@@ -1598,7 +1598,7 @@ bool Viewer::event(QEvent *e)
   {
     QMouseEvent* me = (static_cast<QMouseEvent*>(e));
     mousePressEvent(me);
-    camera_->frame()->touchBeginEvent(e, camera());
+    qobject_cast<TouchFrame*>(camera()->frame())->touchBeginEvent(e, camera());
     return true;
   }
   case QEvent::TouchUpdate:
@@ -1606,7 +1606,7 @@ bool Viewer::event(QEvent *e)
     QTouchEvent* te = (static_cast<QTouchEvent*>(e));
     if(te->touchPoints().count()==2 )
     {
-      camera_->frame()->event(e, camera());
+      qobject_cast<TouchFrame*>(camera()->frame())->event(e, camera());
     }
     return true;
   }
@@ -1643,7 +1643,7 @@ bool TouchFrame::event(QEvent *e,  qglviewer::Camera* const camera) Q_DECL_OVERR
   QVector2D translation(c2-c1);
 
   //Performs  a translation along the X and Y axis
-  Vec trans(-translation.x(), translation.y(), 0);
+  qglviewer::Vec trans(-translation.x(), translation.y(), 0);
 
   // Scale to fit the screen mouse displacement
   trans *= 2.0 * tan(camera->fieldOfView()/2.0) *

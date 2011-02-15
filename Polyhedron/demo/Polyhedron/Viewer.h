@@ -11,6 +11,7 @@
 #include <CGAL/Three/Viewer_interface.h>
 
 #include <QGLViewer/qglviewer.h>
+#include <QGLViewer/manipulatedCameraFrame.h>
 #include <QPoint>
 #include <QFont>
 #include <QOpenGLFramebufferObject>
@@ -40,7 +41,7 @@ public:
   The mouse behavior depends on which button is pressed. See the <a href="../mouse.html">QGLViewer
   mouse page</a> for details.
     */
-   bool event(QEvent *e,  qglviewr::Camera* const camera) Q_DECL_OVERRIDE;
+   bool event(QEvent *e,  qglviewer::Camera* const camera);
    /*! Gives the position of the first TouchEvent as the pressPos_ and prevPos_ like a regular MousePressEvent.*/
 
    bool touchBeginEvent(QEvent *e, qglviewer::Camera* const);
