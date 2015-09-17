@@ -339,18 +339,6 @@ MainWindow::MainWindow(QWidget* parent)
   connect(ui->menuOperations, SIGNAL(aboutToShow()), this, SLOT(filterOperations()));
 }
 
-//Recursive function that do a pass over a menu and its sub-menus(etc.) and hide them when they are empty
-void filterMenuOperations(QMenu* menu)
-{
-    Q_FOREACH(QAction* action, menu->actions()) {
-        if(QMenu* menu = action->menu()) {
-            filterMenuOperations(menu);
-            action->setVisible(!(menu->isEmpty()));
-        }
-    }
-
-}
-
 void MainWindow::filterOperations()
 {
   Q_FOREACH(const PluginNamePair& p, plugins) {
@@ -359,9 +347,15 @@ void MainWindow::filterOperations()
     }
   }
 
-  // do a pass over all menus in Operations and their sub-menus(etc.) and hide them when they are empty
-  filterMenuOperations(ui->menuOperations);
+  // do a pass over all menus in Operations and hide them when they are empty
+  Q_FOREACH(QAction* action, ui->menuOperations->actions()) {
+    if(QMenu* menu = action->menu()) {
+      action->setVisible(!(menu->isEmpty()));
+    }
+  }
 }
+
+
 #ifdef QT_SCRIPT_LIB
 void MainWindow::evaluate_script(QString script,
                                  const QString& filename,
@@ -469,10 +463,9 @@ void MainWindow::loadPlugins()
     }
   }
 
-//Creates sub-Menus for operations.
-  //!TODO : Make it recursive to allow sub-menus of sub-menus
+  // sort the operations menu by name
   QList<QAction*> actions;
- /* QList<QMenu*> menus;
+  QList<QMenu*> menus;
   Q_FOREACH(QMenu* menu, ui->menuOperations->findChildren<QMenu*>()) {
       menus.append(menu);
   }
@@ -492,79 +485,33 @@ void MainWindow::loadPlugins()
               }
           }
       }
-  }*/
+  }
   actions = ui->menuOperations->actions();
   Q_FOREACH(QAction* a, actions)
   {
-      QString menuPath = a->property("subMenuName").toString();
-      bool hasSub = false;
-      QString menuName, subMenuName;
-      if (!menuPath.isNull())
+      QString menuName = a->property("subMenuName").toString();
+      if (!menuName.isNull())
       {
-          //Get the menu and submenu names
-          for(int i=0; i<menuPath.size(); i++)
-          {
-              if(menuPath.at(i)=='/')
-                  hasSub = true;
-          }
-
-          if(hasSub)
-          {
-              int i=0;
-              for(i; menuPath.at(i)!='/'; i++)
-                  menuName.append(menuPath.at(i));
-              i++;
-              for(i; i<menuPath.size(); i++)
-                  subMenuName.append(menuPath.at(i));
-          }
-          else
-              menuName= menuPath;
-          //Create the menu and sub menu
           QMenu* menu = 0;
-          QMenu* subMenu = 0;
-          //if the menu already exists, don't create a new one.
           Q_FOREACH(QAction* action, findChildren<QAction*>()) {
               if(!action->menu()) continue;
               QString menuText = action->menu()->title();
-              if(menuText != menuName && menuText != subMenuName) continue;
+              if(menuText != menuName) continue;
               menu = action->menu();
-              if(hasSub)
-              {
-                  if(menuText != subMenuName) continue;
-                  subMenu = action->menu();
-                  //find the parent menu of the submenu
-                  Q_FOREACH(QMenu* parentmenu, findChildren<QMenu*>())
-                  {
-                      if(parentmenu->title() != menuName) continue;
-                      menu = parentmenu;
-                  }
-              }
           }
-
           if(menu == 0)
-          {
               menu = new QMenu(menuName, this);
-          }
-          if(hasSub)
-          {
-              if(subMenu == 0)
-                  subMenu = new QMenu(subMenuName, this);
-              subMenu->addAction(a);
-              menu->addMenu(subMenu);
-          }
-          else
-              menu->addAction(a);
 
+
+          menu->addAction(a);
           ui->menuOperations->addMenu(menu);
           ui->menuOperations->removeAction(a);
       }
-  }
-  // sort the operations menu by name
-      actions = ui->menuOperations->actions();
+      QList<QAction*> actions = ui->menuOperations->actions();
       qSort(actions.begin(), actions.end(), actionsByName);
       ui->menuOperations->clear();
       ui->menuOperations->addActions(actions);
-
+  }
 }
 
 bool MainWindow::hasPlugin(const QString& pluginName) const

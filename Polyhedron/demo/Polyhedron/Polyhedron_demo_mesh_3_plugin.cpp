@@ -39,7 +39,6 @@ public:
     this->mw = mainWindow;
     actionMesh_3 = new QAction("Create a tetrahedral mesh", mw);
     if(actionMesh_3) {
-      actionMesh_3->setProperty("subMenuName", "Operations with plane");
       connect(actionMesh_3, SIGNAL(triggered()),
               this, SLOT(mesh_3()));
     }

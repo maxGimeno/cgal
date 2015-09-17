@@ -1,5 +1,4 @@
 #include <QApplication>
-#include <QAction>
 #include <QMessageBox>
 #include <QMainWindow>
 #include "opengl_tools.h"
@@ -32,18 +31,6 @@ public:
   // used by Polyhedron_demo_plugin_helper
   QStringList actionsNames() const {
     return QStringList() << "actionSelfIntersection";
-  }
-
-  void init(QMainWindow* mainWindow,
-            Scene_interface* scene_interface,
-            Messages_interface* m)
-  {
-      mw = mainWindow;
-      scene = scene_interface;
-      actions_map["actionSelfIntersection"] = getActionFromMainWindow(mw, "actionSelfIntersection");
-      actions_map["actionSelfIntersection"]->setProperty("subMenuName", "Detection operations");
-      autoConnectActions();
-
   }
 
   bool applicable(QAction*) const { 
