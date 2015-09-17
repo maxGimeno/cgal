@@ -50,11 +50,7 @@ public:
 
       actions_map["actionDCP"] = new QAction ("DCP", mw);
       actions_map["actionDCP"]->setProperty("subMenuName", "Color alteration/Parametrization");
-
-      connect(actions_map["actionMVC"], SIGNAL(triggered()),
-              this, SLOT(on_actionMVC_triggered()));
-      connect(actions_map["actionDCP"], SIGNAL(triggered()),
-              this, SLOT(on_actionDCP_triggered()));
+      autoConnectActions();
 
   }
 

@@ -52,11 +52,7 @@ public:
 
       actions_map["actionFitLine"] = new QAction("Fit Line", mw);
       actions_map["actionFitLine"]->setProperty("subMenuName", "Object creation/PCA");
-
-      connect(actions_map["actionFitPlane"], SIGNAL(triggered()),
-              this, SLOT(on_actionFitPlane_triggered()));
-      connect(actions_map["actionFitLine"], SIGNAL(triggered()),
-              this, SLOT(on_actionFitLine_triggered()));
+      autoConnectActions();
 
   }
 
