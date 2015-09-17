@@ -7,7 +7,6 @@
 #include <QVector>
 #include <QSet>
 #include <QDockWidget>
-#include "MainWindow.h"
 
 QAction*
 Polyhedron_demo_plugin_helper::
