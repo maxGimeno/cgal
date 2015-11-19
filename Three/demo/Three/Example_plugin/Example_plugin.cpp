@@ -5,7 +5,7 @@
 
 #include <CGAL/Three/Scene_item.h>
 #include <CGAL/Three/Viewer_interface.h>
-#include "ui_Polyhedron_demo_example_plugin.h"
+#include "ui_Example_plugin.h"
 #include "ui_dock_example.h"
 
 //! The dialog class to get the coordinates of the triangle
@@ -262,4 +262,4 @@ Ui::Dock_example ui_widget;
 QDockWidget* dock_widget;
 
 }; //end of class Polyhedron_demo_example_plugin
-#include "Polyhedron_demo_example_plugin.moc"
+#include "Example_plugin.moc"

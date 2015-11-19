@@ -34,8 +34,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 
            
   #include( ${CMAKE_CURRENT_SOURCE_DIR}/../../Polyhedron/demo/Polyhedron/polyhedron_demo_macros.cmake )
-  qt5_wrap_ui( exampleUI_FILES Polyhedron_demo_example_plugin.ui dock_example.ui)
+  qt5_wrap_ui( exampleUI_FILES Example_plugin.ui dock_example.ui)
   qt5_wrap_ui( example_dockUI_FILES dock_example.ui)
-  polyhedron_demo_plugin(example_plugin Polyhedron_demo_example_plugin ${exampleUI_FILES} ${example_dockUI_FILES})
+  polyhedron_demo_plugin(example_plugin Example_plugin ${exampleUI_FILES} ${example_dockUI_FILES})
   target_link_libraries(example_plugin scene_polyhedron_item)  
 endif()

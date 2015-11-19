@@ -24,20 +24,19 @@ A plugin usually defines an object that inherits from Scene_item or uses some of
 \section examplePlugin Creating a simple Plugin
 \subsection examplePluginItself The plugin itself
 A basic plugin will inherit from Polyhedron_demo_plugin_interface. It can also inherits from the Polyhedron_demo_plugin_helper instead, for a more detailed model of plugin.
-It must be created in a folder named Xxxx_yyyy_plugin containing all the files created for it, and a CMakeLists.txt file. This file contains the following line :
-Its name must be of the form Polyhedron_demo_xxxx_yyyy_plugin. \n
-<b>In the CMakeList.txt file, in the section Plugins, add the following lines :</b>
+It must be created in a folder named after its main package, containing all the files created for it, and a CMakeLists.txt file.
+<b>In the CMakeList.txt file from your plugin's folder, add the following lines :</b>
 
     include( polyhedron_demo_macros )
     #if the plugin has a UI file
-    qt5_wrap_ui( xxxx_yyyyUI_FILES Polyhedron_demo_xxxx_yyyy_plugin.ui)
-    polyhedron_demo_plugin(xxx_yyyy_plugin Polyhedron_demo_xxx_yyyy_plugin ${xxx_yyyyUI_FILES})
+    qt5_wrap_ui( xxxx_yyyyUI_FILES Xxxx_yyyy_plugin.ui)
+    polyhedron_demo_plugin(xxxx_yyyy_plugin Xxxx_yyyy_plugin ${xxxx_yyyyUI_FILES})
     #if the plugin uses external libraries like scene_items
-    target_link_libraries(xxx_yyyy_plugin scene_polygon_xxxx_yyyy_item scene_xxxx_zzzz_item)
+    target_link_libraries(xxxx_yyyy_plugin scene_polygon_xxxx_yyyy_item scene_xxxx_zzzz_item)
     
-And in the main CMakeLists.txt, you must add the following line:
+And in the main CMakeLists.txt (the one of the Demo), you must add the following line (if it is not already present:
 
-    add_subdirectory(Xxxx_yyyy_plugin)
+    add_subdirectory(Name_of_your_folder)
 
   [init]: @ref CGAL::Three::Polyhedron_demo_plugin_helper#init(QMainWindow *, Scene_interface *)
   The class must contain the following lines :\n
@@ -57,7 +56,7 @@ If the plugin implements a new Scene_item, please notice that a Scene_item has a
 
 A plugin must always contain
 ~~~~~~~~~~~~~{.cpp}
-#include "Polyhedron_demo_xxxx_yyyy_plugin.moc"
+#include "Xxxx_yyyy_plugin.moc"
 ~~~~~~~~~~~~~
 \subsection examplePluginDialog Adding a dialog
 
@@ -79,15 +78,15 @@ For a minimalist dialog, intended to get a single parameter for instancem you ca
     
 
 For a more elaborate interface, you will have to use the designer tool of QtCreator. Create a new Qt Designer form (file->New file or Project->Qt->), and select among the template/form choices. 
-Name it Polyhedron_demo_your_plugin_name_plugin_dialog.ui (you may have to rename it once it is created as QtCreator tends to forget the capital letters), and add it to the project in the CMakeList :
+Name it Your_plugin_name_plugin_dialog.ui (you may have to rename it once it is created as QtCreator tends to forget the capital letters), and add it to the project in the CMakeList :
 
-    qt5_wrap_ui( exampleUI_FILES Polyhedron_demo_example_plugin.ui )
-    polyhedron_demo_plugin(example_plugin Polyhedron_demo_example_plugin ${exampleUI_FILES})
+    qt5_wrap_ui( exampleUI_FILES Example_plugin.ui )
+    polyhedron_demo_plugin(example_plugin Example_plugin ${exampleUI_FILES})
     target_link_libraries(example_plugin scene_polyhedron_item)
 
 Edit the ui file with the editor, then add the following line to your plugin file:
 ~~~~~~~~~~~~~{.cpp}
-#include "ui_Polyhedron_demo_your_plugin_name_plugin.h"
+#include "ui_Your_plugin_name_plugin.h"
 ~~~~~~~~~~~~~
 
 You can then add a new class inheriting from QDialog and your own dialog, accessible with "Ui::". Add the macro Q_OBJECT and the line 
@@ -98,7 +97,7 @@ in your constructor. You can populate the dialog in the action, using dialog.sho
 This section describes how to add a Dock Widget to the application.
 Just like with the Dialog, create a new Qt Designer form (file->New file or Project->Qt->Qt Designer Form), choose QDockWidget in Widgets, and add it to the project in the CMakeList :
     qt5_wrap_ui( exampleUI_FILES dock_example.ui )
-    polyhedron_demo_plugin(example_plugin Polyhedron_demo_example_plugin ${exampleUI_FILES})
+    polyhedron_demo_plugin(example_plugin Example_plugin ${exampleUI_FILES})
     target_link_libraries(example_plugin scene_polyhedron_item)
 Edit the ui file with the editor, then add the following line to your plugin file:
 ~~~~~~~~~~~~~{.cpp}
@@ -139,7 +138,7 @@ An external plugin will not be automatically loaded in the Polyhedron demo. It m
 \section example Example : 
 \subsection example1 Creating a simple plugin
 The following code will create a plugin that adds an action to the MainWindow. This action is called "Draw Triangle" and adds a triangle to the scene.
-\cgalExample{Three/Example_plugin/Polyhedron_demo_example_plugin.cpp}
+\cgalExample{Three/Example_plugin/Example_plugin.cpp}
 
 \subsection example2 Creating an external plugin
 The following code makes the same thing than the previous, only the plugin is external.
@@ -180,9 +179,9 @@ The following code makes the same thing than the previous, only the plugin is ex
 
 
       #include( ${CMAKE_CURRENT_SOURCE_DIR}/../../Polyhedron/demo/Polyhedron/polyhedron_demo_macros.cmake )
-      qt5_wrap_ui( exampleUI_FILES Polyhedron_demo_example_plugin.ui dock_example.ui)
+      qt5_wrap_ui( exampleUI_FILES Example_plugin.ui dock_example.ui)
       qt5_wrap_ui( example_dockUI_FILES dock_example.ui)
-      polyhedron_demo_plugin(example_plugin Polyhedron_demo_example_plugin ${exampleUI_FILES} ${example_dockUI_FILES})
+      polyhedron_demo_plugin(example_plugin Example_plugin ${exampleUI_FILES} ${example_dockUI_FILES})
       target_link_libraries(example_plugin scene_polyhedron_item)
     endif()
 
