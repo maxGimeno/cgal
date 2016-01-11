@@ -553,10 +553,10 @@ include(/home/mgimeno/Android/qt-android-cmake/AddQtAndroidApk.cmake)
                         libdemo_framework.so
                         libscene_polyhedron_item.so
                         libscene_polygon_soup_item.so
-                        libscene_points_with_normal_item.so
-                        libscene_implicit_function_item.so
-                        libscene_polylines_item.so
                         libpoint_dialog.so
+                        #libscene_points_with_normal_item.so
+                        #libscene_implicit_function_item.so
+                        #libscene_polylines_item.so
                         #libscene_c2t3_item.so
                         #libscene_nef_polyhedron_item.so
                         #libscene_polyhedron_selection_item.so
