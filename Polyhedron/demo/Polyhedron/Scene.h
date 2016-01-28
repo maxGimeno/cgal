@@ -274,12 +274,22 @@ private:
   //!Index of the item_B.
   int item_B;
   bool picked;
+  QMap<QModelIndex, int> index_map;
+#if !ANDROID
   static GlSplat::SplatRenderer* ms_splatting;
   static int ms_splattingCounter;
-  QMap<QModelIndex, int> index_map;
-
+#endif
+  struct shaders_info
+  {
+      QByteArray code;
+      int program_index;
+      int shader_index;
+      int item_index;
+  };
 public:
+#if !ANDROID
   static GlSplat::SplatRenderer* splatting();
+#endif
 
 }; // end class Scene
 
@@ -317,6 +327,7 @@ private:
   QAbstractProxyModel *proxy;
   Scene *scene;
   mutable int size;
+
 }; // end class SceneDelegate
 
 #endif // SCENE_H

@@ -15,7 +15,6 @@ bool is_nan(double d)
 {
     return !CGAL::Is_valid<double>()( d );
 }
-
 void Scene_implicit_function_item::initialize_buffers(CGAL::Three::Viewer_interface *viewer = 0) const
 {
     if(GLuint(-1) == textureId) {
@@ -117,23 +116,27 @@ void Scene_implicit_function_item::compute_vertices_and_texmap(void)
     // The Quad
     {
 
-
         //A
         positions_tex_quad.push_back(b.xmin);
         positions_tex_quad.push_back(b.ymin);
         positions_tex_quad.push_back(z);
+        texture_map.push_back(0.0);
+        texture_map.push_back(0.0);
 
 
         //B
         positions_tex_quad.push_back(b.xmin);
         positions_tex_quad.push_back(b.ymax);
         positions_tex_quad.push_back(z);
-
+        texture_map.push_back(0.0);
+        texture_map.push_back(1.0);
 
         //C
         positions_tex_quad.push_back(b.xmax);
         positions_tex_quad.push_back(b.ymax);
         positions_tex_quad.push_back(z);
+        texture_map.push_back(1.0);
+        texture_map.push_back(1.0);
 
 
 
@@ -141,38 +144,24 @@ void Scene_implicit_function_item::compute_vertices_and_texmap(void)
         positions_tex_quad.push_back(b.xmin);
         positions_tex_quad.push_back(b.ymin);
         positions_tex_quad.push_back(z);
-
+        texture_map.push_back(0.0);
+        texture_map.push_back(0.0);
 
         //C
         positions_tex_quad.push_back(b.xmax);
         positions_tex_quad.push_back(b.ymax);
         positions_tex_quad.push_back(z);
-
+        texture_map.push_back(1.0);
+        texture_map.push_back(1.0);
 
         //D
         positions_tex_quad.push_back(b.xmax);
         positions_tex_quad.push_back(b.ymin);
         positions_tex_quad.push_back(z);
-
-
-        //UV Mapping x2 but I don't know why.
-        texture_map.push_back(0.0);
-        texture_map.push_back(0.0);
-
-        texture_map.push_back(0.0);
-        texture_map.push_back(1.0);
-
-        texture_map.push_back(1.0);
-        texture_map.push_back(1.0);
-
-        texture_map.push_back(0.0);
-        texture_map.push_back(0.0);
-
-        texture_map.push_back(1.0);
-        texture_map.push_back(1.0);
-
         texture_map.push_back(1.0);
         texture_map.push_back(0.0);
+
+
 
 
 
@@ -350,7 +339,7 @@ Scene_implicit_function_item(Implicit_function_interface* f)
     , red_color_ramp_()
     , textureId(-1)
 {
-    texture = new Texture(grid_size_-1,grid_size_-1);
+    texture = new Texture(grid_size_,grid_size_);
     blue_color_ramp_.build_blue();
     red_color_ramp_.build_red();
     startTimer(0);
@@ -385,6 +374,7 @@ Scene_implicit_function_item::compute_bbox() const
 void
 Scene_implicit_function_item::draw(CGAL::Three::Viewer_interface* viewer) const
 {
+    Scene_item::draw();
     if(!are_buffers_filled)
         initialize_buffers(viewer);
 
@@ -419,6 +409,7 @@ Scene_implicit_function_item::draw(CGAL::Three::Viewer_interface* viewer) const
 void
 Scene_implicit_function_item::draw_edges(CGAL::Three::Viewer_interface* viewer) const
 {
+    Scene_item::draw();
     if(!are_buffers_filled)
         initialize_buffers(viewer);
     //  draw_aux(viewer, true);

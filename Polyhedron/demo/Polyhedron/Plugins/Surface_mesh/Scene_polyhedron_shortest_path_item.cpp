@@ -100,7 +100,9 @@ void Scene_polyhedron_shortest_path_item::draw_points(CGAL::Three::Viewer_interf
     {
         initialize_buffers(viewer);
     }
+#if !ANDROID
    glPointSize(4.0f);
+#endif
    program = getShaderProgram(PROGRAM_WITHOUT_LIGHT);
    attrib_buffers(viewer, PROGRAM_WITHOUT_LIGHT);
    vaos[Selected_Edges]->bind();
@@ -109,7 +111,9 @@ void Scene_polyhedron_shortest_path_item::draw_points(CGAL::Three::Viewer_interf
    viewer->glDrawArrays(GL_POINTS, 0, vertices.size()/3);
    program->release();
    vaos[Selected_Edges]->release();
+#if !ANDROID
    glPointSize(1.0f);
+#endif
 }
   
 Scene_polyhedron_shortest_path_item* Scene_polyhedron_shortest_path_item::clone() const

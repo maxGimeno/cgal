@@ -1,13 +1,12 @@
 #ifndef SCENE_POLYHEDRON_SELECTION_ITEM_H
 #define SCENE_POLYHEDRON_SELECTION_ITEM_H
-#include "opengl_tools.h"
+//#include "opengl_tools.h"
 #include "Scene_polyhedron_selection_item_config.h"
 #include "Scene_polyhedron_item_k_ring_selection.h"
 #include "Travel_isolated_components.h"
 
 #include "Scene_polyhedron_item_decorator.h"
 #include "Polyhedron_type.h"
-
 #include <CGAL/property_map.h>
 #include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
@@ -187,6 +186,13 @@ public:
         nb_facets = 0;
         nb_points = 0;
         nb_lines = 0;
+
+        is_selected = true;
+        QGLViewer* v = *QGLViewer::QGLViewerPool().begin();
+        Viewer_interface* viewer = dynamic_cast<Viewer_interface*>(v);
+        if(!viewer)
+            return;
+          viewer->setNoBinding();
     }
 
   Scene_polyhedron_selection_item(Scene_polyhedron_item* poly_item, QMainWindow* mw) 
@@ -206,6 +212,13 @@ public:
         {
             buffers[i].create();
         }
+
+        is_selected = true;
+        QGLViewer* v = *QGLViewer::QGLViewerPool().begin();
+        Viewer_interface* viewer = dynamic_cast<Viewer_interface*>(v);
+        if(!viewer)
+            return;
+          viewer->setNoBinding();
         init(poly_item, mw);
         invalidateOpenGLBuffers();
     }

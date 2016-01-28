@@ -21,7 +21,7 @@
 // 
 //
 // Author(s)     : Laurent Rineau <laurent.rineau__CGAL@normalesup.org>
-
+/*
 #ifndef CGAL_OPENGL_TOOLS_H
 #define CGAL_OPENGL_TOOLS_H
 
@@ -62,3 +62,4 @@ public:
 } // end namespace CGAL
 
 #endif // not CGAL_OPENGL_TOOLS_H
+*/

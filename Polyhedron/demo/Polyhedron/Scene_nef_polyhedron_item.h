@@ -88,13 +88,13 @@ private:
       NbOfVbos = Points_vertices +1
   };
 
-  mutable std::vector<double> positions_lines;
-  mutable std::vector<double> positions_facets;
-  mutable std::vector<double> positions_points;
-  mutable std::vector<double> normals;
-  mutable std::vector<double> color_lines;
-  mutable std::vector<double> color_facets;
-  mutable std::vector<double> color_points;
+  mutable std::vector<float> positions_lines;
+  mutable std::vector<float> positions_facets;
+  mutable std::vector<float> positions_points;
+  mutable std::vector<float> normals;
+  mutable std::vector<float> color_lines;
+  mutable std::vector<float> color_facets;
+  mutable std::vector<float> color_points;
   mutable std::size_t nb_points;
   mutable std::size_t nb_lines;
   mutable std::size_t nb_facets;

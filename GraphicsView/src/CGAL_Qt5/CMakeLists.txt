@@ -20,6 +20,7 @@ endif()
 if(NOT OPENGL_FOUND)
   set(CGAL_Qt5_MISSING_DEPS "${CGAL_Qt5_MISSING_DEPS} OpenGL")
 endif()
+find_package(OpenGL QUIET )
 
 if(CGAL_Qt5_MISSING_DEPS)
   message(STATUS "libCGAL_Qt5 is missing the dependencies: ${CGAL_Qt5_MISSING_DEPS} cannot be configured.")

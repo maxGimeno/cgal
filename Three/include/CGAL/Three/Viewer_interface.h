@@ -24,7 +24,7 @@
 #include <QGLViewer/qglviewer.h>
 #include <QWidget>
 #include <QPoint>
-#include <QOpenGLFunctions_2_1>
+#include <QOpenGLFunctions>
 #include <CGAL/Qt/CreateOpenGLContext.h>
 // forward declarations
 class QWidget;
@@ -38,7 +38,7 @@ namespace CGAL{
 namespace Three{
 class Scene_draw_interface;
 //! Base class to interact with the viewer from the plugins, the items and the scene.
-class VIEWER_EXPORT Viewer_interface : public QGLViewer, public QOpenGLFunctions_2_1 {
+class VIEWER_EXPORT Viewer_interface : public QGLViewer, public QOpenGLFunctions {
 
   Q_OBJECT
 
@@ -55,7 +55,7 @@ public:
                             PROGRAM_C3T3_EDGES,
                             NB_OF_PROGRAMS };
 
-  Viewer_interface(QWidget* parent) : QGLViewer(CGAL::Qt::createOpenGLContext(), parent) {}
+  Viewer_interface(QWidget* parent) : QGLViewer(parent) {}
   virtual ~Viewer_interface() {}
 
   //! Sets the scene for the viewer.
@@ -88,7 +88,7 @@ public:
    * - PROGRAM_INSTANCED_WIRE : used for the wireframe mode of PROGRAM_INSTANCED
    * @returns a pointer to the corresponding program.*/
   virtual QOpenGLShaderProgram* getShaderProgram(int name) const = 0;
-
+#if !ANDROID
   //!Allows OpenGL 2.1 context to get access to glDrawArraysInstanced.
   typedef void (APIENTRYP PFNGLDRAWARRAYSINSTANCEDARBPROC) (GLenum mode, GLint first, GLsizei count, GLsizei primcount);
   //!Allows OpenGL 2.1 context to get access to glVertexAttribDivisor.
@@ -101,6 +101,7 @@ public:
   PFNGLVERTEXATTRIBDIVISORARBPROC glVertexAttribDivisor;
   //!Allows OpenGL 2.1 context to get access to gkFrameBufferTexture2D.
   PFNGLFRAMEBUFFERTEXTURE2DEXTPROC glFramebufferTexture2D;
+#endif
   //!@returns true if glVertexAttribDivisor, and glDrawArraysInstanced are found.
   //! Used by the items to avoid SEGFAULT.
   bool extension_is_found;

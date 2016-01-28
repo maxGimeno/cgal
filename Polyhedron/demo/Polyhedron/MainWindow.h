@@ -14,6 +14,7 @@
 #include <QFileInfo>
 #include <QStringList>
 #include <QSet>
+#include <QCheckBox>
 class Scene;
 class Viewer;
 class QTreeView;
@@ -310,6 +311,11 @@ protected Q_SLOTS:
   void filterOperations();
   //!Updates the bounding box and moves the camera to fits the scene.
   void on_actionRecenterScene_triggered();
+
+  //Controls
+
+  void toggle_frameManipulation(bool b);
+  void toggle_SelectionMode(bool b);
 protected:
   QList<QAction*> createSubMenus(QList<QAction*>);
   /*! For each objects in the sceneView, loads the associated plugins.
@@ -365,6 +371,8 @@ private:
 
 #ifdef QT_SCRIPT_LIB
   QScriptEngine* script_engine;
+  QCheckBox *ctrl_checkBox;
+  QCheckBox *shift_checkBox;
 public:
   /*! Evaluates a script and search for uncaught exceptions. If quiet is false, prints the
    *backtrace of the uncaught exceptions.

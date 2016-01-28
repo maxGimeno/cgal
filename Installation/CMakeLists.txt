@@ -521,6 +521,16 @@ message("== Set up flags (DONE) ==\n")
 
 message("== Detect external libraries ==")
 
+macro( add_config_flag flag )
+    #message( "In add_config_flag: ${flag} value is ${${flag}}")
+    if ( ${flag} )
+      file( APPEND ${CMAKE_BINARY_DIR}/include/CGAL/compiler_config.h "#define ${flag} 1\n\n")
+    else()
+      file( APPEND ${CMAKE_BINARY_DIR}/include/CGAL/compiler_config.h "//#define ${flag} 1\n\n")
+    endif()
+
+endmacro()
+ 
 # this is the place to tell which external libs are supporting
 # Remarks: 
 #  External libs configured when Qt5 lib of cgal are required
@@ -663,16 +673,22 @@ file(WRITE ${CMAKE_BINARY_DIR}/include/CGAL/compiler_config.h "//\n// compiler_c
 foreach(config_test_cpp ${all_config_tests})
   # Test's name is .cpp's base name
   get_filename_component(config_test_name ${config_test_cpp} NAME_WE)
+  if(CMAKE_CROSSCOMPILING)
+    message("Cross compiling: set ${config_test_name} to 0")
 
-  # Compile and run ${config_test_cpp}. Exit code is stored in ${config_test_name}.
-  CHECK_CXX_FILE_RUNS(${config_test_cpp} ${config_test_name} ${config_test_name})
-  if(${config_test_name})
-    set(${config_test_name} 0)
+    #if not working use cache_set instead of set
+    set( ${config_test_name} 0 )
   else()
-    set(${config_test_name} 1)
+    # Compile and run ${config_test_cpp}. Exit code is stored in ${config_test_name}.
+    CHECK_CXX_FILE_RUNS(${config_test_cpp} ${config_test_name} ${config_test_name})
+    if(${config_test_name})
+      set(${config_test_name} 0)
+    else()
+      set(${config_test_name} 1)
+    endif()
   endif()
-
   add_config_flag(${config_test_name} ${config_test_name})
+    
 endforeach()
 
 add_config_flag(CGAL_USE_GMP)

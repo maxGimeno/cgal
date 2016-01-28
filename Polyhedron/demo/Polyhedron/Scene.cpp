@@ -1,11 +1,12 @@
+#if !ANDROID
 #include "GlSplat/GlSplat.h"
-
+#endif
 
 
 #include "config.h"
 #include "Scene.h"
 #include  <CGAL/Three/Scene_item.h>
-
+#include <CGAL/Three/Viewer_interface.h>
 #include <QObject>
 #include <QMetaObject>
 #include <QString>
@@ -19,7 +20,9 @@
 #include <QList>
 #include <QAbstractProxyModel>
 #include <QMimeData>
+#include <QDebug>
 
+#if !ANDROID
 GlSplat::SplatRenderer* Scene::ms_splatting = 0;
 int Scene::ms_splattingCounter = 0;
 GlSplat::SplatRenderer* Scene::splatting()
@@ -27,7 +30,7 @@ GlSplat::SplatRenderer* Scene::splatting()
     assert(ms_splatting!=0 && "A Scene object must be created before requesting the splatting object");
     return ms_splatting;
 }
-
+#endif
 Scene::Scene(QObject* parent)
     : QStandardItemModel(parent),
       selected_item(-1),
@@ -39,10 +42,11 @@ Scene::Scene(QObject* parent)
                                       double, double, double)),
             this, SLOT(setSelectionRay(double, double, double,
                                        double, double, double)));
-
+#if !ANDROID
     if(ms_splatting==0)
         ms_splatting  = new GlSplat::SplatRenderer();
     ms_splattingCounter++;
+#endif
     picked = false;
 
 
@@ -224,9 +228,10 @@ Scene::~Scene()
         delete item_ptr;
     }
     m_entries.clear();
-
+#if !ANDROID
     if((--ms_splattingCounter)==0)
         delete ms_splatting;
+#endif
 }
 
 CGAL::Three::Scene_item*
@@ -270,7 +275,9 @@ Scene::duplicate(Item_id index)
 
 void Scene::initializeGL()
 {
+#if !ANDROID
     ms_splatting->init();
+#endif
 
     //Setting the light options
 
@@ -281,10 +288,10 @@ void Scene::initializeGL()
     GLfloat position[] = { 0.0f, 0.0f, 1.0f, 1.0f };
 
     // Assign created components to GL_LIGHT0
-    glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
-    glLightfv(GL_LIGHT0, GL_POSITION, position);
+  //  glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
+  //  glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
+  //  glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
+  //  glLightfv(GL_LIGHT0, GL_POSITION, position);
 
 }
 
@@ -303,44 +310,129 @@ Scene::keyPressEvent(QKeyEvent* e){
 void
 Scene::draw()
 {
-    draw_aux(false, 0);
 }
 void
 Scene::draw(CGAL::Three::Viewer_interface* viewer)
 {
-    draw_aux(false, viewer);
+    draw_aux(false,viewer);
 }
 void
 Scene::drawWithNames()
 {
-    draw_aux(true, 0);
+    //drawWithNames();
 }
 void
 Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
 {
-    draw_aux(true, viewer);
+   /* QOpenGLFunctions gl;
+    gl.initializeOpenGLFunctions();
+
+    std::vector<shaders_info> original_shaders;
+    QColor bgColor(viewer->backgroundColor());
+
+    //draws the image in the fbo
+    for(int index = 0; index < m_entries.size(); ++index)
+    {
+        Scene_item& item = *m_entries[index];
+        //transforms the index in a corresponding unique RGB color for picking.
+        int R = (index & 0x000000FF) >>  0;
+        int G = (index & 0x0000FF00) >>  8;
+        int B = (index & 0x00FF0000) >> 16;
+        float r= R/255.0;
+        float g = G/255.0;
+        float b = B/255.0;
+        //The fragmentertex source code
+        QString picking_fragment_source(
+                    "void main(void) { \n"
+                    "gl_FragColor = vec4(");
+        picking_fragment_source.append(QString::number(r)+","+QString::number(g)+","+QString::number(b)+",1.0); \n"
+                                                                                                        "} \n"
+                                                                                                        "\n");
+
+        Q_FOREACH(QOpenGLShaderProgram* viewer->d, item.shader_programs)
+        {
+            for(int j=0; j<(int)program->shaders().size(); j++)
+            {
+                if(program->shaders().at(j)->shaderType() == QOpenGLShader::Fragment)
+                {
+                    //copies the original shaders of each program
+                    shaders_info c;
+                    c.code = program->shaders().at(j)->sourceCode();
+                    c.program_index = item.shader_programs.key(program);
+                    c.shader_index = j;
+                    c.item_index = index;
+                    original_shaders.push_back(c);
+                    //replace their fragment shaders so they display with the picking color
+                    program->shaders().at(j)->compileSourceCode(picking_fragment_source);
+                }
+                program->link();
+            }
+        }
+        viewer->setBackgroundColor(::Qt::white);
+
+        if(item.visible())
+        {
+            item.draw(viewer);
+        }
+    }
+    //determines the size of the buffer
+    int deviceWidth = viewer->camera()->screenWidth();
+    int deviceHeight = viewer->camera()->screenHeight();
+    int rowLength = deviceWidth * 4; // data asked in RGBA,so 4 bytes.
+    const static int dataLength = rowLength * deviceHeight;
+    GLubyte* buffer = new GLubyte[dataLength];
+
+    // Qt uses upper corner for its origin while GL uses the lower corner.
+    glReadPixels(picking_target.x(), deviceHeight-1-picking_target.y(), 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+    std::vector<QOpenGLShaderProgram*> all_programs(0);
+    //resets the originals programs
+    for(int i=0; i<(int)original_shaders.size(); i++)
+    {
+        int entries_index = original_shaders[i].item_index;
+        int program_index = original_shaders[i].program_index;
+        int shader_index = original_shaders[i].shader_index;
+        m_entries[entries_index]->shader_programs[program_index]->shaders().at(shader_index)->compileSourceCode(original_shaders[i].code);
+        m_entries[entries_index]->shader_programs[program_index]->link();
+        all_programs.push_back(m_entries[entries_index]->shader_programs[program_index]);
+
+    }
+
+    int ID = (buffer[0] + buffer[1] * 256 +buffer[2] * 256*256);
+    //if the picked color is not white (background color)
+    if(buffer[0]*buffer[1]*buffer[2] < 255*255*255)
+        viewer->setSelectedName(ID);
+    else
+        viewer->setSelectedName(-1);
+    viewer->setBackgroundColor(bgColor);
+    list_programs = all_programs;*/
 }
 
 void 
 Scene::draw_aux(bool with_names, CGAL::Three::Viewer_interface* viewer)
 {
+#if !ANDROID
     if(!ms_splatting->viewer_is_set)
         ms_splatting->setViewer(viewer);
+#endif
     // Flat/Gouraud OpenGL drawing
     for(int index = 0; index < m_entries.size(); ++index)
     {
         if(with_names) {
+#if !ANDROID
             viewer->glPushName(index);
+#endif
         }
         CGAL::Three::Scene_item& item = *m_entries[index];
         if(item.visible())
         {
             if(item.renderingMode() == Flat || item.renderingMode() == FlatPlusEdges || item.renderingMode() == Gouraud)
             {
+#if !ANDROID
                 viewer->glEnable(GL_LIGHTING);
                 viewer->glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
                 viewer->glPointSize(2.f);
                 viewer->glLineWidth(1.0f);
+    #endif
                 if(index == selected_item || selected_items_list.contains(index))
                 {
                     item.selection_changed(true);
@@ -350,11 +442,6 @@ Scene::draw_aux(bool with_names, CGAL::Three::Viewer_interface* viewer)
                 {
                     item.selection_changed(false);
                 }
-
-                if(item.renderingMode() == Gouraud)
-                    viewer->glShadeModel(GL_SMOOTH);
-                else
-                    viewer->glShadeModel(GL_FLAT);
                 if(viewer)
                     item.draw(viewer);
                 else
@@ -362,7 +449,9 @@ Scene::draw_aux(bool with_names, CGAL::Three::Viewer_interface* viewer)
             }
         }
         if(with_names) {
+#if !ANDROID
             viewer->glPopName();
+#endif
         }
     }
 glDepthFunc(GL_LEQUAL);
@@ -370,17 +459,21 @@ glDepthFunc(GL_LEQUAL);
     for(int index = 0; index < m_entries.size(); ++index)
     {
         if(with_names) {
+#if !ANDROID
             viewer->glPushName(index);
+#endif
         }
         CGAL::Three::Scene_item& item = *m_entries[index];
         if(item.visible())
         {
             if(item.renderingMode() == FlatPlusEdges || item.renderingMode() == Wireframe)
             {
+#if !ANDROID
                 viewer->glDisable(GL_LIGHTING);
                 viewer->glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
                 viewer->glPointSize(2.f);
                 viewer->glLineWidth(1.0f);
+    #endif
                 if(index == selected_item || selected_items_list.contains(index))
                 {
                       item.selection_changed(true);
@@ -390,8 +483,6 @@ glDepthFunc(GL_LEQUAL);
                       item.selection_changed(false);
                 }
 
-
-
                 if(viewer)
                     item.draw_edges(viewer);
                 else
@@ -399,10 +490,12 @@ glDepthFunc(GL_LEQUAL);
             }
             else{
                 if( item.renderingMode() == PointsPlusNormals ){
+#if !ANDROID
                     viewer->glDisable(GL_LIGHTING);
                     viewer->glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
                     viewer->glPointSize(2.f);
                     viewer->glLineWidth(1.0f);
+#endif
                     if(index == selected_item || selected_items_list.contains(index))
                     {
 
@@ -421,7 +514,9 @@ glDepthFunc(GL_LEQUAL);
             }
         }
         if(with_names) {
+#if !ANDROID
             viewer->glPopName();
+#endif
         }
     }
 
@@ -430,17 +525,21 @@ glDepthFunc(GL_LEQUAL);
     for(int index = 0; index < m_entries.size(); ++index)
     {
         if(with_names) {
+#if !ANDROID
             viewer->glPushName(index);
+#endif
         }
         CGAL::Three::Scene_item& item = *m_entries[index];
         if(item.visible())
         {
             if(item.renderingMode() == Points  || item.renderingMode() == PointsPlusNormals)
             {
+#if !ANDROID
                 viewer->glDisable(GL_LIGHTING);
                 viewer->glPolygonMode(GL_FRONT_AND_BACK,GL_POINT);
                 viewer->glPointSize(2.f);
                 viewer->glLineWidth(1.0f);
+#endif
 
                 if(viewer)
                     item.draw_points(viewer);
@@ -449,10 +548,13 @@ glDepthFunc(GL_LEQUAL);
             }
         }
         if(with_names) {
+#if !ANDROID
             viewer->glPopName();
+#endif
         }
     }
     glDepthFunc(GL_LESS);
+#if !ANDROID
     // Splatting
     if(!with_names && ms_splatting->isSupported())
     {
@@ -487,8 +589,9 @@ glDepthFunc(GL_LEQUAL);
         }
         ms_splatting->finalize();
 
-    }
 
+    }
+#endif
     //scrolls the sceneView to the selected item's line.
     if(picked)
         Q_EMIT(itemPicked(index_map.key(mainSelectionIndex())));

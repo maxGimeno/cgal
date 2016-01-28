@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>978</width>
-    <height>594</height>
+    <height>761</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -145,7 +145,7 @@
          <item>
           <widget class="QToolButton" name="addButton">
            <property name="text">
-            <string>+</string>
+            <string/>
            </property>
            <property name="icon">
             <iconset resource="Polyhedron_3.qrc">
@@ -156,7 +156,7 @@
          <item>
           <widget class="QToolButton" name="removeButton">
            <property name="text">
-            <string>-</string>
+            <string/>
            </property>
            <property name="icon">
             <iconset resource="Polyhedron_3.qrc">
@@ -167,7 +167,7 @@
          <item>
           <widget class="QToolButton" name="duplicateButton">
            <property name="text">
-            <string>...</string>
+            <string/>
            </property>
            <property name="icon">
             <iconset resource="Polyhedron_3.qrc">
@@ -658,6 +658,22 @@
   <action name="actionLSC">
    <property name="text">
     <string>Least square conformal maps</string>
+     </property>
+  </action>
+  <action name="actionManipulated_Frame">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Manipulated frame</string>
+   </property>
+  </action>
+  <action name="actionSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Selection</string>
    </property>
   </action>
   <action name="actionLoad_plugin">

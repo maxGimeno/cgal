@@ -296,7 +296,8 @@
    || defined(__x86_64) || defined(__x86_64__) \
    || defined(__ia64) || defined(__ia64__) \
    || defined(_M_IX86) || defined(_M_IA64) \
-   || defined(_M_ALPHA) || defined(_WIN64)
+   || defined(_M_ALPHA) || defined(_WIN64) \
+   || defined(__ARM_EABI__)
 #  define CGAL_LITTLE_ENDIAN
 #else
 #  error Unknown endianness

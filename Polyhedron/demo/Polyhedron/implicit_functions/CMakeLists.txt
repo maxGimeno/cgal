@@ -24,7 +24,6 @@ set( QT_USE_QTSCRIPT  TRUE )
 set( QT_USE_QTOPENGL  TRUE )
 find_package(Qt5 QUIET COMPONENTS Xml Script OpenGL ScriptTools )
 
-
 if(CGAL_Qt5_FOUND AND Qt5_FOUND)
   # put plugins (which are shared libraries) at the same location as
   # executable files

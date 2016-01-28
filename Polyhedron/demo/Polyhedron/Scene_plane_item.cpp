@@ -93,7 +93,8 @@ void Scene_plane_item::compute_normals_and_vertices(void)
 
 void Scene_plane_item::draw(CGAL::Three::Viewer_interface* viewer)const
 {
-    if(!are_buffers_filled)
+    Scene_item::draw();
+    if(!are_buffers_filled);
         initialize_buffers(viewer);
     vaos[Facets]->bind();
     program = getShaderProgram(PROGRAM_WITHOUT_LIGHT);
@@ -113,7 +114,8 @@ void Scene_plane_item::draw(CGAL::Three::Viewer_interface* viewer)const
 
 void Scene_plane_item::draw_edges(CGAL::Three::Viewer_interface* viewer)const
 {
-    if(!are_buffers_filled)
+    Scene_item::draw();
+    if(!are_buffers_filled);
         initialize_buffers(viewer);
     vaos[Edges]->bind();
     program = getShaderProgram(PROGRAM_WITHOUT_LIGHT);

@@ -1,11 +1,9 @@
 #include "Scene_polylines_item.h"
 #include "create_sphere.h"
-
 #include <CGAL/bounding_box.h>
 #include <CGAL/gl.h>
 #include <QMenu>
 #include <QAction>
-
 #include <QInputDialog>
 
 class Scene_polylines_item_private {
@@ -23,6 +21,7 @@ public:
 
     bool draw_extremities;
     double spheres_drawn_radius;
+
 };
 
 void
@@ -85,10 +84,10 @@ Scene_polylines_item::initialize_buffers(CGAL::Three::Viewer_interface *viewer =
             program->enableAttributeArray("center");
             program->setAttributeBuffer("center",GL_FLOAT,0,3);
             buffers[Spheres_Center].release();
-
+#if !ANDROID
             viewer->glVertexAttribDivisor(program->attributeLocation("center"), 1);
             viewer->glVertexAttribDivisor(program->attributeLocation("colors"), 1);
-
+#endif
         }
         else
         {
@@ -146,13 +145,12 @@ Scene_polylines_item::initialize_buffers(CGAL::Three::Viewer_interface *viewer =
             program->setAttributeBuffer("center",GL_FLOAT,0,3);
             buffers[Spheres_Center].release();
 
-
+#if !ANDROID
             viewer->glVertexAttribDivisor(program->attributeLocation("center"), 1);
             viewer->glVertexAttribDivisor(program->attributeLocation("colors"), 1);
-
+#endif
             vaos[Wired_Spheres]->release();
             program->release();
-
             nb_lines = positions_lines.size();
             positions_lines.resize(0);
             std::vector<float>(positions_lines).swap(positions_lines);
@@ -432,6 +430,8 @@ Scene_polylines_item::draw(CGAL::Three::Viewer_interface* viewer) const {
     {
         if(viewer->extension_is_found)
         {
+
+#if !ANDROID
             vaos[Spheres]->bind();
             QOpenGLShaderProgram* program = getShaderProgram(PROGRAM_INSTANCED);
             attrib_buffers(viewer, PROGRAM_INSTANCED);
@@ -440,17 +440,22 @@ Scene_polylines_item::draw(CGAL::Three::Viewer_interface* viewer) const {
                                           static_cast<GLsizei>(nb_spheres/3), nbSpheres);
             program->release();
             vaos[Spheres]->release();
+#endif
         }
         else
         {
             vaos[Spheres]->bind();
             QOpenGLShaderProgram* program = getShaderProgram(PROGRAM_NO_SELECTION);
             attrib_buffers(viewer, PROGRAM_NO_SELECTION);
+#if !ANDROID
             glPointSize(8.0f);
             glEnable(GL_POINT_SMOOTH);
+#endif
             program->bind();
             viewer->glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(nb_centers/3));
+#if !ANDROID
             glDisable(GL_POINT_SMOOTH);
+#endif
             program->release();
             vaos[Spheres]->release();
         }
@@ -478,6 +483,7 @@ Scene_polylines_item::draw_edges(CGAL::Three::Viewer_interface* viewer) const {
     {
         if(viewer->extension_is_found)
         {
+#if !ANDROID
             vaos[Wired_Spheres]->bind();
             attrib_buffers(viewer, PROGRAM_INSTANCED_WIRE);
             program = getShaderProgram(PROGRAM_INSTANCED_WIRE);
@@ -486,6 +492,7 @@ Scene_polylines_item::draw_edges(CGAL::Three::Viewer_interface* viewer) const {
                                           static_cast<GLsizei>(nb_wire/3), nbSpheres);
             program->release();
             vaos[Wired_Spheres]->release();
+#endif
         }
     }
 
@@ -493,7 +500,6 @@ Scene_polylines_item::draw_edges(CGAL::Three::Viewer_interface* viewer) const {
 
 void 
 Scene_polylines_item::draw_points(CGAL::Three::Viewer_interface* viewer) const {
-    if(!are_buffers_filled)
     {
         compute_elements();
         initialize_buffers(viewer);

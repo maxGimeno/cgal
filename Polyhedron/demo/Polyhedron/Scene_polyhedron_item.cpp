@@ -307,8 +307,6 @@ Scene_polyhedron_item::triangulate_facet_color(Facet_iterator fit) const
 #include <QObject>
 #include <QMenu>
 #include <QAction>
-
-
 void
 Scene_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interface* viewer) const
 {
@@ -460,6 +458,7 @@ Scene_polyhedron_item::compute_normals_and_vertices(void) const
     typedef Polyhedron::Facet_iterator Facet_iterator;
     typedef Polyhedron::Halfedge_around_facet_circulator HF_circulator;
 
+
     Facet_iterator f = poly->facets_begin();
     for(f = poly->facets_begin();
         f != poly->facets_end();
@@ -479,16 +478,14 @@ Scene_polyhedron_item::compute_normals_and_vertices(void) const
             HF_circulator end = he;
             CGAL_For_all(he,end)
             {
-
                 // If Flat shading:1 normal per polygon added once per vertex
-
                 Vector n = CGAL::Polygon_mesh_processing::compute_face_normal(f, *poly);
                 normals_flat.push_back(n.x());
                 normals_flat.push_back(n.y());
                 normals_flat.push_back(n.z());
 
 
-                //// If Gouraud shading: 1 normal per vertex
+                // If Gouraud shading: 1 normal per vertex
 
                 n = CGAL::Polygon_mesh_processing::compute_vertex_normal(he->vertex(), *poly);
                 normals_gouraud.push_back(n.x());
@@ -899,7 +896,6 @@ void Scene_polyhedron_item::draw_edges(CGAL::Three::Viewer_interface* viewer) co
         initialize_buffers(viewer);
         compute_bbox();
     }
-
     if(!show_only_feature_edges_m)
     {
         vaos[Edges]->bind();

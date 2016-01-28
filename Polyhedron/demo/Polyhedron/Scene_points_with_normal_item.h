@@ -106,13 +106,14 @@ private:
       NbOfVbos = Selected_points_vertices+1
   };
 
-  mutable std::vector<double> positions_lines;
-  mutable std::vector<double> positions_points;
-  mutable std::vector<double> positions_selected_points;
-  mutable std::vector<double> normals;
+  mutable std::vector<float> positions_lines;
+  mutable std::vector<float> positions_points;
+  mutable std::vector<float> positions_selected_points;
+  mutable std::vector<float> normals;
   mutable std::size_t nb_points;
   mutable std::size_t nb_selected_points;
   mutable std::size_t nb_lines;
+
 
   mutable QOpenGLShaderProgram *program;
 

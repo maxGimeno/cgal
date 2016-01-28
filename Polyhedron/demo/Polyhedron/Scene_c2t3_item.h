@@ -76,33 +76,7 @@ public:
   }
 
   void draw() const {
-   /* ::glBegin(GL_TRIANGLES);
-    for(C2t3::Facet_iterator
-          fit = c2t3().facets_begin(),
-          end = c2t3().facets_end();
-        fit != end; ++fit)
-    {
-      const Tr::Cell_handle& cell = fit->first;
-      const int& index = fit->second;
-      const Tr::Geom_traits::Point_3& pa = cell->vertex((index+1)&3)->point();
-      const Tr::Geom_traits::Point_3& pb = cell->vertex((index+2)&3)->point();
-      const Tr::Geom_traits::Point_3& pc = cell->vertex((index+3)&3)->point();
-      draw_triangle(pa, pb, pc);
-    }
-    ::glEnd();*/
-  }
 
-private:
-  static void draw_triangle(const Tr::Point& pa,
-                            const Tr::Point& pb,
-                            const Tr::Point& pc) {
-    Tr::Geom_traits::Vector_3 n = cross_product(pb - pa, pc -pa);
-    n = n / CGAL::sqrt(n*n);
-    ::glNormal3d(n.x(),n.y(),n.z());
-
-    ::glVertex3d(pa.x(),pa.y(),pa.z());
-    ::glVertex3d(pb.x(),pb.y(),pb.z());
-    ::glVertex3d(pc.x(),pc.y(),pc.z());
   }
 
 private:

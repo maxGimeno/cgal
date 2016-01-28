@@ -36,7 +36,7 @@
 #include <QApplication>
 #include <QThread>
 #include <QMessageBox>
-
+#include <QDebug>
 template <class Tr>
 class Surface_mesh_modified_criteria_3
 {
@@ -297,11 +297,11 @@ CGAL::Three::Scene_item* cgal_code_remesh(QWidget* parent,
   timer.reset();
   Mesher_base* mesher;
   std::cerr << "Remesh...";
-  QMessageBox* message_box = new QMessageBox(QMessageBox::NoIcon,
-                                            "Remeshing...",
-                                            "Meshing process is running...",
-                                            QMessageBox::Cancel,
-                                            parent);
+  QMessageBox message_box(QMessageBox::NoIcon,
+                          "Remeshing...",
+                          "Meshing process is running...",
+                          QMessageBox::Cancel,
+                          parent);
   switch(tag) {
   case 0:
     mesher = new Mesher<Criteria,
@@ -316,9 +316,9 @@ CGAL::Three::Scene_item* cgal_code_remesh(QWidget* parent,
     mesher = new Mesher<Criteria,
       CGAL::Manifold_with_boundary_tag>(0, c2t3, input, facets_criteria);
   }
-  QObject::connect(message_box, SIGNAL(buttonClicked( QAbstractButton *)),
+  QObject::connect(&message_box, SIGNAL(buttonClicked( QAbstractButton *)),
                    mesher, SLOT(stop()));
-  message_box->show();
+  message_box.show();
   qApp->processEvents();
 
 
@@ -330,9 +330,10 @@ CGAL::Three::Scene_item* cgal_code_remesh(QWidget* parent,
     qApp->processEvents();
     thread->wait(200);
   }
-  delete message_box;
+  message_box.hide();
   delete mesher;
-  std::cerr << "done (" << timer.time() << " ms, " << triangulation.number_of_vertices() << " vertices)" << std::endl;
+  qDebug()<<"done (" << timer.time() << " ms, " << triangulation.number_of_vertices() << " vertices)";
+ // std::cerr << "done (" << timer.time() << " ms, " << triangulation.number_of_vertices() << " vertices)" << std::endl;
 
   if(triangulation.number_of_vertices() > 0)
   {

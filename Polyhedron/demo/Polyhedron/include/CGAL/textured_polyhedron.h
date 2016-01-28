@@ -201,50 +201,6 @@ public :
         compute_normals_per_vertex();
     }
 
-    void gl_draw_textured_triangles(bool smooth_shading,
-                                    bool use_normals,
-                                    const double scaling_tex_coordinates)
-    {
-        ::glBegin(GL_TRIANGLES);
-        Facet_iterator f = this->facets_begin();
-        for(;f!= this->facets_end();f++)
-            gl_draw_textured_facet(f,smooth_shading,use_normals,scaling_tex_coordinates);
-        ::glEnd();
-    }
-
-    void gl_draw_textured_facet(Facet_handle f,
-                                bool smooth_shading,
-                                bool use_normals,
-                                const double scaling_tex_coordinates)
-    {
-        // one normal per face
-        if(use_normals && !smooth_shading)
-        {
-            const typename Facet::Normal_3& n = f->normal();
-            ::glNormal3f(n[0],n[1],n[2]);
-        }
-
-        // revolve around current face to get vertices
-        Halfedge_around_facet_circulator he = f->facet_begin();
-        do
-        {
-            // one normal per vertex
-            if(use_normals && smooth_shading)
-            {
-                const typename Facet::Normal_3& n = he->vertex()->normal();
-                ::glNormal3d(n[0],n[1],n[2]);
-            }
-
-            // polygon assembly is performed per vertex
-            const Point& p  = he->vertex()->point();
-            const double u = he->vertex()->u();
-            const double v = he->vertex()->v();
-            // std::cout << u << " " << v << std::endl;
-            ::glTexCoord2d(u * scaling_tex_coordinates, v * scaling_tex_coordinates);
-            ::glVertex3d(p[0],p[1],p[2]);
-        }
-        while(++he != f->facet_begin());
-    }
 }; // end class Textured_polyhedron
 
 } // end namespace CGAL

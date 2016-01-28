@@ -13,7 +13,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with GlSplat. If not, see <http://www.gnu.org/licenses/>.
-
+#if !ANDROID
 #ifndef _GLSPLAT_SPLATRENDERER_H_
 #define _GLSPLAT_SPLATRENDERER_H_
 
@@ -151,8 +151,7 @@ private :
   CGAL::Three::Viewer_interface *viewer;
 };
 
-
 } // namepsace GlSplat
 
 #endif // _GLSPLAT_SPLATRENDERER_H_
-
+#endif

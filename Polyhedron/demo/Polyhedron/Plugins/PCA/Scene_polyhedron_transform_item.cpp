@@ -67,6 +67,7 @@ void Scene_polyhedron_transform_item::compute_elements() const
 
 void Scene_polyhedron_transform_item::draw_edges(CGAL::Three::Viewer_interface* viewer) const
 {
+    Scene_item::draw();
     if(!are_buffers_filled)
         initialize_buffers(viewer);
     vaos[Edges]->bind();

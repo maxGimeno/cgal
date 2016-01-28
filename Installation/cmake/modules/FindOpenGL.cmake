@@ -6,7 +6,8 @@ if ( NOT FIND_OPENGL_WRAPPER )
   
   set(CMAKE_MODULE_PATH ${ORIG_CMAKE_MODULE_PATH} )
   
-  find_package(OpenGL)
+  find_package( OpenGL )
+  
   
   if ( OPENGL_FOUND AND CGAL_APPLE_LEOPARD )
   

@@ -248,10 +248,8 @@ public:
     m_bounding_box_is_valid = false;
   }
 
-
-
-
   
+
   bool are_radii_uptodate() const { return m_radii_are_uptodate; }
   void set_radii_uptodate(bool /*on*/) { m_radii_are_uptodate = false; }
 

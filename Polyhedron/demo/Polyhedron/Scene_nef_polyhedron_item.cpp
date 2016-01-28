@@ -9,7 +9,6 @@
 #include <CGAL/Inverse_index.h>
 
 #include <QObject>
-
 #include <CGAL/minkowski_sum_3.h>
 #include <CGAL/convex_decomposition_3.h>
 
@@ -39,13 +38,13 @@ typedef CGAL::Constrained_triangulation_plus_2<CDTbase>              CDT;
 
 
 struct DPoint {
-    DPoint(GLdouble x, GLdouble y, GLdouble z)
+    DPoint(GLfloat x, GLfloat y, GLfloat z)
     {
         coords[0] = x;
         coords[1] = y;
         coords[2] = z;
     }
-    GLdouble coords[3];
+    GLfloat coords[3];
 };
 Scene_nef_polyhedron_item::Scene_nef_polyhedron_item()
     : Scene_item(NbOfVbos,NbOfVaos),
@@ -92,27 +91,26 @@ void Scene_nef_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interface
         vaos[Facets]->bind();
         buffers[Facets_vertices].bind();
         buffers[Facets_vertices].allocate(positions_facets.data(),
-                            static_cast<int>(positions_facets.size()*sizeof(double)));
+                            static_cast<int>(positions_facets.size()*sizeof(float)));
         program->enableAttributeArray("vertex");
-        program->setAttributeBuffer("vertex",GL_DOUBLE,0,3);
+        program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
         buffers[Facets_vertices].release();
 
 
 
         buffers[Facets_normals].bind();
         buffers[Facets_normals].allocate(normals.data(),
-                            static_cast<int>(normals.size()*sizeof(double)));
+                            static_cast<int>(normals.size()*sizeof(float)));
         program->enableAttributeArray("normals");
-        program->setAttributeBuffer("normals",GL_DOUBLE,0,3);
+        program->setAttributeBuffer("normals",GL_FLOAT,0,3);
         buffers[Facets_normals].release();
 
         nb_facets = positions_facets.size();
         positions_facets.resize(0);
-        std::vector<double>(positions_facets).swap(positions_facets);
+        std::vector<float>(positions_facets).swap(positions_facets);
 
         normals.resize(0);
-        std::vector<double>(normals).swap(normals);
-
+        std::vector<float>(normals).swap(normals);
         program->release();
 
     }
@@ -124,15 +122,14 @@ void Scene_nef_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interface
         vaos[Edges]->bind();
         buffers[Edges_vertices].bind();
         buffers[Edges_vertices].allocate(positions_lines.data(),
-                            static_cast<int>(positions_lines.size()*sizeof(double)));
+                            static_cast<int>(positions_lines.size()*sizeof(float)));
         program->enableAttributeArray("vertex");
-        program->setAttributeBuffer("vertex",GL_DOUBLE,0,3);
+        program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
         buffers[Edges_vertices].release();
-
 
         nb_lines = positions_lines.size();
         positions_lines.resize(0);
-        std::vector<double>(positions_lines).swap(positions_lines);
+        std::vector<float>(positions_lines).swap(positions_lines);
         vaos[Edges]->release();
         program->release();
     }
@@ -144,16 +141,15 @@ void Scene_nef_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interface
         vaos[Points]->bind();
         buffers[Points_vertices].bind();
         buffers[Points_vertices].allocate(positions_points.data(),
-                            static_cast<int>(positions_points.size()*sizeof(double)));
+                            static_cast<int>(positions_points.size()*sizeof(float)));
         program->enableAttributeArray("vertex");
-        program->setAttributeBuffer("vertex",GL_DOUBLE,0,3);
+        program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
         buffers[Points_vertices].release();
-
         vaos[Points]->release();
 
         nb_points = positions_points.size();
         positions_points.resize(0);
-        std::vector<double>(positions_points).swap(positions_points);
+        std::vector<float>(positions_points).swap(positions_points);
         program->release();
     }
     are_buffers_filled = true;
@@ -246,20 +242,20 @@ void Scene_nef_polyhedron_item::compute_normals_and_vertices(void) const
                         if(ffit->info().is_external){ continue;}
                         for(int i = 0; i<3; i++)
                         {
-                            positions_facets.push_back(CGAL::to_double(ffit->vertex(i)->point().x()));
-                            positions_facets.push_back(CGAL::to_double(ffit->vertex(i)->point().y()));
-                            positions_facets.push_back(CGAL::to_double(ffit->vertex(i)->point().z()));
+                            positions_facets.push_back((float)CGAL::to_double(ffit->vertex(i)->point().x()));
+                            positions_facets.push_back((float)CGAL::to_double(ffit->vertex(i)->point().y()));
+                            positions_facets.push_back((float)CGAL::to_double(ffit->vertex(i)->point().z()));
 
                         }
 
 
 
                         Nef_polyhedron::Vector_3 v = f->plane().orthogonal_vector();
-                        GLdouble normal[3];
-                        normal[0] = CGAL::to_double(v.x());
-                        normal[1] = CGAL::to_double(v.y());
-                        normal[2] = CGAL::to_double(v.z());
-                        GLdouble norm = normal[0]*normal[0]
+                        GLfloat normal[3];
+                        normal[0] = (float)CGAL::to_double(v.x());
+                        normal[1] = (float)CGAL::to_double(v.y());
+                        normal[2] = (float)CGAL::to_double(v.z());
+                        GLfloat norm = normal[0]*normal[0]
                                 + normal[1]*normal[1]
                                 + normal[2]*normal[2];
                         norm = CGAL::sqrt(norm);
@@ -299,13 +295,13 @@ void Scene_nef_polyhedron_item::compute_normals_and_vertices(void) const
             const Nef_polyhedron::Point_3& a = s->point();
             const Nef_polyhedron::Point_3& b = t->point();
 
-            positions_lines.push_back(CGAL::to_double(a.x()));
-            positions_lines.push_back(CGAL::to_double(a.y()));
-            positions_lines.push_back(CGAL::to_double(a.z()));
+            positions_lines.push_back((float)CGAL::to_double(a.x()));
+            positions_lines.push_back((float)CGAL::to_double(a.y()));
+            positions_lines.push_back((float)CGAL::to_double(a.z()));
 
-            positions_lines.push_back(CGAL::to_double(b.x()));
-            positions_lines.push_back(CGAL::to_double(b.y()));
-            positions_lines.push_back(CGAL::to_double(b.z()));
+            positions_lines.push_back((float)CGAL::to_double(b.x()));
+            positions_lines.push_back((float)CGAL::to_double(b.y()));
+            positions_lines.push_back((float)CGAL::to_double(b.z()));
 
 
         }
@@ -318,9 +314,9 @@ void Scene_nef_polyhedron_item::compute_normals_and_vertices(void) const
             v != end; ++v)
         {
             const Nef_polyhedron::Point_3& p = v->point();
-            positions_points.push_back(CGAL::to_double(p.x()));
-            positions_points.push_back(CGAL::to_double(p.y()));
-            positions_points.push_back(CGAL::to_double(p.z()));
+            positions_points.push_back((float)CGAL::to_double(p.x()));
+            positions_points.push_back((float)CGAL::to_double(p.y()));
+            positions_points.push_back((float)CGAL::to_double(p.z()));
 
                 color_points.push_back(this->color().lighter(50).redF());
                 color_points.push_back(this->color().lighter(50).greenF());
@@ -334,6 +330,7 @@ void Scene_nef_polyhedron_item::compute_normals_and_vertices(void) const
 
     } //end points
 }
+
 Scene_nef_polyhedron_item* 
 Scene_nef_polyhedron_item::clone() const {
     return new Scene_nef_polyhedron_item(*nef_poly);
@@ -401,6 +398,7 @@ Scene_nef_polyhedron_item::toolTip() const
 
 void Scene_nef_polyhedron_item::draw(CGAL::Three::Viewer_interface* viewer) const
 {
+    Scene_item::draw();
     if(!are_buffers_filled)
     {
         compute_normals_and_vertices();
@@ -417,15 +415,16 @@ void Scene_nef_polyhedron_item::draw(CGAL::Three::Viewer_interface* viewer) cons
     vaos[Facets]->release();
     program->release();
     GLfloat point_size;
-    viewer->glGetFloatv(GL_POINT_SIZE, &point_size);
-    viewer->glPointSize(10.f);
+//    viewer->glGetFloatv(GL_POINT_SIZE, &point_size);
+//    viewer->glPointSize(10.f);
 
     draw_points(viewer);
-    viewer->glPointSize(point_size);
+  //  viewer->glPointSize(point_size);
 
 }
 void Scene_nef_polyhedron_item::draw_edges(CGAL::Three::Viewer_interface* viewer) const
 {
+    Scene_item::draw();
     if(!are_buffers_filled)
     {
         compute_normals_and_vertices();
@@ -442,15 +441,17 @@ void Scene_nef_polyhedron_item::draw_edges(CGAL::Three::Viewer_interface* viewer
     if(renderingMode() == PointsPlusNormals)
     {
         GLfloat point_size;
-        viewer->glGetFloatv(GL_POINT_SIZE, &point_size);
-        viewer->glPointSize(10.f);
+        //viewer->glGetFloatv(GL_POINT_SIZE, &point_size);
+        //viewer->glPointSize(10.f);
 
         draw_points(viewer);
-        viewer->glPointSize(point_size);
+        //viewer->glPointSize(point_size);
+
     }
 }
 void Scene_nef_polyhedron_item::draw_points(CGAL::Three::Viewer_interface* viewer) const
 {
+    Scene_item::draw();
     if(!are_buffers_filled)
     {
         compute_normals_and_vertices();
@@ -522,9 +523,9 @@ struct Copy_polyhedron_to
             vi = in_poly.vertices_begin(), end = in_poly.vertices_end();
             vi != end ; ++vi)
         {
-            typename Polyhedron_output::Point_3 p(::CGAL::to_double( vi->point().x()),
-                                                  ::CGAL::to_double( vi->point().y()),
-                                                  ::CGAL::to_double( vi->point().z()));
+            typename Polyhedron_output::Point_3 p((float)CGAL::to_double( vi->point().x()),
+                                                  (float)CGAL::to_double( vi->point().y()),
+                                                  (float)CGAL::to_double( vi->point().z()));
             builder.add_vertex(p);
         }
 

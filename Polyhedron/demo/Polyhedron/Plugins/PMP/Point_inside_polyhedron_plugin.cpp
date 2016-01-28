@@ -1,5 +1,5 @@
 #include <QtCore/qglobal.h>
-#include "opengl_tools.h"
+//#include "opengl_tools.h"
 
 #include "Messages_interface.h"
 #include "Scene_polyhedron_item.h"
@@ -244,6 +244,7 @@ public Q_SLOTS:
 
     scene->addItem(point_item);
     scene->itemChanged(point_item);
+
   }
 private:
   Messages_interface* messages;

@@ -22,5 +22,4 @@
 
 #include <CGAL/Image_3.h>
 #include <CGAL/Image_3_impl.h>
-
 #endif // CGAL_HEADER_ONLY

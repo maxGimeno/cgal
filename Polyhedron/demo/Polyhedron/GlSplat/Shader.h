@@ -13,13 +13,13 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with GlSplat. If not, see <http://www.gnu.org/licenses/>.
-
+#if !ANDROID
 #ifndef _GLSPLAT_Shader_h_
 #define _GLSPLAT_Shader_h_
 #include <string>
 #include <map>
-#include <QOpenGLFunctions_3_3_Core>
 #include <CGAL/Three/Viewer_interface.h>
+#include <QOpenGLFunctions>
 
 namespace GlSplat {
 
@@ -45,7 +45,7 @@ class Shader
 public:
     Shader(void)
       : mIsValid(false)
-    { }
+    {}
     ~Shader()
     {
     }
@@ -124,7 +124,9 @@ public:
     inline void setUniform(const char* name, float a, float b, float c, float d)
     { viewer->glUniform4f(viewer->glGetUniformLocation(mProgramID, name), a, b, c, d); }
 
-     CGAL::Three::Viewer_interface *viewer;
+
+  CGAL::Three::Viewer_interface *viewer;
+
 protected:
 
     bool mIsValid;
@@ -132,8 +134,10 @@ protected:
     DefineMap mDefines;
     void printInfoLog(GLuint objectID);
     GLuint mProgramID;
+
 };
 
 } // namepsace GlSplat
 
+#endif
 #endif

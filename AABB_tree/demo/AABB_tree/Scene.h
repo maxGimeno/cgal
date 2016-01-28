@@ -1,6 +1,6 @@
 #ifndef SCENE_H
 #define SCENE_H
-
+#include <Viewer.h>
 #include <QtOpenGL/qgl.h>
 #include <iostream>
 #include <cmath>
@@ -18,7 +18,8 @@
 #include <QtCore/qglobal.h>
 #include <QGLViewer/manipulatedFrame.h>
 #include <QGLViewer/qglviewer.h>
-#include <QOpenGLFunctions_2_1>
+#include <QOpenGLFunctions>
+
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLBuffer>
 #include <QOpenGLShaderProgram>
@@ -50,6 +51,7 @@ public:
     GLubyte* getData(){return data; }
 
 };
+
 class Viewer;
 class Scene : public QObject
 {
@@ -60,6 +62,7 @@ public:
 public:
     // types
     typedef CGAL::Bbox_3 Bbox;
+    std::vector<QOpenGLShaderProgram*> programs;
     
 private:
     typedef CGAL::AABB_face_graph_triangle_primitive<Polyhedron>         Facet_Primitive;
@@ -77,7 +80,6 @@ private:
     };
   
 public:
-    QGLContext* context;
     void draw(QGLViewer*);
     void update_bbox();
     Bbox bbox() { return m_bbox; }
@@ -86,7 +88,7 @@ public:
 
 private:
     // member data
-    QOpenGLFunctions_2_1 *gl;
+    QOpenGLFunctions *gl;
     Bbox m_bbox;
     Polyhedron *m_pPolyhedron;
     std::list<Point> m_points;
@@ -94,6 +96,8 @@ private:
     std::vector<Segment> m_cut_segments;
     bool ready_to_cut;
 
+    bool are_buffers_initialized;
+    bool boule;
     // distance functions (simple 2D arrays)
     Color_ramp m_red_ramp;
     Color_ramp m_blue_ramp;
@@ -113,7 +117,6 @@ private:
     Edge_tree m_edge_tree;
     
     Cut_planes_types m_cut_plane;
-    bool are_buffers_initialized;
   
 private:
     // utility functions
@@ -139,7 +142,6 @@ private:
     void sign_distance_function(const Tree& tree);
 
     //Shaders elements
-
     int poly_vertexLocation;
     int tex_Location;
     int points_vertexLocation;
@@ -163,8 +165,10 @@ private:
 
     Texture *texture;
     GLint sampler_location;
-    QOpenGLBuffer buffers[10];
-    QOpenGLVertexArrayObject vao[10];
+    const static int buffer_size =8;
+    const static int vao_size = 7;
+    QOpenGLBuffer buffers[buffer_size];
+    QOpenGLVertexArrayObject vao[vao_size];
     QOpenGLShaderProgram tex_rendering_program;
     QOpenGLShaderProgram rendering_program;
     void initialize_buffers();
@@ -172,6 +176,7 @@ private:
     void attrib_buffers(QGLViewer*);
     void compile_shaders();
     void compute_texture(int, int, Color_ramp, Color_ramp);
+    void initialize_textures(int mode);
 
 public:
     // file menu
@@ -251,13 +256,13 @@ public:
     void deactivate_cutting_plane();
 
     //timer sends a top when all the events are finished
+    void setGL(QOpenGLFunctions *);
     void timerEvent(QTimerEvent *);
-
-  
 public slots:
     // cutting plane
     void cutting_plane(bool override = false);
     void changed();
+    void frame_changed();
 }; // end class Scene
 
 #endif // SCENE_H

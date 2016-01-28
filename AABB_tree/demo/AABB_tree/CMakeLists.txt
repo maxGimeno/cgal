@@ -18,7 +18,8 @@ find_package(CGAL COMPONENTS Qt5 )
 include( ${CGAL_USE_FILE} )
 
 # Find Qt5 itself
-find_package(Qt5 QUIET COMPONENTS Xml Script OpenGL Gui Svg)
+find_package(Qt5 COMPONENTS Gui Quick OpenGL Qml Xml Script Svg  Widgets UiTools)
+
 
 # Find OpenGL
 find_package(OpenGL)
@@ -29,6 +30,7 @@ if(Qt5_FOUND)
 endif(Qt5_FOUND)
 
 if(CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
+
 
   include_directories ( ${QGLVIEWER_INCLUDE_DIR} )
 
@@ -51,8 +53,13 @@ if(CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FO
                                        "${CMAKE_CURRENT_BINARY_DIR}/Viewer_moc.cpp"
                                        "${CMAKE_CURRENT_BINARY_DIR}/Scene_moc.cpp" )
 
-  add_executable  ( AABB_demo AABB_demo.cpp ${UI_FILES} ${RESOURCE_FILES} )
-  qt5_use_modules(AABB_demo Gui OpenGL Xml Script Svg )
+  if(ANDROID)
+    add_library(AABB_demo SHARED AABB_demo.cpp ${UI_FILES} ${RESOURCE_FILES})
+  else()					
+    add_executable  ( AABB_demo AABB_demo.cpp ${UI_FILES} ${RESOURCE_FILES} )
+  endif()
+  get_property(LIB_FILES TARGET AABB_demo PROPERTY LINK_LIBRARIES)
+  qt5_use_modules(AABB_demo Gui Quick OpenGL Qml Xml Script Svg  Widgets UiTools)
   # Link with Qt libraries
   target_link_libraries( AABB_demo ${QT_LIBRARIES} )
 
@@ -60,10 +67,22 @@ if(CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FO
   target_link_libraries( AABB_demo ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} )
 
   # Link with libQGLViewer, OpenGL
-  target_link_libraries( AABB_demo ${QGLVIEWER_LIBRARIES} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} )
+  target_link_libraries( AABB_demo ${QGLVIEWER_LIBRARIES} ${OPENGL_gl_LIBRARY} #${OPENGL_glu_LIBRARY}
+)
 
   add_to_cached_list( CGAL_EXECUTABLE_TARGETS AABB_demo )
-
+  if(ANDROID)
+    include(/home/mgimeno/Android/qt-android-cmake/AddQtAndroidApk.cmake)
+    add_qt_android_apk(
+                        AABB_demo_apk AABB_demo
+                        NAME "AABB demo"
+                        DEPENDS
+                        /home/mgimeno/Android/Android-build/lib/libgmp.so
+                        /home/mgimeno/Téléchargements/android-ndk-r10d/platforms/android-16/arch-arm/usr/lib/libGLESv2.so
+                        /home/mgimeno/Android/libQGLViewer_Clone/libQGLViewer/build-for-android/libQGLViewer.so
+                        INSTALL)
+endif()
+  
 
 else (CGAL_FOUND AND CGAL_CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
 

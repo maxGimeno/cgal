@@ -83,7 +83,7 @@ void Scene_textured_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_inte
     viewer->glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     viewer->glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     viewer->glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+//    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
     nb_facets = positions_facets.size();
     positions_facets.resize(0);
@@ -288,7 +288,6 @@ Scene_textured_polyhedron_item::toolTip() const
 
 // Points/Wireframe/Flat/Gouraud OpenGL drawing in a display list
 void Scene_textured_polyhedron_item::draw(CGAL::Three::Viewer_interface* viewer) const {
-
     if(!are_buffers_filled)
     {
         compute_normals_and_vertices();
@@ -357,7 +356,7 @@ Scene_textured_polyhedron_item::selection_changed(bool p_is_selected)
     if(p_is_selected != is_selected)
     {
         is_selected = p_is_selected;
-        initialize_buffers();
+        are_buffers_filled = false;
     }
     else
         is_selected = p_is_selected;

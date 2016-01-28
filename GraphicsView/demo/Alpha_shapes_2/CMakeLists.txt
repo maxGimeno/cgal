@@ -12,7 +12,8 @@ find_package(CGAL COMPONENTS Qt5)
 
 include(${CGAL_USE_FILE})
 
-find_package(Qt5 QUIET COMPONENTS Xml Script OpenGL Svg)
+find_package(Qt5 COMPONENTS Xml Script OpenGL Svg)
+
 include_directories (BEFORE ../../include)
 include_directories (BEFORE ./include)
 
@@ -30,9 +31,12 @@ qt5_add_resources ( DT_RESOURCE_FILES ./Alpha_shapes_2.qrc )
 
 # use the Qt MOC preprocessor on classes that derives from QObject
 qt5_generate_moc( Alpha_shapes_2.cpp Alpha_shapes_2.moc )
-
+if(ANDROID)
+add_library  ( Alpha_shapes_2 SHARED Alpha_shapes_2.cpp Alpha_shapes_2.moc ${DT_UI_FILES} ${DT_RESOURCE_FILES} )
+else()
 # The executable itself.
 add_executable  ( Alpha_shapes_2 Alpha_shapes_2.cpp Alpha_shapes_2.moc ${DT_UI_FILES} ${DT_RESOURCE_FILES} )
+endif()
 
 qt5_use_modules(Alpha_shapes_2 Xml Script OpenGL Svg)
 
@@ -42,7 +46,18 @@ add_to_cached_list( CGAL_EXECUTABLE_TARGETS Alpha_shapes_2 )
 target_link_libraries( Alpha_shapes_2 ${QT_LIBRARIES} )
 # Link with CGAL
 target_link_libraries( Alpha_shapes_2 ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
-
+get_property(LIB_FILES TARGET Alpha_shapes_2 PROPERTY LINK_LIBRARIES)
+get_property(INCLUDE_DIRECTORY TARGET Alpha_shapes_2 PROPERTY INCLUDE_DIRECTORIES )
+if(ANDROID)
+  message("ANDROID")
+  include(/home/mgimeno/Android/qt-android-cmake/AddQtAndroidApk.cmake)
+  add_qt_android_apk(
+                        Alpha_shapes_2_apk Alpha_shapes_2
+                        NAME  "Alpha_shapes_2 from CMake"
+                        DEPENDS
+                        /home/mgimeno/Android/Android-build/lib/libgmp.so
+                        INSTALL)
+endif()
 else()
 
   message(STATUS "NOTICE: This demo requires CGAL and Qt5, and will not be compiled.")

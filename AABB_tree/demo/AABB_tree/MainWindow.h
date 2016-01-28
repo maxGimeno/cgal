@@ -25,6 +25,8 @@ public:
 		void updateViewerBBox();
 		void open(QString filename);
 		void setAddKeyFrameKeyboardModifiers(Qt::KeyboardModifiers);
+                void toggle_setPivotPoint(bool b);
+                void toggle_frameManipulation(bool b);
 
 		protected slots:
 
@@ -77,6 +79,12 @@ public:
 			void on_actionView_segments_triggered();
 			void on_actionView_polyhedron_triggered();
       void on_actionView_cutting_plane_triggered();
+
+
+private slots:
+      void on_grid_radioButton_toggled(bool checked);
+
+      void on_axis_radioButton_toggled(bool checked);
 
 private:
 	Scene* m_pScene;

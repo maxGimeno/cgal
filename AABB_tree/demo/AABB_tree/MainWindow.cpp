@@ -38,9 +38,18 @@ MainWindow::MainWindow(QWidget* parent)
 
 	this->addRecentFiles(ui->menuFile, ui->actionQuit);
 	connect(this, SIGNAL(openRecentFile(QString)),
-		this, SLOT(open(QString)));
+                this, SLOT(open(QString)));
+        readSettings();
 
-	readSettings();
+        connect(ui->pp_radioButton, SIGNAL(toggled(bool)),
+                                     this, SLOT(toggle_setPivotPoint(bool)));
+
+        connect(ui->mf_radioButton, SIGNAL(toggled(bool)),
+                                     this, SLOT(toggle_frameManipulation(bool)));
+        connect(ui->grid_radioButton, SIGNAL(toggled(bool)),
+                                     this, SLOT(on_grid_radioButton_toggled(bool)));
+        connect(ui->axis_radioButton, SIGNAL(toggled(bool)),
+                                     this, SLOT(on_axis_radioButton_toggled(bool)));
 }
 
 MainWindow::~MainWindow()
@@ -51,7 +60,7 @@ MainWindow::~MainWindow()
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
 	if (event->mimeData()->hasFormat("text/uri-list"))
-		event->acceptProposedAction();
+                event->acceptProposedAction();
 }
 
 void MainWindow::dropEvent(QDropEvent *event)
@@ -118,6 +127,15 @@ void MainWindow::quit()
 {
 	writeSettings();
 	close();
+}
+
+void MainWindow::toggle_setPivotPoint(bool b)
+{
+    m_pViewer->settingPivotPoint = b;
+}
+void MainWindow::toggle_frameManipulation(bool b)
+{
+    m_pViewer->frame_manipulation = b;
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -424,7 +442,7 @@ void MainWindow::on_actionCopy_snapshot_triggered()
   QClipboard *qb = QApplication::clipboard();
   m_pViewer->makeCurrent();
   m_pViewer->raise();
-  QImage snapshot = m_pViewer->grabFrameBuffer(true);
+  QImage snapshot = m_pViewer->grabFramebuffer();
   qb->setImage(snapshot);
 	QApplication::restoreOverrideCursor();
 }
@@ -432,3 +450,13 @@ void MainWindow::on_actionCopy_snapshot_triggered()
 
 
 
+
+void MainWindow::on_grid_radioButton_toggled(bool checked)
+{
+     m_pViewer->setGridIsDrawn(checked);
+}
+
+void MainWindow::on_axis_radioButton_toggled(bool checked)
+{
+m_pViewer->setAxisIsDrawn(checked);
+}

@@ -24,7 +24,7 @@
 
 #include <map>
 #include <fstream>
-
+#include <QDebug>
 
 // Class for visualizing selection 
 // provides mouse selection functionality

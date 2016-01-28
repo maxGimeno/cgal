@@ -1,7 +1,6 @@
 #include "Scene_polyhedron_selection_item.h"
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
 
-
 void Scene_polyhedron_selection_item::initialize_buffers(CGAL::Three::Viewer_interface *viewer)const
 {
     //vao containing the data for the unselected facets
@@ -163,7 +162,7 @@ void Scene_polyhedron_selection_item::compute_elements()const
 
 void Scene_polyhedron_selection_item::draw(CGAL::Three::Viewer_interface* viewer) const
 {
-
+    Scene_item::draw();
     if(!are_buffers_filled)
     {
         compute_elements();
@@ -198,7 +197,6 @@ void Scene_polyhedron_selection_item::draw_edges(CGAL::Three::Viewer_interface* 
         compute_elements();
         initialize_buffers(viewer);
     }
-
     viewer->glLineWidth(3.f);
     vaos[1]->bind();
     program = getShaderProgram(PROGRAM_NO_SELECTION);
@@ -228,6 +226,5 @@ void Scene_polyhedron_selection_item::draw_points(CGAL::Three::Viewer_interface*
     viewer->glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(nb_points/3));
     program->release();
     vaos[2]->release();
-    viewer->glPointSize(1.f);
 
 }

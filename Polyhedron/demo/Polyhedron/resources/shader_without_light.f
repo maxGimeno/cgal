@@ -1,4 +1,3 @@
-#version 120
 varying highp vec4 color;
 uniform bool is_selected;
 void main(void) 

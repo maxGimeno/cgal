@@ -29,6 +29,8 @@
 #  else
 #    include <OpenGL/gl.h>
 #  endif
+#elif defined(__ANDROID__)
+#   include<GLES2/gl2.h>
 #else
 #  include <GL/gl.h>
 #endif

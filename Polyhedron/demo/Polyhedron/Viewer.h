@@ -12,6 +12,7 @@
 #include <QGLViewer/qglviewer.h>
 #include <QPoint>
 
+
 // forward declarations
 class QWidget;
 namespace CGAL{
@@ -23,12 +24,14 @@ class QMouseEvent;
 class QKeyEvent;
 
 class Viewer_impl;
+
 //!The viewer class. Deals with all the openGL rendering and the mouse/keyboard events.
 class VIEWER_EXPORT Viewer : public CGAL::Three::Viewer_interface {
 
   Q_OBJECT
 
 public:
+  bool shift_pressed;
   Viewer(QWidget * parent, bool antialiasing = false);
   ~Viewer();
 
@@ -42,8 +45,8 @@ public:
   void fastDraw();
   //! Initializes the OpenGL functions and sets the backGround color.
   void initializeGL();
-  //! Deprecated and does nothing.
-  void drawWithNames();
+  //! call this instead f draw if you want to perform a picking
+  void drawWithNames(const QPoint &point);
   /*! Uses the parameter pixel's coordinates to get the corresponding point
    * in the World frame. If this point is found, emits selectedPoint, selected,
    * and selectionRay signals.
@@ -63,6 +66,7 @@ public:
   void attrib_buffers(int program_name) const;
   //! Implementation of `Viewer_interface::getShaderProgram()`
   QOpenGLShaderProgram* getShaderProgram(int name) const;
+
 
 public Q_SLOTS:
   //! Sets the antialiasing to true or false.
@@ -126,13 +130,24 @@ protected:
    * \param data the struct of std::vector that will contain the results.
    */
 
-  void makeArrow(double R, int prec, qglviewer::Vec from, qglviewer::Vec to, qglviewer::Vec color, AxisData &data);
+  void makeArrow(float R, int prec, qglviewer::Vec from, qglviewer::Vec to, qglviewer::Vec color, AxisData &data);
   void resizeGL(int w, int h);
 
 
-protected:
   Viewer_impl* d;
-  double prev_radius;
-}; // end class Viewer
+protected:
+  double prev_radius;/*
+#if ANDROID
+  bool event(QEvent *e);
+  void mouseMoveEvent(QMouseEvent* e);
+#endif
+  struct datas
+  {
+      QByteArray code;
+      int program_index;
+      int shader_index;
+  };
+  qglviewer::Vec pointUnderPixelGLES(std::vector<QOpenGLShaderProgram*> programs, qglviewer::Camera*const camera, const QPoint& pixel, bool& found);
+*/}; // end class Viewer
 
 #endif // VIEWER_H

@@ -262,7 +262,7 @@ void Scene_combinatorial_map_item::compute_elements(void) const{
             }
             else
             {
-                for ( ;vol_it!=vol_end; ++vol_it )
+               /* for ( ;vol_it!=vol_end; ++vol_it )
                 {
                     if ( !combinatorial_map().is_marked(vol_it,facetreated) )
                     {
@@ -288,7 +288,7 @@ void Scene_combinatorial_map_item::compute_elements(void) const{
                             combinatorial_map().mark(face_it, voltreated);
                         }
                     }
-                }
+                }*/
             }
             if ( index==volume_to_display ) break;
         }
@@ -349,9 +349,9 @@ void Scene_combinatorial_map_item::initialize_buffers(CGAL::Three::Viewer_interf
         vaos[Edges]->bind();
         buffers[Edges_vertices].bind();
         buffers[Edges_vertices].allocate(positions_lines.data(),
-                            static_cast<int>(positions_lines.size()*sizeof(double)));
+                            static_cast<int>(positions_lines.size()*sizeof(float)));
         program->enableAttributeArray("vertex");
-        program->setAttributeBuffer("vertex",GL_DOUBLE,0,3);
+        program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
         buffers[Edges_vertices].release();
         nb_lines = positions_lines.size();
         positions_lines.resize(0);
@@ -367,14 +367,14 @@ void Scene_combinatorial_map_item::initialize_buffers(CGAL::Three::Viewer_interf
         vaos[Points]->bind();
         buffers[Points_vertices].bind();
         buffers[Points_vertices].allocate(positions_points.data(),
-                            static_cast<int>(positions_points.size()*sizeof(double)));
+                            static_cast<int>(positions_points.size()*sizeof(float)));
         program->enableAttributeArray("vertex");
-        program->setAttributeBuffer("vertex",GL_DOUBLE,0,3);
+        program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
         buffers[Points_vertices].release();
         vaos[Points]->release();
         nb_points = positions_points.size();
         positions_points.resize(0);
-        std::vector<double>(positions_points).swap(positions_points);
+        std::vector<float>(positions_points).swap(positions_points);
         program->release();
     }
     //vao for the facets
@@ -385,27 +385,27 @@ void Scene_combinatorial_map_item::initialize_buffers(CGAL::Three::Viewer_interf
         vaos[Facets]->bind();
         buffers[Facets_vertices].bind();
         buffers[Facets_vertices].allocate(positions_facets.data(),
-                            static_cast<int>(positions_facets.size()*sizeof(double)));
+                            static_cast<int>(positions_facets.size()*sizeof(float)));
         program->enableAttributeArray("vertex");
-        program->setAttributeBuffer("vertex",GL_DOUBLE,0,3);
+        program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
         buffers[Facets_vertices].release();
 
         buffers[Facets_normals].bind();
         buffers[Facets_normals].allocate(normals.data(),
-                            static_cast<int>(normals.size()*sizeof(double)));
+                            static_cast<int>(normals.size()*sizeof(float)));
         program->enableAttributeArray("normals");
-        program->setAttributeBuffer("normals",GL_DOUBLE,0,3);
+        program->setAttributeBuffer("normals",GL_FLOAT,0,3);
         buffers[Facets_normals].release();
+
         nb_facets = positions_facets.size();
         positions_facets.resize(0);
-        std::vector<double>(positions_facets).swap(positions_facets);
+        std::vector<float>(positions_facets).swap(positions_facets);
         normals.resize(0);
-        std::vector<double>(normals).swap(normals);
-        vaos[Facets]->release();
+        std::vector<float>(normals).swap(normals);
+        vaos[2]->release();
         program->release();
     }
     are_buffers_filled = true;
-
 
 }
 

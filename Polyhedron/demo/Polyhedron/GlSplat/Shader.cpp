@@ -13,7 +13,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with GlSplat. If not, see <http://www.gnu.org/licenses/>.
-
+#if !ANDROID
 #include "Shader.h"
 #include <iostream>
 
@@ -138,3 +138,4 @@ void Shader::setViewer(CGAL::Three::Viewer_interface *v)
     viewer = v;
 }
 } // namepsace GlSplat
+#endif
