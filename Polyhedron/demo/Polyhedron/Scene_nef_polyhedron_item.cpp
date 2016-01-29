@@ -108,9 +108,10 @@ void Scene_nef_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interface
         nb_facets = positions_facets.size();
         positions_facets.resize(0);
         std::vector<float>(positions_facets).swap(positions_facets);
-
+        program->disableAttributeArray("colors");
         normals.resize(0);
         std::vector<float>(normals).swap(normals);
+        vaos[Facets]->release();
         program->release();
 
     }
@@ -126,7 +127,7 @@ void Scene_nef_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interface
         program->enableAttributeArray("vertex");
         program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
         buffers[Edges_vertices].release();
-
+        program->disableAttributeArray("colors");
         nb_lines = positions_lines.size();
         positions_lines.resize(0);
         std::vector<float>(positions_lines).swap(positions_lines);
@@ -144,6 +145,7 @@ void Scene_nef_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interface
                             static_cast<int>(positions_points.size()*sizeof(float)));
         program->enableAttributeArray("vertex");
         program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
+        program->disableAttributeArray("colors");
         buffers[Points_vertices].release();
         vaos[Points]->release();
 
@@ -398,7 +400,6 @@ Scene_nef_polyhedron_item::toolTip() const
 
 void Scene_nef_polyhedron_item::draw(CGAL::Three::Viewer_interface* viewer) const
 {
-    Scene_item::draw();
     if(!are_buffers_filled)
     {
         compute_normals_and_vertices();
@@ -411,6 +412,7 @@ void Scene_nef_polyhedron_item::draw(CGAL::Three::Viewer_interface* viewer) cons
     attrib_buffers(viewer,PROGRAM_WITH_LIGHT);
     program->bind();
     program->setUniformValue("is_two_side", 1);
+    program->setAttributeValue("colors", this->color());
     viewer->glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(nb_facets/3));
     vaos[Facets]->release();
     program->release();
@@ -424,7 +426,6 @@ void Scene_nef_polyhedron_item::draw(CGAL::Three::Viewer_interface* viewer) cons
 }
 void Scene_nef_polyhedron_item::draw_edges(CGAL::Three::Viewer_interface* viewer) const
 {
-    Scene_item::draw();
     if(!are_buffers_filled)
     {
         compute_normals_and_vertices();
@@ -435,6 +436,7 @@ void Scene_nef_polyhedron_item::draw_edges(CGAL::Three::Viewer_interface* viewer
     program = getShaderProgram(PROGRAM_WITHOUT_LIGHT);
     attrib_buffers(viewer ,PROGRAM_WITHOUT_LIGHT);
     program->bind();
+    program->setAttributeValue("colors", this->color());
     viewer->glDrawArrays(GL_LINES,0,static_cast<GLsizei>(nb_lines/3));
     vaos[Edges]->release();
     program->release();
@@ -451,7 +453,6 @@ void Scene_nef_polyhedron_item::draw_edges(CGAL::Three::Viewer_interface* viewer
 }
 void Scene_nef_polyhedron_item::draw_points(CGAL::Three::Viewer_interface* viewer) const
 {
-    Scene_item::draw();
     if(!are_buffers_filled)
     {
         compute_normals_and_vertices();

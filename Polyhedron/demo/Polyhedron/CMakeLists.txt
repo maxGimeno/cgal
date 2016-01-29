@@ -376,10 +376,9 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
                             #libscene_implicit_function_item.so
                             #libscene_polylines_item.so
                             #libscene_c2t3_item.so
-                            #libscene_nef_polyhedron_item.so
+                            libscene_nef_polyhedron_item.so
                             #libscene_polyhedron_selection_item.so
-                            #libscene_nef_polyhedron_item.so
-                            libscene_basic_objects.so
+                            #libscene_basic_objects.so
                             #libscene_combinatorial_map_item.so
                             #libscene_polyhedron_transform_item.so
                             #libscene_polyhedron_item_k_ring_selection.so
@@ -402,7 +401,7 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
     #libselection_io_plugin.so
     #liborient_soup_plugin.so
     #libtriangulate_facets_plugin.so
-    #liboff_to_nef_plugin.so
+    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_to_nef_plugin.so
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_to_xyz_plugin.so
     #libconvex_hull_plugin.so
     #libkernel_plugin.so
@@ -414,14 +413,14 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
     #libmesh_simplification_plugin.so
     #libpolyhedron_slicer_plugin.so
     #libmesh_segmentation_plugin.so
-    #libnef_plugin.so
+    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Convex_decomposition/libnef_plugin.so
     #libintersection_plugin.so
     #libtransform_polyhedron_plugin.so
     #libcorefinement_plugin.so
     #
     #libtrivial_plugin.so
     #
-    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/AABB_tree/libcut_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/AABB_tree/libcut_plugin.so
     #libpoint_inside_polyhedron_plugin.so
     #libpoint_set_simplification_plugin.so
     #libpoint_set_outliers_removal_plugin.so
