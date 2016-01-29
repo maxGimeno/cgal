@@ -121,7 +121,6 @@ public:
   {
       is_bbox_computed = false;
       is_monochrome = true;
-      qDebug()<<"context when item creates VAOs : "<<QOpenGLContext::currentContext();
       for(int i=0; i<vaosSize; i++)
       {
           addVaos(i);

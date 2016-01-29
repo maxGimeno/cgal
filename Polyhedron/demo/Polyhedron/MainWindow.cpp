@@ -817,7 +817,7 @@ void MainWindow::message(QString message, QString colorName, QString font) {
     message.remove(message.length()-1, 1);
   }
   std::cerr << qPrintable(message) << std::endl;
-  statusBar()->showMessage(message, 5000);
+  //statusBar()->showMessage(message, 5000);
   message = "<font color=\"" + colorName + "\" style=\"font-style: " + font + ";\" >" +
     message + "</font><br>";
   message = "[" + QTime::currentTime().toString() + "] " + message;

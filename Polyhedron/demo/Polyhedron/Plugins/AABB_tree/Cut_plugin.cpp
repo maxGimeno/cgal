@@ -396,6 +396,8 @@ QList<QAction*> Polyhedron_demo_cut_plugin::actions() const {
 }
 
 void Polyhedron_demo_cut_plugin::createCutPlane() {
+  QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
+  viewer->makeCurrent();
   plane_item = new Scene_plane_item(scene);
   const CGAL::Three::Scene_interface::Bbox& bbox = scene->bbox();
   plane_item->setPosition((bbox.xmin+bbox.xmax)/2.f,
@@ -428,6 +430,8 @@ void Polyhedron_demo_cut_plugin::createCutPlane() {
 void Polyhedron_demo_cut_plugin::cut() {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   if(!edges_item) {
+    QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
+    viewer->makeCurrent();
     edges_item = new Scene_edges_item;
     edges_item->setName("Edges of the cut");
     edges_item->setColor(Qt::red);
@@ -458,6 +462,8 @@ void Polyhedron_demo_cut_plugin::cut() {
                                        new AABB_tree(faces(*(poly_item->polyhedron())).first,
                                                      faces(*(poly_item->polyhedron())).second,
                                                      *poly_item->polyhedron() )));
+      QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
+      viewer->makeCurrent();
       Scene_aabb_item* aabb_item = new Scene_aabb_item(*it->second);
       aabb_item->setName(tr("AABB tree of %1").arg(poly_item->name()));
       aabb_item->setRenderingMode(Wireframe);
@@ -466,10 +472,10 @@ void Polyhedron_demo_cut_plugin::cut() {
       scene->addItem(aabb_item);
       //std::cerr << "size: " << it->second->size() << std::endl;
     }
-    
+
     if(!CGAL::do_intersect(plane, it->second->bbox()))
       continue;
-    
+
     std::vector<AABB_tree::Object_and_primitive_id> intersections;
     it->second->all_intersections(plane, std::back_inserter(intersections));
     
@@ -484,12 +490,12 @@ void Polyhedron_demo_cut_plugin::cut() {
     }
   }
 
-  if(sequencer.elapsed()>1000)
+  if(sequencer.elapsed()>300)
   {
       sequencer.restart();
       messages->information(QString("cut (%1 ms). %2 edges.").arg(time.elapsed()).arg(edges_item->edges.size()));
-      edges_item->invalidate_buffers();
   }
+  edges_item->invalidateOpenGLBuffers();
   scene->itemChanged(edges_item);
   }
   QApplication::restoreOverrideCursor();

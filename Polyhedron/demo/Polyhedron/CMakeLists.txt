@@ -379,7 +379,7 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
                             #libscene_nef_polyhedron_item.so
                             #libscene_polyhedron_selection_item.so
                             #libscene_nef_polyhedron_item.so
-                           # libscene_basic_objects.so
+                            libscene_basic_objects.so
                             #libscene_combinatorial_map_item.so
                             #libscene_polyhedron_transform_item.so
                             #libscene_polyhedron_item_k_ring_selection.so
@@ -389,10 +389,9 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
 
     #libedit_polyhedron_plugin.so
     /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_plugin.so
-    #
     #libparameterization_plugin.so
     #libremeshing_plugin.so
-    #libcamera_positions_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Camera_position/libcamera_positions_plugin.so
     #libinside_out_plugin.so
     #libnef_io_plugin.so
     #libpolylines_io_plugin.so
@@ -404,7 +403,7 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
     #liborient_soup_plugin.so
     #libtriangulate_facets_plugin.so
     #liboff_to_nef_plugin.so
-    #liboff_to_xyz_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_to_xyz_plugin.so
     #libconvex_hull_plugin.so
     #libkernel_plugin.so
     #libpca_plugin.so
@@ -422,7 +421,7 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
     #
     #libtrivial_plugin.so
     #
-    #libcut_plugin.so
+    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/AABB_tree/libcut_plugin.so
     #libpoint_inside_polyhedron_plugin.so
     #libpoint_set_simplification_plugin.so
     #libpoint_set_outliers_removal_plugin.so
@@ -438,7 +437,6 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
     #libpoint_set_smoothing_plugin.so
 
                           INSTALL)
-
 
   endif()
 
