@@ -64,16 +64,16 @@ struct Get_point {
 void Polyhedron_demo_convex_hull_plugin::on_actionConvexHull_triggered()
 {
   const CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
-  
+
   Scene_polyhedron_item* poly_item = 
     qobject_cast<Scene_polyhedron_item*>(scene->item(index));
 
   Scene_points_with_normal_item* pts_item =
     qobject_cast<Scene_points_with_normal_item*>(scene->item(index));
-  
+
   Scene_polylines_item* lines_item = 
     qobject_cast<Scene_polylines_item*>(scene->item(index));
-  
+
   Scene_polyhedron_selection_item* selection_item = 
     qobject_cast<Scene_polyhedron_selection_item*>(scene->item(index));
 
@@ -81,7 +81,7 @@ void Polyhedron_demo_convex_hull_plugin::on_actionConvexHull_triggered()
   {
     // wait cursor
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    
+
     QTime time;
     time.start();
     std::cout << "Convex hull...";
@@ -118,7 +118,6 @@ void Polyhedron_demo_convex_hull_plugin::on_actionConvexHull_triggered()
       }
     }
     std::cout << "ok (" << time.elapsed() << " ms)" << std::endl;
-
     Scene_polyhedron_item* new_item = new Scene_polyhedron_item(pConvex_hull);
     new_item->setName(tr("%1 (convex hull)").arg(scene->item(index)->name()));
     new_item->setColor(Qt::magenta);

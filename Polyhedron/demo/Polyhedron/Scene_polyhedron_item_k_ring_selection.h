@@ -5,6 +5,7 @@
 #include "Scene_polyhedron_item.h"
 
 #include <QGLViewer/qglviewer.h>
+#include <CGAL/Three/Viewer_interface.h>
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QMainWindow>
@@ -180,7 +181,7 @@ protected:
     // This filter is both filtering events from 'viewer' and 'main window'
     // key events
       QGLViewer* v = *QGLViewer::QGLViewerPool().begin();
-      Viewer_interface* viewer = dynamic_cast<Viewer_interface*>(v);
+      CGAL::Three::Viewer_interface* viewer = dynamic_cast<CGAL::Three::Viewer_interface*>(v);
     if(event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease)  {
       QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
       Qt::KeyboardModifiers modifiers = keyEvent->modifiers();

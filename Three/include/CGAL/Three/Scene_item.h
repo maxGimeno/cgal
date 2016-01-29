@@ -22,6 +22,7 @@
 #define SCENE_ITEM_H
 #include <CGAL/Three/Scene_item_config.h>
 #include <CGAL/Three/Scene_interface.h>
+#include <CGAL/Three/Viewer_interface.h>
 #include <QString>
 #include <QPixmap>
 #include <QFont>
@@ -86,6 +87,8 @@ public:
       vaosSize(10),
       vaos(10)
   {
+   QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
+   viewer->makeCurrent();
       is_bbox_computed = false;
       is_monochrome = true;
       for(int i=0; i<vaosSize; i++)
@@ -119,6 +122,8 @@ public:
       vaosSize(vaos_size),
       vaos(vaos_size)
   {
+   QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
+   viewer->makeCurrent();
       is_bbox_computed = false;
       is_monochrome = true;
       for(int i=0; i<vaosSize; i++)

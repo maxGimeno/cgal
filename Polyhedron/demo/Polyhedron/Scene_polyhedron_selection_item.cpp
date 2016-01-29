@@ -217,7 +217,9 @@ void Scene_polyhedron_selection_item::draw_points(CGAL::Three::Viewer_interface*
         compute_elements();
         initialize_buffers(viewer);
     }
+#if !ANDROID
     viewer->glPointSize(5.f);
+#endif
     vaos[2]->bind();
     program = getShaderProgram(PROGRAM_NO_SELECTION);
     attrib_buffers(viewer,PROGRAM_NO_SELECTION);

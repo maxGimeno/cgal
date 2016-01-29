@@ -57,7 +57,7 @@ public:
 
   Viewer_interface(QWidget* parent) : QGLViewer(parent) {}
   virtual ~Viewer_interface() {}
-
+  bool shift_pressed;
   //! Sets the scene for the viewer.
   virtual void setScene(CGAL::Three::Scene_draw_interface* scene) = 0;
   //! @returns the antialiasing state.

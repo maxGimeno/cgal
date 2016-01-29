@@ -189,7 +189,7 @@ public:
 
         is_selected = true;
         QGLViewer* v = *QGLViewer::QGLViewerPool().begin();
-        Viewer_interface* viewer = dynamic_cast<Viewer_interface*>(v);
+        CGAL::Three::Viewer_interface* viewer = dynamic_cast<CGAL::Three::Viewer_interface*>(v);
         if(!viewer)
             return;
           viewer->setNoBinding();
@@ -215,7 +215,7 @@ public:
 
         is_selected = true;
         QGLViewer* v = *QGLViewer::QGLViewerPool().begin();
-        Viewer_interface* viewer = dynamic_cast<Viewer_interface*>(v);
+        CGAL::Three::Viewer_interface* viewer = dynamic_cast<CGAL::Three::Viewer_interface*>(v);
         if(!viewer)
             return;
           viewer->setNoBinding();

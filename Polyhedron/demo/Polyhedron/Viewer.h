@@ -31,7 +31,6 @@ class VIEWER_EXPORT Viewer : public CGAL::Three::Viewer_interface {
   Q_OBJECT
 
 public:
-  bool shift_pressed;
   Viewer(QWidget * parent, bool antialiasing = false);
   ~Viewer();
 

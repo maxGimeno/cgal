@@ -396,8 +396,6 @@ QList<QAction*> Polyhedron_demo_cut_plugin::actions() const {
 }
 
 void Polyhedron_demo_cut_plugin::createCutPlane() {
-  QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
-  viewer->makeCurrent();
   plane_item = new Scene_plane_item(scene);
   const CGAL::Three::Scene_interface::Bbox& bbox = scene->bbox();
   plane_item->setPosition((bbox.xmin+bbox.xmax)/2.f,
@@ -430,8 +428,6 @@ void Polyhedron_demo_cut_plugin::createCutPlane() {
 void Polyhedron_demo_cut_plugin::cut() {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   if(!edges_item) {
-    QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
-    viewer->makeCurrent();
     edges_item = new Scene_edges_item;
     edges_item->setName("Edges of the cut");
     edges_item->setColor(Qt::red);
@@ -462,8 +458,6 @@ void Polyhedron_demo_cut_plugin::cut() {
                                        new AABB_tree(faces(*(poly_item->polyhedron())).first,
                                                      faces(*(poly_item->polyhedron())).second,
                                                      *poly_item->polyhedron() )));
-      QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
-      viewer->makeCurrent();
       Scene_aabb_item* aabb_item = new Scene_aabb_item(*it->second);
       aabb_item->setName(tr("AABB tree of %1").arg(poly_item->name()));
       aabb_item->setRenderingMode(Wireframe);

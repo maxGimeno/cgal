@@ -1054,7 +1054,6 @@ CGAL::Three::Scene_item* MainWindow::load_item(QFileInfo fileinfo, CGAL::Three::
 
   QApplication::setOverrideCursor(Qt::WaitCursor);
   //To make sure the vaos ids are correct and won't conflict with each other
-  viewer->makeCurrent();
   item = loader->load(fileinfo);
   QApplication::restoreOverrideCursor();
   if(!item) {
