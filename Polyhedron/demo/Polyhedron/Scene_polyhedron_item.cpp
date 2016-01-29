@@ -407,7 +407,6 @@ Scene_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interface* viewer)
       program = getShaderProgram(PROGRAM_NO_SELECTION, viewer);
       program->bind();
       vaos[Feature_edges]->bind();
-
       buffers[Feature_edges_vertices].bind();
       buffers[Feature_edges_vertices].allocate(positions_feature_lines.data(),
                           static_cast<int>(positions_feature_lines.size()*sizeof(float)));
@@ -415,9 +414,9 @@ Scene_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interface* viewer)
       program->setAttributeBuffer("vertex",GL_FLOAT,0,4);
       buffers[Feature_edges_vertices].release();
       program->disableAttributeArray("colors");
+      vaos[Feature_edges]->release();
       program->release();
 
-      vaos[Feature_edges]->release();
 
   }
     nb_f_lines = positions_feature_lines.size();
@@ -600,7 +599,6 @@ Scene_polyhedron_item::Scene_polyhedron_item()
       erase_next_picked_facet_m(false),
       plugin_has_set_color_vector_m(false)
 {
-    cur_shading=FlatPlusEdges;
     is_selected = true;
     nb_facets = 0;
     nb_lines = 0;
@@ -617,7 +615,6 @@ Scene_polyhedron_item::Scene_polyhedron_item(Polyhedron* const p)
       erase_next_picked_facet_m(false),
       plugin_has_set_color_vector_m(false)
 {
-    cur_shading=FlatPlusEdges;
     is_selected = true;
     nb_facets = 0;
     nb_lines = 0;
@@ -635,8 +632,6 @@ Scene_polyhedron_item::Scene_polyhedron_item(const Polyhedron& p)
       erase_next_picked_facet_m(false),
       plugin_has_set_color_vector_m(false)
 {
-    //setItemIsMulticolor(true);
-    cur_shading=FlatPlusEdges;
     is_selected=true;
     init();
     nb_facets = 0;
@@ -855,14 +850,13 @@ void Scene_polyhedron_item::set_erase_next_picked_facet(bool b)
 }
 
 void Scene_polyhedron_item::draw(CGAL::Three::Viewer_interface* viewer) const {
-    if(!are_buffers_filled)
+   if(!are_buffers_filled)
     {
         compute_normals_and_vertices();
         initialize_buffers(viewer);
         compute_bbox();
     }
-
-    if(renderingMode() == Flat || renderingMode() == FlatPlusEdges)
+     if(renderingMode() == Flat || renderingMode() == FlatPlusEdges)
         vaos[Facets]->bind();
     else
     {
@@ -1011,12 +1005,12 @@ Scene_polyhedron_item::setColor(QColor c)
 }
 
 void
-Scene_polyhedron_item::select(double orig_x,
-                              double orig_y,
-                              double orig_z,
-                              double dir_x,
-                              double dir_y,
-                              double dir_z)
+Scene_polyhedron_item::select(float orig_x,
+                              float orig_y,
+                              float orig_z,
+                              float dir_x,
+                              float dir_y,
+                              float dir_z)
 {
     if(facet_picking_m) {
         typedef Input_facets_AABB_tree Tree;

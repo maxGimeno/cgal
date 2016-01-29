@@ -178,10 +178,10 @@ void Viewer::initializeGL()
       "   color = colors; \n"
       "   fP = mv_matrix * vertex; \n"
       "   fN = mat3(mv_matrix)* normal; \n"
-      "   vec4 temp = vec4(mvp_matrix * vertex); \n"
-      "   vec4 ort = ortho_mat * vec4(width-150.0, height-150.0, 0,0); \n"
-      "   float ratio = width/height; \n"
-      "   gl_Position =  ort +vec4(temp.x, temp.y, temp.z, 1.0); \n"
+      "   highp vec4 temp = highp vec4(mvp_matrix * vertex); \n"
+      "   highp vec4 ort = ortho_mat * highp vec4(width-150.0, height-150.0, 0,0); \n"
+      "   highp float ratio = width/height; \n"
+      "   gl_Position =  ort +highp vec4(temp.x, temp.y, temp.z, 1.0); \n"
       "} \n"
       "\n"
   };
@@ -199,7 +199,6 @@ void Viewer::initializeGL()
       "uniform highp float spec_power ; \n"
 
       "void main(void) { \n"
-
       "  highp vec3 L = light_pos.xyz - fP.xyz; \n"
       "  highp vec3 V = -fP.xyz; \n"
       "  highp vec3 N; \n"
@@ -236,6 +235,7 @@ void Viewer::initializeGL()
   {
       std::cerr<<"adding fragment shader FAILED"<<std::endl;
   }
+  rendering_program.bindAttributeLocation("vertex",0);
   if(!rendering_program.link())
   {
       //std::cerr<<"linking Program FAILED"<<std::endl;
@@ -507,6 +507,7 @@ void Viewer::attrib_buffers(int program_name) const {
     case PROGRAM_WITH_LIGHT:
         program->setUniformValue("mvp_matrix", mvp_mat);
         program->setUniformValue("mv_matrix", mv_mat);
+        program->setUniformValue("f_matrix",f_mat);
         program->setUniformValue("light_pos", position);
         program->setUniformValue("light_diff",diffuse);
         program->setUniformValue("light_spec", specular);
@@ -824,17 +825,15 @@ void Viewer::makeArrow(float R, int prec, qglviewer::Vec from, qglviewer::Vec to
     }
 }
 
-void Viewer::drawVisualHints()
+void Viewer::drawVisualHintsGLES()
 {
-    QGLViewer::drawVisualHints();
+    QGLViewer::drawVisualHintsGLES();
     if(axis_are_displayed)
     {
         QMatrix4x4 mvpMatrix;
         QMatrix4x4 mvMatrix;
         float mat[16];
         //Keeps the axis from being clipped
-        qglviewer::Vec center = sceneCenter();
-        setSceneCenter(camera()->position());
         camera()->getModelViewProjectionMatrix(mat);
         //nullifies the translation
         mat[12]=0;
@@ -853,7 +852,6 @@ void Viewer::drawVisualHints()
         mvMatrix.data()[12] = 0;
         mvMatrix.data()[13] = 0;
         mvMatrix.data()[14] = 1;
-
         QVector4D	position(0.0f,0.0f,0.0f,1.0f );
         // define material
         QVector4D	ambient;
@@ -877,7 +875,6 @@ void Viewer::drawVisualHints()
         specular[3] = 0.0f;
         // Shininess
         shininess = 51.2f;
-
         rendering_program.bind();
         rendering_program.setUniformValue("light_pos", position);
         rendering_program.setUniformValue("mvp_matrix", mvpMatrix);
@@ -886,15 +883,8 @@ void Viewer::drawVisualHints()
         rendering_program.setUniformValue("light_spec", specular);
         rendering_program.setUniformValue("light_amb", ambient);
         rendering_program.setUniformValue("spec_power", shininess);
-        rendering_program.release();
-
         vao[0].bind();
-        rendering_program.bind();
-        //Keeps the axis system in front of everything
-        glClear(GL_DEPTH_BUFFER_BIT);
         glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(v_Axis.size() / 3));
-        //restores the original sceneCenter
-        setSceneCenter(center);
         rendering_program.release();
         vao[0].release();
     }
@@ -1082,6 +1072,7 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
+            program->bindAttributeLocation("vertex",0);
             program->link();
             d->shader_programs[PROGRAM_C3T3] = program;
             return program;
@@ -1105,6 +1096,7 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
+            program->bindAttributeLocation("vertex",0);
             program->link();
             d->shader_programs[PROGRAM_C3T3_EDGES] = program;
             return program;
@@ -1128,6 +1120,7 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
+            program->bindAttributeLocation("vertex",0);
             program->link();
             d->shader_programs[PROGRAM_WITH_LIGHT] = program;
             return program;
@@ -1149,6 +1142,7 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
+            program->bindAttributeLocation("vertex",0);
             program->link();
             d->shader_programs[PROGRAM_WITHOUT_LIGHT] = program;
             return program;
@@ -1170,6 +1164,7 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
+            program->bindAttributeLocation("vertex",0);
             program->link();
             d->shader_programs[PROGRAM_NO_SELECTION] = program;
             return program;
@@ -1191,6 +1186,7 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
+            program->bindAttributeLocation("vertex",0);
             program->link();
             d->shader_programs[PROGRAM_WITH_TEXTURE] = program;
             return program;
@@ -1214,6 +1210,7 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
+            program->bindAttributeLocation("vertex",0);
             program->link();
             d->shader_programs[PROGRAM_PLANE_TWO_FACES] = program;
             return program;
@@ -1236,6 +1233,7 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
+            program->bindAttributeLocation("vertex",0);
             program->link();
             d->shader_programs[PROGRAM_WITH_TEXTURED_EDGES] = program;
             return program;
@@ -1258,6 +1256,7 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
+            program->bindAttributeLocation("vertex",0);
             program->link();
             d->shader_programs[PROGRAM_INSTANCED] = program;
             return program;
@@ -1280,6 +1279,7 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
+            program->bindAttributeLocation("vertex",0);
             program->link();
             d->shader_programs[PROGRAM_INSTANCED_WIRE] = program;
             return program;

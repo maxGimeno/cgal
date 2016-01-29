@@ -98,12 +98,12 @@ public Q_SLOTS:
     void enable_facets_picking(bool);
     void set_erase_next_picked_facet(bool);
 
-    void select(double orig_x,
-                double orig_y,
-                double orig_z,
-                double dir_x,
-                double dir_y,
-                double dir_z);
+    void select(float orig_x,
+                float orig_y,
+                float orig_z,
+                float dir_x,
+                float dir_y,
+                float dir_z);
 
     void update_vertex_indices();
     void update_facet_indices();
@@ -144,7 +144,7 @@ private:
         Edges,
         Feature_edges,
         Gouraud_Facets,
-        NbOfVaos = Gouraud_Facets+1
+        NbOfVaos
     };
     enum VBOs {
         Facets_vertices = 0,
@@ -154,7 +154,7 @@ private:
         Feature_edges_vertices,
         Edges_color,
         Facets_normals_gouraud,
-        NbOfVbos = Facets_normals_gouraud+1
+        NbOfVbos
     };
 
     mutable std::vector<float> positions_lines;
@@ -178,7 +178,7 @@ private:
     void compute_colors() const;
     void triangulate_facet(Facet_iterator ) const;
     void triangulate_facet_color(Facet_iterator ) const;
-    double volume, area;
+    float volume, area;
 
 }; // end class Scene_polyhedron_item
 

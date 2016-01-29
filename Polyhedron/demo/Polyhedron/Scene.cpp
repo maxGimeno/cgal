@@ -540,7 +540,6 @@ glDepthFunc(GL_LEQUAL);
                 viewer->glPointSize(2.f);
                 viewer->glLineWidth(1.0f);
 #endif
-
                 if(viewer)
                     item.draw_points(viewer);
                 else

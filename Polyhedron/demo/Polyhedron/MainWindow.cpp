@@ -1053,6 +1053,8 @@ CGAL::Three::Scene_item* MainWindow::load_item(QFileInfo fileinfo, CGAL::Three::
   }
 
   QApplication::setOverrideCursor(Qt::WaitCursor);
+  //To make sure the vaos ids are correct and won't conflict with each other
+  viewer->makeCurrent();
   item = loader->load(fileinfo);
   QApplication::restoreOverrideCursor();
   if(!item) {
@@ -1450,16 +1452,12 @@ void MainWindow::on_actionLoad_triggered()
   dialog.setFileMode(QFileDialog::ExistingFiles);
 
   if(dialog.exec() != QDialog::Accepted) { return; }
-
   FilterPluginMap::iterator it =
     filterPluginMap.find(dialog.selectedNameFilter());
-  
   CGAL::Three::Polyhedron_demo_io_plugin_interface* selectedPlugin = NULL;
-
   if(it != filterPluginMap.end()) {
     selectedPlugin = it.value();
   }
-
   Q_FOREACH(const QString& filename, dialog.selectedFiles()) {
     CGAL::Three::Scene_item* item = NULL;
     if(selectedPlugin) {

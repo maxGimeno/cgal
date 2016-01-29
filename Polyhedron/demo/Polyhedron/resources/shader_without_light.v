@@ -5,7 +5,7 @@
   varying highp vec4 color; 
   void main(void)
   {
-  gl_PointSize = 4.0;
+     gl_PointSize = 4.0;
      color = vec4(colors, 1.0); 
      gl_Position = mvp_matrix * f_matrix * vertex;
   }

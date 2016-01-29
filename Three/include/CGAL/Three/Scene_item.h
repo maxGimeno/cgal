@@ -25,6 +25,7 @@
 #include <QString>
 #include <QPixmap>
 #include <QFont>
+#include <QOpenGLContext>
 #include <QOpenGLBuffer>
 #include <QOpenGLShader>
 #include <QOpenGLVertexArrayObject>
@@ -53,7 +54,7 @@ class SCENE_ITEM_EXPORT Scene_item : public QObject {
   Q_ENUMS(RenderingMode)
   Q_PROPERTY(RenderingMode renderingMode READ renderingMode WRITE setRenderingMode)
 public:
-  enum OpenGL_program_IDs { PROGRAM_WITH_LIGHT,
+  enum OpenGL_program_IDs { PROGRAM_WITH_LIGHT=0,
                             PROGRAM_WITHOUT_LIGHT,
                             PROGRAM_NO_SELECTION,
                             PROGRAM_WITH_TEXTURE,
@@ -120,6 +121,7 @@ public:
   {
       is_bbox_computed = false;
       is_monochrome = true;
+      qDebug()<<"context when item creates VAOs : "<<QOpenGLContext::currentContext();
       for(int i=0; i<vaosSize; i++)
       {
           addVaos(i);

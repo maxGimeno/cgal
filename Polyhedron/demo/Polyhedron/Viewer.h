@@ -40,7 +40,7 @@ public:
   void draw();
   //!This step happens after draw(). It is here that the axis system is
   //!displayed.
-  void drawVisualHints();
+  void drawVisualHintsGLES();
   //! Deprecated. Does the same as draw().
   void fastDraw();
   //! Initializes the OpenGL functions and sets the backGround color.
