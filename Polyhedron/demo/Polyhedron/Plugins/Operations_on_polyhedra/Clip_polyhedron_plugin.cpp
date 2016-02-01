@@ -203,7 +203,7 @@ public Q_SLOTS:
             scene->replaceItem(scene->item_id(poly),new_item);
             delete poly;
             new_item->invalidateOpenGLBuffers();
-            viewer->updateGL();
+            viewer->update();
             messages->information(QString("%1 clipped").arg(new_item->name()));
           }
           else
@@ -216,7 +216,7 @@ public Q_SLOTS:
         {
           CGAL::corefinement::inplace_clip_open_polyhedron(*(poly->polyhedron()),plane->plane());
           poly->invalidateOpenGLBuffers();
-          viewer->updateGL();
+          viewer->update();
           messages->information(QString("%1 clipped").arg(poly->name()));
         }
       }

@@ -983,7 +983,6 @@ qglviewer::Vec Viewer::pointUnderPixelGLES(std::vector<QOpenGLShaderProgram*> pr
     //The fragmentertex source code
     const char grayscale_fragment_source[] =
     {
-        //"#version 330 \n"
         "void main(void) { \n"
         "gl_FragColor = vec4(vec3(gl_FragCoord.z), 1.0); \n"
         "} \n"

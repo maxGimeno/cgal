@@ -151,7 +151,6 @@ Scene_polylines_item::initialize_buffers(CGAL::Three::Viewer_interface *viewer =
 #endif
             vaos[Wired_Spheres]->release();
             program->release();
-            nb_lines = positions_lines.size();
             positions_lines.resize(0);
             std::vector<float>(positions_lines).swap(positions_lines);
             nb_spheres = positions_spheres.size();
@@ -316,6 +315,7 @@ Scene_polylines_item::compute_elements() const
         create_Sphere(d->spheres_drawn_radius);
 
     }
+        nb_lines = positions_lines.size();
 }
 
 
@@ -476,7 +476,7 @@ Scene_polylines_item::draw_edges(CGAL::Three::Viewer_interface* viewer) const {
     QOpenGLShaderProgram *program = getShaderProgram(PROGRAM_NO_SELECTION);
     program->bind();
     program->setAttributeValue("colors", this->color());
-    viewer->glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(nb_lines/4));
+    viewer->glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(positions_lines.size()/4));
     program->release();
     vaos[Edges]->release();
     if(d->draw_extremities)

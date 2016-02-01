@@ -355,7 +355,7 @@ void Scene_combinatorial_map_item::initialize_buffers(CGAL::Three::Viewer_interf
         buffers[Edges_vertices].release();
         nb_lines = positions_lines.size();
         positions_lines.resize(0);
-        std::vector<double>(positions_lines).swap(positions_lines);
+        std::vector<float>(positions_lines).swap(positions_lines);
         vaos[Edges]->release();
         program->release();
     }
