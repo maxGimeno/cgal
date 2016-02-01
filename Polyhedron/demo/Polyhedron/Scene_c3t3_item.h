@@ -209,7 +209,7 @@ private:
 
   typedef std::set<int> Indices;
   Indices indices_;
-
+#if !ANDROID
   //!Allows OpenGL 2.1 context to get access to glDrawArraysInstanced.
   typedef void (APIENTRYP PFNGLDRAWARRAYSINSTANCEDARBPROC) (GLenum mode, GLint first, GLsizei count, GLsizei primcount);
   //!Allows OpenGL 2.1 context to get access to glVertexAttribDivisor.
@@ -218,7 +218,7 @@ private:
   PFNGLDRAWARRAYSINSTANCEDARBPROC glDrawArraysInstanced;
   //!Allows OpenGL 2.1 context to get access to glVertexAttribDivisor.
   PFNGLVERTEXATTRIBDIVISORARBPROC glVertexAttribDivisor;
-
+#endif
   mutable std::size_t positions_poly_size;
   mutable std::size_t positions_lines_size;
   mutable std::vector<float> positions_lines;

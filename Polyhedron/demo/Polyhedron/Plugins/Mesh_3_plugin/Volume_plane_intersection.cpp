@@ -116,7 +116,7 @@ void Volume_plane_intersection::init_buffers()
 void Volume_plane_intersection::attrib_buffers(Viewer_interface* viewer) const
 {
     QMatrix4x4 mvpMatrix;
-    double mat[16];
+    float mat[16];
     viewer->camera()->getModelViewProjectionMatrix(mat);
     for(int i=0; i < 16; i++)
     {

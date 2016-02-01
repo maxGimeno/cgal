@@ -528,7 +528,7 @@ void Scene_segmented_image_item::attrib_buffers(Viewer_interface* viewer) const
 {
     QMatrix4x4 mvpMatrix;
     QMatrix4x4 mvMatrix;
-    double mat[16];
+    float mat[16];
     viewer->camera()->getModelViewProjectionMatrix(mat);
     for(int i=0; i < 16; i++)
     {
@@ -541,7 +541,7 @@ void Scene_segmented_image_item::attrib_buffers(Viewer_interface* viewer) const
     }
     QVector4D	position(0.0f,0.0f,1.0f,1.0f );
     GLboolean isTwoSide;
-    viewer->glGetBooleanv(GL_LIGHT_MODEL_TWO_SIDE,&isTwoSide);
+    //viewer->glGetBooleanv(GL_LIGHT_MODEL_TWO_SIDE,&isTwoSide);
     // define material
      QVector4D	ambient;
      QVector4D	diffuse;
@@ -578,7 +578,7 @@ void Scene_segmented_image_item::attrib_buffers(Viewer_interface* viewer) const
     lightLocation[4] = rendering_program.uniformLocation("spec_power");
 
     rendering_program.setUniformValue(lightLocation[0], position);
-    rendering_program.setUniformValue(twosideLocation, isTwoSide);
+    rendering_program.setUniformValue(twosideLocation, 1);
     rendering_program.setUniformValue(mvpLocation[0], mvpMatrix);
     rendering_program.setUniformValue(mvLocation[0], mvMatrix);
     rendering_program.setUniformValue(lightLocation[1], diffuse);

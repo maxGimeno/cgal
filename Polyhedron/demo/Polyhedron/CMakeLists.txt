@@ -372,20 +372,27 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
                             libscene_polyhedron_item.so
                             libscene_polygon_soup_item.so
 
-                            libscene_points_with_normal_item.so
-                            #libscene_implicit_function_item.so
+                            #libscene_points_with_normal_item.so
+                            libscene_implicit_function_item.so
                             libscene_polylines_item.so
                             #libscene_c2t3_item.so
-                            libscene_nef_polyhedron_item.so
-                            libscene_polyhedron_selection_item.so
+                             libscene_c3t3_item.so
+                             libscene_segmented_image_item.so
+                           # libscene_nef_polyhedron_item.so
+                           # libscene_polyhedron_selection_item.so
                             #libscene_basic_objects.so
                             #libscene_combinatorial_map_item.so
                             #libscene_polyhedron_transform_item.so
-                            libscene_polyhedron_item_k_ring_selection.so
-                            libscene_polyhedron_item_decorator.so
+                            #libscene_polyhedron_item_k_ring_selection.so
+                            #libscene_polyhedron_item_decorator.so
                             #libscene_textured_polyhedron_item.so
-                            #libscene_edit_polyhedron_item.so
+                            #libscene_edit_polyhedron_item.so\
 
+    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libc3t3_io_plugin.so
+    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libio_image_plugin.so
+    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_optimization_plugin.so
+    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_plugin.so
+    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_volume_planes_plugin.so
     #libedit_polyhedron_plugin.so
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_plugin.so
     #libparameterization_plugin.so
@@ -402,9 +409,9 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
     #liborient_soup_plugin.so
     #libtriangulate_facets_plugin.so
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_to_nef_plugin.so
-    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_to_xyz_plugin.so
-   /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Convex_hull/libconvex_hull_plugin.so
-   /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Convex_hull/libkernel_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_to_xyz_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Convex_hull/libconvex_hull_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Convex_hull/libkernel_plugin.so
     #libpca_plugin.so
     #libself_intersection_plugin.so
     #libpolyhedron_stitching_plugin.so

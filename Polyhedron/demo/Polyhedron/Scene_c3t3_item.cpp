@@ -525,7 +525,7 @@ void Scene_c3t3_item::draw(CGAL::Three::Viewer_interface* viewer) const {
   program->release();
   vaos[iFacets]->release();
 
-
+#if !ANDROID
   if(spheres_are_shown)
   {
     vaos[Spheres]->bind();
@@ -570,6 +570,7 @@ void Scene_c3t3_item::draw(CGAL::Three::Viewer_interface* viewer) const {
     program_sphere->release();
     vaos[Spheres]->release();
   }
+#endif
 }
 
 void Scene_c3t3_item::draw_edges(CGAL::Three::Viewer_interface* viewer) const {
@@ -615,6 +616,7 @@ void Scene_c3t3_item::draw_edges(CGAL::Three::Viewer_interface* viewer) const {
   program->release();
   vaos[iEdges]->release();
 
+#if !ANDROID
   if(spheres_are_shown)
   {
       vaos[Wired_spheres]->bind();
@@ -641,7 +643,6 @@ void Scene_c3t3_item::draw_edges(CGAL::Three::Viewer_interface* viewer) const {
       QVector4D specular(0.0f, 0.0f, 0.0f, 1.0f);
       viewer->glGetIntegerv(GL_LIGHT_MODEL_TWO_SIDE, &is_both_sides);
 
-
       program_sphere->setUniformValue("mvp_matrix", mvp_mat);
       program_sphere->setUniformValue("mv_matrix", mv_mat);
       program_sphere->setUniformValue("light_pos", position);
@@ -657,6 +658,7 @@ void Scene_c3t3_item::draw_edges(CGAL::Three::Viewer_interface* viewer) const {
       program_sphere->release();
       vaos[Wired_spheres]->release();
   }
+#endif
 }
 
 void Scene_c3t3_item::draw_points(CGAL::Three::Viewer_interface * viewer) const
@@ -955,7 +957,7 @@ void Scene_c3t3_item::initialize_buffers(CGAL::Three::Viewer_interface *viewer)
     vaos[Grid]->release();
     program->release();
   }
-
+#if !ANDROID
   //vao containing the data for the spheres
   {
     program_sphere->bind();
@@ -1042,6 +1044,7 @@ void Scene_c3t3_item::initialize_buffers(CGAL::Three::Viewer_interface *viewer)
 
       program_sphere->release();
     }
+#endif
     program_sphere->release();
     are_buffers_filled = true;
 }
