@@ -35,7 +35,6 @@ void Scene_c3t3_item::compile_shaders()
     //Source code
     const char vertex_source[] =
     {
-        "#version 120                                                                                             \n"
         "attribute highp vec4 vertex;                                                                             \n"
         "attribute highp vec3 normals;                                                                            \n"
         "attribute highp vec3 colors;                                                                             \n"
@@ -51,7 +50,7 @@ void Scene_c3t3_item::compile_shaders()
         "                                                                                                         \n"
         "void main(void)                                                                                          \n"
         "{                                                                                                        \n"
-        " if(center.x * cutplane.x  + center.y * cutplane.y  + center.z * cutplane.z  +  cutplane.w > 0){         \n"
+        " if(center.x * cutplane.x  + center.y * cutplane.y  + center.z * cutplane.z  +  cutplane.w > 0.0){       \n"
         "    color = vec4(colors,0.0);                                                                            \n"
         " }else{                                                                                                  \n"
         "  color = vec4(colors,1.0);}                                                                             \n"

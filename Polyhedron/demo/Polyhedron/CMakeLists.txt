@@ -376,7 +376,7 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
                             libscene_implicit_function_item.so
                             libscene_polylines_item.so
                             #libscene_c2t3_item.so
-                        #     libscene_c3t3_item.so
+                             libscene_c3t3_item.so
                              libscene_segmented_image_item.so
                            # libscene_nef_polyhedron_item.so
                            # libscene_polyhedron_selection_item.so
@@ -388,13 +388,13 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
                             #libscene_textured_polyhedron_item.so
                             #libscene_edit_polyhedron_item.so\
 
-    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libc3t3_io_plugin.so
-    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libio_image_plugin.so
-   # /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_optimization_plugin.so
-   # /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_plugin.so
-    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_volume_planes_plugin.so
+    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libc3t3_io_plugin.so
+   # /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libio_image_plugin.so
+    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_optimization_plugin.so
+    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_volume_planes_plugin.so
     #libedit_polyhedron_plugin.so
-    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_plugin.so
+    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_plugin.so
     #libparameterization_plugin.so
     #libremeshing_plugin.so
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Camera_position/libcamera_positions_plugin.so
