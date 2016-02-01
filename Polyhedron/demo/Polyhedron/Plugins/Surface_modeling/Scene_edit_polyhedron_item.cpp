@@ -52,7 +52,6 @@ Scene_edit_polyhedron_item::Scene_edit_polyhedron_item
 
     const char vertex_shader_source_bbox[] =
     {
-        //"#version 120 \n"
         "attribute highp vec3 vertex; \n"
         "attribute highp vec3 colors; \n"
 

@@ -161,7 +161,6 @@ void Viewer::initializeGL()
   //Vertex source code
   const char vertex_source[] =
   {
-      //"#version 120 \n"
       "attribute highp vec4 vertex;\n"
       "attribute highp vec3 normal;\n"
       "attribute highp vec4 colors;\n"
@@ -188,7 +187,6 @@ void Viewer::initializeGL()
   //Fragment source code
   const char fragment_source[] =
   {
-      //"#version 120 \n"
       "varying highp vec4 color; \n"
       "varying highp vec4 fP; \n"
       "varying highp vec3 fN; \n"

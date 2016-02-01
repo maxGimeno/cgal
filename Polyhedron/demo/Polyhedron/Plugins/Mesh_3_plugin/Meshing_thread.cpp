@@ -29,6 +29,7 @@
 
 #include "Meshing_thread.h"
 
+#include <QDebug>
 class Scene_c3t3_item;
 
 Meshing_thread::
@@ -66,6 +67,7 @@ run()
   time_ = double(timer.elapsed()) / 1000;
   
   Q_EMIT done(this);
+  qDebug()<<"normalement c'est la que ca se ferme...";
 }
 
 
