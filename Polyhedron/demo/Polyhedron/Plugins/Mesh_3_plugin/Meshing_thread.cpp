@@ -67,7 +67,6 @@ run()
   time_ = double(timer.elapsed()) / 1000;
   
   Q_EMIT done(this);
-  qDebug()<<"normalement c'est la que ca se ferme...";
 }
 
 

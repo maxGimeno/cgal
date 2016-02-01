@@ -337,14 +337,6 @@ launch_thread(Meshing_thread* mesh_thread)
   // -----------------------------------
   // Create message box with stop button
   // -----------------------------------
-  // -----------------------------------
-  // Connect main thread to meshing thread
-  // -----------------------------------
-  QObject::connect(mesh_thread, SIGNAL(done(Meshing_thread*)),
-                   this,        SLOT(meshing_done(Meshing_thread*)));
-
-  QObject::connect(mesh_thread, SIGNAL(status_report(QString)),
-                   this,        SLOT(status_report(QString)));
   message_box_ = new QMessageBox(QMessageBox::NoIcon,
                                  "Meshing",
                                  "Mesh generation in progress...",
@@ -359,11 +351,18 @@ launch_thread(Meshing_thread* mesh_thread)
                    mesh_thread,  SLOT(stop()));
 
   message_box_->show();
+  // -----------------------------------
+  // Connect main thread to meshing thread
+  // -----------------------------------
+  QObject::connect(mesh_thread, SIGNAL(done(Meshing_thread*)),
+                   this,        SLOT(meshing_done(Meshing_thread*)));
 
+  QObject::connect(mesh_thread, SIGNAL(status_report(QString)),
+                  this,        SLOT(status_report(QString)));
+  mesh_thread->start();
   // -----------------------------------
   // Launch mesher
   // -----------------------------------
-  mesh_thread->start();
 }
 
 
@@ -405,9 +404,9 @@ meshing_done(Meshing_thread* thread)
   // Treat new c3t3 item
   treat_result(*source_item_, *result_item);
   // close message box
-  message_box_->close();
-qDebug()<<"CLOSED ";
+  message_box_->hide();
   message_box_ = NULL;
+
 
   // free memory
   // TODO: maybe there is another way to do that
