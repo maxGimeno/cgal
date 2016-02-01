@@ -350,11 +350,13 @@ private:
     Clamp_to_one_zero_range clamper = { minmax };
 
     switchReaderConverter< Word >(minmax);
-    
-    threads.push_back(new X_plane_thread<Word>(img, clamper, name));
+    Viewer_interface* viewer = qobject_cast<Viewer_interface*>(QGLViewer::QGLViewerPool().first());
+    viewer->makeCurrent();
+     threads.push_back(new X_plane_thread<Word>(img, clamper, name));
     connect(threads.back(), SIGNAL(finished(Volume_plane_thread*)), this, SLOT(addVP(Volume_plane_thread*)));
     threads.back()->start();
-    
+
+#if !ANDROID
     threads.push_back(new Y_plane_thread<Word>(img, clamper, name));
     connect(threads.back(), SIGNAL(finished(Volume_plane_thread*)), this, SLOT(addVP(Volume_plane_thread*)));
     threads.back()->start();
@@ -362,7 +364,7 @@ private:
     threads.push_back(new Z_plane_thread<Word>(img, clamper, name));
     connect(threads.back(), SIGNAL(finished(Volume_plane_thread*)), this, SLOT(addVP(Volume_plane_thread*)));
     threads.back()->start();
-
+#endif
   }
 
   template<typename T>

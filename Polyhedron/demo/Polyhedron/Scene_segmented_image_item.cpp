@@ -441,7 +441,6 @@ void Scene_segmented_image_item::compile_shaders()
     //Vertex source code
     const char vertex_source[] =
     {
-        "#version 120 \n"
         "attribute highp vec4 vertex;\n"
         "attribute highp vec3 normal;\n"
         "attribute highp vec4 inColor;\n"
@@ -462,7 +461,6 @@ void Scene_segmented_image_item::compile_shaders()
     //Fragment source code
     const char fragment_source[] =
     {
-        "#version 120 \n"
         "varying highp vec4 fP; \n"
         "varying highp vec3 fN; \n"
         "varying highp vec4 color; \n"
@@ -471,14 +469,14 @@ void Scene_segmented_image_item::compile_shaders()
         "uniform highp vec4 light_diff; \n"
         "uniform highp vec4 light_spec; \n"
         "uniform highp vec4 light_amb;  \n"
-        "uniform float spec_power ; \n"
+        "uniform highp float spec_power ; \n"
 
         "void main(void) { \n"
 
-        "   vec3 L = light_pos.xyz - fP.xyz; \n"
-        "   vec3 V = -fP.xyz; \n"
+        "   highp vec3 L = light_pos.xyz - fP.xyz; \n"
+        "   highp vec3 V = -fP.xyz; \n"
 
-        "   vec3 N; \n"
+        "   highp vec3 N; \n"
         "   if(fN == vec3(0.0,0.0,0.0)) \n"
         "       N = vec3(0.0,0.0,0.0); \n"
         "   else \n"
@@ -486,15 +484,14 @@ void Scene_segmented_image_item::compile_shaders()
         "   L = normalize(L); \n"
         "   V = normalize(V); \n"
 
-        "   vec3 R = reflect(-L, N); \n"
-        "   vec4 diffuse; \n"
+        "   highp vec3 R = reflect(-L, N); \n"
+        "   highp vec4 diffuse; \n"
         "   if(!is_two_side) \n"
-        "       diffuse = max(dot(N,L),0) * light_diff*color; \n"
+        "       diffuse = max(dot(N,L),0.0) * light_diff*color; \n"
         "   else \n"
-        "       diffuse = max(abs(dot(N,L)),0) * light_diff*color; \n"
-        "   vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
-
-         "gl_FragColor = color*light_amb + diffuse + specular; \n"
+        "       diffuse = max(abs(dot(N,L)),0.0) * light_diff*color; \n"
+        "   highp vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
+        "   gl_FragColor = color*light_amb + diffuse + specular; \n"
         "} \n"
         "\n"
     };

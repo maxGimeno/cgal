@@ -82,7 +82,6 @@ void X_plane_thread<Word>::run() {
     }
     item = new Volume_plane<x_tag>(static_cast<int>(img->ydim()), static_cast<int>(img->zdim()), static_cast<int>(img->xdim()), 
                                    img->vx(), img->vy(), img->vz(), buffer);
-
     item->setName(name);
     item->moveToThread(QApplication::instance()->thread());
     Q_EMIT finished(this);
