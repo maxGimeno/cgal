@@ -295,9 +295,7 @@ void Scene_edit_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interfac
     }
     if(program_list_is_empty)
     {
-    Q_FOREACH(QOpenGLShaderProgram* prog, shader_programs)
-        viewer->program_list.push_back(prog);
-    k_ring_selector.edit_programs = viewer->program_list;
+    k_ring_selector.edit_programs = viewer->getPrograms();
     program_list_is_empty = false;
     }
     //vao for the frame plane

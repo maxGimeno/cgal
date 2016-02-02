@@ -65,6 +65,7 @@ public:
   void attrib_buffers(int program_name) const;
   //! Implementation of `Viewer_interface::getShaderProgram()`
   QOpenGLShaderProgram* getShaderProgram(int name) const;
+  std::vector<QOpenGLShaderProgram*> getPrograms()const;
 
 
 public Q_SLOTS:

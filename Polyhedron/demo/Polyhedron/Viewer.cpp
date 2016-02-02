@@ -1304,3 +1304,7 @@ void Viewer::wheelEvent(QWheelEvent* e)
     else
         QGLViewer::wheelEvent(e);
 }
+std::vector<QOpenGLShaderProgram*> Viewer::getPrograms()const
+{
+  return d->shader_programs;
+}
