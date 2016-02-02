@@ -372,19 +372,19 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
                             libscene_polyhedron_item.so
                             libscene_polygon_soup_item.so
 
-                            #libscene_points_with_normal_item.so
+                            libscene_points_with_normal_item.so
                             #libscene_implicit_function_item.so
                             libscene_polylines_item.so
                             #libscene_c2t3_item.so
                             #libscene_c3t3_item.so
-                             #libscene_segmented_image_item.so
+                            #libscene_segmented_image_item.so
                             #libscene_nef_polyhedron_item.so
-                            #libscene_polyhedron_selection_item.so
+                            libscene_polyhedron_selection_item.so
                             libscene_basic_objects.so
                             libscene_combinatorial_map_item.so
-                            #libscene_polyhedron_transform_item.so
-                            #libscene_polyhedron_item_k_ring_selection.so
-                            #libscene_polyhedron_item_decorator.so
+                            libscene_polyhedron_transform_item.so
+                            libscene_polyhedron_item_k_ring_selection.so
+                            libscene_polyhedron_item_decorator.so
                             #libscene_textured_polyhedron_item.so
                             #libscene_edit_polyhedron_item.so\
 
@@ -395,6 +395,23 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_volume_planes_plugin.so
     #libedit_polyhedron_plugin.so
     /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libfairing_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libhole_filling_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libhole_filling_polyline_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libinside_out_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libisotropic_remeshing_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libjet_fitting_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libjoin_and_split_polyhedra_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libmean_curvature_flow_skeleton_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/liborient_soup_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libpoint_inside_polyhedron_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libpolyhedron_slicer_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libpolyhedron_stitching_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/librepair_polyhedron_plugin.so
+    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libselection_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libself_intersection_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libtriangulate_facets_plugin.so
+
     #libparameterization_plugin.so
     #libremeshing_plugin.so
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Camera_position/libcamera_positions_plugin.so
@@ -423,10 +440,12 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Convex_decomposition/libnef_plugin.so
     #libintersection_plugin.so
     #libtransform_polyhedron_plugin.so
-    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Operations_on_polyhedra/libintersection_plugin.so
-    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Operations_on_polyhedra/libcorefinement_plugin.so
-    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Operations_on_polyhedra/libclip_polyhedron_plugin.so
-    #
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Operations_on_polyhedra/libintersection_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Operations_on_polyhedra/libcorefinement_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Operations_on_polyhedra/libclip_polyhedron_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PCA/libpca_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PCA/libtrivial_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PCA/libtransform_polyhedron_plugin.so
     #libtrivial_plugin.so
     #
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/AABB_tree/libcut_plugin.so
