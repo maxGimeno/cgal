@@ -279,6 +279,8 @@ public Q_SLOTS:
 
 // members
 private:
+  //mutable QPoint prevPos_;
+  //mutable Qpoint pressPos_;
   mutable bool program_list_is_empty;
   bool ctrl_pressing ;
   bool shift_pressing;
@@ -297,6 +299,7 @@ private:
   mutable std::vector<GLfloat> normals;
   mutable std::vector<GLfloat> pos_bbox;
   mutable std::vector<GLfloat> pos_axis;
+  mutable std::vector<GLfloat> normal_axis;
   mutable std::vector<GLfloat> pos_sphere;
   mutable std::vector<GLfloat> normals_sphere;
   mutable std::vector<GLfloat> pos_frame_plane;
@@ -340,7 +343,7 @@ private:
   void initialize_buffers(CGAL::Three::Viewer_interface *viewer) const;
   void compute_normals_and_vertices(void);
   void compute_bbox(const CGAL::Three::Scene_interface::Bbox&);
-  void create_Sphere(double);
+  void create_Sphere(float);
   void reset_drawing_data();
 
 

@@ -587,7 +587,9 @@ bool Scene_edit_polyhedron_item::eventFilter(QObject* /*target*/, QEvent *event)
           state.ctrl_pressing = true;
       }
       else
+      {
           state.ctrl_pressing = false;
+      }
       if(viewer->selection_mode || shift_pressing )
           state.shift_pressing = true;
       else
