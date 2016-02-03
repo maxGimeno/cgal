@@ -968,8 +968,8 @@ bool SceneDelegate::editorEvent(QEvent *event, QAbstractItemModel *model,
                 QColor color =
                         QColorDialog::getColor(model->data(index).value<QColor>(),
                                                0/*,
-                                                                                                                                 tr("Select color"),
-                                                                                                                                 QColorDialog::ShowAlphaChannel*/);
+                                                tr("Select color"),
+                                                QColorDialog::ShowAlphaChannel*/);
                 if (color.isValid()) {
                     model->setData(index, color );
                 }

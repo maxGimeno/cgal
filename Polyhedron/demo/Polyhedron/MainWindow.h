@@ -15,6 +15,7 @@
 #include <QStringList>
 #include <QSet>
 #include <QCheckBox>
+#include <QTime>
 class Scene;
 class Viewer;
 class QTreeView;
@@ -93,7 +94,8 @@ public Q_SLOTS:
    index of the item to be reloaded as data attached to the action.
    The index must identify a valid `Scene_item`.*/
   void reload_item();
-  
+
+  bool event(QEvent *event);
   /*!
    * This is an overloaded function.
    * If QT_SCRIPT_LIB is defined, returns true if the script is valid.
@@ -358,6 +360,7 @@ private:
   Ui::MainWindow* ui;
   QVector<CGAL::Three::Polyhedron_demo_io_plugin_interface*> io_plugins;
   QMap<QString,QString> default_plugin_selection;
+  QTime chrono;
   // typedef to make Q_FOREACH work
   typedef QPair<CGAL::Three::Polyhedron_demo_plugin_interface*, QString> PluginNamePair;
   QVector<PluginNamePair > plugins;

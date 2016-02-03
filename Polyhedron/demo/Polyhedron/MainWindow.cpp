@@ -1377,6 +1377,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
   event->accept();
 }
 
+
 bool MainWindow::load_script(QString filename)
 {
   QFileInfo fileinfo(filename);
@@ -1904,4 +1905,22 @@ QString MainWindow::get_item_stats()
     }
   }
   return str;
+}
+bool MainWindow::event(QEvent *event)
+{
+    if (event->type() == QEvent::TouchBegin) {
+      chrono.start();
+      return true;
+    }
+    else if(event->type() == QEvent::TouchEnd)
+    {
+      QTouchEvent* te = (static_cast<QTouchEvent*>(event));
+      if(chrono.elapsed()>=2000)
+      {
+        showSceneContextMenu((te->touchPoints().first()).pos().toPoint());
+        qDebug()<<"show menu";
+      }
+      return true;
+    }
+    return QWidget::event(event);
 }

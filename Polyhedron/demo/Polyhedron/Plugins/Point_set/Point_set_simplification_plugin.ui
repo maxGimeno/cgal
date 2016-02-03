@@ -6,28 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>450</width>
-    <height>251</height>
+    <width>392</width>
+    <height>242</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Simplification</string>
   </property>
   <layout class="QGridLayout">
-   <item row="7" column="0">
-    <widget class="QLabel" name="label_4">
+   <item row="8" column="0">
+    <widget class="QLabel" name="label_5">
      <property name="text">
-      <string>Maximum cluster size</string>
-     </property>
-    </widget>
-   </item>
-   <item row="9" column="0" colspan="2">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+      <string>Maximum surface variation</string>
      </property>
     </widget>
    </item>
@@ -41,10 +31,65 @@
      </property>
     </widget>
    </item>
+   <item row="7" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>Maximum cluster size</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="1">
+    <widget class="QDoubleSpinBox" name="m_maximumSurfaceVariation">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="suffix">
+      <string/>
+     </property>
+     <property name="decimals">
+      <number>5</number>
+     </property>
+     <property name="minimum">
+      <double>0.000010000000000</double>
+     </property>
+     <property name="maximum">
+      <double>0.333330000000000</double>
+     </property>
+     <property name="singleStep">
+      <double>0.012340000000000</double>
+     </property>
+     <property name="value">
+      <double>0.333330000000000</double>
+     </property>
+    </widget>
+   </item>
    <item row="4" column="0">
     <widget class="QRadioButton" name="Grid">
      <property name="text">
       <string>Grid</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1">
+    <widget class="QSpinBox" name="m_maximumClusterSize">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>2147483647</number>
+     </property>
+     <property name="value">
+      <number>10</number>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QRadioButton" name="Hierarchy">
+     <property name="text">
+      <string>Hierarchy</string>
      </property>
     </widget>
    </item>
@@ -70,10 +115,17 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="0">
-    <widget class="QRadioButton" name="Hierarchy">
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_2">
      <property name="text">
-      <string>Hierarchy</string>
+      <string>Points to Remove Randomly</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>Grid Cell Size</string>
      </property>
     </widget>
    </item>
@@ -102,65 +154,13 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>Points to Remove Randomly</string>
+   <item row="9" column="0" colspan="2">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
      </property>
-    </widget>
-   </item>
-   <item row="5" column="0">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>Grid Cell Size</string>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="1">
-    <widget class="QSpinBox" name="m_maximumClusterSize">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="minimum">
-      <number>1</number>
-     </property>
-     <property name="maximum">
-      <number>2147483647</number>
-     </property>
-     <property name="value">
-      <number>10</number>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="0">
-    <widget class="QLabel" name="label_5">
-     <property name="text">
-      <string>Maximum surface variation</string>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="1">
-    <widget class="QDoubleSpinBox" name="m_maximumSurfaceVariation">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="suffix">
-      <string/>
-     </property>
-     <property name="decimals">
-      <number>5</number>
-     </property>
-     <property name="minimum">
-      <double>0.000010000000000</double>
-     </property>
-     <property name="maximum">
-      <double>0.333330000000000</double>
-     </property>
-     <property name="singleStep">
-      <double>0.012340000000000</double>
-     </property>
-     <property name="value">
-      <double>0.333330000000000</double>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
      </property>
     </widget>
    </item>
