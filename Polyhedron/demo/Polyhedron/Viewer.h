@@ -136,9 +136,10 @@ protected:
 
   Viewer_impl* d;
 protected:
+  QTime chrono;
+  bool event(QEvent *e);
   double prev_radius;/*
 #if ANDROID
-  bool event(QEvent *e);
   void mouseMoveEvent(QMouseEvent* e);
 #endif
   struct datas

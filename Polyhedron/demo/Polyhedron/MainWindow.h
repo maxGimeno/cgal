@@ -95,7 +95,6 @@ public Q_SLOTS:
    The index must identify a valid `Scene_item`.*/
   void reload_item();
 
-  bool event(QEvent *event);
   /*!
    * This is an overloaded function.
    * If QT_SCRIPT_LIB is defined, returns true if the script is valid.
@@ -360,7 +359,6 @@ private:
   Ui::MainWindow* ui;
   QVector<CGAL::Three::Polyhedron_demo_io_plugin_interface*> io_plugins;
   QMap<QString,QString> default_plugin_selection;
-  QTime chrono;
   // typedef to make Q_FOREACH work
   typedef QPair<CGAL::Three::Polyhedron_demo_plugin_interface*, QString> PluginNamePair;
   QVector<PluginNamePair > plugins;

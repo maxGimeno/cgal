@@ -8,6 +8,7 @@
 #include <QOpenGLShader>
 #include <QOpenGLShaderProgram>
 #include <cmath>
+#include <QTime>
 
 class Viewer_impl {
 #include <QOpenGLContext>
@@ -948,31 +949,29 @@ void Viewer::resizeGL(int w, int h)
     rendering_program.setUniformValue("height", (float)dim.y);
     rendering_program.setUniformValue("ortho_mat", orthoMatrix);
     rendering_program.release();
-}/*
-#if ANDROID
+}
+QPointF posipoint;
 bool Viewer::event(QEvent *e)
 {
-    bool save;
     if(e->type() == QEvent::TouchBegin)
     {
-      save = selection_mode;
-      selection_mode = selection_mode && shift_pressed;
+      chrono.start();
+      posipoint = static_cast<QTouchEvent*>(e)->touchPoints().first().pos();
+      QGLViewer::event(e);
+      return true;
     }
-    QGLViewer::event(e);
-    if(e->type() == QEvent::TouchBegin)
+   else if(e->type() == QEvent::TouchEnd)
     {
-      selection_mode = save;
+     if( posipoint == static_cast<QTouchEvent*>(e)->touchPoints().first().pos() && chrono.elapsed() >=1000)
+     {qDebug()<<"show menu"; requestContextMenu(static_cast<QTouchEvent*>(e)->touchPoints().first().pos().toPoint()); }
+     else{qDebug()<<posipoint<<" vs "<<static_cast<QTouchEvent*>(e)->touchPoints().first().pos().toPoint()<<", "<<chrono.elapsed();}
+     QGLViewer::event(e);
+     return true;
     }
-}
-void Viewer::mouseMoveEvent(QMouseEvent* e)
-{
-    bool save = selection_mode;
-    selection_mode =  shift_pressed;
-    QGLViewer::mouseMoveEvent(e);
-    selection_mode = save;
-}
-#endif
 
+    return  QGLViewer::event(e);
+}
+/*
 qglviewer::Vec Viewer::pointUnderPixelGLES(std::vector<QOpenGLShaderProgram*> programs, qglviewer::Camera*const camera, const QPoint& pixel, bool& found)
 {
     makeCurrent();
