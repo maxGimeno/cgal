@@ -71,7 +71,9 @@ struct z_tag {};
 template<typename Tag>
 class Volume_plane : public Volume_plane_interface, public Tag {
 public:
-  Volume_plane(unsigned int adim, unsigned int bdim, unsigned int cdim, 
+  Volume_plane();
+
+  void setData(unsigned int adim, unsigned int bdim, unsigned int cdim,
                float xscale, float yscale, float zscale, std::vector<float>& colors);
 
   virtual ~Volume_plane();
@@ -148,8 +150,8 @@ private:
     out.push_back(0.0f);
   }
 
-  const unsigned int adim_, bdim_, cdim_;
-  const double xscale_, yscale_, zscale_;
+   unsigned int adim_, bdim_, cdim_;
+   double xscale_, yscale_, zscale_;
   mutable int currentCube;
 
   mutable QOpenGLBuffer vVBO;
@@ -222,29 +224,29 @@ private:
 template<typename T>
 const char* Volume_plane<T>::vertexShader_source =
 
-      "in vec4 vertex; \n"
-      "in float color; \n"
+      "attribute highp vec4 vertex; \n"
+      "attribute highp float color; \n"
       "uniform highp mat4 mvp_matrix; \n"
       "uniform highp mat4 f_matrix; \n"
-      "out vec4 fullColor; \n"
+      "varying vec4 fullColor; \n"
       "void main() \n"
       "{ gl_Position = mvp_matrix * f_matrix * vertex; \n"
-      " fullColor = vec4(color, color, color, 1.0f); } \n";
+      " fullColor = vec4(color, color, color, 1.0); } \n";
 
 template<typename T>
 const char* Volume_plane<T>::fragmentShader_source =
-      "
-      "in vec4 fullColor; \n"
+
+      "varying highp vec4 fullColor; \n"
       "void main() { gl_FragColor = fullColor; } \n";
 
 template<typename T>
 const char* Volume_plane<T>::vertexShader_bordures_source =
 
-      "in vec4 vertex; \n"
-      "uniform vec4 color; \n"
+      "attribute highp vec4 vertex; \n"
+      "uniform highp vec4 color; \n"
       "uniform highp mat4 mvp_matrix; \n"
       "uniform highp mat4 f_matrix; \n"
-      "out vec4 fullColor; \n"
+      "varying highp vec4 fullColor; \n"
       "void main() \n"
       "{ gl_Position = mvp_matrix * f_matrix * vertex; \n"
       " fullColor = color; } \n";
@@ -252,21 +254,29 @@ const char* Volume_plane<T>::vertexShader_bordures_source =
 template<typename T>
 const char* Volume_plane<T>::fragmentShader_bordures_source =
 
-      "in vec4 fullColor; \n"
+      "varying highp vec4 fullColor; \n"
       "void main() { gl_FragColor = fullColor; } \n";
 
 
 
 template<typename T>
-Volume_plane<T>::Volume_plane(unsigned int adim, unsigned int bdim, unsigned int cdim, 
-                              float xscale, float yscale, float zscale, std::vector<float>& colors)
-  : Volume_plane_interface(new qglviewer::ManipulatedFrame), adim_(adim), bdim_(bdim), cdim_(cdim), xscale_(xscale), 
-    yscale_(yscale), zscale_(zscale), currentCube(0)
+Volume_plane<T>::Volume_plane()
+  : Volume_plane_interface(new qglviewer::ManipulatedFrame)
 {
-  colors_.swap(colors);
-  mFrame_->setConstraint(setConstraint(*this));
 }
-
+template<typename T>
+void Volume_plane<T>::setData(unsigned int adim, unsigned int bdim, unsigned int cdim, float xscale, float yscale, float zscale, std::vector<float> &colors)
+{
+ adim_ = adim;
+ bdim_ = bdim;
+ cdim_= cdim;
+ xscale_ = xscale;
+ yscale_ =yscale;
+ zscale_ = zscale;
+ currentCube = 0;
+ colors_.swap(colors);
+ mFrame_->setConstraint(setConstraint(*this));
+}
 template<typename T>
 Volume_plane<T>::~Volume_plane() {
   for(std::vector< std::pair< QOpenGLBuffer, unsigned int> >::iterator it = ebos.begin();
@@ -278,10 +288,7 @@ Volume_plane<T>::~Volume_plane() {
 
 template<typename T>
 void Volume_plane<T>::draw(Viewer_interface *viewer) const {
-  updateCurrentCube();
-
-
-
+ updateCurrentCube();
   GLdouble mat[16];
   viewer->camera()->getModelViewProjectionMatrix(mat);
   QMatrix4x4 mvp;
