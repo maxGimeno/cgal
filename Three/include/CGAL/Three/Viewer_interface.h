@@ -135,7 +135,7 @@ public:
     selection_mode = false;
 #endif
   }
-  virtual std::vector<QOpenGLShaderProgram*> getPrograms()const = 0;
+  virtual std::vector<QOpenGLShaderProgram*> getPrograms() = 0;
 
 Q_SIGNALS:
   //!Defined automatically in moc.

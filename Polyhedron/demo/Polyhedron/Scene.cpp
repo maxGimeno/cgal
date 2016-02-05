@@ -324,12 +324,8 @@ Scene::drawWithNames()
 void
 Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
 {
-   /* QOpenGLFunctions gl;
-    gl.initializeOpenGLFunctions();
-
     std::vector<shaders_info> original_shaders;
     QColor bgColor(viewer->backgroundColor());
-
     //draws the image in the fbo
     for(int index = 0; index < m_entries.size(); ++index)
     {
@@ -348,9 +344,10 @@ Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
         picking_fragment_source.append(QString::number(r)+","+QString::number(g)+","+QString::number(b)+",1.0); \n"
                                                                                                         "} \n"
                                                                                                         "\n");
-
-        Q_FOREACH(QOpenGLShaderProgram* viewer->d, item.shader_programs)
+        for(int i=0; i<viewer->NB_OF_PROGRAMS; i++)
         {
+          QOpenGLShaderProgram* program = viewer->getPrograms()[i];
+          if(program)
             for(int j=0; j<(int)program->shaders().size(); j++)
             {
                 if(program->shaders().at(j)->shaderType() == QOpenGLShader::Fragment)
@@ -358,7 +355,7 @@ Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
                     //copies the original shaders of each program
                     shaders_info c;
                     c.code = program->shaders().at(j)->sourceCode();
-                    c.program_index = item.shader_programs.key(program);
+                    c.program_index = i;
                     c.shader_index = j;
                     c.item_index = index;
                     original_shaders.push_back(c);
@@ -366,6 +363,7 @@ Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
                     program->shaders().at(j)->compileSourceCode(picking_fragment_source);
                 }
                 program->link();
+
             }
         }
         viewer->setBackgroundColor(::Qt::white);
@@ -374,6 +372,17 @@ Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
         {
             item.draw(viewer);
         }
+    //resets the originals programs
+    for(int i=0; i<(int)original_shaders.size(); i++)
+    {
+        //int entries_index = original_shaders[i].item_index;
+        int program_index = original_shaders[i].program_index;
+        int shader_index = original_shaders[i].shader_index;
+        viewer->getPrograms()[program_index]->shaders().at(shader_index)->compileSourceCode(original_shaders[i].code);
+        viewer->getPrograms()[program_index]->link();
+       // all_programs.push_back(viewer->getPrograms()[program_index]);
+        original_shaders.clear();
+    }
     }
     //determines the size of the buffer
     int deviceWidth = viewer->camera()->screenWidth();
@@ -381,30 +390,14 @@ Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
     int rowLength = deviceWidth * 4; // data asked in RGBA,so 4 bytes.
     const static int dataLength = rowLength * deviceHeight;
     GLubyte* buffer = new GLubyte[dataLength];
-
     // Qt uses upper corner for its origin while GL uses the lower corner.
     glReadPixels(picking_target.x(), deviceHeight-1-picking_target.y(), 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-    std::vector<QOpenGLShaderProgram*> all_programs(0);
-    //resets the originals programs
-    for(int i=0; i<(int)original_shaders.size(); i++)
-    {
-        int entries_index = original_shaders[i].item_index;
-        int program_index = original_shaders[i].program_index;
-        int shader_index = original_shaders[i].shader_index;
-        m_entries[entries_index]->shader_programs[program_index]->shaders().at(shader_index)->compileSourceCode(original_shaders[i].code);
-        m_entries[entries_index]->shader_programs[program_index]->link();
-        all_programs.push_back(m_entries[entries_index]->shader_programs[program_index]);
-
-    }
-
     int ID = (buffer[0] + buffer[1] * 256 +buffer[2] * 256*256);
-    //if the picked color is not white (background color)
     if(buffer[0]*buffer[1]*buffer[2] < 255*255*255)
         viewer->setSelectedName(ID);
     else
         viewer->setSelectedName(-1);
     viewer->setBackgroundColor(bgColor);
-    list_programs = all_programs;*/
 }
 
 void 

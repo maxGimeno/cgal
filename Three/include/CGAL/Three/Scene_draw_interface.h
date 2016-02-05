@@ -41,8 +41,6 @@ public:
   virtual bool keyPressEvent(QKeyEvent* e) = 0;
   virtual float get_bbox_length() const = 0;
 
-  std::vector<QOpenGLShaderProgram*> list_programs;
-
   QPoint picking_target;
 };
 }

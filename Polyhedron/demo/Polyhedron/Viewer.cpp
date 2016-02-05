@@ -380,9 +380,15 @@ void Viewer::postSelection(const QPoint& pixel)
     if(selection_mode)
     {
 #endif*/
-        qDebug()<<selection_mode;
   bool found = false;
-  qglviewer::Vec point = pointUnderPixelGLES(d->scene->list_programs,camera(),pixel, found);
+  std::vector<QOpenGLShaderProgram*> list;
+  for(int i=0; i<NB_OF_PROGRAMS; i++)
+  {
+    QOpenGLShaderProgram *program = d->shader_programs[i];
+    if(program)
+      list.push_back(program);
+  }
+  qglviewer::Vec point = pointUnderPixelGLES(list,camera(),pixel, found);
   if(found) {
     Q_EMIT selectedPoint(point.x,
                        point.y,
@@ -1303,7 +1309,7 @@ void Viewer::wheelEvent(QWheelEvent* e)
     else
         QGLViewer::wheelEvent(e);
 }
-std::vector<QOpenGLShaderProgram*> Viewer::getPrograms()const
+std::vector<QOpenGLShaderProgram*> Viewer::getPrograms()
 {
   return d->shader_programs;
 }
