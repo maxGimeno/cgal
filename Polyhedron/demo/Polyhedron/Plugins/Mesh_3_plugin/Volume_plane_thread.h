@@ -44,8 +44,8 @@ protected:
 template<typename Word>
 class X_plane_thread : public Volume_plane_thread {
 public:
-  X_plane_thread(Volume_plane<x_tag>*p_it, const CGAL::Image_3* img, const Clamp_to_one_zero_range& clamp, const QString& name)
-    : Volume_plane_thread(img, clamp, name) { item = p_it;}
+  X_plane_thread(Volume_plane<x_tag>* p_it, const CGAL::Image_3* img, const Clamp_to_one_zero_range& clamp, const QString& name)
+    : Volume_plane_thread(img, clamp, name) {item = p_it; }
 protected:
   void run();
 };

@@ -38,7 +38,9 @@
 
 #include <boost/type_traits.hpp>
 #include <boost/optional.hpp>
-
+#if ANDROID
+#include <QMutex>
+#endif
 // Covariant return types don't work for scalar types and we cannot
 // have templates here, hence this unfortunate hack.
 
@@ -164,7 +166,6 @@ public:
     return qobject_cast<Scene_segmented_image_item*>(scene->item(scene->mainSelectionIndex()));
   }
 
-
   void init(QMainWindow* mainWindow, CGAL::Three::Scene_interface* scene_interface) {
     this->scene = scene_interface;
     this->mw = mainWindow;
@@ -235,18 +236,17 @@ public Q_SLOTS:
   }
 
   void addVP(Volume_plane_thread* thread) {
+#if ANDROID
+    mutex.lock();
+#endif
     Volume_plane_interface* plane = thread->getItem();
     plane->init();
-
     // add the interface for this Volume_plane
     int id = scene->addItem(plane);
-    
     QLayout* layout = createOrGetDockLayout();
-    
     QWidget* controls = new QWidget;
     QHBoxLayout* box = new QHBoxLayout(controls);
     layout->addWidget(controls);
-
     QLabel* label = new QLabel(controls);
     label->setText(plane->name());
 
@@ -267,18 +267,18 @@ public Q_SLOTS:
     box->addWidget(label);
     box->addWidget(slider);
     box->addWidget(cubeLabel);
-    
     connect(plane, SIGNAL(aboutToBeDestroyed()), controls, SLOT(deleteLater()));
 
     std::vector<Volume_plane_thread*>::iterator it = std::find(threads.begin(), threads.end(), thread);
-
     // this slot has been connected to a thread that hasn't been
     // registered here.
     assert(it != threads.end());
     delete *it;
     threads.erase(it);
-
     Volume_plane_intersection* intersection = dynamic_cast<Volume_plane_intersection*>(scene->item(intersectionId));
+#if ANDROID
+    mutex.unlock();
+#endif
     if(!intersection) {
       // the intersection is gone before it was initialized
       return;
@@ -292,12 +292,14 @@ public Q_SLOTS:
     } else if(Volume_plane<z_tag>* p = dynamic_cast< Volume_plane<z_tag>* >(plane)) {
       intersection->setZ(p);
     }
-
     connect(plane, SIGNAL(planeDestructionIncoming(Volume_plane_interface*)), 
             intersection, SLOT(planeRemoved(Volume_plane_interface*)));
   }
  
 private:
+#if ANDROID
+  QMutex mutex;
+#endif
   QAction* planeSwitch;
   PixelReader pxr_;
 
@@ -353,7 +355,7 @@ private:
     Volume_plane<x_tag> *xitem = new Volume_plane<x_tag>();
     Volume_plane<y_tag> *yitem = new Volume_plane<y_tag>();
     Volume_plane<z_tag> *zitem = new Volume_plane<z_tag>();
-    threads.push_back(new X_plane_thread<Word>(xitem, img, clamper, name));
+    threads.push_back(new X_plane_thread<Word>(xitem,img, clamper, name));
     connect(threads.back(), SIGNAL(finished(Volume_plane_thread*)), this, SLOT(addVP(Volume_plane_thread*)));
     threads.back()->start();
     threads.push_back(new Y_plane_thread<Word>(yitem,img, clamper, name));

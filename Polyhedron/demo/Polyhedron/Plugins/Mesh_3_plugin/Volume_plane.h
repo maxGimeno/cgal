@@ -283,7 +283,6 @@ Volume_plane<T>::~Volume_plane() {
       it != ebos.end(); ++it) { 
       it->first.destroy();
   }
-  program.release();
 }
 
 template<typename T>
@@ -368,16 +367,15 @@ void Volume_plane<T>::init() {
   // for each vertex
   std::vector< float > vertices;
   vertices.reserve(bdim_ * adim_ * 3);
-  for(unsigned int i = 0; i < adim_; ++i) 
+  for(unsigned int i = 0; i < adim_; ++i)
   {
     for(unsigned int j = 0; j < bdim_; ++j)
     {
       buildVertex(vertices, i, j);
     }
   }
-    
-  assert(vertices.size() == (3 * adim_ * bdim_));
 
+  assert(vertices.size() == (3 * adim_ * bdim_));
   int maxi, maxv;
 #if !ANDROID
   glGetIntegerv(GL_MAX_ELEMENTS_INDICES, &maxi);
@@ -439,6 +437,15 @@ void Volume_plane<T>::init() {
   cbuffer.bind();
   cbuffer.allocate(colors_.data(),static_cast<int>(colors_.size()*sizeof(float)));
   cbuffer.release();
+
+  vertices.resize(0);
+  std::vector<float>(vertices).swap(vertices);
+
+  indices.resize(0);
+  std::vector<unsigned int>(indices).swap(indices);
+
+  colors_.resize(0);
+  std::vector<float>(colors_).swap(colors_);
 
   printGlError(__LINE__);
 }
