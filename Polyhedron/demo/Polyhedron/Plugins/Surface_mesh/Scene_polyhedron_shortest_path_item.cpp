@@ -396,6 +396,9 @@ bool Scene_polyhedron_shortest_path_item::run_point_select(const Ray_3& ray)
 
 bool Scene_polyhedron_shortest_path_item::eventFilter(QObject* /*target*/, QEvent* event)
 {
+  QGLViewer* v = *QGLViewer::QGLViewerPool().begin();
+  CGAL::Three::Viewer_interface* viewer = dynamic_cast<CGAL::Three::Viewer_interface*>(v);
+
   if(event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease)
   {
     QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
@@ -403,7 +406,7 @@ bool Scene_polyhedron_shortest_path_item::eventFilter(QObject* /*target*/, QEven
     m_shiftHeld = modifiers.testFlag(Qt::ShiftModifier);
   }
   
-  if (event->type() == QEvent::MouseButtonPress && m_shiftHeld)
+  if (event->type() == QEvent::MouseButtonPress && (m_shiftHeld || viewer->shift_pressed))
   {
     QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
     if(mouseEvent->button() == Qt::LeftButton) 
