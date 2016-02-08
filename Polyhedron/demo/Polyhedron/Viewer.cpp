@@ -42,6 +42,7 @@ Viewer::Viewer(QWidget* parent, bool antialiasing)
   d->inFastDrawing = true;
   d->shader_programs.resize(NB_OF_PROGRAMS);
   shift_pressed = false;
+  no_picking = false;
   setShortcut(EXIT_VIEWER, 0);
   setShortcut(DRAW_AXIS, 0);
   setKeyDescription(Qt::Key_T,
@@ -355,7 +356,7 @@ void Viewer_impl::draw_aux(bool with_names, Viewer* viewer)
     viewer->glBlendFunc(GL_ONE, GL_ZERO);
   }
 #endif
-  if(with_names)
+  if(with_names && !viewer->no_picking)
     scene->drawWithNames(viewer);
   else
     scene->draw(viewer);

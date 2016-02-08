@@ -60,6 +60,7 @@ public:
   mutable int is_two_sides;
   mutable std::vector<QOpenGLShaderProgram*> program_list;
   bool shift_pressed;
+  bool no_picking;
   //! Sets the scene for the viewer.
   virtual void setScene(CGAL::Three::Scene_draw_interface* scene) = 0;
   //! @returns the antialiasing state.

@@ -202,6 +202,7 @@ protected:
     }
     // mouse events
     if(event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease) {
+      viewer->no_picking =true;
       QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
       if(mouse_event->button() == Qt::LeftButton) {
         state.left_button_pressing = event->type() == QEvent::MouseButtonPress;
@@ -237,7 +238,12 @@ protected:
         const qglviewer::Vec& dir = point - orig;
         poly_item->select(orig.x, orig.y, orig.z, dir.x, dir.y, dir.z);
       }
-    }//end MouseMove
+    }
+    else if(event->type() == QEvent::MouseButtonRelease
+            && static_cast<QMouseEvent*>(event)->button() == Qt::LeftButton)
+    {
+      viewer->no_picking = false;
+  }//end MouseMove
     return false;
   }
 };
