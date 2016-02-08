@@ -43,7 +43,12 @@ public:
   Scene_polyhedron_item* poly_item;
   bool is_active;
 
-  Scene_polyhedron_item_k_ring_selection() {cadencer.start();}
+  Scene_polyhedron_item_k_ring_selection()
+  {
+    startTimer(0);
+    top = true;
+    cadencer.start();
+  }
 
   Scene_polyhedron_item_k_ring_selection
     (Scene_polyhedron_item* poly_item, QMainWindow* mw, Active_handle::Type aht, int k_ring)
@@ -51,7 +56,13 @@ public:
   {
     init(poly_item, mw, aht, k_ring);
     cadencer.start();
+    startTimer(0);
+    top = true;
+  }
 
+  void timerEvent(QTimerEvent* /*event*/)
+  {
+    top = true;
   }
 
   void init(Scene_polyhedron_item* poly_item, QMainWindow* /*mw*/, Active_handle::Type aht, int k_ring) {
@@ -105,6 +116,7 @@ Q_SIGNALS:
 
 protected:
 
+  bool top;
   QTime cadencer;
   template<class HandleType>
   void process_selection(HandleType clicked) {
@@ -202,7 +214,6 @@ protected:
     }
     // mouse events
     if(event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease) {
-      viewer->no_picking =true;
       QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
       if(mouse_event->button() == Qt::LeftButton) {
         state.left_button_pressing = event->type() == QEvent::MouseButtonPress;
@@ -217,36 +228,38 @@ protected:
       else if(mouse_event->button() == Qt::RightButton) {
           state.left_button_pressing = false;
           state.shift_pressing = false;
-        }
+      }
     }
     // use mouse move event for paint-like selection
     if( (event->type() == QEvent::MouseMove
          || (event->type() == QEvent::MouseButtonPress
              && static_cast<QMouseEvent*>(event)->button() == Qt::LeftButton))
-      && ((state.shift_pressing || viewer->shift_pressed) && state.left_button_pressing) )
+        && ((state.shift_pressing || viewer->shift_pressed) && state.left_button_pressing) )
     {
-      viewer->no_picking = true;
-      // paint with mouse move event
-      QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
-      QGLViewer* v = *QGLViewer::QGLViewerPool().begin();
-      CGAL::Three::Viewer_interface *viewer = qobject_cast<CGAL::Three::Viewer_interface *>(v);
-      qglviewer::Camera* camera = viewer->camera();
-
-      bool found = false;
-      viewer->getShaderProgram(viewer->PROGRAM_NO_SELECTION);
-      const qglviewer::Vec& point = viewer->pointUnderPixelGLES(viewer->getPrograms(), camera, mouse_event->pos(), found);
-      if(found)
+      if(top)
       {
-        const qglviewer::Vec& orig = camera->position();
-        const qglviewer::Vec& dir = point - orig;
-        poly_item->select(orig.x, orig.y, orig.z, dir.x, dir.y, dir.z);
+        top = false;
+        // paint with mouse move event
+        QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
+        QGLViewer* v = *QGLViewer::QGLViewerPool().begin();
+        CGAL::Three::Viewer_interface *viewer = qobject_cast<CGAL::Three::Viewer_interface *>(v);
+        qglviewer::Camera* camera = viewer->camera();
+
+        bool found = false;
+        viewer->getShaderProgram(viewer->PROGRAM_NO_SELECTION);
+        const qglviewer::Vec& point = viewer->pointUnderPixelGLES(viewer->getPrograms(), camera, mouse_event->pos(), found);
+        if(found)
+        {
+          const qglviewer::Vec& orig = camera->position();
+          const qglviewer::Vec& dir = point - orig;
+          poly_item->select(orig.x, orig.y, orig.z, dir.x, dir.y, dir.z);
+        }
       }
     }
     else if(event->type() == QEvent::MouseButtonRelease
             && static_cast<QMouseEvent*>(event)->button() == Qt::LeftButton)
     {
-      viewer->no_picking = false;
-  }//end MouseMove
+    }//end MouseMove
     return false;
   }
 };

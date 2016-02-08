@@ -290,9 +290,15 @@ public:
       if(!viewer)
           return;
       if(!b)
+      {
         viewer->setBindingSelect();
+        viewer->no_picking = true;
+      }
       else
+      {
         viewer->setNoBinding();
+        viewer->no_picking = false;
+      }
   }
   void compute_bbox() const
   {

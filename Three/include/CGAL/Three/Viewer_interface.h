@@ -121,6 +121,7 @@ public:
 
 #if ANDROID
     selection_mode = true;
+    qDebug()<<"sel_mode = true";
 #endif
 
   }
@@ -134,6 +135,7 @@ public:
 #endif
 #if ANDROID
     selection_mode = false;
+    qDebug()<<"sel_mode = false;";
 #endif
   }
   virtual std::vector<QOpenGLShaderProgram*> getPrograms() = 0;
