@@ -471,6 +471,8 @@ QString Viewer::dumpCameraCoordinates()
 
 void Viewer::attrib_buffers(int program_name) const {
     GLint is_both_sides = 0;
+    if(d->twosides)
+      is_both_sides = 1;
     //ModelViewMatrix used for the transformation of the camera.
     QMatrix4x4 mvp_mat;
     // ModelView Matrix used for the lighting system

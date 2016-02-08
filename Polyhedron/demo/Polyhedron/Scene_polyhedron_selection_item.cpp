@@ -174,17 +174,19 @@ void Scene_polyhedron_selection_item::draw(CGAL::Three::Viewer_interface* viewer
     GLfloat offset_units;
     viewer->glGetFloatv( GL_POLYGON_OFFSET_FACTOR, &offset_factor);
     viewer->glGetFloatv(GL_POLYGON_OFFSET_UNITS, &offset_units);
-    glPolygonOffset(-1.f, 1.f);
 
     vaos[0]->bind();
     program = getShaderProgram(PROGRAM_WITH_LIGHT);
     attrib_buffers(viewer,PROGRAM_WITH_LIGHT);
     program->bind();
     program->setAttributeValue("colors",facet_color);
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(-0.9f, -0.9f);
     viewer->glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(nb_facets/3));
     program->release();
     vaos[0]->release();
     glPolygonOffset(offset_factor, offset_units);
+    glDisable(GL_POLYGON_OFFSET_FILL);
     draw_edges(viewer);
 
 
