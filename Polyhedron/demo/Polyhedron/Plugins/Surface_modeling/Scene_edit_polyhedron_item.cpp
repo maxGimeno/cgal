@@ -295,7 +295,14 @@ void Scene_edit_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interfac
     }
     if(program_list_is_empty)
     {
-    k_ring_selector.edit_programs = viewer->getPrograms();
+      std::vector<QOpenGLShaderProgram*> list;
+      for(int i=0; i<viewer->NB_OF_PROGRAMS; i++)
+      {
+        QOpenGLShaderProgram* program = viewer->getPrograms[i];
+        if(program)
+          list.push_back(program);
+      }
+    k_ring_selector.edit_programs = list;
     program_list_is_empty = false;
     }
     //vao for the frame plane

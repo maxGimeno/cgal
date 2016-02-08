@@ -339,8 +339,8 @@ Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
         float b = B/255.0;
         //The fragmentertex source code
         QString picking_fragment_source(
-                    "void main(void) { \n"
-                    "gl_FragColor = vec4(");
+              "void main(void) { \n"
+              "gl_FragColor = vec4(");
         picking_fragment_source.append(QString::number(r)+","+QString::number(g)+","+QString::number(b)+",1.0); \n"
                                                                                                         "} \n"
                                                                                                         "\n");
@@ -350,19 +350,19 @@ Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
           if(program)
             for(int j=0; j<(int)program->shaders().size(); j++)
             {
-                if(program->shaders().at(j)->shaderType() == QOpenGLShader::Fragment)
-                {
-                    //copies the original shaders of each program
-                    shaders_info c;
-                    c.code = program->shaders().at(j)->sourceCode();
-                    c.program_index = i;
-                    c.shader_index = j;
-                    c.item_index = index;
-                    original_shaders.push_back(c);
-                    //replace their fragment shaders so they display with the picking color
-                    program->shaders().at(j)->compileSourceCode(picking_fragment_source);
-                }
-                program->link();
+              if(program->shaders().at(j)->shaderType() == QOpenGLShader::Fragment)
+              {
+                //copies the original shaders of each program
+                shaders_info c;
+                c.code = program->shaders().at(j)->sourceCode();
+                c.program_index = i;
+                c.shader_index = j;
+                c.item_index = index;
+                original_shaders.push_back(c);
+                //replace their fragment shaders so they display with the picking color
+                program->shaders().at(j)->compileSourceCode(picking_fragment_source);
+              }
+              program->link();
 
             }
         }
@@ -370,19 +370,17 @@ Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
 
         if(item.visible())
         {
-            item.draw(viewer);
+          item.draw(viewer);
         }
-    //resets the originals programs
-    for(int i=0; i<(int)original_shaders.size(); i++)
-    {
-        //int entries_index = original_shaders[i].item_index;
-        int program_index = original_shaders[i].program_index;
-        int shader_index = original_shaders[i].shader_index;
-        viewer->getPrograms()[program_index]->shaders().at(shader_index)->compileSourceCode(original_shaders[i].code);
-        viewer->getPrograms()[program_index]->link();
-       // all_programs.push_back(viewer->getPrograms()[program_index]);
+        //resets the originals programs
+        for(int i=0; i<(int)original_shaders.size(); i++)
+        {
+          int program_index = original_shaders[i].program_index;
+          int shader_index = original_shaders[i].shader_index;
+          viewer->getPrograms()[program_index]->shaders().at(shader_index)->compileSourceCode(original_shaders[i].code);
+          viewer->getPrograms()[program_index]->link();
+        }
         original_shaders.clear();
-    }
     }
     //determines the size of the buffer
     int deviceWidth = viewer->camera()->screenWidth();

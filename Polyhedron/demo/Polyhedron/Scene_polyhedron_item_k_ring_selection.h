@@ -225,13 +225,16 @@ protected:
              && static_cast<QMouseEvent*>(event)->button() == Qt::LeftButton))
       && ((state.shift_pressing || viewer->shift_pressed) && state.left_button_pressing) )
     {
+      viewer->no_picking = true;
       // paint with mouse move event
       QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
-      QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
+      QGLViewer* v = *QGLViewer::QGLViewerPool().begin();
+      CGAL::Three::Viewer_interface *viewer = qobject_cast<CGAL::Three::Viewer_interface *>(v);
       qglviewer::Camera* camera = viewer->camera();
 
       bool found = false;
-      const qglviewer::Vec& point = viewer->pointUnderPixelGLES(edit_programs, camera, mouse_event->pos(), found);
+      viewer->getShaderProgram(viewer->PROGRAM_NO_SELECTION);
+      const qglviewer::Vec& point = viewer->pointUnderPixelGLES(viewer->getPrograms(), camera, mouse_event->pos(), found);
       if(found)
       {
         const qglviewer::Vec& orig = camera->position();
