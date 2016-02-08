@@ -407,7 +407,7 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
 
     /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_plugin.so
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_to_nef_plugin.so
-#   /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_to_xyz_plugin.so
+   /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_to_xyz_plugin.so
 
                                             #########
                                             ## PMP ##
@@ -426,7 +426,7 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libpolyhedron_slicer_plugin.so
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libpolyhedron_stitching_plugin.so
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/librepair_polyhedron_plugin.so
-    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libselection_plugin.so
+    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libselection_plugin.so
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libself_intersection_plugin.so
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libtriangulate_facets_plugin.so
 
@@ -481,7 +481,7 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_bilateral_smoothing_plugin.so
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_normal_estimation_plugin.so
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_outliers_removal_plugin.so
- #   /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_selection_plugin.so
+    /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_selection_plugin.so
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_shape_detection_plugin.so
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_simplification_plugin.so
     #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_smoothing_plugin.so

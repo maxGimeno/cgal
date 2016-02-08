@@ -244,7 +244,9 @@ protected:
       return false; 
     }
     int item_id = scene->item_id (point_set_item);
-      
+    QGLViewer* v = *QGLViewer::QGLViewerPool().begin();
+    CGAL::Three::Viewer_interface* viewer = dynamic_cast<CGAL::Three::Viewer_interface*>(v);
+
     if(event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease)  {
       QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
       Qt::KeyboardModifiers modifiers = keyEvent->modifiers();
@@ -253,14 +255,14 @@ protected:
     }
 
     // mouse events
-    if(shift_pressing && event->type() == QEvent::MouseButtonPress)
+    if((shift_pressing || viewer->shift_pressed) && event->type() == QEvent::MouseButtonPress)
       {
+      viewer->no_picking = true;
 	QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
 	// Start selection
 	if (mouseEvent->button() == Qt::LeftButton && !visualizer)
-	  {
+          {
 	    QApplication::setOverrideCursor(Qt::CrossCursor);
-	    QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
 	    if (viewer->camera()->frame()->isSpinning())
 	      viewer->camera()->frame()->stopSpinning();
 	
@@ -275,18 +277,18 @@ protected:
 	
 	    scene->setSelectedItem(item_id);
 	    visualizer->sample_mouse_path();
-	    return true;
+            viewer->no_picking = false;
+            return true;
 	  }
 	// Cancel selection
 	else if (mouseEvent->button() == Qt::RightButton && visualizer)
-	  {
-
+          {
 	    scene->erase( scene->item_id(visualizer) );
 	    scene->setSelectedItem(item_id);
 	    visualizer = NULL;
 	    QApplication::restoreOverrideCursor();
 	    return true;
-	  }
+          }
 
       }
     // End selection
@@ -303,7 +305,9 @@ protected:
     // Update selection
     else if (event->type() == QEvent::MouseMove && visualizer)
       {
+        viewer->no_picking = true;
 	visualizer->sample_mouse_path();
+        viewer->no_picking = false;
 	return true;
       }
 
