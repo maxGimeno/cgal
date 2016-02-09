@@ -991,6 +991,12 @@ bool Viewer::event(QEvent *e)
 
 QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
 {
+  QString path = "";
+#if ANDROID
+  path = ":/shaders/resources/Shaders_es/";
+#else
+  path = ":/shaders/resources/Shaders_desktop/";
+#endif
     // workaround constness issues in Qt
     Viewer* viewer = const_cast<Viewer*>(this);
 
@@ -1007,11 +1013,11 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
         {
 
             QOpenGLShaderProgram *program = new QOpenGLShaderProgram(viewer);
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,":/cgal/Polyhedron_3/resources/shader_c3t3.v"))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,QString("%1").arg(path).append("shader_c3t3.v")))
             {
                 std::cerr<<"adding vertex shader FAILED"<<std::endl;
             }
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,":/cgal/Polyhedron_3/resources/shader_c3t3.f"))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,QString("%1").arg(path).append("shader_c3t3.f")))
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
@@ -1031,11 +1037,11 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
         {
 
             QOpenGLShaderProgram *program = new QOpenGLShaderProgram(viewer);
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,":/cgal/Polyhedron_3/resources/shader_c3t3_edges.v"))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,QString("%1").arg(path).append("shader_c3t3_edges.v")))
             {
                 std::cerr<<"adding vertex shader FAILED"<<std::endl;
             }
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,":/cgal/Polyhedron_3/resources/shader_c3t3_edges.f"))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,QString("%1").arg(path).append("shader_c3t3_edges.f")))
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
@@ -1055,11 +1061,11 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
         {
 
             QOpenGLShaderProgram *program = new QOpenGLShaderProgram(viewer);
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,":/cgal/Polyhedron_3/resources/shader_with_light.v"))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,(QString("%1").arg(path)).append("shader_with_light.v")))
             {
                 std::cerr<<"adding vertex shader FAILED"<<std::endl;
             }
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,":/cgal/Polyhedron_3/resources/shader_with_light.f"))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,(QString("%1").arg(path)).append("shader_with_light.f")))
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
@@ -1077,11 +1083,11 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
         else
         {
             QOpenGLShaderProgram *program = new QOpenGLShaderProgram(viewer);
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,":/cgal/Polyhedron_3/resources/shader_without_light.v"))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,QString("%1").arg(path).append("shader_without_light.v")))
             {
                 std::cerr<<"adding vertex shader FAILED"<<std::endl;
             }
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,":/cgal/Polyhedron_3/resources/shader_without_light.f"))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,QString("%1").arg(path).append("shader_without_light.f")))
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
@@ -1099,11 +1105,11 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
         else
         {
             QOpenGLShaderProgram *program = new QOpenGLShaderProgram(viewer);
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,":/cgal/Polyhedron_3/resources/shader_without_light.v"))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,QString("%1").arg(path).append("shader_without_light.v")))
             {
                 std::cerr<<"adding vertex shader FAILED"<<std::endl;
             }
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,":/cgal/Polyhedron_3/resources/shader_no_light_no_selection.f"))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,QString("%1").arg(path).append("shader_no_light_no_selection.f")))
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
@@ -1121,11 +1127,11 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
         else
         {
             QOpenGLShaderProgram *program = new QOpenGLShaderProgram(viewer);
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,":/cgal/Polyhedron_3/resources/shader_with_texture.v"))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,QString("%1").arg(path).append("shader_with_texture.v")))
             {
                 std::cerr<<"adding vertex shader FAILED"<<std::endl;
             }
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,":/cgal/Polyhedron_3/resources/shader_with_texture.f"))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,QString("%1").arg(path).append("shader_with_texture.f")))
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
@@ -1145,11 +1151,11 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
         {
 
             QOpenGLShaderProgram *program = new QOpenGLShaderProgram(viewer);
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,":/cgal/Polyhedron_3/resources/shader_without_light.v"))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,QString("%1").arg(path).append("shader_without_light.v")))
             {
                 std::cerr<<"adding vertex shader FAILED"<<std::endl;
             }
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,":/cgal/Polyhedron_3/resources/shader_plane_two_faces.f"))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,QString("%1").arg(path).append("shader_plane_two_faces.f")))
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
@@ -1168,11 +1174,11 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
         else
         {
             QOpenGLShaderProgram *program = new QOpenGLShaderProgram(viewer);
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,":/cgal/Polyhedron_3/resources/shader_with_textured_edges.v" ))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,QString("%1").arg(path).append("shader_with_textured_edges.v" )))
             {
                 std::cerr<<"adding vertex shader FAILED"<<std::endl;
             }
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,":/cgal/Polyhedron_3/resources/shader_with_textured_edges.f" ))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,QString("%1").arg(path).append("shader_with_textured_edges.f" )))
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
@@ -1191,11 +1197,11 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
         else
         {
             QOpenGLShaderProgram *program = new QOpenGLShaderProgram(viewer);
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,":/cgal/Polyhedron_3/resources/shader_instanced.v" ))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,QString("%1").arg(path).append("shader_instanced.v" )))
             {
                 std::cerr<<"adding vertex shader FAILED"<<std::endl;
             }
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,":/cgal/Polyhedron_3/resources/shader_with_light.f" ))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,QString("%1").arg(path).append("shader_with_light.f" )))
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }
@@ -1214,11 +1220,11 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
         else
         {
             QOpenGLShaderProgram *program = new QOpenGLShaderProgram(viewer);
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,":/cgal/Polyhedron_3/resources/shader_instanced.v" ))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Vertex,QString("%1").arg(path).append("shader_instanced.v" )))
             {
                 std::cerr<<"adding vertex shader FAILED"<<std::endl;
             }
-            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,":/cgal/Polyhedron_3/resources/shader_without_light.f" ))
+            if(!program->addShaderFromSourceFile(QOpenGLShader::Fragment,QString("%1").arg(path).append("shader_without_light.f" )))
             {
                 std::cerr<<"adding fragment shader FAILED"<<std::endl;
             }

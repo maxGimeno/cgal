@@ -24,25 +24,7 @@
     <qresource prefix="/cgal/Polyhedron_3">
         <file alias="about.html">resources/about.html</file>
     </qresource>
-    <qresource prefix="/shaders_desktop">
-        <file>resources/Shader_desktop/shader_c3t3_edges.f</file>
-        <file>resources/Shader_desktop/shader_c3t3_edges.v</file>
-        <file>resources/Shader_desktop/shader_c3t3.f</file>
-        <file>resources/Shader_desktop/shader_c3t3.v</file>
-        <file>resources/Shader_desktop/shader_instanced.v</file>
-        <file>resources/Shader_desktop/shader_no_light_no_selection.f</file>
-        <file>resources/Shader_desktop/shader_plane_two_faces.f</file>
-        <file>resources/Shader_desktop/shader_translate.v</file>
-        <file>resources/Shader_desktop/shader_with_light.f</file>
-        <file>resources/Shader_desktop/shader_with_texture.v</file>
-        <file>resources/Shader_desktop/shader_with_light.v</file>
-        <file>resources/Shader_desktop/shader_with_texture.f</file>
-        <file>resources/Shader_desktop/shader_without_light.f</file>
-        <file>resources/Shader_desktop/shader_without_light.v</file>
-        <file>resources/Shader_desktop/shader_with_textured_edges.f</file>
-        <file>resources/Shader_desktop/shader_with_textured_edges.v</file>
-    </qresource>
-    <qresource prefix="/shaders_es">
+    <qresource prefix="/shaders">
         <file>resources/Shaders_es/shader_c3t3_edges.f</file>
         <file>resources/Shaders_es/shader_c3t3_edges.v</file>
         <file>resources/Shaders_es/shader_c3t3.f</file>
@@ -59,5 +41,21 @@
         <file>resources/Shaders_es/shader_with_textured_edges.v</file>
         <file>resources/Shaders_es/shader_without_light.f</file>
         <file>resources/Shaders_es/shader_without_light.v</file>
+        <file>resources/Shaders_desktop/shader_c3t3_edges.f</file>
+        <file>resources/Shaders_desktop/shader_c3t3_edges.v</file>
+        <file>resources/Shaders_desktop/shader_c3t3.f</file>
+        <file>resources/Shaders_desktop/shader_c3t3.v</file>
+        <file>resources/Shaders_desktop/shader_instanced.v</file>
+        <file>resources/Shaders_desktop/shader_no_light_no_selection.f</file>
+        <file>resources/Shaders_desktop/shader_plane_two_faces.f</file>
+        <file>resources/Shaders_desktop/shader_translate.v</file>
+        <file>resources/Shaders_desktop/shader_with_light.f</file>
+        <file>resources/Shaders_desktop/shader_with_light.v</file>
+        <file>resources/Shaders_desktop/shader_with_texture.f</file>
+        <file>resources/Shaders_desktop/shader_with_texture.v</file>
+        <file>resources/Shaders_desktop/shader_with_textured_edges.f</file>
+        <file>resources/Shaders_desktop/shader_with_textured_edges.v</file>
+        <file>resources/Shaders_desktop/shader_without_light.f</file>
+        <file>resources/Shaders_desktop/shader_without_light.v</file>
     </qresource>
 </RCC>

@@ -76,7 +76,11 @@ void Scene_c3t3_item::compile_shaders()
     }
 
     if(!program_sphere->addShaderFromSourceFile(QOpenGLShader::Fragment,
-                                                ":/cgal/Polyhedron_3/resources/shader_c3t3.f"
+                                            #if !ANDROID
+                                                ":/shaders/resources/Shaders_desktop/shader_c3t3.f"
+                                            #else
+                                                ":/shaders/resources/Shaders_es/shader_c3t3.f"
+                                            #endif
                                                 ))
     {
         std::cerr<<"adding fragment shader FAILED"<<std::endl;
