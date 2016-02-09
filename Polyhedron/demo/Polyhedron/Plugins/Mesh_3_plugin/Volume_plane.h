@@ -223,7 +223,9 @@ private:
 
 template<typename T>
 const char* Volume_plane<T>::vertexShader_source =
-
+  #if !ANDROID
+      "#version 120"
+  #endif
       "attribute highp vec4 vertex; \n"
       "attribute highp float color; \n"
       "uniform highp mat4 mvp_matrix; \n"
@@ -235,13 +237,17 @@ const char* Volume_plane<T>::vertexShader_source =
 
 template<typename T>
 const char* Volume_plane<T>::fragmentShader_source =
-
+  #if !ANDROID
+      "#version 120"
+  #endif
       "varying highp vec4 fullColor; \n"
       "void main() { gl_FragColor = fullColor; } \n";
 
 template<typename T>
 const char* Volume_plane<T>::vertexShader_bordures_source =
-
+  #if !ANDROID
+      "#version 120"
+  #endif
       "attribute highp vec4 vertex; \n"
       "uniform highp vec4 color; \n"
       "uniform highp mat4 mvp_matrix; \n"
@@ -253,7 +259,9 @@ const char* Volume_plane<T>::vertexShader_bordures_source =
 
 template<typename T>
 const char* Volume_plane<T>::fragmentShader_bordures_source =
-
+  #if !ANDROID
+      "#version 120"
+  #endif
       "varying highp vec4 fullColor; \n"
       "void main() { gl_FragColor = fullColor; } \n";
 
@@ -440,6 +448,7 @@ void Volume_plane<T>::init() {
 
   vertices.resize(0);
   std::vector<float>(vertices).swap(vertices);
+  qDebug()<<"plouf";
 
   indices.resize(0);
   std::vector<unsigned int>(indices).swap(indices);

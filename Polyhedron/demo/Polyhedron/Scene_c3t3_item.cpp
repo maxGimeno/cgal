@@ -35,6 +35,9 @@ void Scene_c3t3_item::compile_shaders()
     //Source code
     const char vertex_source[] =
     {
+  #if !ANDROID
+        "#version 120"
+  #endif
         "attribute highp vec4 vertex;                                                                             \n"
         "attribute highp vec3 normals;                                                                            \n"
         "attribute highp vec3 colors;                                                                             \n"
@@ -71,7 +74,10 @@ void Scene_c3t3_item::compile_shaders()
     {
         std::cerr<<"adding vertex shader FAILED"<<std::endl;
     }
-    if(!program_sphere->addShaderFromSourceFile(QOpenGLShader::Fragment,":/cgal/Polyhedron_3/resources/shader_c3t3.f" ))
+
+    if(!program_sphere->addShaderFromSourceFile(QOpenGLShader::Fragment,
+                                                ":/cgal/Polyhedron_3/resources/shader_c3t3.f"
+                                                ))
     {
         std::cerr<<"adding fragment shader FAILED"<<std::endl;
     }

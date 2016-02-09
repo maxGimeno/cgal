@@ -339,6 +339,9 @@ Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
         float b = B/255.0;
         //The fragmentertex source code
         QString picking_fragment_source(
+      #if !ANDROID
+              "#version 120"
+      #endif
               "void main(void) { \n"
               "gl_FragColor = vec4(");
         picking_fragment_source.append(QString::number(r)+","+QString::number(g)+","+QString::number(b)+",1.0); \n"

@@ -441,6 +441,9 @@ void Scene_segmented_image_item::compile_shaders()
     //Vertex source code
     const char vertex_source[] =
     {
+  #if !ANDROID
+        "#version 120"
+  #endif
         "attribute highp vec4 vertex;\n"
         "attribute highp vec3 normal;\n"
         "attribute highp vec4 inColor;\n"
@@ -461,6 +464,9 @@ void Scene_segmented_image_item::compile_shaders()
     //Fragment source code
     const char fragment_source[] =
     {
+  #if !ANDROID
+        "#version 120"
+  #endif
         "varying highp vec4 fP; \n"
         "varying highp vec3 fN; \n"
         "varying highp vec4 color; \n"
