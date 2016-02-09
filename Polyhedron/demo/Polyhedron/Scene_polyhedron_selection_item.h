@@ -224,8 +224,11 @@ public:
     }
 
    ~Scene_polyhedron_selection_item()
-    {
-    }
+  {
+    QGLViewer* v = *QGLViewer::QGLViewerPool().begin();
+    CGAL::Three::Viewer_interface* viewer = dynamic_cast<CGAL::Three::Viewer_interface*>(v);
+    viewer->no_picking = false;
+  }
 
 protected: 
   void init(Scene_polyhedron_item* poly_item, QMainWindow* mw)
@@ -289,15 +292,17 @@ public:
       CGAL::Three::Viewer_interface* viewer = dynamic_cast<CGAL::Three::Viewer_interface*>(v);
       if(!viewer)
           return;
-      if(!b)
+      if(b && viewer->shift_pressed)
       {
         viewer->setBindingSelect();
         viewer->no_picking = true;
+        is_selected = true;
       }
       else
       {
         viewer->setNoBinding();
         viewer->no_picking = false;
+        is_selected = false;
       }
   }
   void compute_bbox() const
