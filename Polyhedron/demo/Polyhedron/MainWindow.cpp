@@ -307,6 +307,7 @@ MainWindow::MainWindow(QWidget* parent)
   debugger->setAutoShowStandardWindow(false);
   debugger->attachTo(script_engine);
 #  endif // QT_SCRIPTTOOLS_LIB
+#if ANDROID
   QDockWidget* controls = new QDockWidget(tr("Controls"), this);
   controls->setObjectName("controls");
   QWidget *dock_contain = new QWidget(controls);
@@ -323,7 +324,7 @@ MainWindow::MainWindow(QWidget* parent)
   dock_contain->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed));
   controls->setWidget(dock_contain);
   this->addDockWidget(Qt::LeftDockWidgetArea, controls);
-
+#endif
   QScriptValue fun = script_engine->newFunction(myPrintFunction);
   script_engine->globalObject().setProperty("print", fun);
 

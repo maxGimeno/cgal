@@ -357,10 +357,21 @@ void Viewer_impl::draw_aux(bool with_names, Viewer* viewer)
           glDisable(GL_MULTISAMPLE);
       }
 #else
-    viewer->glDisable(GL_BLEND);
-    viewer->glDisable(GL_LINE_SMOOTH);
-    viewer->glHint(GL_LINE_SMOOTH_HINT, GL_FASTEST);
-    viewer->glBlendFunc(GL_ONE, GL_ZERO);
+
+  if(antialiasing)
+    {
+      viewer->glEnable(GL_BLEND);
+      viewer->glEnable(GL_LINE_SMOOTH);
+      viewer->glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+      viewer->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+    else
+    {
+      viewer->glDisable(GL_BLEND);
+      viewer->glDisable(GL_LINE_SMOOTH);
+      viewer->glHint(GL_LINE_SMOOTH_HINT, GL_FASTEST);
+      viewer->glBlendFunc(GL_ONE, GL_ZERO);
+    }
 #endif
   if(with_names && !viewer->no_picking)
     scene->drawWithNames(viewer);
