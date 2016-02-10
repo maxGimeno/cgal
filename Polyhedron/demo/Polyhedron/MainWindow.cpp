@@ -39,8 +39,11 @@
 
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 #include <CGAL/Three/Polyhedron_demo_io_plugin_interface.h>
-
+#if ANDROID
+#include "ui_MainWindowGLES.h"
+#else
 #include "ui_MainWindow.h"
+#endif
 #include "ui_Preferences.h"
 #include "ui_Statistics_on_item_dialog.h"
 #include "Show_point_dialog.h"
@@ -52,6 +55,9 @@
 #ifdef QT_SCRIPT_LIB
 #  include <QScriptEngine>
 #  include <QScriptValue>
+#if ANDROID
+#include "ViewerGLES.h"
+#endif
 using namespace CGAL::Three;
 QScriptValue 
 myScene_itemToScriptValue(QScriptEngine *engine, 

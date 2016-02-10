@@ -17,7 +17,11 @@
 #include <QCheckBox>
 #include <QTime>
 class Scene;
+#if ANDROID
+class ViewerGLES;
+#else
 class Viewer;
+#endif
 class QTreeView;
 class QMenu;
 namespace CGAL {
@@ -353,7 +357,12 @@ private:
   /// plugin black-list
   QSet<QString> plugin_blacklist;
   Scene* scene;
+#if ANDROID
+  ViewerGLES* viewer;
+#else
+#error
   Viewer* viewer;
+#endif
   QSortFilterProxyModel* proxyModel;
   QTreeView* sceneView;
   Ui::MainWindow* ui;
