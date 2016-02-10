@@ -36,7 +36,7 @@ void Scene_c3t3_item::compile_shaders()
     const char vertex_source[] =
     {
   #if !ANDROID
-        "#version 120"
+        "#version 120 \n"
   #endif
         "attribute highp vec4 vertex;                                                                             \n"
         "attribute highp vec3 normals;                                                                            \n"

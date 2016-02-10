@@ -53,7 +53,7 @@ Scene_edit_polyhedron_item::Scene_edit_polyhedron_item
     const char vertex_shader_source_bbox[] =
     {
   #if !ANDROID
-        "#version 120"
+        "#version 120 \n"
   #endif
         "attribute highp vec3 vertex; \n"
         "attribute highp vec3 colors; \n"
@@ -74,7 +74,7 @@ Scene_edit_polyhedron_item::Scene_edit_polyhedron_item
     const char fragment_shader_source[]=
     {
   #if !ANDROID
-        "#version 120"
+        "#version 120 \n"
   #endif
         "varying highp vec3 fColors; \n"
         " \n"

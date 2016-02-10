@@ -8,10 +8,10 @@
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLShaderProgram>
 #include <CGAL/Three/Viewer_interface.h>
+#include <CGAL/CGAL_double.h>
 
 #include <QGLViewer/qglviewer.h>
 #include <QPoint>
-
 
 // forward declarations
 class QWidget;
@@ -39,13 +39,21 @@ public:
   void draw();
   //!This step happens after draw(). It is here that the axis system is
   //!displayed.
+#if ANDROID
   void drawVisualHintsGLES();
+#else
+  void drawVisualHints();
+#endif
   //! Deprecated. Does the same as draw().
   void fastDraw();
   //! Initializes the OpenGL functions and sets the backGround color.
   void initializeGL();
-  //! call this instead f draw if you want to perform a picking
+  //! call this instead of draw if you want to perform a picking
+#if ANDROID
   void drawWithNames(const QPoint &point);
+#else
+  void drawWithNames();
+#endif
   /*! Uses the parameter pixel's coordinates to get the corresponding point
    * in the World frame. If this point is found, emits selectedPoint, selected,
    * and selectionRay signals.
@@ -89,9 +97,9 @@ protected:
   //! Holds useful data to draw the axis system
   struct AxisData
   {
-      std::vector<float> *vertices;
-      std::vector<float> *normals;
-      std::vector<float> *colors;
+      std::vector<CGAL_GLdouble> *vertices;
+      std::vector<CGAL_GLdouble> *normals;
+      std::vector<CGAL_GLdouble> *colors;
   };
   //! The buffers used to draw the axis system
   QOpenGLBuffer buffers[3];
@@ -100,11 +108,11 @@ protected:
   //! The rendering program used to draw the axis system
   QOpenGLShaderProgram rendering_program;
   //! Holds the vertices data for the axis system
-  std::vector<float> v_Axis;
+  std::vector<CGAL_GLdouble> v_Axis;
   //! Holds the normals data for the axis system
-  std::vector<float> n_Axis;
+  std::vector<CGAL_GLdouble> n_Axis;
   //! Holds the color data for the axis system
-  std::vector<float> c_Axis;
+  std::vector<CGAL_GLdouble> c_Axis;
   //! Decides if the axis system must be drawn or not
   bool axis_are_displayed;
   //!Defines the behaviour for the mouse press events
@@ -117,7 +125,7 @@ protected:
   * sets the viewer's pickMatrix_ so that the drawing area is only around the cursor. This is because since CGAL 4.7,
   * the drawing system changed to use shaders, and these need this value. pickMatrix_ is passed to the shaders in
   * Scene_item::attrib_buffers(CGAL::Three::Viewer_interface* viewer, int program_name).*/
-  void pickMatrix(GLdouble x, GLdouble y, GLdouble width, GLdouble height,
+  void pickMatrix(float x, float y, float width, float height,
                   GLint viewport[4]);
   /*!
    * \brief makeArrow creates an arrow and stores it in a struct of vectors.
@@ -130,11 +138,13 @@ protected:
    * \param data the struct of std::vector that will contain the results.
    */
 
-  void makeArrow(float R, int prec, qglviewer::Vec from, qglviewer::Vec to, qglviewer::Vec color, AxisData &data);
+  void makeArrow(CGAL_GLdouble R, int prec, qglviewer::Vec from, qglviewer::Vec to, qglviewer::Vec color, AxisData &data);
   void resizeGL(int w, int h);
 
 
   Viewer_impl* d;
+Q_SIGNALS:
+  void toggleSelMode(bool);
 protected:
   QTime chrono;
   bool event(QEvent *e);

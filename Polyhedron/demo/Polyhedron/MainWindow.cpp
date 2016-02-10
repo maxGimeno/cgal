@@ -133,10 +133,12 @@ MainWindow::MainWindow(QWidget* parent)
   // do not save the state of the viewer (anoying)
   viewer->setStateFileName(QString::null);
 
-  //enables Multi Sample Anti Aliasing
+#if ANDROID
+  //enables Multi Sample Anti Aliasing for OpenGL ES
   QSurfaceFormat msaaFormat;
   msaaFormat.setSamples(4);
   viewer->setFormat(msaaFormat);
+#endif
   // setup scene
   scene = new Scene(this);
   viewer->setScene(scene);
@@ -1196,7 +1198,9 @@ void MainWindow::selectionChanged()
 
 void MainWindow::toggle_frameManipulation(bool b)
 {
+#if ANDROID
     viewer->frame_manipulation= b;
+#endif
 }
 void MainWindow::toggle_SelectionMode(bool b)
 {

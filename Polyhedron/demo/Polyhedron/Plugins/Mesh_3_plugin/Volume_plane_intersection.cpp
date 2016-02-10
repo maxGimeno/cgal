@@ -17,7 +17,7 @@ void Volume_plane_intersection::compile_shaders()
     const char vertex_source[] =
     {
   #if !ANDROID
-        "#version 120"
+        "#version 120 \n"
   #endif
         "attribute highp vec4 vertex;\n"
         "uniform highp mat4 mvp_matrix;\n"
@@ -31,7 +31,7 @@ void Volume_plane_intersection::compile_shaders()
     const char fragment_source[] =
     {
   #if !ANDROID
-        "#version 120"
+        "#version 120 \n"
   #endif
         "void main(void) { \n"
         "gl_FragColor = vec4(1.0,0.0,0.0,1.0); \n"

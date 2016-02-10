@@ -24,7 +24,11 @@
 #include <QGLViewer/qglviewer.h>
 #include <QWidget>
 #include <QPoint>
+#if ANDROID
 #include <QOpenGLFunctions>
+#else
+#include <QOpenGLFunctions_2_1>
+#endif
 #include <CGAL/Qt/CreateOpenGLContext.h>
 // forward declarations
 class QWidget;
@@ -38,7 +42,13 @@ namespace CGAL{
 namespace Three{
 class Scene_draw_interface;
 //! Base class to interact with the viewer from the plugins, the items and the scene.
-class VIEWER_EXPORT Viewer_interface : public QGLViewer, public QOpenGLFunctions {
+class VIEWER_EXPORT Viewer_interface : public QGLViewer,
+  #if ANDROID
+  public QOpenGLFunctions
+  #else
+  public QOpenGLFunctions_2_1
+  #endif
+{
 
   Q_OBJECT
 

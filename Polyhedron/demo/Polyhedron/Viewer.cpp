@@ -164,7 +164,7 @@ void Viewer::initializeGL()
   const char vertex_source[] =
   {
   #if !ANDROID
-        "#version 120"
+        "#version 120 \n"
   #endif
       "attribute highp vec4 vertex;\n"
       "attribute highp vec3 normal;\n"
@@ -193,7 +193,7 @@ void Viewer::initializeGL()
   const char fragment_source[] =
   {
   #if !ANDROID
-        "#version 120"
+        "#version 120 \n"
   #endif
       "varying highp vec4 color; \n"
       "varying highp vec4 fP; \n"
@@ -247,10 +247,9 @@ void Viewer::initializeGL()
       //std::cerr<<"linking Program FAILED"<<std::endl;
       qDebug() << rendering_program.log();
 
-  if(!context()->isOpenGLES())
-  {
-    gl->glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-  }
+#if ANDROID
+      gl->glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+#endif
 }
 }
 #include <QMouseEvent>
@@ -264,17 +263,21 @@ void Viewer::mousePressEvent(QMouseEvent* event)
     requestContextMenu(event->globalPos());
     event->accept();
   }
-  else {
-      if(frame_manipulation)
-      {
-          setMouseBinding(Qt::Key(0),Qt::NoModifier, Qt::LeftButton, FRAME, ROTATE);
-      }
-      else
-      {
-          setMouseBinding(Qt::NoModifier, Qt::LeftButton, CAMERA, ROTATE);
 
-      }
-          QGLViewer::mousePressEvent(event);
+  else
+  {
+#if ANDROID
+    if(frame_manipulation)
+    {
+      setMouseBinding(Qt::Key(0),Qt::NoModifier, Qt::LeftButton, FRAME, ROTATE);
+    }
+    else
+    {
+      setMouseBinding(Qt::NoModifier, Qt::LeftButton, CAMERA, ROTATE);
+
+    }
+#endif
+    QGLViewer::mousePressEvent(event);
   }
 }
 
@@ -342,9 +345,9 @@ void Viewer_impl::draw_aux(bool with_names, Viewer* viewer)
     viewer->glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
   else
     viewer->glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
+#endif
 
-  if(!viewer->context()->isOpenGLES())
-  {
+#if ANDORID
       if(antialiasing)
       {
           glEnable(GL_MULTISAMPLE);
@@ -353,14 +356,11 @@ void Viewer_impl::draw_aux(bool with_names, Viewer* viewer)
       {
           glDisable(GL_MULTISAMPLE);
       }
-  }
-  else
-  {
+#else
     viewer->glDisable(GL_BLEND);
     viewer->glDisable(GL_LINE_SMOOTH);
     viewer->glHint(GL_LINE_SMOOTH_HINT, GL_FASTEST);
     viewer->glBlendFunc(GL_ONE, GL_ZERO);
-  }
 #endif
   if(with_names && !viewer->no_picking)
     scene->drawWithNames(viewer);
@@ -372,21 +372,22 @@ void Viewer_impl::draw_aux(bool with_names, Viewer* viewer)
 #endif
 }
 
+#if ANDROID
 void Viewer::drawWithNames(const QPoint &point)
 {
   QGLViewer::draw();
   d->scene->picking_target = point;
   d->draw_aux(true, this);
 }
-
+#else
+void Viewer::drawWithNames()
+{
+  QGLViewer::draw();
+  d->draw_aux(true, this);
+}
+#endif
 void Viewer::postSelection(const QPoint& pixel)
-{/*
-    //Avoids a segfault. I don't know where the segfault comes from but it only
-    //hapens in a situation that should not exist, so this should do the trick.
-#if ANDROID
-    if(selection_mode)
-    {
-#endif*/
+{
   bool found = false;
   std::vector<QOpenGLShaderProgram*> list;
   for(int i=0; i<NB_OF_PROGRAMS; i++)
@@ -395,7 +396,11 @@ void Viewer::postSelection(const QPoint& pixel)
     if(program)
       list.push_back(program);
   }
+#if ANDROID
   qglviewer::Vec point = pointUnderPixelGLES(list,camera(),pixel, found);
+#else
+   qglviewer::Vec point = camera()->pointUnderPixel(pixel, found);
+#endif
   if(found) {
     Q_EMIT selectedPoint(point.x,
                        point.y,
@@ -408,12 +413,6 @@ void Viewer::postSelection(const QPoint& pixel)
                       dir.x, dir.y, dir.z);
 
   }
-
-/*
-#if ANDROID
-    }
-#endif
-*/
 }
 bool CGAL::Three::Viewer_interface::readFrame(QString s, qglviewer::Frame& frame)
 {
@@ -491,15 +490,15 @@ void Viewer::attrib_buffers(int program_name) const {
     QMatrix4x4 pick_mat;
     f_mat.setToIdentity();
     //fills the MVP and MV matrices.
-    GLfloat d_mat[16];
+    CGAL_GLdouble d_mat[16];
     this->camera()->getModelViewProjectionMatrix(d_mat);
-    //Convert the GLdoubles matrices in GLfloats
+    //Convert the GLdoubles matrices in CGAL_GLdoubles
     for (int i=0; i<16; ++i){
-        mvp_mat.data()[i] = GLfloat(d_mat[i]);
+        mvp_mat.data()[i] = CGAL_GLdouble(d_mat[i]);
     }
     this->camera()->getModelViewMatrix(d_mat);
     for (int i=0; i<16; ++i)
-        mv_mat.data()[i] = GLfloat(d_mat[i]);
+        mv_mat.data()[i] = CGAL_GLdouble(d_mat[i]);
     for (int i=0; i<16; ++i)
         pick_mat.data()[i] = this->pickMatrix_[i];
 
@@ -610,12 +609,12 @@ void Viewer::attrib_buffers(int program_name) const {
 }
 
 
-void Viewer::pickMatrix(GLfloat x, GLfloat y, GLfloat width, GLfloat height,
+void Viewer::pickMatrix(float x, float y, float width, float height,
 GLint viewport[4])
 {
- //GLfloat m[16];
- GLfloat sx, sy;
- GLfloat tx, ty;
+ //CGAL_GLdouble m[16];
+ float sx, sy;
+ float tx, ty;
 
  sx = viewport[2] / width;
  sy = viewport[3] / height;
@@ -667,7 +666,7 @@ void Viewer::endSelection(const QPoint& point)
 #endif
 }
 
-void Viewer::makeArrow(float R, int prec, qglviewer::Vec from, qglviewer::Vec to, qglviewer::Vec color, AxisData &data)
+void Viewer::makeArrow(CGAL_GLdouble R, int prec, qglviewer::Vec from, qglviewer::Vec to, qglviewer::Vec color, AxisData &data)
 {
     qglviewer::Vec temp = to-from;
     QVector3D dir = QVector3D(temp.x, temp.y, temp.z);
@@ -676,7 +675,7 @@ void Viewer::makeArrow(float R, int prec, qglviewer::Vec from, qglviewer::Vec to
     mat.translate(from.x, from.y, from.z);
     mat.scale(dir.length());
     dir.normalize();
-    float angle = 0.0;
+    CGAL_GLdouble angle = 0.0;
     if(std::sqrt((dir.x()*dir.x()+dir.y()*dir.y())) > 1)
         angle = 90.0f;
     else
@@ -687,11 +686,11 @@ void Viewer::makeArrow(float R, int prec, qglviewer::Vec from, qglviewer::Vec to
     mat.rotate(angle, axis);
 
     //Head
-    const float Rf = static_cast<float>(R);
+    const CGAL_GLdouble Rf = static_cast<CGAL_GLdouble>(R);
     for(int d = 0; d<360; d+= 360/prec)
     {
-        float D = (float) (d * M_PI / 180.);
-        float a = (float) std::atan(Rf / 0.33);
+        CGAL_GLdouble D = (CGAL_GLdouble) (d * M_PI / 180.);
+        CGAL_GLdouble a = (CGAL_GLdouble) std::atan(Rf / 0.33);
         QVector4D p(0., 1., 0, 1.);
         QVector4D n(Rf*2.*sin(D), sin(a), Rf*2.*cos(D), 1.);
         QVector4D pR = mat*p;
@@ -704,9 +703,9 @@ void Viewer::makeArrow(float R, int prec, qglviewer::Vec from, qglviewer::Vec to
         data.normals->push_back(nR.x());
         data.normals->push_back(nR.y());
         data.normals->push_back(nR.z());
-        data.colors->push_back((float)color.x);
-        data.colors->push_back((float)color.y);
-        data.colors->push_back((float)color.z);
+        data.colors->push_back((CGAL_GLdouble)color.x);
+        data.colors->push_back((CGAL_GLdouble)color.y);
+        data.colors->push_back((CGAL_GLdouble)color.z);
 
         //point B1
         p = QVector4D(Rf*2.*sin(D), 0.66f, Rf*2.* cos(D), 1.f);
@@ -719,9 +718,9 @@ void Viewer::makeArrow(float R, int prec, qglviewer::Vec from, qglviewer::Vec to
         data.normals->push_back(nR.x());
         data.normals->push_back(nR.y());
         data.normals->push_back(nR.z());
-        data.colors->push_back((float)color.x);
-        data.colors->push_back((float)color.y);
-        data.colors->push_back((float)color.z);
+        data.colors->push_back((CGAL_GLdouble)color.x);
+        data.colors->push_back((CGAL_GLdouble)color.y);
+        data.colors->push_back((CGAL_GLdouble)color.z);
         //point C1
         D = (d+360/prec)*M_PI/180.0;
         p = QVector4D(Rf*2.* sin(D), 0.66f, Rf *2.* cos(D), 1.f);
@@ -735,9 +734,9 @@ void Viewer::makeArrow(float R, int prec, qglviewer::Vec from, qglviewer::Vec to
         data.normals->push_back(nR.x());
         data.normals->push_back(nR.y());
         data.normals->push_back(nR.z());
-        data.colors->push_back((float)color.x);
-        data.colors->push_back((float)color.y);
-        data.colors->push_back((float)color.z);
+        data.colors->push_back((CGAL_GLdouble)color.x);
+        data.colors->push_back((CGAL_GLdouble)color.y);
+        data.colors->push_back((CGAL_GLdouble)color.z);
 
     }
 
@@ -746,7 +745,7 @@ void Viewer::makeArrow(float R, int prec, qglviewer::Vec from, qglviewer::Vec to
     for(int d = 0; d<360; d+= 360/prec)
     {
         //point A1
-        float D = d*M_PI/180.0;
+        CGAL_GLdouble D = d*M_PI/180.0;
         QVector4D p(Rf*sin(D), 0.66f, Rf*cos(D), 1.f);
         QVector4D n(sin(D), 0.f, cos(D), 1.f);
         QVector4D pR = mat*p;
@@ -805,9 +804,9 @@ void Viewer::makeArrow(float R, int prec, qglviewer::Vec from, qglviewer::Vec to
         data.normals->push_back(nR.x());
         data.normals->push_back(nR.y());
         data.normals->push_back(nR.z());
-        data.colors->push_back((float)color.x);
-        data.colors->push_back((float)color.y);
-        data.colors->push_back((float)color.z);
+        data.colors->push_back((CGAL_GLdouble)color.x);
+        data.colors->push_back((CGAL_GLdouble)color.y);
+        data.colors->push_back((CGAL_GLdouble)color.z);
         //point B2
         p = QVector4D(Rf * sin(D), 0.66f, Rf*cos(D), 1.f);
         n = QVector4D(sin(D), 0, cos(D), 1.0);
@@ -819,9 +818,9 @@ void Viewer::makeArrow(float R, int prec, qglviewer::Vec from, qglviewer::Vec to
         data.normals->push_back(nR.x());
         data.normals->push_back(nR.y());
         data.normals->push_back(nR.z());
-        data.colors->push_back((float)color.x);
-        data.colors->push_back((float)color.y);
-        data.colors->push_back((float)color.z);
+        data.colors->push_back((CGAL_GLdouble)color.x);
+        data.colors->push_back((CGAL_GLdouble)color.y);
+        data.colors->push_back((CGAL_GLdouble)color.z);
         //point C2
         D = d*M_PI/180.0;
         p = QVector4D(Rf * sin(D), 0.66f, Rf*cos(D), 1.f);
@@ -840,15 +839,20 @@ void Viewer::makeArrow(float R, int prec, qglviewer::Vec from, qglviewer::Vec to
 
     }
 }
-
+#if ANDROID
 void Viewer::drawVisualHintsGLES()
 {
     QGLViewer::drawVisualHintsGLES();
+#else
+void Viewer::drawVisualHints()
+{
+    QGLViewer::drawVisualHints();
+#endif
     if(axis_are_displayed)
     {
         QMatrix4x4 mvpMatrix;
         QMatrix4x4 mvMatrix;
-        float mat[16];
+        CGAL_GLdouble  mat[16];
         //Keeps the axis from being clipped
         camera()->getModelViewProjectionMatrix(mat);
         //nullifies the translation
@@ -857,12 +861,12 @@ void Viewer::drawVisualHintsGLES()
         mat[14]=0;
         for(int i=0; i < 16; i++)
         {
-            mvpMatrix.data()[i] = (float)mat[i];
+            mvpMatrix.data()[i] = (CGAL_GLdouble)mat[i];
         }
         camera()->getModelViewMatrix(mat);
         for(int i=0; i < 16; i++)
         {
-            mvMatrix.data()[i] = (float)mat[i];
+            mvMatrix.data()[i] = (CGAL_GLdouble)mat[i];
         }
         //Keeps the lighing from changing according to the position and orientation of the camera.
         mvMatrix.data()[12] = 0;
@@ -873,7 +877,7 @@ void Viewer::drawVisualHintsGLES()
         QVector4D	ambient;
         QVector4D	diffuse;
         QVector4D	specular;
-        GLfloat      shininess ;
+        float      shininess ;
         // Ambient
         ambient[0] = 0.29225f;
         ambient[1] = 0.29225f;
@@ -906,12 +910,11 @@ void Viewer::drawVisualHintsGLES()
     }
 
 }
-
 void Viewer::resizeGL(int w, int h)
 {
     QGLViewer::resizeGL(w,h);
     qglviewer::Vec dim = qglviewer::Vec(w,h, 0) ;
-    GLfloat ortho[16];
+    CGAL_GLdouble ortho[16];
     QMatrix4x4 orthoMatrix;
     ortho[0]  = 1.0/width(); ortho[1]  = 0; ortho[2]  = 0; ortho[3]  = -0.0;
     ortho[4]  = 0; ortho[5]  = 1.0/height(); ortho[6]  = 0; ortho[7]  = -0.0;
@@ -919,7 +922,7 @@ void Viewer::resizeGL(int w, int h)
     ortho[12] = 0; ortho[13] = 0; ortho[14] = 0; ortho[15] = 1;
     for(int i=0; i < 16; i++)
     {
-        orthoMatrix.data()[i] = (float)ortho[i];
+        orthoMatrix.data()[i] = (CGAL_GLdouble)ortho[i];
     }
 
     QVector4D length(60,60,60, 1.0);
@@ -931,7 +934,7 @@ void Viewer::resizeGL(int w, int h)
     data.vertices = &v_Axis;
     data.normals = &n_Axis;
     data.colors = &c_Axis;
-    float l = length.x()*w/h;
+    CGAL_GLdouble l = length.x()*w/h;
     makeArrow(0.06,10, qglviewer::Vec(0,0,0),qglviewer::Vec(l,0,0),qglviewer::Vec(1,0,0), data);
     makeArrow(0.06,10, qglviewer::Vec(0,0,0),qglviewer::Vec(0,l,0),qglviewer::Vec(0,1,0), data);
     makeArrow(0.06,10, qglviewer::Vec(0,0,0),qglviewer::Vec(0,0,l),qglviewer::Vec(0,0,1), data);
@@ -939,21 +942,21 @@ void Viewer::resizeGL(int w, int h)
 
     vao[0].bind();
     buffers[0].bind();
-    buffers[0].allocate(v_Axis.data(), static_cast<int>(v_Axis.size()) * sizeof(float));
+    buffers[0].allocate(v_Axis.data(), static_cast<int>(v_Axis.size()) * sizeof(CGAL_GLdouble));
     rendering_program.enableAttributeArray("vertex");
-    rendering_program.setAttributeBuffer("vertex",GL_FLOAT,0,3);
+    rendering_program.setAttributeBuffer("vertex",CGAL_GL_DOUBLE,0,3);
     buffers[0].release();
 
     buffers[1].bind();
-    buffers[1].allocate(n_Axis.data(), static_cast<int>(n_Axis.size() * sizeof(float)));
+    buffers[1].allocate(n_Axis.data(), static_cast<int>(n_Axis.size() * sizeof(CGAL_GLdouble)));
     rendering_program.enableAttributeArray("normal");
-    rendering_program.setAttributeBuffer("normal",GL_FLOAT,0,3);
+    rendering_program.setAttributeBuffer("normal",CGAL_GL_DOUBLE,0,3);
     buffers[1].release();
 
     buffers[2].bind();
-    buffers[2].allocate(c_Axis.data(), static_cast<int>(c_Axis.size() * sizeof(float)));
+    buffers[2].allocate(c_Axis.data(), static_cast<int>(c_Axis.size() * sizeof(CGAL_GLdouble)));
     rendering_program.enableAttributeArray("colors");
-    rendering_program.setAttributeBuffer("colors",GL_FLOAT,0,3);
+    rendering_program.setAttributeBuffer("colors",CGAL_GL_DOUBLE,0,3);
     buffers[2].release();
 
     rendering_program.release();
@@ -980,8 +983,7 @@ bool Viewer::event(QEvent *e)
    else if(e->type() == QEvent::TouchEnd)
     {
      if( posipoint == static_cast<QTouchEvent*>(e)->touchPoints().first().pos() && chrono.elapsed() >=1000)
-     {qDebug()<<"show menu"; requestContextMenu(static_cast<QTouchEvent*>(e)->touchPoints().first().pos().toPoint()); }
-     else{qDebug()<<posipoint<<" vs "<<static_cast<QTouchEvent*>(e)->touchPoints().first().pos().toPoint()<<", "<<chrono.elapsed();}
+     { requestContextMenu(static_cast<QTouchEvent*>(e)->touchPoints().first().pos().toPoint()); }
      QGLViewer::event(e);
      return true;
     }

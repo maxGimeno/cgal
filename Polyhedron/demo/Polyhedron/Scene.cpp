@@ -324,6 +324,7 @@ Scene::drawWithNames()
 void
 Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
 {
+#if ANDROID
     std::vector<shaders_info> original_shaders;
     QColor bgColor(viewer->backgroundColor());
     //draws the image in the fbo
@@ -340,7 +341,7 @@ Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
         //The fragmentertex source code
         QString picking_fragment_source(
       #if !ANDROID
-              "#version 120"
+              "#version 120 \n"
       #endif
               "void main(void) { \n"
               "gl_FragColor = vec4(");
@@ -399,6 +400,9 @@ Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
     else
         viewer->setSelectedName(-1);
     viewer->setBackgroundColor(bgColor);
+#else //ANDROID
+  draw_aux(true, viewer);
+#endif //ANDROID
 }
 
 void 

@@ -31,6 +31,7 @@
 #include <QOpenGLShader>
 #include <QOpenGLVertexArrayObject>
 #include <vector>
+#include <CGAL/double.h>
 namespace CGAL {
 namespace Three {
   class Viewer_interface;

@@ -224,7 +224,7 @@ private:
 template<typename T>
 const char* Volume_plane<T>::vertexShader_source =
   #if !ANDROID
-      "#version 120"
+      "#version 120 \n"
   #endif
       "attribute highp vec4 vertex; \n"
       "attribute highp float color; \n"
@@ -238,7 +238,7 @@ const char* Volume_plane<T>::vertexShader_source =
 template<typename T>
 const char* Volume_plane<T>::fragmentShader_source =
   #if !ANDROID
-      "#version 120"
+      "#version 120 \n"
   #endif
       "varying highp vec4 fullColor; \n"
       "void main() { gl_FragColor = fullColor; } \n";
@@ -246,7 +246,7 @@ const char* Volume_plane<T>::fragmentShader_source =
 template<typename T>
 const char* Volume_plane<T>::vertexShader_bordures_source =
   #if !ANDROID
-      "#version 120"
+      "#version 120 \n"
   #endif
       "attribute highp vec4 vertex; \n"
       "uniform highp vec4 color; \n"
@@ -260,7 +260,7 @@ const char* Volume_plane<T>::vertexShader_bordures_source =
 template<typename T>
 const char* Volume_plane<T>::fragmentShader_bordures_source =
   #if !ANDROID
-      "#version 120"
+      "#version 120 \n"
   #endif
       "varying highp vec4 fullColor; \n"
       "void main() { gl_FragColor = fullColor; } \n";
