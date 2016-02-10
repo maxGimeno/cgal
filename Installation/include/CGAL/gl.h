@@ -35,4 +35,12 @@
 #  include <GL/gl.h>
 #endif
 
+//Defines type for double. Needed because OpenGL ES doesn't know double, only float.
+#if ANDROID
+  #define CGAL_GLdouble GLfloat
+  #define CGAL_GL_DOUBLE GL_FLOAT
+#else
+  #define CGAL_GLdouble GLdouble
+  #define CGAL_GL_DOUBLE GL_DOUBLE
+#endif 
 #endif // CGAL_GL_H

@@ -1189,11 +1189,12 @@ void MainWindow::selectionChanged()
     connect(viewer->manipulatedFrame(), SIGNAL(modified()),
             this, SLOT(updateInfo()));
   }
+#if ANDROID
   connect(shift_checkBox, SIGNAL(toggled(bool)),
                                this, SLOT(toggle_SelectionMode(bool)));
   connect(ctrl_checkBox, SIGNAL(toggled(bool)),
                                this, SLOT(toggle_frameManipulation(bool)));
-
+#endif
   viewer->update();
 }
 

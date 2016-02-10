@@ -42,8 +42,8 @@ public:
   typedef Polyhedron::Traits::Point_3  value_type;
   typedef const value_type&                  reference;
   typedef boost::read_write_property_map_tag category;
-  Array_based_vertex_point_map(std::vector<float>* positions) : positions(positions) {}
-  std::vector<float>* positions;
+  Array_based_vertex_point_map(std::vector<CGAL_GLdouble>* positions) : positions(positions) {}
+  std::vector<CGAL_GLdouble>* positions;
 };
 
 
@@ -287,22 +287,22 @@ private:
   Ui::DeformMesh* ui_widget;
   Scene_polyhedron_item* poly_item;
   // For drawing
-  mutable std::vector<GLfloat> positions;
+  mutable std::vector<CGAL_GLdouble> positions;
   mutable std::vector<unsigned int> tris;
   mutable std::vector<unsigned int> edges;
-  mutable std::vector<GLfloat> color_lines;
-  mutable std::vector<GLfloat> color_bbox;
-  mutable std::vector<GLfloat> ROI_points;
-  mutable std::vector<GLfloat> control_points;
-  mutable std::vector<GLfloat> ROI_color;
-  mutable std::vector<GLfloat> control_color;
-  mutable std::vector<GLfloat> normals;
-  mutable std::vector<GLfloat> pos_bbox;
-  mutable std::vector<GLfloat> pos_axis;
-  mutable std::vector<GLfloat> normal_axis;
-  mutable std::vector<GLfloat> pos_sphere;
-  mutable std::vector<GLfloat> normals_sphere;
-  mutable std::vector<GLfloat> pos_frame_plane;
+  mutable std::vector<CGAL_GLdouble> color_lines;
+  mutable std::vector<CGAL_GLdouble> color_bbox;
+  mutable std::vector<CGAL_GLdouble> ROI_points;
+  mutable std::vector<CGAL_GLdouble> control_points;
+  mutable std::vector<CGAL_GLdouble> ROI_color;
+  mutable std::vector<CGAL_GLdouble> control_color;
+  mutable std::vector<CGAL_GLdouble> normals;
+  mutable std::vector<CGAL_GLdouble> pos_bbox;
+  mutable std::vector<CGAL_GLdouble> pos_axis;
+  mutable std::vector<CGAL_GLdouble> normal_axis;
+  mutable std::vector<CGAL_GLdouble> pos_sphere;
+  mutable std::vector<CGAL_GLdouble> normals_sphere;
+  mutable std::vector<CGAL_GLdouble> pos_frame_plane;
   mutable QOpenGLShaderProgram *program;
   mutable QOpenGLShaderProgram bbox_program;
   mutable std::size_t nb_ROI;
@@ -343,7 +343,7 @@ private:
   void initialize_buffers(CGAL::Three::Viewer_interface *viewer) const;
   void compute_normals_and_vertices(void);
   void compute_bbox(const CGAL::Three::Scene_interface::Bbox&);
-  void create_Sphere(float);
+  void create_Sphere(double);
   void reset_drawing_data();
 
 

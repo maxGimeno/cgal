@@ -126,16 +126,16 @@ void Scene_edit_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interfac
         vaos[Facets]->bind();
         buffers[Facet_vertices].bind();
         buffers[Facet_vertices].allocate(positions.data(),
-                            static_cast<int>(positions.size()*sizeof(float)));
+                            static_cast<int>(positions.size()*sizeof(CGAL_GLdouble)));
         program->enableAttributeArray("vertex");
-        program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
+        program->setAttributeBuffer("vertex",CGAL_GL_DOUBLE,0,3);
         buffers[Facet_vertices].release();
 
         buffers[Facet_normals].bind();
         buffers[Facet_normals].allocate(normals.data(),
-                            static_cast<int>(normals.size()*sizeof(float)));
+                            static_cast<int>(normals.size()*sizeof(CGAL_GLdouble)));
         program->enableAttributeArray("normals");
-        program->setAttributeBuffer("normals",GL_FLOAT,0,3);
+        program->setAttributeBuffer("normals",CGAL_GL_DOUBLE,0,3);
         buffers[Facet_normals].release();
         vaos[Facets]->release();
         program->release();
@@ -146,9 +146,9 @@ void Scene_edit_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interfac
         vaos[Roi_points]->bind();
         buffers[Roi_vertices].bind();
         buffers[Roi_vertices].allocate(ROI_points.data(),
-                            static_cast<int>(ROI_points.size()*sizeof(float)));
+                            static_cast<int>(ROI_points.size()*sizeof(CGAL_GLdouble)));
         program->enableAttributeArray("vertex");
-        program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
+        program->setAttributeBuffer("vertex",CGAL_GL_DOUBLE,0,3);
         buffers[Roi_vertices].release();
         vaos[Roi_points]->release();
 
@@ -161,7 +161,7 @@ void Scene_edit_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interfac
         vaos[Edges]->bind();
         buffers[Facet_vertices].bind();
         program->enableAttributeArray("vertex");
-        program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
+        program->setAttributeBuffer("vertex",CGAL_GL_DOUBLE,0,3);
         buffers[Facet_vertices].release();
         vaos[Edges]->release();
         program->release();
@@ -174,21 +174,21 @@ void Scene_edit_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interfac
         vaos[ROI_spheres]->bind();
         buffers[Sphere_vertices].bind();
         buffers[Sphere_vertices].allocate(pos_sphere.data(),
-                            static_cast<int>(pos_sphere.size()*sizeof(float)));
+                            static_cast<int>(pos_sphere.size()*sizeof(CGAL_GLdouble)));
         program->enableAttributeArray("vertex");
-        program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
+        program->setAttributeBuffer("vertex",CGAL_GL_DOUBLE,0,3);
         buffers[Sphere_vertices].release();
 
         buffers[Sphere_normals].bind();
         buffers[Sphere_normals].allocate(normals_sphere.data(),
-                            static_cast<int>(normals_sphere.size()*sizeof(float)));
+                            static_cast<int>(normals_sphere.size()*sizeof(CGAL_GLdouble)));
         program->enableAttributeArray("normals");
-        program->setAttributeBuffer("normals",GL_FLOAT,0,3);
+        program->setAttributeBuffer("normals",CGAL_GL_DOUBLE,0,3);
         buffers[Sphere_normals].release();
 
         buffers[Roi_vertices].bind();
         program->enableAttributeArray("center");
-        program->setAttributeBuffer("center",GL_FLOAT,0,3);
+        program->setAttributeBuffer("center",CGAL_GL_DOUBLE,0,3);
         buffers[Roi_vertices].release();
 
         if(viewer->extension_is_found)
@@ -200,10 +200,10 @@ void Scene_edit_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interfac
         }
         vaos[ROI_spheres]->release();
         ROI_color.resize(0);
-        std::vector<float>(ROI_color).swap(ROI_color);
+        std::vector<CGAL_GLdouble>(ROI_color).swap(ROI_color);
         nb_ROI = ROI_points.size();
         ROI_points.resize(0);
-        std::vector<float>(ROI_points).swap(ROI_points);
+        std::vector<CGAL_GLdouble>(ROI_points).swap(ROI_points);
     }
     //vao for the BBOX
     {
@@ -211,18 +211,18 @@ void Scene_edit_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interfac
         vaos[BBox]->bind();
         buffers[Bbox_vertices].bind();
         buffers[Bbox_vertices].allocate(pos_bbox.data(),
-                             static_cast<int>(pos_bbox.size()*sizeof(float)));
+                             static_cast<int>(pos_bbox.size()*sizeof(CGAL_GLdouble)));
         bbox_program.enableAttributeArray("vertex");
-        bbox_program.setAttributeBuffer("vertex",GL_FLOAT,0,3);
+        bbox_program.setAttributeBuffer("vertex",CGAL_GL_DOUBLE,0,3);
         buffers[Bbox_vertices].release();
 
 
         vaos[BBox]->release();
         nb_bbox = pos_bbox.size();
         pos_bbox.resize(0);
-        std::vector<float>(pos_bbox).swap(pos_bbox);
+        std::vector<CGAL_GLdouble>(pos_bbox).swap(pos_bbox);
         color_bbox.resize(0);
-        std::vector<float>(color_bbox).swap(color_bbox);
+        std::vector<CGAL_GLdouble>(color_bbox).swap(color_bbox);
         bbox_program.release();
     }
     //vao for the control points
@@ -232,9 +232,9 @@ void Scene_edit_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interfac
         vaos[Control_points]->bind();
         buffers[Control_vertices].bind();
         buffers[Control_vertices].allocate(control_points.data(),
-                             static_cast<int>(control_points.size()*sizeof(float)));
+                             static_cast<int>(control_points.size()*sizeof(CGAL_GLdouble)));
         program->enableAttributeArray("vertex");
-        program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
+        program->setAttributeBuffer("vertex",CGAL_GL_DOUBLE,0,3);
         buffers[Control_vertices].release();
 
         vaos[Control_points]->release();
@@ -247,16 +247,16 @@ void Scene_edit_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interfac
         vaos[Control_spheres]->bind();
         buffers[Sphere_vertices].bind();
         program->enableAttributeArray("vertex");
-        program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
+        program->setAttributeBuffer("vertex",CGAL_GL_DOUBLE,0,3);
 
         buffers[Sphere_normals].bind();
         program->enableAttributeArray("normals");
-        program->setAttributeBuffer("normals",GL_FLOAT,0,3);
+        program->setAttributeBuffer("normals",CGAL_GL_DOUBLE,0,3);
         buffers[Sphere_normals].release();
 
         buffers[Control_vertices].bind();
         program->enableAttributeArray("center");
-        program->setAttributeBuffer("center",GL_FLOAT,0,3);
+        program->setAttributeBuffer("center",CGAL_GL_DOUBLE,0,3);
         buffers[Control_vertices].release();
 
         if(viewer->extension_is_found)
@@ -269,10 +269,10 @@ void Scene_edit_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interfac
         nb_sphere = pos_sphere.size();
 
         control_color.resize(0);
-        std::vector<float>(control_color).swap(control_color);
+        std::vector<CGAL_GLdouble>(control_color).swap(control_color);
         nb_control = control_points.size();
         control_points.resize(0);
-        std::vector<float>(control_points).swap(control_points);
+        std::vector<CGAL_GLdouble>(control_points).swap(control_points);
     }
     //vao for the axis
     {
@@ -281,30 +281,30 @@ void Scene_edit_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interfac
         vaos[Axis]->bind();
         buffers[Axis_vertices].bind();
         buffers[Axis_vertices].allocate(pos_axis.data(),
-                             static_cast<int>(pos_axis.size()*sizeof(float)));
+                             static_cast<int>(pos_axis.size()*sizeof(CGAL_GLdouble)));
         program->enableAttributeArray("vertex");
-        program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
+        program->setAttributeBuffer("vertex",CGAL_GL_DOUBLE,0,3);
         buffers[Axis_vertices].release();
         buffers[Axis_colors].bind();
         buffers[Axis_colors].allocate(color_lines.data(),
-                             static_cast<int>(color_lines.size()*sizeof(float)));
+                             static_cast<int>(color_lines.size()*sizeof(CGAL_GLdouble)));
         program->enableAttributeArray("colors");
-        program->setAttributeBuffer("colors",GL_FLOAT,0,3);
+        program->setAttributeBuffer("colors",CGAL_GL_DOUBLE,0,3);
         buffers[Axis_colors].release();
         vaos[Axis]->release();
         program->release();
         nb_axis = pos_axis.size();
         pos_axis.resize(0);
-        std::vector<float>(pos_axis).swap(pos_axis);
+        std::vector<CGAL_GLdouble>(pos_axis).swap(pos_axis);
         color_lines.resize(0);
-        std::vector<float>(color_lines).swap(color_lines);
+        std::vector<CGAL_GLdouble>(color_lines).swap(color_lines);
     }
     if(program_list_is_empty)
     {
       std::vector<QOpenGLShaderProgram*> list;
       for(int i=0; i<viewer->NB_OF_PROGRAMS; i++)
       {
-        QOpenGLShaderProgram* program = viewer->getPrograms[i];
+        QOpenGLShaderProgram* program = viewer->getPrograms()[i];
         if(program)
           list.push_back(program);
       }
@@ -321,7 +321,7 @@ void Scene_edit_polyhedron_item::initialize_buffers(CGAL::Three::Viewer_interfac
         buffers[Frame_vertices].allocate(pos_frame_plane.data(),
                              static_cast<int>(pos_frame_plane.size()*sizeof(double)));
         bbox_program.enableAttributeArray("vertex");
-        bbox_program.setAttributeBuffer("vertex",GL_FLOAT,0,3);
+        bbox_program.setAttributeBuffer("vertex",CGAL_GL_DOUBLE,0,3);
         buffers[Frame_vertices].release();
 
         vaos[Frame_plane]->release();
@@ -431,6 +431,7 @@ void Scene_edit_polyhedron_item::compute_normals_and_vertices(void)
     for(int i =0; i< (int)pos_bbox.size(); i+=3)
         color_bbox[i]=1.0;
 
+#if ANDROID
     //The axis
     qglviewer::AxisData data;
     pos_axis.resize(0);
@@ -443,20 +444,23 @@ void Scene_edit_polyhedron_item::compute_normals_and_vertices(void)
     viewer->drawArrowGLES(0.01f, 10, qglviewer::Vec(0,0,0), qglviewer::Vec(0,0,length_of_axis), qglviewer::Vec(0,0,1), data);
     viewer->drawArrowGLES(0.01f, 10, qglviewer::Vec(0,0,0), qglviewer::Vec(0,length_of_axis,0), qglviewer::Vec(0,1,0), data);
     viewer->drawArrowGLES(0.01f, 10, qglviewer::Vec(0,0,0), qglviewer::Vec(length_of_axis,0,0), qglviewer::Vec(1,0,0), data);
-/*
-    pos_axis.resize(18);
-    for(int i =0; i< 18; i++)
-        pos_axis[i]=0.0;
-    pos_axis[3] = length_of_axis; pos_axis[10] = length_of_axis; pos_axis[17] = length_of_axis;
-    color_lines.resize(18);
-    for(int i =0; i< 18; i++)
-        color_lines[i]=0.0;
 
-    color_lines[2] = 1.0; color_lines[5] = 1.0;
-    color_lines[6] = 1.0; color_lines[9] = 1.0;
-    color_lines[13] = 1.0; color_lines[16] = 1.0;
-    */
+#else
+    //The axis
 
+       pos_axis.resize(18);
+       for(int i =0; i< 18; i++)
+           pos_axis[i]=0.0;
+       pos_axis[3] = length_of_axis; pos_axis[10] = length_of_axis; pos_axis[17] = length_of_axis;
+       color_lines.resize(18);
+       for(int i =0; i< 18; i++)
+           color_lines[i]=0.0;
+
+       color_lines[2] = 1.0; color_lines[5] = 1.0;
+       color_lines[6] = 1.0; color_lines[9] = 1.0;
+       color_lines[13] = 1.0; color_lines[16] = 1.0;
+
+#endif
     if(ui_widget->ActivateFixedPlaneCheckBox->isChecked())
       draw_frame_plane(viewer);
 
@@ -591,11 +595,8 @@ bool Scene_edit_polyhedron_item::eventFilter(QObject* /*target*/, QEvent *event)
   }
   QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
   // mouse events
-
-  if(event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease)
-  {
-
-      if(viewer->frame_manipulation || ctrl_pressing  )
+#if ANDROID
+      if(viewer->frame_manipulation /*|| ctrl_pressing */)
       {
           state.ctrl_pressing = true;
       }
@@ -603,7 +604,24 @@ bool Scene_edit_polyhedron_item::eventFilter(QObject* /*target*/, QEvent *event)
       {
           state.ctrl_pressing = false;
       }
-      if(viewer->selection_mode || shift_pressing )
+#else
+    if( ctrl_pressing  )
+    {
+        state.ctrl_pressing = true;
+    }
+    else
+    {
+        state.ctrl_pressing = false;
+    }
+#endif
+  if(event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease)
+  {
+//TO DO : test this under Android. If it doesn't work, uncomment.
+#if ANDROID
+    if(viewer->selection_mode /*|| shift_pressing */)
+#else
+    if(shift_pressing )
+#endif
           state.shift_pressing = true;
       else
           state.shift_pressing = false;
@@ -661,10 +679,15 @@ void Scene_edit_polyhedron_item::draw_edges(CGAL::Three::Viewer_interface* viewe
     program->release();
     vaos[Frame_plane]->release();
 
-
-  if(rendering_mode == Wireframe) {
-        draw_ROI_and_control_vertices(viewer);
-  }
+#if !ANDROID
+    glPointSize(5.0);
+#endif
+    if(rendering_mode == Wireframe) {
+      draw_ROI_and_control_vertices(viewer);
+    }
+#if !ANDROID
+    glPointSize(1.0);
+#endif
 }
 void Scene_edit_polyhedron_item::draw(CGAL::Three::Viewer_interface* viewer) const {
     Scene_item::draw();
@@ -682,7 +705,13 @@ void Scene_edit_polyhedron_item::draw(CGAL::Three::Viewer_interface* viewer) con
     program->release();
     vaos[Facets]->release();
     draw_edges(viewer);
+#if !ANDROID
+    glPointSize(5.0);
+#endif
     draw_ROI_and_control_vertices(viewer);
+#if !ANDROID
+    glPointSize(1.0);
+#endif
 
 }
 
@@ -717,12 +746,6 @@ void Scene_edit_polyhedron_item::draw_frame_plane(QGLViewer* ) const
 void Scene_edit_polyhedron_item::draw_ROI_and_control_vertices(CGAL::Three::Viewer_interface* viewer) const {
 
     Scene_item::draw();
-    //CGAL::GL::Color color;
-    //CGAL::GL::Point_size point_size; point_size.set_point_size(5);
-
-   // color.set_rgb_color(0, 1.f, 0);
-       // qFunc.glEnable(GL_POINT_SPRITE);
-        //qFunc.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
     if(ui_widget->ShowROICheckBox->isChecked()) {
 
 
@@ -785,12 +808,12 @@ void Scene_edit_polyhedron_item::draw_ROI_and_control_vertices(CGAL::Three::View
   {
         if(hgb_data->frame == viewerB->manipulatedFrame())
     {      
-            GLfloat f_matrix[16];
+            CGAL_GLdouble f_matrix[16];
             for(int i =0; i<16; i++)
                 f_matrix[i] = hgb_data->frame->matrix()[i];
             QMatrix4x4 f_mat;
                 for(int i=0; i<16; i++)
-                    f_mat.data()[i] = (float)f_matrix[i];
+                    f_mat.data()[i] = (CGAL_GLdouble)f_matrix[i];
             vaos[Axis]->bind();
             program = getShaderProgram(PROGRAM_NO_SELECTION);
             attrib_buffers(viewer, PROGRAM_NO_SELECTION);
@@ -804,9 +827,9 @@ void Scene_edit_polyhedron_item::draw_ROI_and_control_vertices(CGAL::Three::View
       // draw bbox
       if(!ui_widget->ActivatePivotingCheckBox->isChecked())
       {
-                GLfloat f_matrix[16];
-                GLfloat trans[3];
-                GLfloat trans2[3];
+                CGAL_GLdouble f_matrix[16];
+                CGAL_GLdouble trans[3];
+                CGAL_GLdouble trans2[3];
 
                 trans[0] = hgb_data->frame->position().x;
                 trans[1] = hgb_data->frame->position().y;
@@ -824,11 +847,11 @@ void Scene_edit_polyhedron_item::draw_ROI_and_control_vertices(CGAL::Three::View
                 QVector3D vec(trans[0], trans[1], trans[2]);
                 QVector3D vec2(trans2[0], trans2[1], trans2[2]);
                     for(int i=0; i<16; i++)
-                        f_mat.data()[i] = (float)f_matrix[i];
-                    GLfloat temp_mat[16];
+                        f_mat.data()[i] = (CGAL_GLdouble)f_matrix[i];
+                    CGAL_GLdouble temp_mat[16];
                     viewer->camera()->getModelViewProjectionMatrix(temp_mat);
                     for(int i=0; i<16; i++)
-                        mvp_mat.data()[i] = (float)temp_mat[i];
+                        mvp_mat.data()[i] = (CGAL_GLdouble)temp_mat[i];
                 vaos[BBox]->bind();
                 bbox_program.bind();
                 bbox_program.setUniformValue("rotations", f_mat);
@@ -986,7 +1009,7 @@ bool Scene_edit_polyhedron_item::keyPressEvent(QKeyEvent* e)
   return false;
 }
 
-void Scene_edit_polyhedron_item::create_Sphere(float R)
+void Scene_edit_polyhedron_item::create_Sphere(double R)
 {
   create_flat_sphere(R, pos_sphere, normals_sphere);
 }

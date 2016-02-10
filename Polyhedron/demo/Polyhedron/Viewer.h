@@ -8,8 +8,7 @@
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLShaderProgram>
 #include <CGAL/Three/Viewer_interface.h>
-#include <CGAL/CGAL_double.h>
-
+#include <CGAL/gl.h>
 #include <QGLViewer/qglviewer.h>
 #include <QPoint>
 
