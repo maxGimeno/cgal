@@ -86,28 +86,28 @@ void Volume_plane_intersection::init_buffers()
 
         vao[0].bind();
         buffers[0].bind();
-        buffers[0].allocate(a_vertex.data(), static_cast<int>(a_vertex.size()*sizeof(float)));
+        buffers[0].allocate(a_vertex.data(), static_cast<int>(a_vertex.size()*sizeof(CGAL_GLdouble)));
         vertexLocation[0] = rendering_program.attributeLocation("vertex");
         rendering_program.enableAttributeArray(vertexLocation[0]);
-        rendering_program.setAttributeBuffer(vertexLocation[0],GL_FLOAT,0,3);
+        rendering_program.setAttributeBuffer(vertexLocation[0],CGAL_GL_DOUBLE,0,3);
         buffers[0].release();
         vao[0].release();
 
         vao[1].bind();
         buffers[1].bind();
-        buffers[1].allocate(b_vertex.data(), static_cast<int>(b_vertex.size()*sizeof(float)));
+        buffers[1].allocate(b_vertex.data(), static_cast<int>(b_vertex.size()*sizeof(CGAL_GLdouble)));
         vertexLocation[0] = rendering_program.attributeLocation("vertex");
         rendering_program.enableAttributeArray(vertexLocation[0]);
-        rendering_program.setAttributeBuffer(vertexLocation[0],GL_FLOAT,0,3);
+        rendering_program.setAttributeBuffer(vertexLocation[0],CGAL_GL_DOUBLE,0,3);
         buffers[1].release();
         vao[1].release();
 
         vao[2].bind();
         buffers[2].bind();
-        buffers[2].allocate(c_vertex.data(), static_cast<int>(c_vertex.size()*sizeof(float)));
+        buffers[2].allocate(c_vertex.data(), static_cast<int>(c_vertex.size()*sizeof(CGAL_GLdouble)));
         vertexLocation[0] = rendering_program.attributeLocation("vertex");
         rendering_program.enableAttributeArray(vertexLocation[0]);
-        rendering_program.setAttributeBuffer(vertexLocation[0],GL_FLOAT,0,3);
+        rendering_program.setAttributeBuffer(vertexLocation[0],CGAL_GL_DOUBLE,0,3);
         buffers[2].release();
         vao[2].release();
 
@@ -120,11 +120,11 @@ void Volume_plane_intersection::init_buffers()
 void Volume_plane_intersection::attrib_buffers(Viewer_interface* viewer) const
 {
     QMatrix4x4 mvpMatrix;
-    float mat[16];
+    CGAL_GLdouble mat[16];
     viewer->camera()->getModelViewProjectionMatrix(mat);
     for(int i=0; i < 16; i++)
     {
-        mvpMatrix.data()[i] = (float)mat[i];
+        mvpMatrix.data()[i] = (CGAL_GLdouble)mat[i];
     }
 
     rendering_program.bind();
@@ -145,12 +145,12 @@ void Volume_plane_intersection::draw(Viewer_interface* viewer) const {
     QMatrix4x4 b_mat, c_mat;
     for(int i=0; i<16; i++)
     {
-       b_mat.data()[i] = (float)mat[i];
+       b_mat.data()[i] = (CGAL_GLdouble)mat[i];
     }
     c->manipulatedFrame()->getMatrix(mat);
     for(int i=0; i<16; i++)
     {
-       c_mat.data()[i] = (float)mat[i];
+       c_mat.data()[i] = (CGAL_GLdouble)mat[i];
     }
     rendering_program.setUniformValue("f_matrix", b_mat*c_mat);
     viewer->glDrawArrays(GL_LINES, 0, 2);
@@ -166,12 +166,12 @@ void Volume_plane_intersection::draw(Viewer_interface* viewer) const {
       QMatrix4x4 a_mat, c_mat;
       for(int i=0; i<16; i++)
       {
-         a_mat.data()[i] = (float)mat[i];
+         a_mat.data()[i] = (CGAL_GLdouble)mat[i];
       }
       c->manipulatedFrame()->getMatrix(mat);
       for(int i=0; i<16; i++)
       {
-         c_mat.data()[i] = (float)mat[i];
+         c_mat.data()[i] = (CGAL_GLdouble)mat[i];
       }
       rendering_program.setUniformValue("f_matrix", a_mat*c_mat);
       viewer->glDrawArrays(GL_LINES, 0, 2);
@@ -187,12 +187,12 @@ void Volume_plane_intersection::draw(Viewer_interface* viewer) const {
       QMatrix4x4 a_mat, b_mat;
       for(int i=0; i<16; i++)
       {
-         a_mat.data()[i] = (float)mat[i];
+         a_mat.data()[i] = (CGAL_GLdouble)mat[i];
       }
       b->manipulatedFrame()->getMatrix(mat);
       for(int i=0; i<16; i++)
       {
-         b_mat.data()[i] = (float)mat[i];
+         b_mat.data()[i] = (CGAL_GLdouble)mat[i];
       }
       rendering_program.setUniformValue("f_matrix", a_mat*b_mat);
       viewer->glDrawArrays(GL_LINES, 0, 2);

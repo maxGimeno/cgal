@@ -1009,7 +1009,7 @@ bool Scene_edit_polyhedron_item::keyPressEvent(QKeyEvent* e)
   return false;
 }
 
-void Scene_edit_polyhedron_item::create_Sphere(double R)
+void Scene_edit_polyhedron_item::create_Sphere(CGAL_GLdouble R)
 {
   create_flat_sphere(R, pos_sphere, normals_sphere);
 }

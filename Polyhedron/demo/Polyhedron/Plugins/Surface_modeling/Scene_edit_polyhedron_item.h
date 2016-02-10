@@ -343,7 +343,7 @@ private:
   void initialize_buffers(CGAL::Three::Viewer_interface *viewer) const;
   void compute_normals_and_vertices(void);
   void compute_bbox(const CGAL::Three::Scene_interface::Bbox&);
-  void create_Sphere(double);
+  void create_Sphere(CGAL_GLdouble);
   void reset_drawing_data();
 
 

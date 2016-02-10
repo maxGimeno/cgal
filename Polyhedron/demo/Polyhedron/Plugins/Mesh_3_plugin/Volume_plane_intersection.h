@@ -10,6 +10,7 @@
 #include <QOpenGLBuffer>
 #include <QOpenGLShaderProgram>
 #include <CGAL/Three/Viewer_interface.h>
+#include <CGAL/gl.h>
 using namespace CGAL::Three;
 class Volume_plane_interface;
 
@@ -61,9 +62,9 @@ private:
   mutable int vertexLocation[1];
   mutable int mvpLocation[1];
 
-  std::vector<float> a_vertex;
-  std::vector<float> b_vertex;
-  std::vector<float> c_vertex;
+  std::vector<CGAL_GLdouble> a_vertex;
+  std::vector<CGAL_GLdouble> b_vertex;
+  std::vector<CGAL_GLdouble> c_vertex;
 
   mutable QOpenGLBuffer buffers[vboSize];
   mutable QOpenGLVertexArrayObject vao[vaoSize];

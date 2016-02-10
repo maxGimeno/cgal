@@ -1,6 +1,6 @@
 #ifndef POLYHEDRON_DEMO_CREATE_SPHERE_H
 #define POLYHEDRON_DEMO_CREATE_SPHERE_H
-
+#include <CGAL/gl.h>
 #include <vector>
 #include <cmath>
 #include <CGAL/number_type_config.h>

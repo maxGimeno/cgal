@@ -69,8 +69,8 @@ private:
   mutable int lightLocation[5];
   mutable int twosideLocation;
 
-   std::vector<float> *v_box;
-   std::vector<float> color;
+   std::vector<CGAL_GLdouble> *v_box;
+   std::vector<CGAL_GLdouble> color;
 
 
   mutable QOpenGLBuffer m_vbo[vboSize];
@@ -80,7 +80,7 @@ private:
   void draw_bbox();
   void attrib_buffers(CGAL::Three::Viewer_interface*) const;
   void compile_shaders();
-  void draw_Bbox(Bbox bbox, std::vector<float> *vertices);
+  void draw_Bbox(Bbox bbox, std::vector<CGAL_GLdouble> *vertices);
 public Q_SLOTS:
     void changed();
 #endif // SCENE_SEGMENTED_IMAGE_GL_BUFFERS_AVAILABLE

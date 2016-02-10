@@ -23,7 +23,7 @@ public:
   bool is_vertex_active(std::size_t i, std::size_t j, std::size_t k) const;
   const QColor& vertex_color(std::size_t i, std::size_t j, std::size_t k) const;
   void normal(std::size_t i, std::size_t j, std::size_t k,
-              float& x, float& y, float& z) const;
+              CGAL_GLdouble& x, CGAL_GLdouble& y, CGAL_GLdouble& z) const;
   
   int dx() const { return dx_; }
   int dy() const { return dy_; }
@@ -43,7 +43,7 @@ private:
   unsigned char image_data(std::size_t i, std::size_t j, std::size_t k) const;
   
   void add_to_normal(unsigned char v,
-                     float& x, float& y, float& z,
+                     CGAL_GLdouble& x, CGAL_GLdouble& y, CGAL_GLdouble& z,
                      int dx, int dy, int dz) const;
   
 private:
@@ -168,7 +168,7 @@ non_null_neighbor_data(std::size_t i, std::size_t j, std::size_t k) const
 void
 Image_accessor::
 normal(std::size_t i, std::size_t j, std::size_t k,
-       float& x, float& y, float& z) const
+       CGAL_GLdouble& x, CGAL_GLdouble& y, CGAL_GLdouble& z) const
 {
   unsigned char v = image_data(i-dx_, j-dy_, k-dz_);
   add_to_normal(v,x,y,z,       1    , 1    , 1);
@@ -198,7 +198,7 @@ normal(std::size_t i, std::size_t j, std::size_t k,
 void
 Image_accessor::
 add_to_normal(unsigned char v,
-              float& x, float& y, float& z,
+              CGAL_GLdouble& x, CGAL_GLdouble& y, CGAL_GLdouble& z,
               int dx, int dy, int dz) const
 {
   if ( 0 != v )
@@ -218,14 +218,14 @@ public:
   
   void fill_buffer_data();
 
-  const GLfloat* colors() const { return &(colors_[0]); }
-  const GLfloat* normals() const { return &(normals_[0]); }
-  const GLfloat* vertices() const { return &(vertices_[0]); }
+  const CGAL_GLdouble* colors() const { return &(colors_[0]); }
+  const CGAL_GLdouble* normals() const { return &(normals_[0]); }
+  const CGAL_GLdouble* vertices() const { return &(vertices_[0]); }
   const GLuint* quads() const { return &(quads_[0]); }
   
-  std::size_t color_size() const { return colors_.size()*sizeof(GLfloat); }
-  std::size_t normal_size() const { return normals_.size()*sizeof(GLfloat); }
-  std::size_t vertex_size() const { return vertices_.size()*sizeof(GLfloat); }
+  std::size_t color_size() const { return colors_.size()*sizeof(CGAL_GLdouble); }
+  std::size_t normal_size() const { return normals_.size()*sizeof(CGAL_GLdouble); }
+  std::size_t vertex_size() const { return vertices_.size()*sizeof(CGAL_GLdouble); }
   std::size_t quad_size() const { return quads_.size()*sizeof(GLuint); }
   
 private:
@@ -250,7 +250,7 @@ private:
   const Image_accessor& data_;
   typedef std::map<int, std::size_t> Indices;
   Indices indices_;
-  std::vector<GLfloat> colors_, normals_, vertices_;
+  std::vector<CGAL_GLdouble> colors_, normals_, vertices_;
   std::vector<GLuint> quads_;
 };
 
@@ -306,10 +306,10 @@ Vertex_buffer_helper::push_color(std::size_t i, std::size_t j, std::size_t k)
 void
 Vertex_buffer_helper::push_normal(std::size_t i, std::size_t j, std::size_t k)
 {
-  float x=0.f, y=0.f, z=0.f;
+  CGAL_GLdouble x=0, y=0, z=0;
   data_.normal(i,j,k,x,y,z);
   
-  float norm = std::sqrt(x*x+y*y+z*z);
+  CGAL_GLdouble norm = std::sqrt(x*x+y*y+z*z);
   x = x / norm;
   y = y / norm;
   z = z / norm;
@@ -411,7 +411,7 @@ Scene_segmented_image_item::Scene_segmented_image_item(Image* im,
 {
   CGAL_USE(display_scale);
 
-  v_box = new std::vector<float>();
+  v_box = new std::vector<CGAL_GLdouble>();
   compile_shaders();
   initialize_buffers();
   setRenderingMode(Flat);
@@ -531,16 +531,16 @@ void Scene_segmented_image_item::attrib_buffers(Viewer_interface* viewer) const
 {
     QMatrix4x4 mvpMatrix;
     QMatrix4x4 mvMatrix;
-    float mat[16];
+    CGAL_GLdouble mat[16];
     viewer->camera()->getModelViewProjectionMatrix(mat);
     for(int i=0; i < 16; i++)
     {
-        mvpMatrix.data()[i] = (float)mat[i];
+        mvpMatrix.data()[i] = (CGAL_GLdouble)mat[i];
     }
     viewer->camera()->getModelViewMatrix(mat);
     for(int i=0; i < 16; i++)
     {
-        mvMatrix.data()[i] = (float)mat[i];
+        mvMatrix.data()[i] = (CGAL_GLdouble)mat[i];
     }
     QVector4D	position(0.0f,0.0f,1.0f,1.0f );
     GLboolean isTwoSide;
@@ -665,7 +665,7 @@ Scene_segmented_image_item::initialize_buffers()
   helper.fill_buffer_data();
 
   draw_Bbox(bbox(), v_box);
-  std::vector<float> nul_vec(0);
+  std::vector<CGAL_GLdouble> nul_vec(0);
   for(std::size_t i=0; i<v_box->size(); i++)
       nul_vec.push_back(0.0);
 
@@ -675,21 +675,21 @@ Scene_segmented_image_item::initialize_buffers()
   m_vbo[0].allocate(helper.vertices(), static_cast<int>(helper.vertex_size()));
   poly_vertexLocation[0] = rendering_program.attributeLocation("vertex");
   rendering_program.enableAttributeArray(poly_vertexLocation[0]);
-  rendering_program.setAttributeBuffer(poly_vertexLocation[0],GL_FLOAT,0,3);
+  rendering_program.setAttributeBuffer(poly_vertexLocation[0],CGAL_GL_DOUBLE,0,3);
   m_vbo[0].release();
 
   m_vbo[1].bind();
   m_vbo[1].allocate(helper.normals(), static_cast<int>(helper.normal_size()));
   normalsLocation[0] = rendering_program.attributeLocation("normal");
   rendering_program.enableAttributeArray(normalsLocation[0]);
-  rendering_program.setAttributeBuffer(normalsLocation[0],GL_FLOAT,0,3);
+  rendering_program.setAttributeBuffer(normalsLocation[0],CGAL_GL_DOUBLE,0,3);
   m_vbo[1].release();
 
   m_vbo[2].bind();
   m_vbo[2].allocate(helper.colors(), static_cast<int>(helper.color_size()));
   colorLocation[0] = rendering_program.attributeLocation("inColor");
   rendering_program.enableAttributeArray(colorLocation[0]);
-  rendering_program.setAttributeBuffer(colorLocation[0],GL_FLOAT,0,3);
+  rendering_program.setAttributeBuffer(colorLocation[0],CGAL_GL_DOUBLE,0,3);
   m_vbo[2].release();
 
   m_ibo->bind();
@@ -702,24 +702,24 @@ Scene_segmented_image_item::initialize_buffers()
 
   vao[1].bind();
   m_vbo[3].bind();
-  m_vbo[3].allocate(v_box->data(), static_cast<int>(v_box->size()*sizeof(float)));
+  m_vbo[3].allocate(v_box->data(), static_cast<int>(v_box->size()*sizeof(CGAL_GLdouble)));
   poly_vertexLocation[0] = rendering_program.attributeLocation("vertex");
   rendering_program.enableAttributeArray(poly_vertexLocation[0]);
-  rendering_program.setAttributeBuffer(poly_vertexLocation[0],GL_FLOAT,0,3);
+  rendering_program.setAttributeBuffer(poly_vertexLocation[0],CGAL_GL_DOUBLE,0,3);
   m_vbo[3].release();
 
   m_vbo[4].bind();
-  m_vbo[3].allocate(nul_vec.data(), static_cast<int>(nul_vec.size()*sizeof(float)));
+  m_vbo[3].allocate(nul_vec.data(), static_cast<int>(nul_vec.size()*sizeof(CGAL_GLdouble)));
   normalsLocation[0] = rendering_program.attributeLocation("normal");
   rendering_program.enableAttributeArray(normalsLocation[0]);
-  rendering_program.setAttributeBuffer(normalsLocation[0],GL_FLOAT,0,3);
+  rendering_program.setAttributeBuffer(normalsLocation[0],CGAL_GL_DOUBLE,0,3);
   m_vbo[4].release();
 
   m_vbo[5].bind();
-  m_vbo[5].allocate(nul_vec.data(), static_cast<int>(nul_vec.size()*sizeof(float)));
+  m_vbo[5].allocate(nul_vec.data(), static_cast<int>(nul_vec.size()*sizeof(CGAL_GLdouble)));
   colorLocation[0] = rendering_program.attributeLocation("inColor");
   rendering_program.enableAttributeArray(colorLocation[0]);
-  rendering_program.setAttributeBuffer(colorLocation[0],GL_FLOAT,0,3);
+  rendering_program.setAttributeBuffer(colorLocation[0],CGAL_GL_DOUBLE,0,3);
   m_vbo[5].release();
 
   m_ibo->bind();
@@ -763,7 +763,7 @@ void Scene_segmented_image_item::changed()
     initialize_buffers();
 }
 
-void Scene_segmented_image_item::draw_Bbox(Bbox bbox, std::vector<float> *vertices)
+void Scene_segmented_image_item::draw_Bbox(Bbox bbox, std::vector<CGAL_GLdouble> *vertices)
 {
     vertices->push_back(bbox.xmin);
     vertices->push_back(bbox.ymin);

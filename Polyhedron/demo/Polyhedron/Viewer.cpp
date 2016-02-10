@@ -347,7 +347,7 @@ void Viewer_impl::draw_aux(bool with_names, Viewer* viewer)
     viewer->glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
 #endif
 
-#if ANDORID
+#if ANDROID
       if(antialiasing)
       {
           glEnable(GL_MULTISAMPLE);
