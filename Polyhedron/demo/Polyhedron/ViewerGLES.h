@@ -147,17 +147,7 @@ Q_SIGNALS:
 protected:
   QTime chrono;
   bool event(QEvent *e);
-  double prev_radius;/*
-#if ANDROID
-  void mouseMoveEvent(QMouseEvent* e);
-#endif
-  struct datas
-  {
-      QByteArray code;
-      int program_index;
-      int shader_index;
-  };
-  qglviewer::Vec pointUnderPixelGLES(std::vector<QOpenGLShaderProgram*> programs, qglviewer::Camera*const camera, const QPoint& pixel, bool& found);
-*/}; // end class Viewer
+  double prev_radius;
+}; // end class Viewer
 
 #endif // VIEWERGLES_H
