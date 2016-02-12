@@ -114,6 +114,11 @@ public:
   PFNGLVERTEXATTRIBDIVISORARBPROC glVertexAttribDivisor;
   //!Allows OpenGL 2.1 context to get access to gkFrameBufferTexture2D.
   PFNGLFRAMEBUFFERTEXTURE2DEXTPROC glFramebufferTexture2D;
+#else
+  /*! Flag defining if the touch events should move the camera frame or the manipulated frame when running on a touchscreen device.
+  Can be set by a radiobutton for instance. */
+  bool frame_manipulation;
+  bool selection_mode;
 #endif
   //!@returns true if glVertexAttribDivisor, and glDrawArraysInstanced are found.
   //! Used by the items to avoid SEGFAULT.

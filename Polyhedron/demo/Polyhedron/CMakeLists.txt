@@ -359,8 +359,7 @@ endif()
     demo_framework
     scene_polyhedron_item
     scene_points_with_normal_item
-    scene_implicit_function_item
-    scene_polylines_item
+    scene_implicit_function_item    scene_polylines_item
     NAMESPACE Polyhedron_
     APPEND FILE polyhedron_demo_targets.cmake)
   if(NOT ANDROID)
@@ -383,7 +382,7 @@ endif()
                            DEPENDS
                            /home/mgimeno/Android/Android-build/lib/libgmp.so
                            /home/mgimeno/Téléchargements/android-ndk-r10d/platforms/android-16/arch-arm/usr/lib/libGLESv2.so
-                           /home/mgimeno/Android/libQGLViewer_Clone/libQGLViewer/build-for-android/libQGLViewer.so
+                           /home/mgimeno/Android/libQGLViewer-2.6.1/QGLViewer-build-Android/libQGLViewer.so
                            libpoint_dialog.so
                            libpolyhedron_demo.so
                            libdemo_framework.so

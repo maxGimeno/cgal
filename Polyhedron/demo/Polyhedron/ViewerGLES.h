@@ -38,11 +38,7 @@ public:
   void draw();
   //!This step happens after draw(). It is here that the axis system is
   //!displayed.
-#if ANDROID
-  void drawVisualHintsGLES();
-#else
   void drawVisualHints();
-#endif
   //! Deprecated. Does the same as draw().
   void fastDraw();
   //! Initializes the OpenGL functions and sets the backGround color.
@@ -92,7 +88,24 @@ public Q_SLOTS:
   bool moveCameraToCoordinates(QString,
                                float animation_duration = 0.5f);
 
+  /*! OpenGL ES version of glReadPixels cannot be used with GL_DEPTH_COMPONENT. In fact, there is no direct way
+   with OpenGL ES to access the depth buffer data. The common workaround is to draw the scene in a grayscale
+   representing the depth value accessible only from the fragment shader. This is why you must provide a vector
+  containing all of the programs used to render your scene. The fragment shaders of all these programs is replaced
+   by one drawing in a grayscale, then the scene is rendered in an FBO that will not be displayed, glReadPixels
+  reads the color data, which is then converted in  a depth value, and the original fragment shaders are set back up.
+  */
+
+   qglviewer::Vec pointUnderPixel(std::vector<QOpenGLShaderProgram*> programs, qglviewer::Camera* const camera, const QPoint& pixel, bool& found);
+
 protected:
+//! Holds useful data to reset programs in pointUnderPixel
+   struct programs_data
+   {
+       QByteArray code;
+       int program_index;
+       int shader_index;
+   };
   //! Holds useful data to draw the axis system
   struct AxisData
   {
@@ -100,6 +113,11 @@ protected:
       std::vector<CGAL_GLdouble> *normals;
       std::vector<CGAL_GLdouble> *colors;
   };
+  //!The data for the pivotPoint cross
+  float pivotVertices[12];
+  float pivotNormals[12];
+  float pivotColors[12];
+
   //! The buffers used to draw the axis system
   QOpenGLBuffer buffers[3];
   //! The VAO used to draw the axis system
@@ -114,6 +132,8 @@ protected:
   std::vector<CGAL_GLdouble> c_Axis;
   //! Decides if the axis system must be drawn or not
   bool axis_are_displayed;
+  //! Decides if the pivotPoint must be drawn or not
+  bool pivot_point_is_displayed;
   //!Defines the behaviour for the mouse press events
   void mousePressEvent(QMouseEvent*);
   void wheelEvent(QWheelEvent *);

@@ -9,6 +9,7 @@
 #include <QOpenGLShaderProgram>
 #include <cmath>
 #include <QTime>
+#include <QOpenGLFramebufferObject>
 
 class Viewer_impl {
 #include <QOpenGLContext>
@@ -34,6 +35,7 @@ public:
 ViewerGLES::ViewerGLES(QWidget* parent, bool antialiasing)
   : CGAL::Three::Viewer_interface(parent)
 {
+  setAttribute(Qt::WA_AcceptTouchEvents);
   d = new Viewer_impl;
   d->scene = 0;
   d->antialiasing = antialiasing;
@@ -74,6 +76,33 @@ ViewerGLES::ViewerGLES(QWidget* parent, bool antialiasing)
   pickMatrix_[15]=1;
   prev_radius = sceneRadius();
   axis_are_displayed = true;
+
+  pivotNormals[0] = 0;
+  pivotNormals[1] = 0;
+  pivotNormals[2] = 0;
+  pivotNormals[3] = 0;
+  pivotNormals[4] = 0;
+  pivotNormals[5] = 0;
+  pivotNormals[6] = 0;
+  pivotNormals[7] = 0;
+  pivotNormals[8] = 0;
+  pivotNormals[9] = 0;
+  pivotNormals[10] = 0;
+  pivotNormals[11] = 0;
+
+  pivotColors[0] = 1.0;
+  pivotColors[1] = 1.0;
+  pivotColors[2] = 1.0;
+  pivotColors[3] = 1.0;
+  pivotColors[4] = 1.0;
+  pivotColors[5] = 1.0;
+
+  pivotColors[6] = 1.0;
+  pivotColors[7] = 1.0;
+  pivotColors[8] = 1.0;
+  pivotColors[9] = 1.0;
+  pivotColors[10] = 1.0;
+  pivotColors[11] = 1.0;
 }
 
 ViewerGLES::~ViewerGLES()
@@ -248,7 +277,7 @@ void ViewerGLES::initializeGL()
       qDebug() << rendering_program.log();
 
 #if ANDROID
-      gl->glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+      glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 #endif
 }
 }
@@ -383,20 +412,12 @@ void Viewer_impl::draw_aux(bool with_names, ViewerGLES *viewer)
 #endif
 }
 
-#if ANDROID
 void ViewerGLES::drawWithNames(const QPoint &point)
 {
   QGLViewer::draw();
   d->scene->picking_target = point;
   d->draw_aux(true, this);
 }
-#else
-void ViewerGLES::drawWithNames()
-{
-  QGLViewer::draw();
-  d->draw_aux(true, this);
-}
-#endif
 void ViewerGLES::postSelection(const QPoint& pixel)
 {
   bool found = false;
@@ -407,11 +428,7 @@ void ViewerGLES::postSelection(const QPoint& pixel)
     if(program)
       list.push_back(program);
   }
-#if ANDROID
-  qglviewer::Vec point = pointUnderPixelGLES(list,camera(),pixel, found);
-#else
-   qglviewer::Vec point = camera()->pointUnderPixel(pixel, found);
-#endif
+  qglviewer::Vec point = pointUnderPixel(list,camera(),pixel, found);
   if(found) {
     Q_EMIT selectedPoint(point.x,
                        point.y,
@@ -850,15 +867,61 @@ void ViewerGLES::makeArrow(CGAL_GLdouble R, int prec, qglviewer::Vec from, qglvi
 
     }
 }
-#if ANDROID
-void ViewerGLES::drawVisualHintsGLES()
-{
-    QGLViewer::drawVisualHintsGLES();
-#else
+
 void ViewerGLES::drawVisualHints()
 {
-    QGLViewer::drawVisualHints();
-#endif
+  if(pivot_point_is_displayed)
+  {  // Pivot point cross
+        const qreal size = 0.05 * sceneRadius();
+
+        pivotVertices[0] = camera()->pivotPoint().x-size;
+        pivotVertices[1] = camera()->pivotPoint().y;
+        pivotVertices[2] = camera()->pivotPoint().z;
+        pivotVertices[3] = camera()->pivotPoint().x+size;
+        pivotVertices[4] = camera()->pivotPoint().y;
+        pivotVertices[5] = camera()->pivotPoint().z;
+
+        pivotVertices[6] = camera()->pivotPoint().x;
+        pivotVertices[7] = camera()->pivotPoint().y-size;
+        pivotVertices[8] = camera()->pivotPoint().z;
+        pivotVertices[9] = camera()->pivotPoint().x;
+        pivotVertices[10] = camera()->pivotPoint().y+size;
+        pivotVertices[11] = camera()->pivotPoint().z;
+
+        vao[1].bind();
+        buffers[3].bind();
+        buffers[3].allocate(pivotVertices, 12 * sizeof(float));
+        rendering_program.bind();
+        rendering_program.enableAttributeArray("vertex");
+        rendering_program.setAttributeBuffer("vertex",GL_FLOAT,0,3);
+        buffers[3].release();
+
+        buffers[4].bind();
+        buffers[4].allocate(pivotNormals, 12 * sizeof(float));
+        rendering_program.bind();
+        rendering_program.enableAttributeArray("normal");
+        rendering_program.setAttributeBuffer("normal",GL_FLOAT,0,3);
+        buffers[4].release();
+
+        buffers[5].bind();
+        buffers[5].allocate(pivotColors, 12 * sizeof(float));
+        rendering_program.bind();
+        rendering_program.enableAttributeArray("colors");
+        rendering_program.setAttributeBuffer("colors",GL_FLOAT,0,3);
+        buffers[5].release();
+
+        rendering_program.release();
+        vao[1].release();
+
+
+        vao[1].bind();
+        rendering_program.bind();
+        glLineWidth(3.0);
+        glDrawArrays(GL_LINES, 0, 4);
+        glLineWidth(1.0);
+        rendering_program.release();
+        vao[1].release();
+    }
     if(axis_are_displayed)
     {
         QMatrix4x4 mvpMatrix;
@@ -1272,4 +1335,75 @@ void ViewerGLES::wheelEvent(QWheelEvent* e)
 std::vector<QOpenGLShaderProgram*> ViewerGLES::getPrograms()
 {
   return d->shader_programs;
+}
+
+qglviewer::Vec ViewerGLES::pointUnderPixel(std::vector<QOpenGLShaderProgram*> programs, qglviewer::Camera*const camera, const QPoint& pixel, bool& found)
+{
+  makeCurrent();
+
+  static const int size = programs.size();
+
+  std::vector<programs_data> original_shaders;
+  //The fragmentertex source code
+  const char grayscale_fragment_source[] =
+  {
+    "void main(void) { \n"
+    "gl_FragColor = vec4(vec3(gl_FragCoord.z), 1.0); \n"
+    "} \n"
+    "\n"
+  };
+
+  for(int i=0; i<size; i++)
+  {
+    if(programs[i])
+      for(int j=0; j<programs[i]->shaders().size(); j++)
+      {
+        if(programs[i]->shaders().at(j)->shaderType() == QOpenGLShader::Fragment)
+        {
+          //copies the original shaders of each program
+          programs_data c;
+          c.code = programs[i]->shaders().at(j)->sourceCode();
+          c.program_index = i;
+          c.shader_index = j;
+          original_shaders.push_back(c);
+          //replace their fragment shaders so they display in a grayscale
+          programs[i]->shaders().at(j)->compileSourceCode(grayscale_fragment_source);
+        }
+        programs[i]->link();
+      }
+  }
+  //determines the size of the buffer
+  int deviceWidth = camera->screenWidth();
+  int deviceHeight = camera->screenHeight();
+  int rowLength = deviceWidth * 4; // data asked in RGBA,so 4 bytes.
+  //the FBO in which the grayscale image will be rendered
+  QOpenGLFramebufferObject *fbo = new QOpenGLFramebufferObject(deviceWidth, deviceHeight);
+  fbo->bind();
+  //make the lines thicker so it is easier to click
+  glLineWidth(10.0);
+  //draws the image in the fbo
+  paintGL();
+  glLineWidth(1.0);
+  const static int dataLength = rowLength * deviceHeight;
+  GLubyte* buffer = new GLubyte[dataLength];
+  // Qt uses upper corner for its origin while GL uses the lower corner.
+  glReadPixels(pixel.x(), deviceHeight-1-pixel.y(), 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+  //reset the fbo to the one rendered on-screen, now that we have our information
+  fbo->release();
+  delete fbo;
+  //resets the original programs
+  for(int i=0; i<(int)original_shaders.size(); i++)
+  {
+    programs[original_shaders[i].program_index]->shaders().at(original_shaders[i].shader_index)->compileSourceCode(original_shaders[i].code);
+    programs[original_shaders[i].program_index]->link();
+  }
+  original_shaders.clear();
+  //depth value needs to be between 0 and 1.
+  float depth = buffer[0]/255.0;
+  delete buffer;
+  qglviewer::Vec point(pixel.x(), pixel.y(), depth);
+  point = camera->unprojectedCoordinatesOf(point);
+  //if depth is 1, then it is the zFar plane that is hit, so there is nothing rendered along the ray.
+  found = depth<1;
+  return point;
 }
