@@ -291,8 +291,6 @@ protected Q_SLOTS:
   void on_actionSaveAs_triggered(); 
   //!Calls the function save of the current plugin if able.
   void save(QString filename, CGAL::Three::Scene_item* item);
-  //!Calls the function saveSnapShot of the viewer.
-  void on_actionSaveSnapshot_triggered();
   //!Opens a Dialog to choose a color and make it the background color.
   void on_actionSetBackgroundColor_triggered();
   /*! Opens a Dialog to enter coordinates of the new center point and sets it

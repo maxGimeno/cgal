@@ -34,8 +34,9 @@ public:
   ~ViewerGLES();
 
   // overload several QGLViewer virtual functions
-  //! Deprecated and does nothing.
+  //! Calls the draw of the scene.
   void draw();
+  void postDraw();
   //!This step happens after draw(). It is here that the axis system is
   //!displayed.
   void drawVisualHints();
@@ -44,11 +45,7 @@ public:
   //! Initializes the OpenGL functions and sets the backGround color.
   void initializeGL();
   //! call this instead of draw if you want to perform a picking
-#if ANDROID
   void drawWithNames(const QPoint &point);
-#else
-  void drawWithNames();
-#endif
   /*! Uses the parameter pixel's coordinates to get the corresponding point
    * in the World frame. If this point is found, emits selectedPoint, selected,
    * and selectionRay signals.
@@ -72,6 +69,7 @@ public:
 
 
 public Q_SLOTS:
+  void select(const QPoint& point);
   //! Sets the antialiasing to true or false.
   void setAntiAliasing(bool b);
   //! If b is true, facets will be ligted from both internal and external sides.
@@ -113,15 +111,19 @@ protected:
       std::vector<CGAL_GLdouble> *normals;
       std::vector<CGAL_GLdouble> *colors;
   };
+  //! Thedata for the grid
+  std::vector<float> gridVertices;
+  std::vector<float> gridNormals;
+  std::vector<float> gridColors;
   //!The data for the pivotPoint cross
   float pivotVertices[12];
   float pivotNormals[12];
   float pivotColors[12];
 
   //! The buffers used to draw the axis system
-  QOpenGLBuffer buffers[3];
+  QOpenGLBuffer buffers[9];
   //! The VAO used to draw the axis system
-  QOpenGLVertexArrayObject vao[1];
+  QOpenGLVertexArrayObject vao[3];
   //! The rendering program used to draw the axis system
   QOpenGLShaderProgram rendering_program;
   //! Holds the vertices data for the axis system
@@ -156,7 +158,7 @@ protected:
    * \param color the RGB color of the arrow.
    * \param data the struct of std::vector that will contain the results.
    */
-
+  void makeGrid(qreal size, int nbSubdivisions, AxisData &data);
   void makeArrow(CGAL_GLdouble R, int prec, qglviewer::Vec from, qglviewer::Vec to, qglviewer::Vec color, AxisData &data);
   void resizeGL(int w, int h);
 

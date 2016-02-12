@@ -154,6 +154,12 @@ void ViewerGLES::draw()
   d->draw_aux(false, this);
 }
 
+void ViewerGLES::postDraw()
+{
+  // Pivot point, line when camera rolls, zoom region
+  drawVisualHints();
+}
+
 void ViewerGLES::fastDraw()
 {
   d->draw_aux(false, this);
@@ -184,8 +190,9 @@ void ViewerGLES::initializeGL()
 #endif
 
   setBackgroundColor(::Qt::white);
-  vao[0].create();
   for(int i=0; i<3; i++)
+    vao[i].create();
+  for(int i=0; i<9; i++)
     buffers[i].create();
   d->scene->initializeGL();
 
@@ -416,10 +423,12 @@ void ViewerGLES::drawWithNames(const QPoint &point)
 {
   QGLViewer::draw();
   d->scene->picking_target = point;
+  qDebug()<<"picking target is "<<d->scene->picking_target;
   d->draw_aux(true, this);
 }
 void ViewerGLES::postSelection(const QPoint& pixel)
 {
+
   bool found = false;
   std::vector<QOpenGLShaderProgram*> list;
   for(int i=0; i<NB_OF_PROGRAMS; i++)
@@ -870,118 +879,150 @@ void ViewerGLES::makeArrow(CGAL_GLdouble R, int prec, qglviewer::Vec from, qglvi
 
 void ViewerGLES::drawVisualHints()
 {
+  if (gridIsDrawn())
+  {
+    AxisData data;
+    data.vertices = &gridVertices;
+    data.normals = &gridNormals;
+    data.colors = &gridColors;
+    makeGrid(camera()->sceneRadius(), 10, data);
+    rendering_program.bind();
+
+    vao[2].bind();
+    buffers[6].bind();
+    buffers[6].allocate(gridVertices.data(), gridVertices.size()*sizeof(float));
+    rendering_program.enableAttributeArray("vertex");
+    rendering_program.setAttributeBuffer("vertex",GL_FLOAT,0,3);
+    buffers[6].release();
+
+    buffers[7].bind();
+    buffers[7].allocate(gridNormals.data(), gridNormals.size()*sizeof(float));
+    rendering_program.enableAttributeArray("normal");
+    rendering_program.setAttributeBuffer("normal",GL_FLOAT,0,3);
+    buffers[7].release();
+
+    buffers[8].bind();
+    buffers[8].allocate(gridColors.data(), gridColors.size()*sizeof(float));
+    rendering_program.enableAttributeArray("colors");
+    rendering_program.setAttributeBuffer("colors",GL_FLOAT,0,3);
+    buffers[8].release();
+
+    glDrawArrays(GL_LINES, 0, gridVertices.size()/3);
+    rendering_program.release();
+    vao[2].release();
+  }
   if(pivot_point_is_displayed)
   {  // Pivot point cross
-        const qreal size = 0.05 * sceneRadius();
+    const qreal size = 0.05 * sceneRadius();
 
-        pivotVertices[0] = camera()->pivotPoint().x-size;
-        pivotVertices[1] = camera()->pivotPoint().y;
-        pivotVertices[2] = camera()->pivotPoint().z;
-        pivotVertices[3] = camera()->pivotPoint().x+size;
-        pivotVertices[4] = camera()->pivotPoint().y;
-        pivotVertices[5] = camera()->pivotPoint().z;
+    pivotVertices[0] = camera()->pivotPoint().x-size;
+    pivotVertices[1] = camera()->pivotPoint().y;
+    pivotVertices[2] = camera()->pivotPoint().z;
+    pivotVertices[3] = camera()->pivotPoint().x+size;
+    pivotVertices[4] = camera()->pivotPoint().y;
+    pivotVertices[5] = camera()->pivotPoint().z;
 
-        pivotVertices[6] = camera()->pivotPoint().x;
-        pivotVertices[7] = camera()->pivotPoint().y-size;
-        pivotVertices[8] = camera()->pivotPoint().z;
-        pivotVertices[9] = camera()->pivotPoint().x;
-        pivotVertices[10] = camera()->pivotPoint().y+size;
-        pivotVertices[11] = camera()->pivotPoint().z;
+    pivotVertices[6] = camera()->pivotPoint().x;
+    pivotVertices[7] = camera()->pivotPoint().y-size;
+    pivotVertices[8] = camera()->pivotPoint().z;
+    pivotVertices[9] = camera()->pivotPoint().x;
+    pivotVertices[10] = camera()->pivotPoint().y+size;
+    pivotVertices[11] = camera()->pivotPoint().z;
 
-        vao[1].bind();
-        buffers[3].bind();
-        buffers[3].allocate(pivotVertices, 12 * sizeof(float));
-        rendering_program.bind();
-        rendering_program.enableAttributeArray("vertex");
-        rendering_program.setAttributeBuffer("vertex",GL_FLOAT,0,3);
-        buffers[3].release();
+    vao[1].bind();
+    buffers[3].bind();
+    buffers[3].allocate(pivotVertices, 12 * sizeof(float));
+    rendering_program.bind();
+    rendering_program.enableAttributeArray("vertex");
+    rendering_program.setAttributeBuffer("vertex",GL_FLOAT,0,3);
+    buffers[3].release();
 
-        buffers[4].bind();
-        buffers[4].allocate(pivotNormals, 12 * sizeof(float));
-        rendering_program.bind();
-        rendering_program.enableAttributeArray("normal");
-        rendering_program.setAttributeBuffer("normal",GL_FLOAT,0,3);
-        buffers[4].release();
+    buffers[4].bind();
+    buffers[4].allocate(pivotNormals, 12 * sizeof(float));
+    rendering_program.bind();
+    rendering_program.enableAttributeArray("normal");
+    rendering_program.setAttributeBuffer("normal",GL_FLOAT,0,3);
+    buffers[4].release();
 
-        buffers[5].bind();
-        buffers[5].allocate(pivotColors, 12 * sizeof(float));
-        rendering_program.bind();
-        rendering_program.enableAttributeArray("colors");
-        rendering_program.setAttributeBuffer("colors",GL_FLOAT,0,3);
-        buffers[5].release();
+    buffers[5].bind();
+    buffers[5].allocate(pivotColors, 12 * sizeof(float));
+    rendering_program.bind();
+    rendering_program.enableAttributeArray("colors");
+    rendering_program.setAttributeBuffer("colors",GL_FLOAT,0,3);
+    buffers[5].release();
 
-        rendering_program.release();
-        vao[1].release();
+    rendering_program.release();
+    vao[1].release();
 
 
-        vao[1].bind();
-        rendering_program.bind();
-        glLineWidth(3.0);
-        glDrawArrays(GL_LINES, 0, 4);
-        glLineWidth(1.0);
-        rendering_program.release();
-        vao[1].release();
-    }
-    if(axis_are_displayed)
+    vao[1].bind();
+    rendering_program.bind();
+    glLineWidth(3.0);
+    glDrawArrays(GL_LINES, 0, 4);
+    glLineWidth(1.0);
+    rendering_program.release();
+    vao[1].release();
+  }
+  if(axis_are_displayed)
+  {
+    QMatrix4x4 mvpMatrix;
+    QMatrix4x4 mvMatrix;
+    CGAL_GLdouble  mat[16];
+    //Keeps the axis from being clipped
+    camera()->getModelViewProjectionMatrix(mat);
+    //nullifies the translation
+    mat[12]=0;
+    mat[13]=0;
+    mat[14]=0;
+    for(int i=0; i < 16; i++)
     {
-        QMatrix4x4 mvpMatrix;
-        QMatrix4x4 mvMatrix;
-        CGAL_GLdouble  mat[16];
-        //Keeps the axis from being clipped
-        camera()->getModelViewProjectionMatrix(mat);
-        //nullifies the translation
-        mat[12]=0;
-        mat[13]=0;
-        mat[14]=0;
-        for(int i=0; i < 16; i++)
-        {
-            mvpMatrix.data()[i] = (CGAL_GLdouble)mat[i];
-        }
-        camera()->getModelViewMatrix(mat);
-        for(int i=0; i < 16; i++)
-        {
-            mvMatrix.data()[i] = (CGAL_GLdouble)mat[i];
-        }
-        //Keeps the lighing from changing according to the position and orientation of the camera.
-        mvMatrix.data()[12] = 0;
-        mvMatrix.data()[13] = 0;
-        mvMatrix.data()[14] = 1;
-        QVector4D	position(0.0f,0.0f,0.0f,1.0f );
-        // define material
-        QVector4D	ambient;
-        QVector4D	diffuse;
-        QVector4D	specular;
-        float      shininess ;
-        // Ambient
-        ambient[0] = 0.29225f;
-        ambient[1] = 0.29225f;
-        ambient[2] = 0.29225f;
-        ambient[3] = 1.0f;
-        // Diffuse
-        diffuse[0] = 0.50754f;
-        diffuse[1] = 0.50754f;
-        diffuse[2] = 0.50754f;
-        diffuse[3] = 1.0f;
-        // Specular
-        specular[0] = 0.0f;
-        specular[1] = 0.0f;
-        specular[2] = 0.0f;
-        specular[3] = 0.0f;
-        // Shininess
-        shininess = 51.2f;
-        rendering_program.bind();
-        rendering_program.setUniformValue("light_pos", position);
-        rendering_program.setUniformValue("mvp_matrix", mvpMatrix);
-        rendering_program.setUniformValue("mv_matrix", mvMatrix);
-        rendering_program.setUniformValue("light_diff", diffuse);
-        rendering_program.setUniformValue("light_spec", specular);
-        rendering_program.setUniformValue("light_amb", ambient);
-        rendering_program.setUniformValue("spec_power", shininess);
-        vao[0].bind();
-        glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(v_Axis.size() / 3));
-        rendering_program.release();
-        vao[0].release();
+      mvpMatrix.data()[i] = (CGAL_GLdouble)mat[i];
     }
+    camera()->getModelViewMatrix(mat);
+    for(int i=0; i < 16; i++)
+    {
+      mvMatrix.data()[i] = (CGAL_GLdouble)mat[i];
+    }
+    //Keeps the lighing from changing according to the position and orientation of the camera.
+    mvMatrix.data()[12] = 0;
+    mvMatrix.data()[13] = 0;
+    mvMatrix.data()[14] = 1;
+    QVector4D	position(0.0f,0.0f,0.0f,1.0f );
+    // define material
+    QVector4D	ambient;
+    QVector4D	diffuse;
+    QVector4D	specular;
+    float      shininess ;
+    // Ambient
+    ambient[0] = 0.29225f;
+    ambient[1] = 0.29225f;
+    ambient[2] = 0.29225f;
+    ambient[3] = 1.0f;
+    // Diffuse
+    diffuse[0] = 0.50754f;
+    diffuse[1] = 0.50754f;
+    diffuse[2] = 0.50754f;
+    diffuse[3] = 1.0f;
+    // Specular
+    specular[0] = 0.0f;
+    specular[1] = 0.0f;
+    specular[2] = 0.0f;
+    specular[3] = 0.0f;
+    // Shininess
+    shininess = 51.2f;
+    rendering_program.bind();
+    rendering_program.setUniformValue("light_pos", position);
+    rendering_program.setUniformValue("mvp_matrix", mvpMatrix);
+    rendering_program.setUniformValue("mv_matrix", mvMatrix);
+    rendering_program.setUniformValue("light_diff", diffuse);
+    rendering_program.setUniformValue("light_spec", specular);
+    rendering_program.setUniformValue("light_amb", ambient);
+    rendering_program.setUniformValue("spec_power", shininess);
+    vao[0].bind();
+    glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(v_Axis.size() / 3));
+    rendering_program.release();
+    vao[0].release();
+  }
 
 }
 void ViewerGLES::resizeGL(int w, int h)
@@ -1340,7 +1381,6 @@ std::vector<QOpenGLShaderProgram*> ViewerGLES::getPrograms()
 qglviewer::Vec ViewerGLES::pointUnderPixel(std::vector<QOpenGLShaderProgram*> programs, qglviewer::Camera*const camera, const QPoint& pixel, bool& found)
 {
   makeCurrent();
-
   static const int size = programs.size();
 
   std::vector<programs_data> original_shaders;
@@ -1406,4 +1446,58 @@ qglviewer::Vec ViewerGLES::pointUnderPixel(std::vector<QOpenGLShaderProgram*> pr
   //if depth is 1, then it is the zFar plane that is hit, so there is nothing rendered along the ray.
   found = depth<1;
   return point;
+}
+
+void ViewerGLES::makeGrid(qreal size, int nbSubdivisions, AxisData &data)
+{
+    data.vertices->resize(0);
+    data.normals->resize(0);
+    data.colors->resize(0);
+    float x = (2*(float)size)/nbSubdivisions;
+    float y = (2*(float)size)/nbSubdivisions;
+    for(int u = 0; u < nbSubdivisions + 1 ; u++)
+    {
+
+        data.vertices->push_back(-(float)size + x* u);
+        data.vertices->push_back(-(float)size);
+        data.vertices->push_back(0.0);
+
+        data.vertices->push_back(-(float)size + x* u);
+        data.vertices->push_back((float)size);
+        data.vertices->push_back(0.0);
+    }
+    for(int v=0; v<nbSubdivisions + 1; v++)
+    {
+
+        data.vertices->push_back(-(float)size);
+        data.vertices->push_back(-(float)size + v * y);
+        data.vertices->push_back(0.0);
+
+        data.vertices->push_back((float)size);
+        data.vertices->push_back(-(float)size + v * y);
+        data.vertices->push_back(0.0);
+    }
+    //color is white but with the normals set to 0, the lighting will make it dark gray.
+    float colors[3];
+    colors[0] = 1.0;
+    colors[1] = 1.0;
+    colors[2] = 1.0;
+
+    for(int i=0; i< 2*2*(nbSubdivisions + 1)*3; i++)
+    {
+        data.colors->push_back(colors[i%3]);
+        data.normals->push_back(0);
+    }
+
+
+
+}
+
+
+void ViewerGLES::select(const QPoint& point)
+{
+        beginSelection(point);
+        drawWithNames(point);
+        endSelection(point);
+        postSelection(point);
 }

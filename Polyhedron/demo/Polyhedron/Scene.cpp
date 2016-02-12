@@ -338,16 +338,15 @@ Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
         float r= R/255.0;
         float g = G/255.0;
         float b = B/255.0;
+        qDebug()<<r<<","<<g<<","<<b;
         //The fragmentertex source code
         QString picking_fragment_source(
-      #if !ANDROID
-              "#version 120 \n"
-      #endif
               "void main(void) { \n"
-              "gl_FragColor = vec4(");
+              "gl_FragColor = highp vec4(");
         picking_fragment_source.append(QString::number(r)+","+QString::number(g)+","+QString::number(b)+",1.0); \n"
                                                                                                         "} \n"
                                                                                                         "\n");
+        qDebug()<<picking_fragment_source;
         for(int i=0; i<viewer->NB_OF_PROGRAMS; i++)
         {
           QOpenGLShaderProgram* program = viewer->getPrograms()[i];
@@ -384,16 +383,19 @@ Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
           viewer->getPrograms()[program_index]->shaders().at(shader_index)->compileSourceCode(original_shaders[i].code);
           viewer->getPrograms()[program_index]->link();
         }
-        original_shaders.clear();
+         original_shaders.clear();
     }
     //determines the size of the buffer
     int deviceWidth = viewer->camera()->screenWidth();
     int deviceHeight = viewer->camera()->screenHeight();
+    qDebug()<<"height = "<<deviceHeight<<", width = "<<deviceWidth;
+
     int rowLength = deviceWidth * 4; // data asked in RGBA,so 4 bytes.
     const static int dataLength = rowLength * deviceHeight;
     GLubyte* buffer = new GLubyte[dataLength];
     // Qt uses upper corner for its origin while GL uses the lower corner.
     glReadPixels(picking_target.x(), deviceHeight-1-picking_target.y(), 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+    qDebug()<<buffer[0]<<","<<buffer[1]<<","<<buffer[2];
     int ID = (buffer[0] + buffer[1] * 256 +buffer[2] * 256*256);
     if(buffer[0]*buffer[1]*buffer[2] < 255*255*255)
         viewer->setSelectedName(ID);
