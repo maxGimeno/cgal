@@ -21,7 +21,8 @@
 #include <QAbstractProxyModel>
 #include <QMimeData>
 #include <QDebug>
-
+#include <QOpenGLFunctions>
+#include <QOpenGLFramebufferObject>
 #if !ANDROID
 GlSplat::SplatRenderer* Scene::ms_splatting = 0;
 int Scene::ms_splattingCounter = 0;
@@ -325,6 +326,12 @@ void
 Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
 {
 #if ANDROID
+  int deviceWidth = viewer->camera()->screenWidth();
+  int deviceHeight = viewer->camera()->screenHeight();
+      QOpenGLFramebufferObject* fbo = new QOpenGLFramebufferObject(deviceWidth, deviceHeight,QOpenGLFramebufferObject::Depth);
+      fbo->bind();
+      viewer->glEnable(GL_DEPTH_TEST);
+      viewer->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     std::vector<shaders_info> original_shaders;
     QColor bgColor(viewer->backgroundColor());
     //draws the image in the fbo
@@ -338,7 +345,6 @@ Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
         float r= R/255.0;
         float g = G/255.0;
         float b = B/255.0;
-        qDebug()<<r<<","<<g<<","<<b;
         //The fragmentertex source code
         QString picking_fragment_source(
               "void main(void) { \n"
@@ -346,7 +352,6 @@ Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
         picking_fragment_source.append(QString::number(r)+","+QString::number(g)+","+QString::number(b)+",1.0); \n"
                                                                                                         "} \n"
                                                                                                         "\n");
-        qDebug()<<picking_fragment_source;
         for(int i=0; i<viewer->NB_OF_PROGRAMS; i++)
         {
           QOpenGLShaderProgram* program = viewer->getPrograms()[i];
@@ -385,23 +390,20 @@ Scene::drawWithNames(CGAL::Three::Viewer_interface* viewer)
         }
          original_shaders.clear();
     }
-    //determines the size of the buffer
-    int deviceWidth = viewer->camera()->screenWidth();
-    int deviceHeight = viewer->camera()->screenHeight();
-    qDebug()<<"height = "<<deviceHeight<<", width = "<<deviceWidth;
 
     int rowLength = deviceWidth * 4; // data asked in RGBA,so 4 bytes.
     const static int dataLength = rowLength * deviceHeight;
     GLubyte* buffer = new GLubyte[dataLength];
     // Qt uses upper corner for its origin while GL uses the lower corner.
-    glReadPixels(picking_target.x(), deviceHeight-1-picking_target.y(), 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-    qDebug()<<buffer[0]<<","<<buffer[1]<<","<<buffer[2];
+    viewer->glReadPixels(picking_target.x(), deviceHeight-1-picking_target.y(), 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
     int ID = (buffer[0] + buffer[1] * 256 +buffer[2] * 256*256);
     if(buffer[0]*buffer[1]*buffer[2] < 255*255*255)
         viewer->setSelectedName(ID);
     else
         viewer->setSelectedName(-1);
     viewer->setBackgroundColor(bgColor);
+    fbo->release();
+    delete fbo;
 #else //ANDROID
   draw_aux(true, viewer);
 #endif //ANDROID

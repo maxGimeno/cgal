@@ -248,7 +248,7 @@ protected:
         bool found = false;
         viewer->getShaderProgram(viewer->PROGRAM_NO_SELECTION);
 #if ANDROID
-        const qglviewer::Vec& point = viewer->pointUnderPixelGLES(viewer->getPrograms(), camera, mouse_event->pos(), found);
+        const qglviewer::Vec& point = viewer->pointUnderPixel(viewer->getPrograms(), camera, mouse_event->pos(), found);
 #else
         const qglviewer::Vec& point = viewer->camera()->pointUnderPixel(mouse_event->pos(), found);
 #endif

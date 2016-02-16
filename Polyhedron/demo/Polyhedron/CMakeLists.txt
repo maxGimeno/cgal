@@ -386,19 +386,19 @@ endif()
                            libpoint_dialog.so
                            libpolyhedron_demo.so
                            libdemo_framework.so
-                          # libscene_basic_objects.so
+                           libscene_basic_objects.so
 
                                            ############
                                            ## Items ##
                                            ############
                            libscene_polyhedron_item.so
                            libscene_polygon_soup_item.so
-                           #libscene_points_with_normal_item.so
-                           #libscene_polylines_item.so
-                           #libscene_implicit_function_item.so
+                           libscene_points_with_normal_item.so
+                           libscene_polylines_item.so
+                           libscene_implicit_function_item.so
                            #libscene_c2t3_item.so
-                           #libscene_c3t3_item.so
-                           #libscene_segmented_image_item.so
+                           libscene_c3t3_item.so
+                           libscene_segmented_image_item.so
                            #libscene_nef_polyhedron_item.so
                            #libscene_polyhedron_selection_item.so
                            #libscene_polyhedron_item_k_ring_selection.so
@@ -418,7 +418,7 @@ endif()
    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libc3t3_io_plugin.so
    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libio_image_plugin.so
    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_optimization_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_plugin.so
+   /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_plugin.so
    #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_volume_planes_plugin.so
 
                                            ########

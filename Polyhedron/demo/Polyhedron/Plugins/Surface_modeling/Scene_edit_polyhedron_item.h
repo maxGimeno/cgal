@@ -286,6 +286,7 @@ private:
   bool shift_pressing;
   Ui::DeformMesh* ui_widget;
   Scene_polyhedron_item* poly_item;
+
   // For drawing
   mutable std::vector<CGAL_GLdouble> positions;
   mutable std::vector<unsigned int> tris;

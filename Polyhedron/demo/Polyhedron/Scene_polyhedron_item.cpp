@@ -1005,12 +1005,12 @@ Scene_polyhedron_item::setColor(QColor c)
 }
 
 void
-Scene_polyhedron_item::select(float orig_x,
-                              float orig_y,
-                              float orig_z,
-                              float dir_x,
-                              float dir_y,
-                              float dir_z)
+Scene_polyhedron_item::select(double orig_x,
+                              double orig_y,
+                              double orig_z,
+                              double dir_x,
+                              double dir_y,
+                              double dir_z)
 {
     if(facet_picking_m) {
         typedef Input_facets_AABB_tree Tree;

@@ -125,6 +125,7 @@ public:
   {
 #if QGLVIEWER_VERSION >= 0x020501
     setMouseBinding(::Qt::ShiftModifier, ::Qt::LeftButton, SELECT);
+
 #else
     setMouseBinding(::Qt::SHIFT + ::Qt::LeftButton, SELECT);
 #endif
@@ -147,7 +148,17 @@ public:
 #endif
   }
   virtual std::vector<QOpenGLShaderProgram*> getPrograms() = 0;
+#if ANDROID
+  /*! OpenGL ES version of glReadPixels cannot be used with GL_DEPTH_COMPONENT. In fact, there is no direct way
+   with OpenGL ES to access the depth buffer data. The common workaround is to draw the scene in a grayscale
+   representing the depth value accessible only from the fragment shader. This is why you must provide a vector
+  containing all of the programs used to render your scene. The fragment shaders of all these programs is replaced
+   by one drawing in a grayscale, then the scene is rendered in an FBO that will not be displayed, glReadPixels
+  reads the color data, which is then converted in  a depth value, and the original fragment shaders are set back up.
+  */
 
+   virtual qglviewer::Vec pointUnderPixel(std::vector<QOpenGLShaderProgram*> programs, qglviewer::Camera* const camera, const QPoint& pixel, bool& found) = 0;
+#endif
 Q_SIGNALS:
   //!Defined automatically in moc.
   void selected(int);

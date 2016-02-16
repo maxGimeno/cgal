@@ -98,12 +98,12 @@ public Q_SLOTS:
     void enable_facets_picking(bool);
     void set_erase_next_picked_facet(bool);
 
-    void select(float orig_x,
-                float orig_y,
-                float orig_z,
-                float dir_x,
-                float dir_y,
-                float dir_z);
+    void select(double orig_x,
+                double orig_y,
+                double orig_z,
+                double dir_x,
+                double dir_y,
+                double dir_z);
 
     void update_vertex_indices();
     void update_facet_indices();

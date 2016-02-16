@@ -151,6 +151,7 @@ bool ViewerGLES::inFastDrawing() const
 void ViewerGLES::draw()
 {
   glEnable(GL_DEPTH_TEST);
+  glClearColor(backgroundColor().redF(),backgroundColor().greenF(),backgroundColor().blueF(),backgroundColor().alphaF());
   d->draw_aux(false, this);
 }
 
@@ -423,7 +424,6 @@ void ViewerGLES::drawWithNames(const QPoint &point)
 {
   QGLViewer::draw();
   d->scene->picking_target = point;
-  qDebug()<<"picking target is "<<d->scene->picking_target;
   d->draw_aux(true, this);
 }
 void ViewerGLES::postSelection(const QPoint& pixel)
@@ -1489,8 +1489,6 @@ void ViewerGLES::makeGrid(qreal size, int nbSubdivisions, AxisData &data)
         data.normals->push_back(0);
     }
 
-
-
 }
 
 
@@ -1501,3 +1499,18 @@ void ViewerGLES::select(const QPoint& point)
         endSelection(point);
         postSelection(point);
 }
+
+#if ANDROID
+
+void ViewerGLES::mouseMoveEvent(QMouseEvent* e)
+{
+    if(selection_mode)
+    {
+
+    }
+    else
+    {
+      QGLViewer::mouseMoveEvent(e);
+    }
+}
+#endif

@@ -33,6 +33,13 @@ public:
   ViewerGLES(QWidget * parent, bool antialiasing = false);
   ~ViewerGLES();
 
+  //! Holds useful data to draw the axis system
+  struct AxisData
+  {
+      std::vector<CGAL_GLdouble> *vertices;
+      std::vector<CGAL_GLdouble> *normals;
+      std::vector<CGAL_GLdouble> *colors;
+  };
   // overload several QGLViewer virtual functions
   //! Calls the draw of the scene.
   void draw();
@@ -63,6 +70,8 @@ public:
   bool inFastDrawing() const;
   //! Implementation of `Viewer_interface::attrib_buffers()`
   void attrib_buffers(int program_name) const;
+  //!Fills data with  the data needed to draw a 3D arrow.
+  void makeArrow(CGAL_GLdouble R, int prec, qglviewer::Vec from, qglviewer::Vec to, qglviewer::Vec color, AxisData &data);
   //! Implementation of `Viewer_interface::getShaderProgram()`
   QOpenGLShaderProgram* getShaderProgram(int name) const;
   std::vector<QOpenGLShaderProgram*> getPrograms();
@@ -104,14 +113,7 @@ protected:
        int program_index;
        int shader_index;
    };
-  //! Holds useful data to draw the axis system
-  struct AxisData
-  {
-      std::vector<CGAL_GLdouble> *vertices;
-      std::vector<CGAL_GLdouble> *normals;
-      std::vector<CGAL_GLdouble> *colors;
-  };
-  //! Thedata for the grid
+  //! The data for the grid
   std::vector<float> gridVertices;
   std::vector<float> gridNormals;
   std::vector<float> gridColors;
@@ -138,6 +140,9 @@ protected:
   bool pivot_point_is_displayed;
   //!Defines the behaviour for the mouse press events
   void mousePressEvent(QMouseEvent*);
+  //!Specifies that in selection mode, the mouseMoveEvent must do nothing, to
+  //! keep it from disturbing the touch events.
+  void mouseMoveEvent(QMouseEvent*);
   void wheelEvent(QWheelEvent *);
   //!Defines the behaviour for the key press events
   void keyPressEvent(QKeyEvent*);
@@ -159,7 +164,6 @@ protected:
    * \param data the struct of std::vector that will contain the results.
    */
   void makeGrid(qreal size, int nbSubdivisions, AxisData &data);
-  void makeArrow(CGAL_GLdouble R, int prec, qglviewer::Vec from, qglviewer::Vec to, qglviewer::Vec color, AxisData &data);
   void resizeGL(int w, int h);
 
 

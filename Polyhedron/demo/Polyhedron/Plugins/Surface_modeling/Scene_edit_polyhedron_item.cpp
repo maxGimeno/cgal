@@ -2,6 +2,9 @@
 #include "create_sphere.h"
 #include "Scene_edit_polyhedron_item.h"
 #include <boost/foreach.hpp>
+#if ANDROID
+#include "ViewerGLES.h"
+#endif
 #include <algorithm>
 #include <QTime>
 
@@ -396,8 +399,10 @@ void Scene_edit_polyhedron_item::compute_normals_and_vertices(void)
     ROI_color.assign(ROI_points.size(),0);
     for(std::size_t i=0; i<ROI_color.size()/3; i++)
       ROI_color[3*i+1]=1.0;
-
     QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
+#if ANDROID
+    ViewerGLES *v = qobject_cast<ViewerGLES*>(viewer);
+#endif
     for(Ctrl_vertices_group_data_list::const_iterator hgb_data = ctrl_vertex_frame_map.begin(); hgb_data != ctrl_vertex_frame_map.end(); ++hgb_data)
     {
         if(hgb_data->frame == viewer->manipulatedFrame())
@@ -433,7 +438,7 @@ void Scene_edit_polyhedron_item::compute_normals_and_vertices(void)
 
 #if ANDROID
     //The axis
-    qglviewer::AxisData data;
+    ViewerGLES::AxisData data;
     pos_axis.resize(0);
     normal_axis.resize(0);
     color_lines.resize(0);
@@ -441,9 +446,9 @@ void Scene_edit_polyhedron_item::compute_normals_and_vertices(void)
     data.vertices=&pos_axis;
     data.normals=&normal_axis;
     data.colors=&color_lines;
-    viewer->drawArrowGLES(0.01f, 10, qglviewer::Vec(0,0,0), qglviewer::Vec(0,0,length_of_axis), qglviewer::Vec(0,0,1), data);
-    viewer->drawArrowGLES(0.01f, 10, qglviewer::Vec(0,0,0), qglviewer::Vec(0,length_of_axis,0), qglviewer::Vec(0,1,0), data);
-    viewer->drawArrowGLES(0.01f, 10, qglviewer::Vec(0,0,0), qglviewer::Vec(length_of_axis,0,0), qglviewer::Vec(1,0,0), data);
+    v->makeArrow(0.01f, 10, qglviewer::Vec(0,0,0), qglviewer::Vec(0,0,length_of_axis), qglviewer::Vec(0,0,1), data);
+    v->makeArrow(0.01f, 10, qglviewer::Vec(0,0,0), qglviewer::Vec(0,length_of_axis,0), qglviewer::Vec(0,1,0), data);
+    v->makeArrow(0.01f, 10, qglviewer::Vec(0,0,0), qglviewer::Vec(length_of_axis,0,0), qglviewer::Vec(1,0,0), data);
 
 #else
     //The axis

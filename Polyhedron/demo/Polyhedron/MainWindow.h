@@ -358,7 +358,6 @@ private:
 #if ANDROID
   ViewerGLES* viewer;
 #else
-#error
   Viewer* viewer;
 #endif
   QSortFilterProxyModel* proxyModel;

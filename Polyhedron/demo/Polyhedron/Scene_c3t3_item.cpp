@@ -596,7 +596,7 @@ void Scene_c3t3_item::draw_edges(CGAL::Three::Viewer_interface* viewer) const {
     program = getShaderProgram(PROGRAM_WITHOUT_LIGHT);
     attrib_buffers(viewer, PROGRAM_WITHOUT_LIGHT);
     program->bind();
-    program->setAttributeValue("colors", QColor(Qt::black));
+    program->setAttributeValue("colors", this->color());
     QMatrix4x4 f_mat;
     for (int i = 0; i<16; i++)
         f_mat.data()[i] = frame->matrix()[i];
