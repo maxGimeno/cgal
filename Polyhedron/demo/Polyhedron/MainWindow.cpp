@@ -1208,6 +1208,8 @@ void MainWindow::toggle_frameManipulation(bool b)
 {
 #if ANDROID
     viewer->frame_manipulation= b;
+#else
+  Q_UNUSED(b);
 #endif
 }
 void MainWindow::toggle_SelectionMode(bool b)

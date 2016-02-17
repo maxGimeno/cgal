@@ -121,6 +121,7 @@ bool Viewer::inFastDrawing() const
 
 void Viewer::draw()
 {
+  qDebug()<<"context in Viewer : "<< context();
   glEnable(GL_DEPTH_TEST);
   d->draw_aux(false, this);
 }
@@ -306,7 +307,7 @@ void Viewer::keyPressEvent(QKeyEvent* e)
     else if(e->key() == Qt::Key_A) {
           axis_are_displayed = !axis_are_displayed;
 #if !ANDROID
-          this->updateGL();
+          this->update();
 #else
           update();
 #endif
@@ -949,7 +950,7 @@ void Viewer::resizeGL(int w, int h)
     makeArrow(0.06,10, qglviewer::Vec(0,0,0),qglviewer::Vec(l,0,0),qglviewer::Vec(1,0,0), data);
     makeArrow(0.06,10, qglviewer::Vec(0,0,0),qglviewer::Vec(0,l,0),qglviewer::Vec(0,1,0), data);
     makeArrow(0.06,10, qglviewer::Vec(0,0,0),qglviewer::Vec(0,0,l),qglviewer::Vec(0,0,1), data);
-
+    rendering_program.bind();
 
     vao[0].bind();
     buffers[0].bind();
@@ -969,13 +970,10 @@ void Viewer::resizeGL(int w, int h)
     rendering_program.enableAttributeArray("colors");
     rendering_program.setAttributeBuffer("colors",CGAL_GL_DOUBLE,0,3);
     buffers[2].release();
-
-    rendering_program.release();
     vao[0].release();
 
 
 
-    rendering_program.bind();
     rendering_program.setUniformValue("width", (float)dim.x);
     rendering_program.setUniformValue("height", (float)dim.y);
     rendering_program.setUniformValue("ortho_mat", orthoMatrix);
@@ -1250,8 +1248,8 @@ QOpenGLShaderProgram* Viewer::getShaderProgram(int name) const
         break;
     default:
         std::cerr<<"ERROR : Program not found."<<std::endl;
-        return 0;
     }
+    return 0;
 }
 void Viewer::wheelEvent(QWheelEvent* e)
 {

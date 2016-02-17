@@ -415,120 +415,120 @@ endif()
                                            ## Mesh_3 ##
                                            ############
 
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libc3t3_io_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libio_image_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_optimization_plugin.so
-   /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_volume_planes_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libc3t3_io_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libio_image_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_optimization_plugin.so
+   /home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Mesh_3_plugin/libmesh_3_volume_planes_plugin.so
 
                                            ########
                                            ## IO ##
                                            ########
 
-   /home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_to_nef_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_to_xyz_plugin.so
+   /home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_to_nef_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/IO/liboff_to_xyz_plugin.so
 
                                            #########
                                            ## PMP ##
                                            #########
 
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libfairing_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libhole_filling_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libhole_filling_polyline_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libinside_out_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libisotropic_remeshing_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libjet_fitting_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libjoin_and_split_polyhedra_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libmean_curvature_flow_skeleton_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/liborient_soup_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libpoint_inside_polyhedron_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libpolyhedron_slicer_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libpolyhedron_stitching_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/librepair_polyhedron_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libselection_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libself_intersection_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libtriangulate_facets_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libfairing_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libhole_filling_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libhole_filling_polyline_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libinside_out_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libisotropic_remeshing_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libjet_fitting_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libjoin_and_split_polyhedra_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libmean_curvature_flow_skeleton_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/liborient_soup_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libpoint_inside_polyhedron_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libpolyhedron_slicer_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libpolyhedron_stitching_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/librepair_polyhedron_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libselection_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libself_intersection_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PMP/libtriangulate_facets_plugin.so
 
                                            #####################
                                            ## Camera position ##
                                            #####################
 
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Camera_position/libcamera_positions_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Camera_position/libcamera_positions_plugin.so
 
                                            #################
                                            ## Convex_hull ##
                                            #################
 
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Convex_hull/libconvex_hull_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Convex_hull/libkernel_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Convex_hull/libconvex_hull_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Convex_hull/libkernel_plugin.so
 
                                            ##########################
                                            ## Convex Decomposition ##
                                            ##########################
 
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Convex_decomposition/libnef_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Convex_decomposition/libnef_plugin.so
 
                                            #############################
                                            ## Operations on Polyhedra ##
                                            #############################
 
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Operations_on_polyhedra/libintersection_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Operations_on_polyhedra/libcorefinement_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Operations_on_polyhedra/libclip_polyhedron_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Operations_on_polyhedra/libintersection_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Operations_on_polyhedra/libcorefinement_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Operations_on_polyhedra/libclip_polyhedron_plugin.so
 
                                            #########
                                            ## PCA ##
                                            #########
 
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PCA/libpca_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PCA/libtrivial_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/PCA/libtransform_polyhedron_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PCA/libpca_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PCA/libtrivial_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/PCA/libtransform_polyhedron_plugin.so
 
                                            ###############
                                            ## AABB Tree ##
                                            ###############
 
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/AABB_tree/libcut_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/AABB_tree/libcut_plugin.so
 
                                            ################
                                            ## Point sets ##
                                            ################
 
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libfeatures_detection_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libmerge_point_sets_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_average_spacing_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_bilateral_smoothing_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_normal_estimation_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_outliers_removal_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_selection_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_shape_detection_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_simplification_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_smoothing_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_upsampling_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_wlop_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libsurface_reconstruction_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libfeatures_detection_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libmerge_point_sets_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_average_spacing_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_bilateral_smoothing_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_normal_estimation_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_outliers_removal_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_selection_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_shape_detection_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_simplification_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_smoothing_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_upsampling_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libpoint_set_wlop_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Point_set/libsurface_reconstruction_plugin.so
 
                                            ##########################
                                            ## Subdivisions Methods ##
                                            ##########################
 
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Subdivision_methods/libsubdivision_methods_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Subdivision_methods/libsubdivision_methods_plugin.so
 
                                            ##################
                                            ## Surface_mesh ##
                                            ##################
 
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Surface_mesh/libmesh_segmentation_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Surface_mesh/libparameterization_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Surface_mesh/libremeshing_plugin.so
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Surface_mesh/libshortest_path_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Surface_mesh/libmesh_segmentation_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Surface_mesh/libparameterization_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Surface_mesh/libremeshing_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Surface_mesh/libshortest_path_plugin.so
 
                                            ######################
                                            ## Surface_modeling ##
                                            ######################
 
-   #/home/mgimeno/cgal-gsoc/Polyhedron/demo/Polyhedron-build-android/Plugins/Surface_modeling/libedit_polyhedron_plugin.so
+   #/home/mgimeno/CGAL-Android/Polyhedron/demo/Polyhedron-build-android/Plugins/Surface_modeling/libedit_polyhedron_plugin.so
 
                          INSTALL)
 
