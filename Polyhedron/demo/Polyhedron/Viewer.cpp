@@ -121,9 +121,9 @@ bool Viewer::inFastDrawing() const
 
 void Viewer::draw()
 {
-  qDebug()<<"context in Viewer : "<< context();
   glEnable(GL_DEPTH_TEST);
   d->draw_aux(false, this);
+  drawVisualHints();
 }
 
 void Viewer::fastDraw()
@@ -851,15 +851,9 @@ void Viewer::makeArrow(CGAL_GLdouble R, int prec, qglviewer::Vec from, qglviewer
 
     }
 }
-#if ANDROID
-void Viewer::drawVisualHintsGLES()
-{
-    QGLViewer::drawVisualHintsGLES();
-#else
 void Viewer::drawVisualHints()
 {
     QGLViewer::drawVisualHints();
-#endif
     if(axis_are_displayed)
     {
         QMatrix4x4 mvpMatrix;
@@ -915,10 +909,13 @@ void Viewer::drawVisualHints()
         rendering_program.setUniformValue("light_spec", specular);
         rendering_program.setUniformValue("light_amb", ambient);
         rendering_program.setUniformValue("spec_power", shininess);
-        vao[0].bind();
-        glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(v_Axis.size() / 3));
         rendering_program.release();
+
+        vao[0].bind();
+        rendering_program.bind();
+        glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(v_Axis.size() / 3));
         vao[0].release();
+        rendering_program.release();
     }
 
 }
@@ -970,13 +967,13 @@ void Viewer::resizeGL(int w, int h)
     rendering_program.enableAttributeArray("colors");
     rendering_program.setAttributeBuffer("colors",CGAL_GL_DOUBLE,0,3);
     buffers[2].release();
-    vao[0].release();
 
 
 
     rendering_program.setUniformValue("width", (float)dim.x);
     rendering_program.setUniformValue("height", (float)dim.y);
     rendering_program.setUniformValue("ortho_mat", orthoMatrix);
+    vao[0].release();
     rendering_program.release();
 }
 QPointF posipoint;

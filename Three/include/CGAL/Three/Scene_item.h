@@ -124,7 +124,6 @@ public:
       vaos(vaos_size)
   {
    QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
-   qDebug()<< viewer;
    viewer->makeCurrent();
       is_bbox_computed = false;
       is_monochrome = true;
