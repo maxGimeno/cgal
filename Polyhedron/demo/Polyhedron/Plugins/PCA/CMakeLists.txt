@@ -2,7 +2,8 @@ include( polyhedron_demo_macros )
 polyhedron_demo_plugin(pca_plugin Pca_plugin)
 target_link_libraries(pca_plugin scene_polyhedron_item scene_basic_objects)
 
-polyhedron_demo_plugin(transform_polyhedron_plugin Transform_polyhedron_plugin)
+qt5_wrap_ui( transformUI_FILES Transformation_widget.ui )
+polyhedron_demo_plugin(transform_polyhedron_plugin Transform_polyhedron_plugin ${transformUI_FILES})
 target_link_libraries(transform_polyhedron_plugin  scene_polyhedron_item scene_polyhedron_transform_item)
 
 polyhedron_demo_plugin(trivial_plugin Trivial_plugin)
