@@ -9,6 +9,8 @@ if(NOT DEFINED CMAKE_MACOSX_RPATH)
 endif()
 find_package(VTK QUIET)
 
+find_package(CGAL)
+include( ${CGAL_USE_FILE} )
 
 include(ParaViewPlugins)
 include(${VTK_USE_FILE})
@@ -41,14 +43,11 @@ if(VTK_FOUND)
   endif()
 endif()
 
-find_package(CGAL)
-include( ${CGAL_USE_FILE} )
-
 if(CGAL_FOUND )
   # Link with CGAL
   if(ParaView_FOUND)
     target_link_libraries( IsotropicRemeshingWithEdgesFilter LINK_PRIVATE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} )
-    target_link_libraries( IsotropicRemeshingFilter LINK_PRIVATE ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} )
+    target_link_libraries( IsotropicRemeshingFilter ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} )
   endif(ParaView_FOUND)
   if(VTK_FOUND)
     target_link_libraries( TestFilterEdges ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} )

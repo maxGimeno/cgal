@@ -29,12 +29,12 @@ vtkIsotropicRemeshingFilter::vtkIsotropicRemeshingFilter()
 }
 
 //----------------------------------------------------------------------------
-typedef typename boost::property_map<SM, CGAL::vertex_point_t>::type       VPMap;
-typedef typename boost::property_map_value<SM, CGAL::vertex_point_t>::type Point_3;
-typedef typename boost::graph_traits<SM>::vertex_descriptor                vertex_descriptor;
-typedef typename boost::graph_traits<SM>::edge_descriptor                  edge_descriptor;
-typedef typename boost::graph_traits<SM>::face_descriptor                  face_descriptor;
-typedef typename boost::graph_traits<SM>::halfedge_descriptor              halfedge_descriptor;
+typedef boost::property_map<SM, CGAL::vertex_point_t>::type       VPMap;
+typedef boost::property_map_value<SM, CGAL::vertex_point_t>::type Point_3;
+typedef boost::graph_traits<SM>::vertex_descriptor                vertex_descriptor;
+typedef boost::graph_traits<SM>::edge_descriptor                  edge_descriptor;
+typedef boost::graph_traits<SM>::face_descriptor                  face_descriptor;
+typedef boost::graph_traits<SM>::halfedge_descriptor              halfedge_descriptor;
 vtkIsotropicRemeshingFilter::~vtkIsotropicRemeshingFilter()
 {
 }
