@@ -19,8 +19,8 @@
 
 int main (int argc, char *argv[])
 {  
-  const char* filename1 = (argc > 1) ? argv[1] : "data/Test_total.vtk";
-  const char* filename2 = (argc > 2) ? argv[2] : "data/Cube_triangulated.vtk";
+  const char* filename1 = (argc > 1) ? argv[1] : "data/Cube_tr.vtk";
+  const char* filename2 = (argc > 2) ? argv[2] : "data/Sphere.vtu";
   vtkSmartPointer<vtkDataSetReader> reader =
     vtkSmartPointer<vtkDataSetReader>::New();
   reader->SetFileName(filename1);
