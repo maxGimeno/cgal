@@ -1,0 +1,40 @@
+Synopsis
+
+This README will explain how to compile, install and use the Isotropic Remeshing Plugins.
+
+Compilation
+
+To compile these plugins, use CMake and provide the location of the CGAL library as CGAL_DIR.
+Example : 
+cd /path/to/build/dir
+cmake -DCGAL_DIR="/path/to/CGAL" "path/to/dir/containing/plugin's/CMakeLists.txt
+
+This will produce a MakeFile for the two plugins. You can then call make to build them.
+
+cd /build/dir
+make
+
+Installation
+
+Once the plugins are built, you will have to load them in paraview. To do so, in paraview, in the menu bar, go to
+Tools->Manage Plugins...
+In the right part, click on the button "Load New" and provide the path to the generated libraries:
+/path/to/build/IsotropicRemeshing.so and /path/to/build/IsotropicRemeshingWithEdges.so (Linux) or 
+/path/to/build/IsotropicRemeshing.dll and /path/to/build/IsotropicRemeshingWithEdges.dll (Windows)
+The plugins are now loaded.
+
+Use the Isotropic Remeshing Filter
+
+To use this filter, load all the meshes you want to remesh and make sure they are all triangulated. They must be either PolyDatas or Unstructured Grids.
+Once it is done, select them all and apply the Group Datasets Filter to generate a Multi block dataset.
+Then you can apply the Isotropic Remeshing Filter to this Multi block dataset.
+Choose the targeted edge length and the number of iterations you want to apply and click Apply.
+This will produce another Multi block dataset containing all the remeshed datasets, as PolyData.
+
+Use the Isotropic Remeshing With Edge Constraints Filter
+
+To use this filter, load a PolyData or an Unstructured Grid, and a polydata containing the line cells corresponding to the edges you want to protect. 
+(Those can be generated with Paraview using the Extract Edges Filter and the cell selection.)
+Then Apply the Filter and provide the input for Mesh and Edges. The different parameters are explained in their respective tooltips and in the help page 
+of the Filter (interogation mark button in the Properties tab).
+

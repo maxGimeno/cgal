@@ -1,0 +1,110 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+    <SourceProxy name="IsotropicRemeshingWithEdgesFilter" class="vtkIsotropicRemeshingWithEdgesFilter" label="Isotropic Remeshing With Edge Constraints">
+      <Documentation
+        short_help="Remeshes a dataset respecting constraints."
+        long_help="Remeshes a dataset but protects the given edges.">
+        This Filter will remesh a given data set, keeping the specified edges untouched. It takes a dataset (polydata or unstructured grid )
+        and a polydata containing Lines cells as input, and ouputs two datasets: one containing the remeshed input and the other the corresponding edges.
+      </Documentation>
+      <InputProperty
+        name="Mesh"
+        port_index="0"
+        command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet"/>
+        </DataTypeDomain>
+        <Documentation>
+          The input Mesh.
+        </Documentation>
+      </InputProperty>
+      <InputProperty
+        name="Edges"
+        port_index="1"
+        command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet"/>
+        </DataTypeDomain>
+        <Documentation>
+          The input Edges.
+        </Documentation>
+      </InputProperty>
+
+      <IntVectorProperty name="Split"
+        command="SetSplit"
+        label="Split only border/selected edges"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          If this box is checked, instead of remeshing the input, the plugin will
+          divide the given edges, so the remeshing algorithm won't have to do it.
+          This is useful in case the mesh contains triangles with two edges that
+          are too long and `Protect Borders/Selected Edges`is enabled.
+        </Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty name="Length"
+        command="SetLength"
+        label="Target Edge Length"
+        number_of_elements="1"
+        default_values="0.086">
+        <Documentation>
+          The targeted length for the new edges of the mesh.
+        </Documentation>
+      </DoubleVectorProperty>
+      <IntVectorProperty name="MainIterations"
+        command="SetMainIterations"
+        label="#Main Iterations"
+        number_of_elements="1"
+        default_values="1">
+        <Documentation>
+          The number of iterations for the sequence of atomic operations performed (edge splits,
+          edge collapses, edge flips, tangential relaxation and projection to the initial surface
+          to generate a smooth mesh with a prescribed edge length).
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty name="SmoothIterations"
+        command="SetSmoothIterations"
+        label="#Smoothing Iterations"
+        number_of_elements="1"
+        default_values="1">
+        <Documentation>
+          The number of iterations of tangential relaxation that are performed at each iteration of the remeshing process.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty name="Protect"
+        command="SetProtect"
+        label="Protect Borders/Selected Edges"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          If true, the provided edges are not splitted nor collapsed during remeshing.
+          Note that around constrained edges that have their length higher than twice Target Edge Length,
+          remeshing will fail to provide good quality results. It can even fail to terminate because of cascading vertex insertions.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty name="Smooth"
+        command="SetSmooth"
+        label="Allow 1D Smoothing Along Borders"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          If true, the end vertices of the provided edges move along the constrained polylines they belong to.
+        </Documentation>
+      </IntVectorProperty>
+      <Hints>
+        <ShowInMenu category="CGAL" />
+      </Hints>
+    </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>
