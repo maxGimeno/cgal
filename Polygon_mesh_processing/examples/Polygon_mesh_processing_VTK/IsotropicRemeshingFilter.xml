@@ -18,20 +18,44 @@
           <Group name="filters"/>
         </ProxyGroupDomain>
         <DataTypeDomain name="input_type">
-          <DataType value="vtkMultiBlockDataSet"/>
+          <DataType value="vtkDataSet"/>
         </DataTypeDomain>
         <Documentation>
           The input Meshes.
         </Documentation>
       </InputProperty>
+      <StringVectorProperty name="Bbox"
+        command="SetBbox"
+        label="Bbox"
+        default_values="0"
+        panel_widget="bbox_panel"
+        information_property="BboxInfo"
+        >
+        <Documentation>
+          The extreme points of the biggest BBox amongst the treated meshes.
+        </Documentation>
+      </StringVectorProperty>
+      <StringVectorProperty name="BboxInfo"
+                            command="GetBboxInfo"
+                            information_only="1">
+        <SimpleStringInformationHelper />
+      </StringVectorProperty>
       <DoubleVectorProperty name="Length"
         command="SetLength"
         label="Target Edge Length"
         number_of_elements="1"
-        default_values="0.086">
+        default_values="0"
+        information_property="LengthInfo"
+        >
+         <DoubleRangeDomain name="range" min="0.0" />
         <Documentation>
           The targeted length for the new edges of the mesh.
         </Documentation>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty name="LengthInfo"
+                            command="GetLengthInfo"
+                            information_only="1">
+        <SimpleDoubleInformationHelper />
       </DoubleVectorProperty>
       <IntVectorProperty name="MainIterations"
         command="SetMainIterations"

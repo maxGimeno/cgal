@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>242</width>
-    <height>97</height>
+    <height>137</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -29,6 +29,9 @@
    </item>
    <item>
     <widget class="QComboBox" name="functionList"/>
+   </item>
+   <item>
+    <widget class="QTextEdit" name="textEdit"/>
    </item>
    <item>
     <spacer name="verticalSpacer">

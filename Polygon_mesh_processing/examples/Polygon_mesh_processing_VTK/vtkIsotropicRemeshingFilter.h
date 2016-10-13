@@ -15,6 +15,14 @@ public:
   vtkSetMacro(Length, double);
   vtkGetMacro(Length, double);
 
+  vtkSetMacro(LengthInfo, double);
+  vtkGetMacro(LengthInfo, double);
+
+  vtkSetStringMacro(BboxInfo);
+  vtkGetStringMacro(BboxInfo);
+
+  vtkSetStringMacro(Bbox);
+  vtkGetStringMacro(Bbox);
 
   vtkSetMacro(MainIterations, int);
   vtkGetMacro(MainIterations, int);
@@ -22,6 +30,10 @@ public:
   int RequestData(vtkInformation*,
                   vtkInformationVector** inputVector,
                   vtkInformationVector* outputVector);
+
+  int RequestInformation(vtkInformation *request,
+                         vtkInformationVector **inputVector,
+                         vtkInformationVector *outputVector);
   int FillInputPortInformation(int, vtkInformation *info);
   int FillOutputPortInformation(int, vtkInformation *info);
 
@@ -30,8 +42,11 @@ protected:
   ~vtkIsotropicRemeshingFilter();
 
   double Length;
+  double LengthInfo;
   int MainIterations;
   int DuplicatedEdges;
+  char* BboxInfo;
+  char* Bbox;
 
 private:
   vtkIsotropicRemeshingFilter(const vtkIsotropicRemeshingFilter&);
