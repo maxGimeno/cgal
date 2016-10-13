@@ -49,7 +49,7 @@
         >
          <DoubleRangeDomain name="range" min="0.0" />
         <Documentation>
-          The targeted length for the new edges of the mesh.
+          The targeted length for the new edges of the mesh (default is 1% of the Bbox).
         </Documentation>
       </DoubleVectorProperty>
       <DoubleVectorProperty name="LengthInfo"

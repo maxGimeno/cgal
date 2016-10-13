@@ -37,7 +37,22 @@
           The input Edges.
         </Documentation>
       </InputProperty>
-
+      <StringVectorProperty name="Bbox"
+        command="SetBbox"
+        label="Bbox"
+        default_values="0"
+        panel_widget="bbox_panel"
+        information_property="BboxInfo"
+        >
+        <Documentation>
+          The extreme points of the mesh's BBox.
+        </Documentation>
+      </StringVectorProperty>
+      <StringVectorProperty name="BboxInfo"
+                            command="GetBboxInfo"
+                            information_only="1">
+        <SimpleStringInformationHelper />
+      </StringVectorProperty>
       <IntVectorProperty name="Split"
         command="SetSplit"
         label="Split only border/selected edges"
@@ -55,10 +70,18 @@
         command="SetLength"
         label="Target Edge Length"
         number_of_elements="1"
-        default_values="0.086">
+        default_values="0"
+        information_property="LengthInfo"
+        >
+         <DoubleRangeDomain name="range" min="0.0" />
         <Documentation>
-          The targeted length for the new edges of the mesh.
+          The targeted length for the new edges of the mesh (default is 1% of the Bbox).
         </Documentation>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty name="LengthInfo"
+                            command="GetLengthInfo"
+                            information_only="1">
+        <SimpleDoubleInformationHelper />
       </DoubleVectorProperty>
       <IntVectorProperty name="MainIterations"
         command="SetMainIterations"

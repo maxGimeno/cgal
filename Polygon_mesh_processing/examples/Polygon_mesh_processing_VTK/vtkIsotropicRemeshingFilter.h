@@ -44,7 +44,6 @@ protected:
   double Length;
   double LengthInfo;
   int MainIterations;
-  int DuplicatedEdges;
   char* BboxInfo;
   char* Bbox;
 

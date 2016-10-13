@@ -33,7 +33,12 @@ if(ParaView_FOUND)
 
   ADD_PARAVIEW_PLUGIN(IsotropicRemeshingWithEdgesFilter "1.0"
     SERVER_MANAGER_XML IsotropicRemeshingWithEdgesFilter.xml
-    SERVER_MANAGER_SOURCES vtkIsotropicRemeshingWithEdgesFilter.cxx)
+    SERVER_MANAGER_SOURCES vtkIsotropicRemeshingWithEdgesFilter.cxx
+    GUI_INTERFACES ${outifaces0}
+    SOURCES ${outsrcs0}
+            ${moc_srcs}
+    pqIsotropicRemeshingWidget.cxx)
+
 
   ADD_PARAVIEW_PLUGIN(IsotropicRemeshingFilter "1.0"
     SERVER_MANAGER_XML IsotropicRemeshingFilter.xml

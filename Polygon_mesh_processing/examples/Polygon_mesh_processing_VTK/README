@@ -26,10 +26,9 @@ The plugins are now loaded.
 Use the Isotropic Remeshing Filter
 
 To use this filter, load all the meshes you want to remesh and make sure they are all triangulated. They must be either PolyDatas or Unstructured Grids.
-Once it is done, select them all and apply the Group Datasets Filter to generate a Multi block dataset.
-Then you can apply the Isotropic Remeshing Filter to this Multi block dataset.
-Choose the targeted edge length and the number of iterations you want to apply and click Apply.
-This will produce another Multi block dataset containing all the remeshed datasets, as PolyData.
+You can apply the Isotropic Remeshing Filter to a single DataSet or to a Multi block dataset.
+Choose the targeted edge length (default is 1% of the total Bounding Box) and the number of iterations you want to apply and click Apply.
+This will produce either a PolyData or a Multi block dataset containing all the remeshed datasets, all PolyData.
 
 Use the Isotropic Remeshing With Edge Constraints Filter
 

@@ -28,6 +28,8 @@ vtkIsotropicRemeshingWithEdgesFilter::vtkIsotropicRemeshingWithEdgesFilter()
 {
    SetNumberOfInputPorts(2);
    SetNumberOfOutputPorts(2);
+   BboxInfo = 0;
+   Bbox = 0;
 }
 
 //----------------------------------------------------------------------------
@@ -359,5 +361,27 @@ int vtkIsotropicRemeshingWithEdgesFilter::FillInputPortInformation(int port, vtk
 int vtkIsotropicRemeshingWithEdgesFilter::FillOutputPortInformation(int, vtkInformation *info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData");
+  return 1;
+}
+
+int vtkIsotropicRemeshingWithEdgesFilter::RequestInformation(vtkInformation *,
+                                                             vtkInformationVector **inputVector,
+                                                             vtkInformationVector *)
+{
+  vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
+  // get the input and output
+  vtkDataSet *input = vtkDataSet::SafeDownCast(
+    inInfo->Get(vtkDataObject::DATA_OBJECT()));
+  double * bounds = input->GetBounds();
+  char *outstring = new char[300];
+  sprintf (outstring, "min(%f, %f, %f)\n max(%f, %f, %f)",bounds[0], bounds[2], bounds[4], bounds[1], bounds[3], bounds[5]);
+  SetBboxInfo(outstring);
+  delete [] outstring;
+  double diagonal = std::sqrt(
+        (bounds[0]-bounds[1]) * (bounds[0]-bounds[1]) +
+      (bounds[2]-bounds[3]) * (bounds[2]-bounds[3]) +
+      (bounds[4]-bounds[5]) * (bounds[4]-bounds[5])
+      );
+  SetLengthInfo(0.01*diagonal);
   return 1;
 }
