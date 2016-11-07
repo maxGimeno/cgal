@@ -2,20 +2,25 @@ cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
 
 if (NOT ParaView_BINARY_DIR)
   find_package(ParaView QUIET)
-  include(${PARAVIEW_USE_FILE})
+  if(ParaView_FOUND)
+    include(${PARAVIEW_USE_FILE})
+    include(ParaViewPlugins)
+  endif() #paraview FOUND
 endif()
 if(NOT DEFINED CMAKE_MACOSX_RPATH)
   set(CMAKE_MACOSX_RPATH 0)
 endif()
 find_package(VTK QUIET)
+if(VTK_FOUND)
+  include(${VTK_USE_FILE})
+  include_directories(
+    ${VTK_INCLUDE_DIRS})
+endif(VTK_FOUND)
 
 find_package(CGAL)
-include( ${CGAL_USE_FILE} )
-
-include(ParaViewPlugins)
-include(${VTK_USE_FILE})
-include_directories(
-  ${VTK_INCLUDE_DIRS})
+if(CGAL_FOUND)
+  include( ${CGAL_USE_FILE} )
+endif()#CGAL FOUND
 if(ParaView_FOUND)
     if (PARAVIEW_BUILD_QT_GUI)
       if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
