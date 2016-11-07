@@ -44,7 +44,7 @@ vtkIsotropicRemeshingFilter::~vtkIsotropicRemeshingFilter()
 {
 }
 int vtkIsotropicRemeshingFilter::RequestData(
-    vtkInformation *vtkNotUsed(request),
+    vtkInformation *,
     vtkInformationVector **inputVector,
     vtkInformationVector *outputVector)
 {
@@ -110,6 +110,13 @@ int vtkIsotropicRemeshingFilter::RequestData(
   }
   for (std::size_t i=0; i < isolated_vertices.size(); ++i)
     sm.remove_vertex(isolated_vertices[i]);
+
+  if(!is_triangle_mesh(sm))
+  {
+    vtkErrorMacro("The input mesh must be triangulated ");
+    return 0;
+  }
+
   /*****************************
    * Apply Isotropic remeshing *
    *****************************/
@@ -169,7 +176,7 @@ int vtkIsotropicRemeshingFilter::FillOutputPortInformation(int, vtkInformation *
   return 1;
 }
 
-int vtkIsotropicRemeshingFilter::RequestInformation(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
+int vtkIsotropicRemeshingFilter::RequestInformation(vtkInformation *, vtkInformationVector **inputVector, vtkInformationVector *)
 {
   vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
   vtkDataSet *input= vtkDataSet::SafeDownCast(

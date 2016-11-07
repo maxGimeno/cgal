@@ -31,7 +31,7 @@ public:
                   vtkInformationVector** inputVector,
                   vtkInformationVector* outputVector);
 
-  int RequestInformation(vtkInformation *request,
+  int RequestInformation(vtkInformation *,
                          vtkInformationVector **inputVector,
                          vtkInformationVector *outputVector);
   int FillInputPortInformation(int, vtkInformation *info);
