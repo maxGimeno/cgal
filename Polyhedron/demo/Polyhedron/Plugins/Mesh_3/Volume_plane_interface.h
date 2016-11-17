@@ -1,11 +1,20 @@
 #ifndef CGAL_VOLUME_PLANE_INTERFACE_H_
 #define CGAL_VOLUME_PLANE_INTERFACE_H_
 
+#ifdef volume_plane_interface_EXPORTS
+#  define VOLUME_PLANE_INTERFACE_EXPORT Q_DECL_EXPORT
+#else
+#  define VOLUME_PLANE_INTERFACE_EXPORT Q_DECL_IMPORT
+#endif
+
+
 #include <QObject>
 #include <QGLViewer/qglviewer.h>
 #include <CGAL/Three/Scene_item.h>
 #include <iostream>
 #include <QGLViewer/manipulatedFrame.h>
+
+
 using namespace CGAL::Three;
 class Volume_plane_interface : public Scene_item {
 Q_OBJECT
