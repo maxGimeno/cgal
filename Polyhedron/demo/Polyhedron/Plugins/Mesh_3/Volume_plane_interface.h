@@ -48,6 +48,8 @@ public:
 Q_SIGNALS:
   void planeDestructionIncoming(Volume_plane_interface*);
   void manipulated(int);
+public Q_SLOTS:
+  virtual void do_reverse_colors(bool b) = 0;
 private Q_SLOTS:
   void propagateManipulation() {
     Q_EMIT manipulated(getCurrentCube());

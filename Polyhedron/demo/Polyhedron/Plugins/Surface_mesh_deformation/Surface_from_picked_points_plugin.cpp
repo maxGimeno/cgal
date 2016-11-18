@@ -135,7 +135,7 @@ private Q_SLOTS:
     else                         { dock_widget->show(); }
 
   }
-  void reset_surface() { surface = NULL;}
+  void reset_surface() { surface = NULL; control_points.clear();}
   void reset_leader() { leader_poly = NULL; leader_is_created = false;}
   void reset_generator() { generator_poly = NULL;}
   void closure()
@@ -336,9 +336,9 @@ private Q_SLOTS:
             this, &SurfaceFromPickedPointsPlugin::reset_leader);
     disconnect(generator_poly, &Scene_polyhedron_item::aboutToBeDestroyed,
             this, &SurfaceFromPickedPointsPlugin::reset_generator);
-    leader_poly = NULL;
-    generator_poly = NULL;
-    surface = NULL;
+    reset_generator();
+    reset_leader();
+    reset_surface();
   }
   void cancel()
   {
