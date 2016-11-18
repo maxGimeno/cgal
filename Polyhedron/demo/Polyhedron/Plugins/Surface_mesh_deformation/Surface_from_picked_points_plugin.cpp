@@ -135,6 +135,9 @@ private Q_SLOTS:
     else                         { dock_widget->show(); }
 
   }
+  void reset_surface() { surface = NULL;}
+  void reset_leader() { leader_poly = NULL; leader_is_created = false;}
+  void reset_generator() { generator_poly = NULL;}
   void closure()
   {
     dock_widget->hide();
@@ -158,9 +161,13 @@ private Q_SLOTS:
     {
       if(generator_poly)
       {
+        disconnect(generator_poly, &Scene_polylines_item::aboutToBeDestroyed,
+                this, &SurfaceFromPickedPointsPlugin::reset_generator);
         generator_poly = NULL;
       }
       leader_poly = new Scene_polylines_item();
+      connect(leader_poly, &Scene_polylines_item::aboutToBeDestroyed,
+              this, &SurfaceFromPickedPointsPlugin::reset_leader);
       leader_poly->polylines.push_back( Scene_polylines_item::Polyline() );
       leader_poly->setName("Leader Polyline");
       scene->addItem(leader_poly);
@@ -168,6 +175,8 @@ private Q_SLOTS:
     else
     {
       generator_poly = new Scene_polylines_item();
+      connect(generator_poly, &Scene_polylines_item::aboutToBeDestroyed,
+              this, &SurfaceFromPickedPointsPlugin::reset_generator);
       generator_poly->polylines.push_back( Scene_polylines_item::Polyline() );
       if(!leader_poly->polylines.back().empty())
         generator_poly->polylines.back().push_back(leader_poly->polylines.back().front());
@@ -314,12 +323,22 @@ private Q_SLOTS:
     surface = new Scene_polyhedron_item(polyhedron);
     surface->setName("Surface");
     scene->addItem(surface);
+    connect(surface, &Scene_polyhedron_item::aboutToBeDestroyed,
+            this, &SurfaceFromPickedPointsPlugin::reset_surface);
   }
   void finish()
   {
     mode = IDLE;
     ui_widget.cancelButton->setEnabled(false);
+    disconnect(surface, &Scene_polyhedron_item::aboutToBeDestroyed,
+            this, &SurfaceFromPickedPointsPlugin::reset_surface);
+    disconnect(leader_poly, &Scene_polyhedron_item::aboutToBeDestroyed,
+            this, &SurfaceFromPickedPointsPlugin::reset_leader);
+    disconnect(generator_poly, &Scene_polyhedron_item::aboutToBeDestroyed,
+            this, &SurfaceFromPickedPointsPlugin::reset_generator);
     leader_poly = NULL;
+    generator_poly = NULL;
+    surface = NULL;
   }
   void cancel()
   {
@@ -337,6 +356,7 @@ private Q_SLOTS:
       current_polyline = generator_poly;
       current_spin = ui_widget.generatorSpinBox;
     }
+
     std::vector<Point_3>& polyline = current_polyline->polylines.back();
     if(polyline.size() >= 2)
     {
@@ -417,11 +437,13 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           current_polyline = leader_poly;
           current_spin = ui_widget.leaderSpinBox;
         }
-        else
+        else if(generator_poly)
         {
           current_polyline = generator_poly;
           current_spin = ui_widget.generatorSpinBox;
         }
+        else
+          return false;
         if(found) {
           std::vector<Point_3>& polyline = current_polyline->polylines.back();
           polyline.push_back(Point_3(point.x, point.y, point.z));
@@ -448,7 +470,8 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         typedef CGAL::AABB_halfedge_graph_segment_primitive<Polyhedron> HGSP;
         typedef CGAL::AABB_traits<Kernel, HGSP>                         AABB_traits;
         typedef CGAL::AABB_tree<AABB_traits>                            AABB_tree;
-
+        if(!surface)
+          return false;
         Volume_plane_interface* plane_interface = NULL;
         viewer->select(e);
         if(strcmp(scene->item(scene->mainSelectionIndex())->metaObject()->className(),"Volume_plane_interface") == 0)
@@ -526,11 +549,6 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         }
         control_points.push_back(target(center, polyhedron));
         //add the control points
-
-        /*BOOST_FOREACH(Polyhedron::Vertex_handle vh, control_points)
-        {
-          deform_mesh.erase_roi_vertex(vh);
-        }*/
         deform_mesh.insert_control_vertices(control_points.begin(), control_points.end());
         //deform
         bool is_matrix_factorization_OK = deform_mesh.preprocess();
