@@ -74,6 +74,9 @@
              </item>
              <item>
               <widget class="QPushButton" name="createSurfaceButton">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
                <property name="text">
                 <string>Create Surface</string>
                </property>
@@ -95,7 +98,7 @@
              <item>
               <widget class="QPushButton" name="newPolylineButton">
                <property name="text">
-                <string>New Polyline</string>
+                <string>New Generator</string>
                </property>
               </widget>
              </item>

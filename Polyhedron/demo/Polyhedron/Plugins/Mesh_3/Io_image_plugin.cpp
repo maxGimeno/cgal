@@ -240,7 +240,6 @@ public:
               this, SLOT(connect_controls(int)));
     }
     actionReverseColors = new QAction("Reverse Volume Planes Colors", mw);
-    actionReverseColors->setProperty("subMenuName", "3D Mesh Generation");
     connect(actionReverseColors, SIGNAL(triggered()), this, SLOT(do_reverse_colors()));
     Viewer_interface* v = mw->findChild<Viewer_interface*>("viewer");
     CGAL_assertion(v != 0);
@@ -309,6 +308,7 @@ public Q_SLOTS:
                               if(vpi)
                               {
                                 vpi->do_reverse_colors(reverse_colors);
+                                vpi->itemChanged();
                               }
                             }
                            }
