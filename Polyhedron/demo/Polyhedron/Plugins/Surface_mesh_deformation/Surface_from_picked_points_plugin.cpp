@@ -18,6 +18,8 @@
 #include <CGAL/Polygon_mesh_slicer.h>
 #include <CGAL/squared_distance_3.h>
 #include <CGAL/boost/graph/Euler_operations.h>
+#include <CGAL/intersections.h>
+#include <CGAL/Polygon_mesh_processing/remesh.h>
 
 #include "Messages_interface.h"
 #include "Scene_polylines_item.h"
@@ -25,30 +27,29 @@
 #include "Scene_points_with_normal_item.h"
 #include "Plugins/Mesh_3/Volume_plane_interface.h"
 #include "ui_Create_surface.h"
-
 typedef Scene_polylines_item::Point_3 Point_3;
 typedef Polyhedron::Traits Kernel;
 // A modifier creating a Polyhedron with the incremental builder.
 template <class HDS>
 class Build_polyhedron : public CGAL::Modifier_base<HDS> {
   std::vector<Point_3> points;
-  int size_I;
-  int size_J;
+  int size_generator;
+  int size_leader;
 public:
   Build_polyhedron(const std::vector<Point_3> &p, int sizeI, int sizeJ)
-    :points(p),size_I(sizeI), size_J(sizeJ){}
+    :points(p),size_generator(sizeI), size_leader(sizeJ){}
   int vertex(int i, int j)
   {
-    return size_I*j+i;
+    return size_leader*i+j;
   }
   void operator()( HDS& hds)
   {
     CGAL::Polyhedron_incremental_builder_3<HDS> B( hds, true);
-    B.begin_surface( size_I*size_J, (size_I-1)*(size_J-1), 0);
-    for(int i = 0; i<size_I*size_J; ++i)
+    B.begin_surface( size_generator*size_leader, (size_generator-1)*(size_leader-1), 0);
+    for(int i = 0; i<size_generator*size_leader; ++i)
       B.add_vertex(points[i]);
-    for(int i = 0; i<size_I-1; ++i)
-      for(int j = 0; j<size_J-1; ++j)
+    for(int i = 0; i<size_generator-1; ++i)
+      for(int j = 0; j<size_leader-1; ++j)
       {
         B.begin_facet();
         B.add_vertex_to_facet(vertex(i,j));
@@ -62,6 +63,34 @@ public:
         B.end_facet();
       }
     B.end_surface();
+  }
+};
+typedef boost::unordered_set<Polyhedron::Vertex_handle, CGAL::Handle_hash_function>    Vertex_set;
+struct Is_constrained_map
+{
+  Vertex_set *m_ptr;
+
+  typedef Vertex_set::key_type               key_type;
+  typedef bool                               value_type;
+  typedef bool                               reference;
+  typedef boost::read_write_property_map_tag category;
+
+  Is_constrained_map()
+    : m_ptr(NULL)
+  {}
+  Is_constrained_map(Vertex_set *vset)
+    : m_ptr(vset)
+  {}
+  friend bool get(const Is_constrained_map& map, const key_type& k)
+  {
+    CGAL_assertion(map.m_ptr != NULL);
+    return map.m_ptr->count(k);
+  }
+  friend void put(Is_constrained_map& map, const key_type& k, value_type b)
+  {
+    CGAL_assertion(map.m_ptr != NULL);
+    if (b)  map.m_ptr->insert(k);
+    else    map.m_ptr->erase(k);
   }
 };
 
@@ -116,10 +145,8 @@ public:
             this, &SurfaceFromPickedPointsPlugin::finish);
     connect(ui_widget.cancelButton, &QPushButton::clicked,
             this, &SurfaceFromPickedPointsPlugin::cancel);
-    connect(ui_widget.generatorSpinBox, SIGNAL(valueChanged(double)),
-            this, SLOT(setDeltaI(double)));
-    connect(ui_widget.leaderSpinBox, SIGNAL(valueChanged(double)),
-            this, SLOT(setDeltaJ(double)));
+    connect(ui_widget.edgeSpinBox, SIGNAL(valueChanged(double)),
+            this, SLOT(setEdgeSize(double)));
     is_active = false;
     mode = IDLE;
     ui_widget.cancelButton->setEnabled(false);
@@ -153,6 +180,7 @@ private Q_SLOTS:
     mode = IDLE;
     ui_widget.cancelButton->setEnabled(false);
     generator_poly = NULL;
+    control_points_item = NULL;
     g_plane = NULL;
     leader_poly = NULL;
     l_plane = NULL;
@@ -181,6 +209,7 @@ private Q_SLOTS:
               this, &SurfaceFromPickedPointsPlugin::reset_generator);
       generator_poly->polylines.push_back( Scene_polylines_item::Polyline() );
       generator_poly->setName("Generator Polyline");
+      generator_poly->setColor(QColor(Qt::green));
       scene->addItem(generator_poly);
       ui_widget.newPolylineButton->setText("New Leader");
       ui_widget.newPolylineButton->setEnabled(false);
@@ -232,70 +261,11 @@ private Q_SLOTS:
     std::vector<Point_3> points;
     std::vector<Point_3>& g_polyline = generator_poly->polylines.back();
     std::vector<Point_3>& l_polyline = leader_poly->polylines.back();
-    std::vector<Point_3>::iterator pit1 = g_polyline.begin();
-    std::vector<Point_3>::iterator pit2 = pit1+1;
     std::vector<Point_3> control_pos;
 
-    //break the polylines into smaller pieces according to the specified deltas
-    while(pit2 != g_polyline.end())
-    {
-      Kernel::Vector_3 v = *pit2 - *pit1;
-      double dist = CGAL::sqrt(v.squared_length());
-      while(dist > deltaI)
-      {
-        Point_3 mid_point = *pit1+v/2;
-        pit2 = g_polyline.insert(pit2, mid_point);
-        pit1 = pit2-1;
-        v = *pit2 - *pit1;
-        dist = CGAL::sqrt(v.squared_length());
-      }
-      ++pit1;
-      ++pit2;
-    }
-    generator_poly->invalidateOpenGLBuffers();
-    generator_poly->itemChanged();
-    pit1 = l_polyline.begin();
-    pit2 = pit1+1;
-    while(pit2 != l_polyline.end())
-    {
-      Kernel::Vector_3 v = *pit2 - *pit1;
-      double dist = CGAL::sqrt(v.squared_length());
-      while(dist > deltaJ)
-      {
-        Point_3 mid_point = *pit1+v/2;
-        pit2 = l_polyline.insert(pit2, mid_point);
-        pit1 = pit2-1;
-        v = *pit2 - *pit1;
-        dist = CGAL::sqrt(v.squared_length());
-      }
-      ++pit1;
-      ++pit2;
-    }
-    leader_poly->invalidateOpenGLBuffers();
-    leader_poly->itemChanged();
-
     //Only work if the polylines intersect the planes at most once.
+     boost::optional<boost::variant<Point_3, Kernel::Segment_3, Kernel::Line_3> > o;
     int g_id(-1), l_id(-1);
-    for(std::size_t i=0; i< g_polyline.size()-1; ++i)
-    {
-      if((l_plane->has_on_negative_side(g_polyline[i]) &&
-          l_plane->has_on_positive_side(g_polyline[i+1])) ||
-         (l_plane->has_on_negative_side(g_polyline[i+1]) &&
-          l_plane->has_on_positive_side(g_polyline[i])))
-      {
-        g_id = i;
-        break;
-      }
-    }
-    if(g_id == -1)
-    {
-      Kernel::Vector_3 f_diff = g_polyline.front()-l_polyline.front();
-      Kernel::Vector_3 b_diff = g_polyline.back()-l_polyline.back();
-      if(f_diff.squared_length()< b_diff.squared_length())
-        g_id =0;
-      else
-        g_id = g_polyline.size()-1;
-    }
     for(std::size_t i=0; i< l_polyline.size()-1; ++i)
     {
       if((g_plane->has_on_negative_side(l_polyline[i]) &&
@@ -303,7 +273,7 @@ private Q_SLOTS:
          (g_plane->has_on_negative_side(l_polyline[i+1]) &&
           g_plane->has_on_positive_side(l_polyline[i])))
       {
-        l_id = i;
+        l_id = i+1;
         break;
       }
     }
@@ -312,29 +282,84 @@ private Q_SLOTS:
       Kernel::Vector_3 f_diff = l_polyline.front()-g_polyline.front();
       Kernel::Vector_3 b_diff = l_polyline.back()-g_polyline.back();
       if(f_diff.squared_length()< b_diff.squared_length())
+      {
         l_id =0;
+      }
       else
+      {
         l_id = l_polyline.size()-1;
+      }
     }
+
+    for(std::size_t i=0; i< g_polyline.size()-1; ++i)
+    {
+      if((l_plane->has_on_negative_side(g_polyline[i]) &&
+          l_plane->has_on_positive_side(g_polyline[i+1])) ||
+         (l_plane->has_on_negative_side(g_polyline[i+1]) &&
+          l_plane->has_on_positive_side(g_polyline[i])))
+      {
+        g_id = i+1;
+        o = *intersection(
+              Kernel::Segment_3(g_polyline[i], g_polyline[i+1]),*l_plane);
+        break;
+      }
+    }
+    if(g_id == -1)
+    {
+      o =*intersection(
+            Kernel::Line_3(g_polyline[0], g_polyline[1])
+          ,*l_plane);
+      Kernel::Vector_3 diff = boost::get<Point_3>(*o)-g_polyline[0];
+      double sq_dist = diff.squared_length();
+      o =*intersection(
+            Kernel::Line_3(g_polyline[g_polyline.size()-1], g_polyline[g_polyline.size()-2])
+          ,*l_plane);
+      diff = boost::get<Point_3>(*o)-g_polyline[g_polyline.size()-1];
+
+      if(sq_dist < diff.squared_length())
+      {
+        g_id =0;
+        o =*intersection(
+              Kernel::Line_3(g_polyline[0], g_polyline[1])
+            ,*l_plane);
+
+      }
+      else
+      {
+        g_id = g_polyline.size();
+
+        o = *intersection(
+               Kernel::Line_3(g_polyline[g_id-1], g_polyline[g_id-2])
+             ,*l_plane);
+
+      }
+    }
+    //get the intersection point between the generator and the leader's plane
+
+    if(o==boost::none)
+    {
+      this->messageInterface->warning("intersection point between generator and leader's plane cannot be found");
+      return;
+    }
+    Point_3 p = boost::get<Point_3>(*o);
+    g_polyline.insert(g_polyline.begin()+g_id, p);
+    generator_poly->invalidateOpenGLBuffers();
+    generator_poly->itemChanged();
     //compute the points
     for(std::size_t i=0; i< g_polyline.size(); ++i)
     {
-      Kernel::Vector_3 offset = g_polyline[i]-g_polyline[g_id];
+      Kernel::Vector_3 offset = g_polyline[i]-p;
       for(std::size_t j=0; j<l_polyline.size(); ++j)
       {
-        if(i == static_cast<std::size_t>(g_id))
-        {
-          points.push_back(l_polyline[j]);
-          control_pos.push_back(points.back());
-        }
-        else
-          points.push_back(l_polyline[j]+offset);
         if(j==static_cast<std::size_t>(l_id))
         {
-          //insert generator unchanged
           points.push_back(g_polyline[i]);
           control_pos.push_back(points.back());
         }
+
+        points.push_back(l_polyline[j]+offset);
+        if(i == static_cast<std::size_t>(g_id))
+          control_pos.push_back(points.back());
       }
     }
     initial_mesh_item = new Scene_points_with_normal_item();
@@ -345,8 +370,11 @@ private Q_SLOTS:
     scene->addItem(initial_mesh_item);
     //create Polyhedron item
     Polyhedron *polyhedron = new Polyhedron();
-    Build_polyhedron<Polyhedron::HalfedgeDS> builder(points, (int)l_polyline.size()+1, (int)g_polyline.size());
+    Build_polyhedron<Polyhedron::HalfedgeDS> builder(points, (int)g_polyline.size(), (int)l_polyline.size()+1);
     polyhedron->delegate(builder);
+    // Init the indices of the halfedges and the vertices.
+    set_halfedgeds_items_id(*polyhedron);
+
 
     //save the points of the initial polylines as control points
     for(
@@ -369,10 +397,22 @@ private Q_SLOTS:
         break;
     }
     control_points_item = new Scene_points_with_normal_item();
+
+
+    //remesh the polyhedron to optimize the surface
+    Vertex_set is_constrained_set;
+    Q_FOREACH(Polyhedron::Vertex_handle vh, control_points)
+      is_constrained_set.insert(vh);
+    Is_constrained_map vcm(&is_constrained_set);
+
     Q_FOREACH(Polyhedron::Vertex_iterator vit, control_points)
     {
       control_points_item->point_set()->insert(vit->point());
     }
+    CGAL::Polygon_mesh_processing::isotropic_remeshing(faces(*polyhedron),
+                                                       edgeSize,
+                                                       *polyhedron,
+                                                       CGAL::Polygon_mesh_processing::parameters::vertex_is_constrained_map(vcm));
     surface = new Scene_polyhedron_item(polyhedron);
     surface->setName("Surface");
     scene->addItem(surface);
@@ -389,14 +429,18 @@ private Q_SLOTS:
   {
     mode = IDLE;
     ui_widget.cancelButton->setEnabled(false);
-    disconnect(surface, &Scene_polyhedron_item::aboutToBeDestroyed,
-            this, &SurfaceFromPickedPointsPlugin::reset_surface);
-    disconnect(control_points_item, &Scene_polyhedron_item::aboutToBeDestroyed,
-            this, &SurfaceFromPickedPointsPlugin::reset_control_points);
-    disconnect(generator_poly, &Scene_polyhedron_item::aboutToBeDestroyed,
-            this, &SurfaceFromPickedPointsPlugin::reset_generator);
-    disconnect(leader_poly, &Scene_polyhedron_item::aboutToBeDestroyed,
-            this, &SurfaceFromPickedPointsPlugin::reset_leader);
+    if(surface)
+      disconnect(surface, &Scene_polyhedron_item::aboutToBeDestroyed,
+                 this, &SurfaceFromPickedPointsPlugin::reset_surface);
+    if(control_points_item)
+      disconnect(control_points_item, &Scene_polyhedron_item::aboutToBeDestroyed,
+                 this, &SurfaceFromPickedPointsPlugin::reset_control_points);
+    if(generator_poly)
+      disconnect(generator_poly, &Scene_polyhedron_item::aboutToBeDestroyed,
+                 this, &SurfaceFromPickedPointsPlugin::reset_generator);
+    if(leader_poly)
+      disconnect(leader_poly, &Scene_polyhedron_item::aboutToBeDestroyed,
+                 this, &SurfaceFromPickedPointsPlugin::reset_leader);
     reset_leader();
     reset_generator();
     reset_surface();
@@ -416,16 +460,14 @@ private Q_SLOTS:
     if(mode != ADD_POLYLINE)
       return;
     Scene_polylines_item* current_polyline = NULL;
-    QDoubleSpinBox* current_spin = NULL;
+    QDoubleSpinBox* current_spin = ui_widget.edgeSpinBox;
     if(generator_is_created)
     {
       current_polyline = generator_poly;
-      current_spin = ui_widget.generatorSpinBox;
     }
     else
     {
       current_polyline = leader_poly;
-      current_spin = ui_widget.leaderSpinBox;
     }
 
     std::vector<Point_3>& polyline = current_polyline->polylines.back();
@@ -442,15 +484,14 @@ private Q_SLOTS:
         if(min_dist == -1 || dist<min_dist)
         {
           min_dist = dist;
-          current_spin->setMaximum(min_dist);
-          current_spin->setValue(min_dist/2.0);
+          current_spin->setMaximum(100*min_dist);
+          current_spin->setValue(min_dist);
           current_spin->setSingleStep(min_dist/100);
         }
       }
     }
   }
-  void setDeltaI(double d) { deltaI = d; }
-  void setDeltaJ(double d) { deltaJ = d; }
+  void setEdgeSize(double d) { edgeSize = d; }
 private:
   enum Select_mode{
     ADD_POLYLINE = 0,
@@ -471,8 +512,7 @@ private:
   Scene_points_with_normal_item* initial_mesh_item;
   Scene_points_with_normal_item* control_points_item;
   bool generator_is_created;
-  double deltaI;
-  double deltaJ;
+  double edgeSize;
   double min_dist;
   std::vector<Polyhedron::Vertex_handle > control_points;
   Kernel::Plane_3* l_plane;
@@ -525,11 +565,10 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
       case ADD_POLYLINE:
       {
         Scene_polylines_item* current_polyline = NULL;
-        QDoubleSpinBox* current_spin = NULL;
+        QDoubleSpinBox* current_spin = ui_widget.edgeSpinBox;
         if(generator_is_created)
         {
           current_polyline = generator_poly;
-          current_spin = ui_widget.generatorSpinBox;
           if(!g_plane)
           {
             g_plane = new Kernel::Plane_3();
@@ -542,7 +581,6 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         else if(leader_poly)
         {
           current_polyline = leader_poly;
-          current_spin = ui_widget.leaderSpinBox;
           if(!l_plane)
           {
             l_plane = new Kernel::Plane_3();

@@ -41,34 +41,16 @@
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_4">
              <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,0">
-               <item>
-                <widget class="QLabel" name="label">
-                 <property name="text">
-                  <string>Delta Leader:</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QDoubleSpinBox" name="leaderSpinBox">
-                 <property name="singleStep">
-                  <double>0.100000000000000</double>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
               <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="1,0">
                <item>
                 <widget class="QLabel" name="label_2">
                  <property name="text">
-                  <string>Delta Generator:</string>
+                  <string>Edge size</string>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QDoubleSpinBox" name="generatorSpinBox"/>
+                <widget class="QDoubleSpinBox" name="edgeSpinBox"/>
                </item>
               </layout>
              </item>
