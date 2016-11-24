@@ -135,8 +135,6 @@ public:
     dock_widget = new QDockWidget("Create and Deform Surface", mw);
     dock_widget->setVisible(false);
     ui_widget.setupUi(dock_widget);
-    connect(dock_widget, &QDockWidget::visibilityChanged,
-            this, &SurfaceFromPickedPointsPlugin::dockwidgetVisibilityChanged);
     connect(ui_widget.createSurfaceButton, &QPushButton::clicked,
             this, &SurfaceFromPickedPointsPlugin::add_surface);
     connect(ui_widget.newPolylineButton, &QPushButton::clicked,
@@ -147,13 +145,21 @@ public:
             this, &SurfaceFromPickedPointsPlugin::cancel);
     connect(ui_widget.edgeSpinBox, SIGNAL(valueChanged(double)),
             this, SLOT(setEdgeSize(double)));
-    is_active = false;
     mode = IDLE;
     ui_widget.cancelButton->setEnabled(false);
     QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
     viewer->installEventFilter(this);
     mw->installEventFilter(this);
     addDockWidget(dock_widget);
+    generator_is_created = false;
+    mode = IDLE;
+    ui_widget.cancelButton->setEnabled(false);
+    generator_poly = NULL;
+    control_points_item = NULL;
+    g_plane = NULL;
+    leader_poly = NULL;
+    l_plane = NULL;
+    surface = NULL;
   }
   bool eventFilter(QObject *, QEvent *event);
 private Q_SLOTS:
@@ -171,20 +177,6 @@ private Q_SLOTS:
   void closure()
   {
     dock_widget->hide();
-  }
-  void dockwidgetVisibilityChanged(bool b)
-  {
-    is_active = b;
-    if(b)
-      generator_is_created = false;
-    mode = IDLE;
-    ui_widget.cancelButton->setEnabled(false);
-    generator_poly = NULL;
-    control_points_item = NULL;
-    g_plane = NULL;
-    leader_poly = NULL;
-    l_plane = NULL;
-    surface = NULL;
   }
   void add_polyline()
   {
@@ -396,34 +388,26 @@ private Q_SLOTS:
       if(control_pos.empty())
         break;
     }
-    control_points_item = new Scene_points_with_normal_item();
-
-
-    //remesh the polyhedron to optimize the surface
-    Vertex_set is_constrained_set;
-    Q_FOREACH(Polyhedron::Vertex_handle vh, control_points)
-      is_constrained_set.insert(vh);
-    Is_constrained_map vcm(&is_constrained_set);
-
-    Q_FOREACH(Polyhedron::Vertex_iterator vit, control_points)
-    {
-      control_points_item->point_set()->insert(vit->point());
-    }
-    CGAL::Polygon_mesh_processing::isotropic_remeshing(faces(*polyhedron),
-                                                       edgeSize,
-                                                       *polyhedron,
-                                                       CGAL::Polygon_mesh_processing::parameters::vertex_is_constrained_map(vcm));
     surface = new Scene_polyhedron_item(polyhedron);
     surface->setName("Surface");
     scene->addItem(surface);
     connect(surface, &Scene_polyhedron_item::aboutToBeDestroyed,
             this, &SurfaceFromPickedPointsPlugin::reset_surface);
+    control_points_item = new Scene_points_with_normal_item();
+    Q_FOREACH(Polyhedron::Vertex_iterator vit, control_points)
+    {
+      control_points_item->point_set()->insert(vit->point());
+    }
     control_points_item->setName("Fixed Points");
     control_points_item->setColor(QColor(Qt::red));
     scene->addItem(control_points_item);
     connect(control_points_item, &Scene_polyhedron_item::aboutToBeDestroyed,
             this, &SurfaceFromPickedPointsPlugin::reset_control_points);
-    ui_widget.createSurfaceButton->setEnabled(false);
+    ui_widget.createSurfaceButton->setText("Remesh");
+    disconnect(ui_widget.createSurfaceButton, &QPushButton::clicked,
+               this, &SurfaceFromPickedPointsPlugin::add_surface);
+    connect(ui_widget.createSurfaceButton, &QPushButton::clicked,
+            this, &SurfaceFromPickedPointsPlugin::remesh);
   }
   void finish()
   {
@@ -446,6 +430,11 @@ private Q_SLOTS:
     reset_surface();
     reset_control_points();
     ui_widget.createSurfaceButton->setEnabled(false);
+    ui_widget.createSurfaceButton->setText("Create Surface");
+    disconnect(ui_widget.createSurfaceButton, &QPushButton::clicked,
+            this, &SurfaceFromPickedPointsPlugin::remesh);
+    connect(ui_widget.createSurfaceButton, &QPushButton::clicked,
+               this, &SurfaceFromPickedPointsPlugin::add_surface);
     ui_widget.newPolylineButton->setText("New Generator");
     ui_widget.newPolylineButton->setEnabled(true);
     Q_FOREACH(int id, hidden_planes)
@@ -484,14 +473,29 @@ private Q_SLOTS:
         if(min_dist == -1 || dist<min_dist)
         {
           min_dist = dist;
-          current_spin->setMaximum(100*min_dist);
           current_spin->setValue(min_dist);
-          current_spin->setSingleStep(min_dist/100);
         }
       }
     }
   }
   void setEdgeSize(double d) { edgeSize = d; }
+  //remesh the polyhedron to optimize the surface
+  void remesh()
+  {
+    if(!surface)
+      return;
+    Polyhedron* poly = surface->polyhedron();
+    Vertex_set is_constrained_set;
+    Q_FOREACH(Polyhedron::Vertex_handle vh, control_points)
+      is_constrained_set.insert(vh);
+    Is_constrained_map vcm(&is_constrained_set);
+    CGAL::Polygon_mesh_processing::isotropic_remeshing(faces(*poly),
+                                                       edgeSize,
+                                                       *poly,
+                                                       CGAL::Polygon_mesh_processing::parameters::vertex_is_constrained_map(vcm));
+    surface->invalidateOpenGLBuffers();
+    surface->itemChanged();
+  }
 private:
   enum Select_mode{
     ADD_POLYLINE = 0,
@@ -504,7 +508,6 @@ private:
   CGAL::Three::Scene_interface* scene;
   QDockWidget* dock_widget;
   Ui::Create_surface ui_widget;
-  bool is_active;
   Select_mode mode;
   Scene_polylines_item* generator_poly;
   Scene_polylines_item* leader_poly;
@@ -525,6 +528,10 @@ bool SurfaceFromPickedPointsPlugin::find_plane(QMouseEvent* e, Kernel::Plane_3& 
 {
   QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
   Volume_plane_interface* plane_interface = NULL;
+  bool found = false;
+  viewer->camera()->pointUnderPixel(e->pos(), found);
+  if(!found)
+    return false;
   viewer->select(e);
   if(strcmp(scene->item(scene->mainSelectionIndex())->metaObject()->className(),"Volume_plane_interface") == 0)
     plane_interface = static_cast<Volume_plane_interface*>(scene->item(scene->mainSelectionIndex()));
@@ -544,7 +551,7 @@ bool SurfaceFromPickedPointsPlugin::find_plane(QMouseEvent* e, Kernel::Plane_3& 
 
 bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
 {
-  if (!is_active || mode == IDLE)
+  if (mode == IDLE)
     return false;
   if(event->type()==QEvent::MouseButtonPress)
   {
@@ -642,7 +649,10 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         CGAL::Polygon_mesh_slicer<Polyhedron, Kernel> slicer_aabb(polyhedron, tree);
         slicer_aabb(plane, std::back_inserter(slices));
         if(slices.empty())
+        {
+          messageInterface->warning("The picked plane must intersect the surface.");
           return false;
+        }
         //find the closest slice
         boost::tuple<double, int, int> min_squared_dist(-1,-1, -1);
         for(std::size_t i = 0; i<slices.size(); ++i)
@@ -704,7 +714,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         }
         Surface_mesh_deformation::Point constrained_pos(point.x, point.y, point.z);
         deform_mesh.set_target_position(target(center, polyhedron), constrained_pos);
-        deform_mesh.deform();
+        deform_mesh.deform(10,1e-4);
         //update the item
         if(control_points_item)
         {
