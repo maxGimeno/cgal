@@ -29,6 +29,7 @@
 #include "ui_Create_surface.h"
 typedef Scene_polylines_item::Point_3 Point_3;
 typedef Polyhedron::Traits Kernel;
+typedef CGAL::Surface_mesh_deformation<Polyhedron> Surface_mesh_deformation;
 // A modifier creating a Polyhedron with the incremental builder.
 template <class HDS>
 class Build_polyhedron : public CGAL::Modifier_base<HDS> {
@@ -409,6 +410,7 @@ private Q_SLOTS:
     connect(ui_widget.createSurfaceButton, &QPushButton::clicked,
             this, &SurfaceFromPickedPointsPlugin::remesh);
   }
+
   void finish()
   {
     mode = IDLE;
@@ -488,11 +490,16 @@ private Q_SLOTS:
     Vertex_set is_constrained_set;
     Q_FOREACH(Polyhedron::Vertex_handle vh, control_points)
       is_constrained_set.insert(vh);
+
     Is_constrained_map vcm(&is_constrained_set);
     CGAL::Polygon_mesh_processing::isotropic_remeshing(faces(*poly),
                                                        edgeSize,
                                                        *poly,
                                                        CGAL::Polygon_mesh_processing::parameters::vertex_is_constrained_map(vcm));
+    control_points.clear();
+    Q_FOREACH(Polyhedron::Vertex_handle vh, is_constrained_set)
+      control_points.push_back(vh);
+
     surface->invalidateOpenGLBuffers();
     surface->itemChanged();
   }
@@ -531,7 +538,9 @@ bool SurfaceFromPickedPointsPlugin::find_plane(QMouseEvent* e, Kernel::Plane_3& 
   bool found = false;
   viewer->camera()->pointUnderPixel(e->pos(), found);
   if(!found)
+  {
     return false;
+  }
   viewer->select(e);
   if(strcmp(scene->item(scene->mainSelectionIndex())->metaObject()->className(),"Volume_plane_interface") == 0)
     plane_interface = static_cast<Volume_plane_interface*>(scene->item(scene->mainSelectionIndex()));
@@ -571,6 +580,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
       {
       case ADD_POLYLINE:
       {
+
         Scene_polylines_item* current_polyline = NULL;
         QDoubleSpinBox* current_spin = ui_widget.edgeSpinBox;
         if(generator_is_created)
@@ -580,7 +590,22 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           {
             g_plane = new Kernel::Plane_3();
             if(!find_plane(e, *g_plane))
+            {
+              delete g_plane;
+              g_plane = NULL;
               return false;
+            }
+          }
+          else
+          {
+            //project point on plane
+            if ( !g_plane->has_on(Point_3(point.x, point.y, point.z)))
+            {
+              qglviewer::Vec pos = viewer->camera()->position();
+              Kernel::Line_3 ray(Point_3(pos.x, pos.y, pos.z), Point_3(point.x, point.y, point.z));
+              Point_3 res = boost::get<Point_3>(*intersection(*g_plane, ray));
+              point = qglviewer::Vec(res.x(), res.y(), res.z());
+            }
           }
           if(generator_poly->polylines.back().size() >=1)
             ui_widget.newPolylineButton->setEnabled(true);
@@ -592,7 +617,22 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           {
             l_plane = new Kernel::Plane_3();
             if(!find_plane(e, *l_plane))
+            {
+              delete l_plane;
+              l_plane = NULL;
               return false;
+            }
+          }
+          else
+          {
+           //project point on plane
+            if ( !l_plane->has_on(Point_3(point.x, point.y, point.z)))
+            {
+              qglviewer::Vec pos = viewer->camera()->position();
+              Kernel::Line_3 ray(Point_3(pos.x, pos.y, pos.z), Point_3(point.x, point.y, point.z));
+              Point_3 res = boost::get<Point_3>(*intersection(*l_plane, ray));
+              point = qglviewer::Vec(res.x(), res.y(), res.z());
+            }
           }
           if(leader_poly->polylines.back().size() >=1)
             ui_widget.createSurfaceButton->setEnabled(true);
@@ -619,9 +659,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
             if(min_dist == -1 || dist<min_dist)
             {
               min_dist = dist;
-              current_spin->setMaximum(min_dist);
               current_spin->setValue(min_dist/2.0);
-              current_spin->setSingleStep(min_dist/100);
             }
           }
           current_polyline->invalidateOpenGLBuffers();
@@ -631,7 +669,6 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
       }
       case ADD_POINT_AND_DEFORM:
       {
-        typedef CGAL::Surface_mesh_deformation<Polyhedron>              Surface_mesh_deformation;
         typedef CGAL::AABB_halfedge_graph_segment_primitive<Polyhedron> HGSP;
         typedef CGAL::AABB_traits<Kernel, HGSP>                         AABB_traits;
         typedef CGAL::AABB_tree<AABB_traits>                            AABB_tree;
@@ -703,7 +740,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         {
           deform_mesh.insert_roi_vertex(vit);
         }
-        control_points.push_back(target(center, polyhedron));
+        control_points.push_back(center->vertex());
         //add the control points
         deform_mesh.insert_control_vertices(control_points.begin(), control_points.end());
         //deform
@@ -714,7 +751,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         }
         Surface_mesh_deformation::Point constrained_pos(point.x, point.y, point.z);
         deform_mesh.set_target_position(target(center, polyhedron), constrained_pos);
-        deform_mesh.deform(10,1e-4);
+        deform_mesh.deform(3, 1e-4);
         //update the item
         if(control_points_item)
         {
