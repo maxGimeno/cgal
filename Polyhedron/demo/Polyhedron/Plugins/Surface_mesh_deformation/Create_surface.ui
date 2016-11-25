@@ -2,6 +2,14 @@
 <ui version="4.0">
  <class>Create_surface</class>
  <widget class="QDockWidget" name="Create_surface">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>379</width>
+    <height>411</height>
+   </rect>
+  </property>
   <property name="windowTitle">
    <string>Create and Deform Surface</string>
   </property>
@@ -30,14 +38,14 @@
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;1/ click New Generator to initiate the creation of the Generator Polyline&lt;/p&gt;
+&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;1/ Click &lt;span style=&quot; font-style:italic;&quot;&gt;New Generator&lt;/span&gt; to initiate the creation of the Generator Polyline&lt;/p&gt;
 &lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;2/ Use SHIFT+left click to add the wanted points to the generator&lt;/p&gt;
-&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;3/ click New Leader to initiate the creation of the Leader Polyline&lt;/p&gt;
-&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;4/ When you are done, click Create Surface to generate a surface from the two polylines&lt;/p&gt;
+&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;3/ Click &lt;span style=&quot; font-style:italic;&quot;&gt;New Leader&lt;/span&gt; to initiate the creation of the Leader Polyline&lt;/p&gt;
+&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;4/ When you are done, click &lt;span style=&quot; font-style:italic;&quot;&gt;Create Surface&lt;/span&gt; to generate a surface from the two polylines&lt;/p&gt;
 &lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;5/ You can choose the target edge length with the spin box and click Remesh to remesh your surface until you are satisfied&lt;/p&gt;
-&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;6/ Use SHIFT+left click to point on the planes and deform the surface\n7/ Once you are satisfied, you can click Finish to end the process and start again with a new surface.&lt;/p&gt;
+&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;6/ Use SHIFT+left click to point on the planes and deform the surface\n7/ Once you are satisfied, you can click &lt;span style=&quot; font-style:italic;&quot;&gt;Finish&lt;/span&gt; to end the process and start again with a new surface.&lt;/p&gt;
 &lt;p align=&quot;justify&quot; style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
-&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;  Tip: You can use Cancel Last Insertion to remove the last picked point from the current Polyline&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;  Tip: You can use &lt;span style=&quot; font-style:italic;&quot;&gt;Cancel Last Insertion&lt;/span&gt; to remove the last picked point from the current Polyline&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="textInteractionFlags">
        <set>Qt::NoTextInteraction</set>
@@ -78,6 +86,13 @@ p, li { white-space: pre-wrap; }
              </property>
              <property name="text">
               <string>Create Surface</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="energyButton">
+             <property name="text">
+              <string>Minimize energy</string>
              </property>
             </widget>
            </item>

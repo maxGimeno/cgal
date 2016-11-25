@@ -146,6 +146,8 @@ public:
             this, &SurfaceFromPickedPointsPlugin::cancel);
     connect(ui_widget.edgeSpinBox, SIGNAL(valueChanged(double)),
             this, SLOT(setEdgeSize(double)));
+    connect(ui_widget.energyButton, &QPushButton::clicked,
+            this, &SurfaceFromPickedPointsPlugin::minEnergy);
     mode = IDLE;
     ui_widget.cancelButton->setEnabled(false);
     QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
@@ -214,12 +216,14 @@ private Q_SLOTS:
               this, &SurfaceFromPickedPointsPlugin::reset_leader);
       leader_poly->polylines.push_back( Scene_polylines_item::Polyline() );
       leader_poly->setName("Leader Polyline");
+      leader_poly->setColor(QColor("#AAFFFF"));
       scene->addItem(leader_poly);
       ui_widget.newPolylineButton->setEnabled(false);
     }
     generator_is_created = !generator_is_created;
     min_dist = -1;
   }
+
   void add_surface()
   {
     if(!(generator_poly && leader_poly))
@@ -230,25 +234,7 @@ private Q_SLOTS:
         scene->item(id)->setVisible(true);
     }
     hidden_planes.clear();
-    bool plane_found = false;
-    for(int i=0; i<scene->numberOfEntries(); ++i)
-    {
-      //always return true
-      Volume_plane_interface* plane = static_cast<Volume_plane_interface*>(scene->item(i));
-      if(plane)
-      {
-        plane_found = true;
-        break;
-      }
-    }
-    if(plane_found)
-    {
-      mode = ADD_POINT_AND_DEFORM;
-    }
-    else
-    {
-      mode = IDLE;
-    }
+    mode = ADD_POINT_AND_DEFORM;
     ui_widget.cancelButton->setEnabled(false);
     //create points
     std::vector<Point_3> points;
@@ -258,7 +244,7 @@ private Q_SLOTS:
 
     //Only work if the polylines intersect the planes at most once.
      boost::optional<boost::variant<Point_3, Kernel::Segment_3, Kernel::Line_3> > o;
-    int g_id(-1), l_id(-1);
+    g_id = -1; l_id = -1;
     for(std::size_t i=0; i< l_polyline.size()-1; ++i)
     {
       if((g_plane->has_on_negative_side(l_polyline[i]) &&
@@ -280,7 +266,7 @@ private Q_SLOTS:
       }
       else
       {
-        l_id = l_polyline.size()-1;
+        l_id = (int)l_polyline.size()-1;
       }
     }
 
@@ -319,7 +305,7 @@ private Q_SLOTS:
       }
       else
       {
-        g_id = g_polyline.size();
+        g_id = (int)g_polyline.size();
 
         o = *intersection(
                Kernel::Line_3(g_polyline[g_id-1], g_polyline[g_id-2])
@@ -389,6 +375,7 @@ private Q_SLOTS:
       if(control_pos.empty())
         break;
     }
+    control_limit = (int)control_points.size();
     surface = new Scene_polyhedron_item(polyhedron);
     surface->setName("Surface");
     scene->addItem(surface);
@@ -503,6 +490,173 @@ private Q_SLOTS:
     surface->invalidateOpenGLBuffers();
     surface->itemChanged();
   }
+
+  void minEnergy()
+  {
+    //get control_points positions
+    //std::vector<Point_3> ctrl_coords(control_points.size() - (std::size_t)control_limit);
+    //for(std::size_t i = (std::size_t)control_limit; i<control_points.size(); ++i)
+    //{
+    //  ctrl_coords[i-(std::size_t)control_limit] = control_points_item->point_set()->point(*(control_points_item->point_set()->begin()+i)) ;
+    //}
+      control_points.clear();
+    //create points
+    std::vector<Point_3> points;
+    std::vector<Point_3>& g_polyline = generator_poly->polylines.back();
+    std::vector<Point_3>& l_polyline = leader_poly->polylines.back();
+    std::vector<Point_3> control_pos;
+    //compute the points
+    for(std::size_t i=0; i< g_polyline.size(); ++i)
+    {
+      Kernel::Vector_3 offset = g_polyline[i]-g_polyline[g_id];
+      for(std::size_t j=0; j<l_polyline.size(); ++j)
+      {
+        if(j==static_cast<std::size_t>(l_id))
+        {
+          points.push_back(g_polyline[i]);
+          control_pos.push_back(points.back());
+        }
+
+        points.push_back(l_polyline[j]+offset);
+        if(i == static_cast<std::size_t>(g_id))
+          control_pos.push_back(points.back());
+      }
+    }
+
+//update Polyhedron item
+
+    //re-create initial polyhedron.
+    Polyhedron *polyhedron = surface->polyhedron();
+    polyhedron->clear();
+    Build_polyhedron<Polyhedron::HalfedgeDS> builder(points, (int)g_polyline.size(), (int)l_polyline.size()+1);
+    polyhedron->delegate(builder);
+    // Init the indices of the halfedges and the vertices.
+    set_halfedgeds_items_id(*polyhedron);
+
+    //re-compute control_points
+    for(
+    Polyhedron::Vertex_iterator vit = polyhedron->vertices_begin();
+        vit != polyhedron->vertices_end();
+        ++vit)
+    {
+      int i=0;
+      BOOST_FOREACH(Point_3 p, control_pos)
+      {
+        if(vit->point() == p)
+        {
+          control_points.push_back(vit);
+          control_pos.erase(control_pos.begin()+i);
+          break;
+        }
+        ++i;
+      }
+      if(control_pos.empty())
+        break;
+    }
+//remesh
+    Vertex_set is_constrained_set;
+    Q_FOREACH(Polyhedron::Vertex_handle vh, control_points)
+      is_constrained_set.insert(vh);
+
+    Is_constrained_map vcm(&is_constrained_set);
+    CGAL::Polygon_mesh_processing::isotropic_remeshing(faces(*polyhedron),
+                                                       edgeSize,
+                                                       *polyhedron,
+                                                       CGAL::Polygon_mesh_processing::parameters::vertex_is_constrained_map(vcm));
+    control_points.clear();
+    Q_FOREACH(Polyhedron::Vertex_handle vh, is_constrained_set)
+      control_points.push_back(vh);
+
+//deform
+    typedef CGAL::AABB_halfedge_graph_segment_primitive<Polyhedron> HGSP;
+    typedef CGAL::AABB_traits<Kernel, HGSP>                         AABB_traits;
+    typedef CGAL::AABB_tree<AABB_traits>                            AABB_tree;
+    //Slice the Polyhedron along the picked plane
+    int plane_id = 0;
+    Q_FOREACH(Point_3 ctrl_p, ordered_control_points)
+    {
+      Kernel::Plane_3 &plane = control_points_planes[plane_id++];
+      std::vector<std::vector<Point_3> > slices;
+      AABB_tree tree(edges(*polyhedron).first, edges(*polyhedron).second, *polyhedron);
+      CGAL::Polygon_mesh_slicer<Polyhedron, Kernel> slicer_aabb(*polyhedron, tree);
+      slicer_aabb(plane, std::back_inserter(slices));
+      if(slices.empty())
+      {
+        messageInterface->warning("An error has occured.");
+      }
+      //find the closest slice
+      boost::tuple<double, int, int> min_squared_dist(-1,-1, -1);
+      for(std::size_t i = 0; i<slices.size(); ++i)
+      {
+        for(std::size_t j = 0; j<slices[i].size()-1; ++j)
+        {
+          Kernel::Segment_3 segment(slices[i][j], slices[i][j+1]);
+          double sq_dist = CGAL::squared_distance(ctrl_p, segment);
+          if(min_squared_dist.get<0>() == -1 ||
+             sq_dist < min_squared_dist.get<0>())
+          {
+            min_squared_dist.get<0>()= sq_dist;
+            min_squared_dist.get<1>() = i;
+            min_squared_dist.get<2>() = j;
+          }
+        }
+      }
+      //find the edges intersected by this slice
+      AABB_traits::Primitive::Id pid1 = tree.closest_point_and_primitive(slices[min_squared_dist.get<1>()][min_squared_dist.get<2>()]).second;
+      AABB_traits::Primitive::Id pid2 = tree.closest_point_and_primitive(slices[min_squared_dist.get<1>()][min_squared_dist.get<2>()+1]).second;
+      Polyhedron::Halfedge_handle h1(halfedge(pid1, *polyhedron));
+      Polyhedron::Halfedge_handle h2(halfedge(pid2, *polyhedron));
+      //find the triangle that contains those two edges
+      Polyhedron::Facet_handle closest_triangle = h1->facet();
+      if(!(closest_triangle == h2->facet()
+           || closest_triangle == h2->opposite()->facet()))
+      {
+        closest_triangle = h1->opposite()->facet();
+      }
+
+      // add triangle's center to the mesh
+      double x(0), y(0), z(0);
+      Polyhedron::Halfedge_around_facet_circulator hafc = closest_triangle->facet_begin();
+      Polyhedron::Halfedge_around_facet_circulator end = hafc;
+      CGAL_For_all(hafc, end)
+      {
+        x+=hafc->vertex()->point().x(); y+=hafc->vertex()->point().y(); z+=hafc->vertex()->point().z();
+      }
+      Polyhedron::Halfedge_handle center = CGAL::Euler::add_center_vertex(closest_triangle->facet_begin(), *polyhedron);
+      center->vertex()->point() = Point_3(x/3.0, y/3.0, z/3.0);
+      control_points.push_back(center->vertex());
+      // Init the indices of the halfedges and the vertices.
+      set_halfedgeds_items_id(*polyhedron);
+    }
+
+    Surface_mesh_deformation deform_mesh(*polyhedron);
+    //Define the ROI
+    for(Polyhedron::Vertex_iterator vit = polyhedron->vertices_begin();
+        vit != polyhedron->vertices_end();
+        ++vit)
+    {
+      deform_mesh.insert_roi_vertex(vit);
+    }
+    //add the control points
+    deform_mesh.insert_control_vertices(control_points.begin(), control_points.end());
+    //deform
+    bool is_matrix_factorization_OK = deform_mesh.preprocess();
+    if(!is_matrix_factorization_OK){
+      std::cerr << "Error in preprocessing, check documentation of preprocess()" << std::endl;
+      return;
+    }
+    int ctrl_id = control_limit;
+    Q_FOREACH(Point_3 ctrl_p, ordered_control_points)
+    {
+      Surface_mesh_deformation::Point constrained_pos(ctrl_p.x(), ctrl_p.y(), ctrl_p.z());
+      deform_mesh.set_target_position(control_points[ctrl_id++], constrained_pos);
+    }
+    deform_mesh.deform(100, 1e-4);
+
+    surface->invalidateOpenGLBuffers();
+    surface->itemChanged();
+  }
+
 private:
   enum Select_mode{
     ADD_POLYLINE = 0,
@@ -529,6 +683,9 @@ private:
   Kernel::Plane_3* g_plane;
   bool find_plane(QMouseEvent* e, Kernel::Plane_3& plane);
   std::vector<int> hidden_planes;
+  int control_limit, g_id, l_id;
+  std::vector<Kernel::Plane_3> control_points_planes; //control_points_planes[i] is the plane associated to control_points[i+control_limit]
+  std::vector<Point_3> ordered_control_points;
 };
 
 bool SurfaceFromPickedPointsPlugin::find_plane(QMouseEvent* e, Kernel::Plane_3& plane)
@@ -677,6 +834,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         Kernel::Plane_3 plane;
         if(!find_plane(e,plane))
           return false;
+        control_points_planes.push_back(plane);
         Polyhedron &polyhedron = *surface->polyhedron();
         // Init the indices of the halfedges and the vertices.
         set_halfedgeds_items_id(polyhedron);
@@ -750,6 +908,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           return false;
         }
         Surface_mesh_deformation::Point constrained_pos(point.x, point.y, point.z);
+        ordered_control_points.push_back(Point_3(point.x, point.y, point.z));
         deform_mesh.set_target_position(target(center, polyhedron), constrained_pos);
         deform_mesh.deform(3, 1e-4);
         //update the item
