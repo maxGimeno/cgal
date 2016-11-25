@@ -639,8 +639,11 @@ private:
     switchReaderConverter< Word >(minmax);
 
     Volume_plane<x_tag> *x_item = new Volume_plane<x_tag>();
+    x_item->setColor(QColor(Qt::red));
     Volume_plane<y_tag> *y_item = new Volume_plane<y_tag>();
+    y_item->setColor(QColor(Qt::green));
     Volume_plane<z_tag> *z_item = new Volume_plane<z_tag>();
+    z_item->setColor(QColor(Qt::blue));
     scene->setSelectedItem(-1);
     group = new Scene_group_item(QString("Planes for %1").arg(seg_img->name()));
     connect(group, SIGNAL(aboutToBeDestroyed()),

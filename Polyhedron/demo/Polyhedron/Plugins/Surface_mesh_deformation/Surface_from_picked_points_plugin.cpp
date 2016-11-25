@@ -157,6 +157,8 @@ public:
     generator_is_created = false;
     mode = IDLE;
     ui_widget.cancelButton->setEnabled(false);
+    ui_widget.edgeSpinBox->setEnabled(false);
+    ui_widget.energyButton->setEnabled(false);
     generator_poly = NULL;
     control_points_item = NULL;
     g_plane = NULL;
@@ -173,7 +175,8 @@ private Q_SLOTS:
     else                         { dock_widget->show(); }
 
   }
-  void reset_surface() { surface = NULL; control_points.clear();}
+  void reset_surface() { surface = NULL; control_points.clear(); ordered_control_points.clear();
+                         ui_widget.edgeSpinBox->setEnabled(false); ui_widget.energyButton->setEnabled(false);}
   void reset_control_points() { control_points_item = NULL; control_points.clear();}
   void reset_generator() { generator_poly = NULL; generator_is_created = false; g_plane = NULL;}
   void reset_leader() { leader_poly = NULL; l_plane = NULL;}
@@ -396,6 +399,8 @@ private Q_SLOTS:
                this, &SurfaceFromPickedPointsPlugin::add_surface);
     connect(ui_widget.createSurfaceButton, &QPushButton::clicked,
             this, &SurfaceFromPickedPointsPlugin::remesh);
+    ui_widget.edgeSpinBox->setEnabled(true);
+    ui_widget.energyButton->setEnabled(true);
   }
 
   void finish()
@@ -493,13 +498,7 @@ private Q_SLOTS:
 
   void minEnergy()
   {
-    //get control_points positions
-    //std::vector<Point_3> ctrl_coords(control_points.size() - (std::size_t)control_limit);
-    //for(std::size_t i = (std::size_t)control_limit; i<control_points.size(); ++i)
-    //{
-    //  ctrl_coords[i-(std::size_t)control_limit] = control_points_item->point_set()->point(*(control_points_item->point_set()->begin()+i)) ;
-    //}
-      control_points.clear();
+    control_points.clear();
     //create points
     std::vector<Point_3> points;
     std::vector<Point_3>& g_polyline = generator_poly->polylines.back();
@@ -625,12 +624,13 @@ private Q_SLOTS:
       Polyhedron::Halfedge_handle center = CGAL::Euler::add_center_vertex(closest_triangle->facet_begin(), *polyhedron);
       center->vertex()->point() = Point_3(x/3.0, y/3.0, z/3.0);
       control_points.push_back(center->vertex());
-      // Init the indices of the halfedges and the vertices.
-      set_halfedgeds_items_id(*polyhedron);
     }
+      // Init the indices of the halfedges and the vertices.
+    set_halfedgeds_items_id(*polyhedron);
 
     Surface_mesh_deformation deform_mesh(*polyhedron);
     //Define the ROI
+    polyhedron->normalize_border();
     for(Polyhedron::Vertex_iterator vit = polyhedron->vertices_begin();
         vit != polyhedron->vertices_end();
         ++vit)
@@ -651,7 +651,7 @@ private Q_SLOTS:
       Surface_mesh_deformation::Point constrained_pos(ctrl_p.x(), ctrl_p.y(), ctrl_p.z());
       deform_mesh.set_target_position(control_points[ctrl_id++], constrained_pos);
     }
-    deform_mesh.deform(100, 1e-4);
+    deform_mesh.deform(100, 1e-8);
 
     surface->invalidateOpenGLBuffers();
     surface->itemChanged();
@@ -926,6 +926,95 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
       default:
         break;
       }
+      return true;
+    }
+    else if(e->modifiers() == Qt::ControlModifier &&
+            e->buttons() == Qt::LeftButton)
+    {
+      if(mode != ADD_POINT_AND_DEFORM)
+        return false;
+
+      QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
+      if(object == mw)
+      {
+        viewer->setFocus();
+        return false;
+      }
+      bool found = false;
+      qglviewer::Vec p = viewer->camera()->pointUnderPixel(e->pos(), found);
+      if(!found)
+        return false;
+
+      Point_3 point(p.x, p.y, p.z);
+      double min_dist = -1;
+      int id(-1), i(0);
+      Point_3 target;
+      Q_FOREACH(Polyhedron::Vertex_handle vh, control_points)
+      {
+        double dist = Kernel::Vector_3(vh->point(), point).squared_length();
+        if(min_dist == -1 || dist < min_dist)
+        {
+          min_dist = dist;
+          id = i;
+          target = vh->point();
+        }
+        ++i;
+      }
+      int save_id = id;
+      min_dist = -1; id = -1; i = 0;
+      Q_FOREACH(Point_3 cp, leader_poly->polylines.back())
+      {
+        ++i;
+        if(cp == target)
+        {
+          id = i;
+          break;
+        }
+      }
+      if(id >-1)
+      {
+        return false;
+      }
+      else
+      {
+        i = 0;
+        Q_FOREACH(Point_3 cp, generator_poly->polylines.back())
+        {
+          ++i;
+          if(cp == target)
+          {
+            id = i;
+            break;
+          }
+        }
+      }
+      if(id >-1)
+      {
+        return false;
+      }
+
+      control_points.erase(control_points.begin()+save_id);
+      min_dist = -1; id = -1; i = 0;
+      Q_FOREACH(Point_3 cp, ordered_control_points)
+      {
+        double dist = Kernel::Vector_3(cp, point).squared_length();
+        if(min_dist == -1 || dist < min_dist)
+        {
+          min_dist = dist;
+          id = i;
+        }
+        ++i;
+      }
+      ordered_control_points.erase(ordered_control_points.begin()+id);
+      control_points_planes.erase(control_points_planes.begin()+id);
+
+      control_points_item->point_set()->clear();
+      Q_FOREACH(Polyhedron::Vertex_iterator vit, control_points)
+      {
+        control_points_item->point_set()->insert(vit->point());
+      }
+      control_points_item->invalidateOpenGLBuffers();
+      control_points_item->itemChanged();
       return true;
     }
   }
