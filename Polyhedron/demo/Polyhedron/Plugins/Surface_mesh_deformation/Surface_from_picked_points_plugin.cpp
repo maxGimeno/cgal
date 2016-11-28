@@ -248,41 +248,52 @@ private Q_SLOTS:
     //Only work if the polylines intersect the planes at most once.
     boost::optional<boost::variant<Point_3, Kernel::Segment_3, Kernel::Line_3> > o;
     g_id = -1; l_id = -1;
-    for(std::size_t i=0; i< l_polyline.size()-1; ++i)
+    CGAL::Oriented_side first_side= g_plane->oriented_side(l_polyline[0]);
+    bool need_split_l = true;
+    //find the closest generator's end point to the l_plane
+    Point_3 g_closest_to_plane;
+    double sq_dist = CGAL::squared_distance(g_polyline.front(), *l_plane);
+    if(CGAL::squared_distance(g_polyline.back(), *l_plane) <sq_dist)
+      g_closest_to_plane = g_polyline.back();
+    else
+      g_closest_to_plane = g_polyline.front();
+
+    for(std::size_t i=1; i< l_polyline.size(); ++i)
     {
-      if((g_plane->has_on_negative_side(l_polyline[i]) &&
-          g_plane->has_on_positive_side(l_polyline[i+1])) ||
-         (g_plane->has_on_negative_side(l_polyline[i+1]) &&
-          g_plane->has_on_positive_side(l_polyline[i])))
+      if(g_plane->oriented_side(l_polyline[i]) !=
+         first_side)
       {
-        l_id = i+1;
+        if(g_plane->oriented_side(l_polyline[i]) == CGAL::ON_ORIENTED_BOUNDARY)
+        {
+          need_split_l = false;
+        }
+        l_id = i;
         break;
       }
     }
     if(l_id == -1)
     {
-      Kernel::Vector_3 f_diff = l_polyline.front()-g_polyline.front();
-      Kernel::Vector_3 b_diff = l_polyline.back()-g_polyline.back();
+      Kernel::Vector_3 f_diff = l_polyline.front()-g_closest_to_plane;
+      Kernel::Vector_3 b_diff = l_polyline.back()-g_closest_to_plane;
       if(f_diff.squared_length()< b_diff.squared_length())
       {
         l_id =0;
       }
       else
       {
-        l_id = (int)l_polyline.size()-1;
+        l_id = (int)l_polyline.size();
       }
     }
-
-    for(std::size_t i=0; i< g_polyline.size()-1; ++i)
+    first_side= l_plane->oriented_side(g_polyline[0]);
+    for(std::size_t i=1; i< g_polyline.size(); ++i)
     {
-      if((l_plane->has_on_negative_side(g_polyline[i]) &&
-          l_plane->has_on_positive_side(g_polyline[i+1])) ||
-         (l_plane->has_on_negative_side(g_polyline[i+1]) &&
-          l_plane->has_on_positive_side(g_polyline[i])))
+      if(l_plane->oriented_side(g_polyline[i]) !=
+         first_side)
       {
-        g_id = i+1;
+        g_id = i;
+        if(l_plane->oriented_side(g_polyline[i]) != CGAL::ON_ORIENTED_BOUNDARY)
         o = *intersection(
-              Kernel::Segment_3(g_polyline[i], g_polyline[i+1]),*l_plane);
+              Kernel::Segment_3(g_polyline[i-1], g_polyline[i]),*l_plane);
         break;
       }
     }
@@ -317,13 +328,10 @@ private Q_SLOTS:
       }
     }
     //get the intersection point between the generator and the leader's plane
+    Point_3 p;
+    if(o!=boost::none)
+       p = boost::get<Point_3>(*o);
 
-    if(o==boost::none)
-    {
-      this->messageInterface->warning("intersection point between generator and leader's plane cannot be found");
-      return;
-    }
-    Point_3 p = boost::get<Point_3>(*o);
     g_polyline.insert(g_polyline.begin()+g_id, p);
     generator_poly->invalidateOpenGLBuffers();
     generator_poly->itemChanged();
@@ -335,7 +343,8 @@ private Q_SLOTS:
       {
         if(j==static_cast<std::size_t>(l_id))
         {
-          points.push_back(g_polyline[i]);
+          if(need_split_l)
+            points.push_back(g_polyline[i]);
           control_pos.push_back(points.back());
         }
 
@@ -343,7 +352,13 @@ private Q_SLOTS:
         if(i == static_cast<std::size_t>(g_id))
           control_pos.push_back(points.back());
       }
+      if(static_cast<std::size_t>(l_id) == l_polyline.size())
+      {
+        points.push_back(g_polyline[i]);
+        control_pos.push_back(points.back());
+      }
     }
+
     initial_mesh_item = new Scene_points_with_normal_item();
     BOOST_FOREACH(Point_3 p, points)
         initial_mesh_item->point_set()->insert(p);
@@ -520,6 +535,11 @@ private Q_SLOTS:
         if(i == static_cast<std::size_t>(g_id))
           control_pos.push_back(points.back());
       }
+      if(static_cast<std::size_t>(l_id) == l_polyline.size())
+      {
+        points.push_back(g_polyline[i]);
+        control_pos.push_back(points.back());
+      }
     }
 
     //update Polyhedron item
@@ -600,6 +620,7 @@ private Q_SLOTS:
           }
         }
       }
+
       //find the edges intersected by this slice
       AABB_traits::Primitive::Id pid1 = tree.closest_point_and_primitive(slices[min_squared_dist.get<1>()][min_squared_dist.get<2>()]).second;
       AABB_traits::Primitive::Id pid2 = tree.closest_point_and_primitive(slices[min_squared_dist.get<1>()][min_squared_dist.get<2>()+1]).second;
@@ -612,7 +633,25 @@ private Q_SLOTS:
       {
         closest_triangle = h1->opposite()->facet();
       }
-
+      if(closest_triangle == NULL)
+      {
+        BOOST_FOREACH(Polyhedron::Facet_handle f1, CGAL::faces_around_target(h1, *polyhedron))
+        {
+          BOOST_FOREACH(Polyhedron::Facet_handle f2, CGAL::faces_around_target(h2, *polyhedron))
+          {
+            if(f2==f1 && f2 != NULL)
+            {
+              closest_triangle = f1;
+              break;
+            }
+          }
+        }
+        if(closest_triangle == NULL)
+        {
+          messageInterface->error("Cannot find the closest triangle.");
+          return ;
+        }
+      }
       // add triangle's center to the mesh
       double x(0), y(0), z(0);
       Polyhedron::Halfedge_around_facet_circulator hafc = closest_triangle->facet_begin();
@@ -968,7 +1007,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
       Point_3 point(p.x, p.y, p.z);
       double min_dist = -1;
       int id(-1), i(0);
-      Point_3 target;
+      Point_3 target = Point_3(0,0,0);
       Q_FOREACH(Polyhedron::Vertex_handle vh, control_points)
       {
         double dist = Kernel::Vector_3(vh->point(), point).squared_length();
