@@ -199,7 +199,7 @@ private Q_SLOTS:
       if(leader_poly)
       {
         disconnect(leader_poly, &Scene_polylines_item::aboutToBeDestroyed,
-                this, &SurfaceFromPickedPointsPlugin::reset_leader);
+                   this, &SurfaceFromPickedPointsPlugin::reset_leader);
         leader_poly = NULL;
       }
       generator_poly = new Scene_polylines_item();
@@ -246,7 +246,7 @@ private Q_SLOTS:
     std::vector<Point_3> control_pos;
 
     //Only work if the polylines intersect the planes at most once.
-     boost::optional<boost::variant<Point_3, Kernel::Segment_3, Kernel::Line_3> > o;
+    boost::optional<boost::variant<Point_3, Kernel::Segment_3, Kernel::Line_3> > o;
     g_id = -1; l_id = -1;
     for(std::size_t i=0; i< l_polyline.size()-1; ++i)
     {
@@ -311,8 +311,8 @@ private Q_SLOTS:
         g_id = (int)g_polyline.size();
 
         o = *intersection(
-               Kernel::Line_3(g_polyline[g_id-1], g_polyline[g_id-2])
-             ,*l_plane);
+              Kernel::Line_3(g_polyline[g_id-1], g_polyline[g_id-2])
+            ,*l_plane);
 
       }
     }
@@ -360,7 +360,7 @@ private Q_SLOTS:
 
     //save the points of the initial polylines as control points
     for(
-    Polyhedron::Vertex_iterator vit = polyhedron->vertices_begin();
+        Polyhedron::Vertex_iterator vit = polyhedron->vertices_begin();
         vit != polyhedron->vertices_end();
         ++vit)
     {
@@ -426,9 +426,9 @@ private Q_SLOTS:
     ui_widget.createSurfaceButton->setEnabled(false);
     ui_widget.createSurfaceButton->setText("Create Surface");
     disconnect(ui_widget.createSurfaceButton, &QPushButton::clicked,
-            this, &SurfaceFromPickedPointsPlugin::remesh);
+               this, &SurfaceFromPickedPointsPlugin::remesh);
     connect(ui_widget.createSurfaceButton, &QPushButton::clicked,
-               this, &SurfaceFromPickedPointsPlugin::add_surface);
+            this, &SurfaceFromPickedPointsPlugin::add_surface);
     ui_widget.newPolylineButton->setText("New Generator");
     ui_widget.newPolylineButton->setEnabled(true);
     Q_FOREACH(int id, hidden_planes)
@@ -522,7 +522,7 @@ private Q_SLOTS:
       }
     }
 
-//update Polyhedron item
+    //update Polyhedron item
 
     //re-create initial polyhedron.
     Polyhedron *polyhedron = surface->polyhedron();
@@ -534,7 +534,7 @@ private Q_SLOTS:
 
     //re-compute control_points
     for(
-    Polyhedron::Vertex_iterator vit = polyhedron->vertices_begin();
+        Polyhedron::Vertex_iterator vit = polyhedron->vertices_begin();
         vit != polyhedron->vertices_end();
         ++vit)
     {
@@ -552,7 +552,7 @@ private Q_SLOTS:
       if(control_pos.empty())
         break;
     }
-//remesh
+    //remesh
     Vertex_set is_constrained_set;
     Q_FOREACH(Polyhedron::Vertex_handle vh, control_points)
       is_constrained_set.insert(vh);
@@ -566,7 +566,7 @@ private Q_SLOTS:
     Q_FOREACH(Polyhedron::Vertex_handle vh, is_constrained_set)
       control_points.push_back(vh);
 
-//deform
+    //deform
     typedef CGAL::AABB_halfedge_graph_segment_primitive<Polyhedron> HGSP;
     typedef CGAL::AABB_traits<Kernel, HGSP>                         AABB_traits;
     typedef CGAL::AABB_tree<AABB_traits>                            AABB_tree;
@@ -625,7 +625,7 @@ private Q_SLOTS:
       center->vertex()->point() = Point_3(x/3.0, y/3.0, z/3.0);
       control_points.push_back(center->vertex());
     }
-      // Init the indices of the halfedges and the vertices.
+    // Init the indices of the halfedges and the vertices.
     set_halfedgeds_items_id(*polyhedron);
 
     Surface_mesh_deformation deform_mesh(*polyhedron);
@@ -782,7 +782,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           }
           else
           {
-           //project point on plane
+            //project point on plane
             if ( !l_plane->has_on(Point_3(point.x, point.y, point.z)))
             {
               qglviewer::Vec pos = viewer->camera()->position();
@@ -877,6 +877,26 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         {
           closest_triangle = h1->opposite()->facet();
         }
+        if(closest_triangle == NULL)
+        {
+          BOOST_FOREACH(Polyhedron::Facet_handle f1, CGAL::faces_around_target(h1, polyhedron))
+          {
+            BOOST_FOREACH(Polyhedron::Facet_handle f2, CGAL::faces_around_target(h2, polyhedron))
+            {
+              if(f2==f1 && f2 != NULL)
+              {
+                closest_triangle = f1;
+                break;
+              }
+            }
+          }
+          if(closest_triangle == NULL)
+          {
+            messageInterface->error("Cannot find the closest triangle.");
+            return false;
+          }
+        }
+
 
         // add triangle's center to the mesh
         double x(0), y(0), z(0);
