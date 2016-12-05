@@ -647,6 +647,10 @@ private:
     x_item->setColor(QColor("red"));
     y_item->setColor(QColor("green"));
     z_item->setColor(QColor("blue"));
+    CGAL::Three::Viewer_interface* viewer = static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first());
+    viewer->installEventFilter(x_item);
+    viewer->installEventFilter(y_item);
+    viewer->installEventFilter(z_item);
     scene->setSelectedItem(-1);
     group = new Scene_group_item(QString("Planes for %1").arg(seg_img->name()));
     connect(group, SIGNAL(aboutToBeDestroyed()),
@@ -678,6 +682,7 @@ private:
     connect(threads.back(), SIGNAL(finished(Volume_plane_thread*)), this, SLOT(addVP(Volume_plane_thread*)));
     threads.back()->start();
 
+    first_offset = viewer->offset();
   }
   template<typename T>
   void switchReaderConverter(std::pair<T, T> minmax) {
