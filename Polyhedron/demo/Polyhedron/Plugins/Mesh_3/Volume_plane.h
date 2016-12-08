@@ -403,7 +403,7 @@ void Volume_plane<T>::init() {
   int maxi, maxv;
   glGetIntegerv(GL_MAX_ELEMENTS_INDICES, &maxi);
   glGetIntegerv(GL_MAX_ELEMENTS_VERTICES, &maxv);
-  assert((vertices.size( ) / 3) < (unsigned int)maxi);
+  CGAL_warning_msg((vertices.size( ) / 3) < (unsigned int)maxi, "The image may be too large to be displayed exactly. There might be a loss of precision.");
   vVBO.create();
   vVBO.bind();
   vVBO.allocate(vertices.data(),static_cast<int>(sizeof(float) * vertices.size()));
