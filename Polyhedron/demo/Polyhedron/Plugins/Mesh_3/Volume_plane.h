@@ -63,8 +63,6 @@ public:
 
  void invalidateOpenGLBuffers()
  {
-     const qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first())->offset();
-     mFrame_->setPosition(offset.x, offset.y, offset.z);
  }
 
  bool eventFilter(QObject *, QEvent *);

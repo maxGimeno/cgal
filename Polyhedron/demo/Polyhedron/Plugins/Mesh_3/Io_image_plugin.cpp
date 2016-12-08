@@ -684,7 +684,6 @@ private:
     connect(threads.back(), SIGNAL(finished(Volume_plane_thread*)), this, SLOT(addVP(Volume_plane_thread*)));
     threads.back()->start();
 
-    first_offset = viewer->offset();
   }
   template<typename T>
   void switchReaderConverter(std::pair<T, T> minmax) {
