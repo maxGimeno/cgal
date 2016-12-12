@@ -196,6 +196,8 @@ public:
     ui_widget.edgeSpinBox->setEnabled(false);
     ui_widget.energyButton->setEnabled(false);
     current_group = NULL;
+    is_editing = false;
+    is_selecting = false;
   }
   bool eventFilter(QObject *, QEvent *event);
 private Q_SLOTS:
@@ -781,9 +783,78 @@ private:
   Ui::Create_surface ui_widget;
   Select_mode mode;
   SurfaceGroup* current_group;
+  Polyhedron::Vertex_handle sel_handle;
+  bool is_editing;
+  bool is_selecting;
   QMap<Scene_polyhedron_item*, SurfaceGroup*> surface_groups;
   bool find_plane(QMouseEvent* e, Kernel::Plane_3& plane);
   std::vector<int> hidden_planes;
+  void extendSurface(const qglviewer::Vec& p, const Kernel::Plane_3& plane)
+  {
+    Point_3 new_point = Point_3(0,0,0);
+    Polyhedron* poly = current_group->surface->polyhedron();
+    poly->normalize_border();
+    Point_3 point(p.x, p.y, p.z);
+    //check to which plane the picked plane is parallel to
+    if(plane.orthogonal_direction() == current_group->g_plane->orthogonal_direction())
+    {
+      //report the vector between the closest point of the bordure and the picked point
+      // at the right end of the generator.
+      std::vector<Point_3>& l_polyline = current_group->leader_poly->polylines.back();
+      double dist = Kernel::Vector_3(l_polyline.front(), point).squared_length();
+      if(Kernel::Vector_3(l_polyline.back(), point).squared_length() > dist)
+      {
+        new_point = plane.projection(l_polyline.front());
+        l_polyline.insert(
+            l_polyline.begin(),
+            new_point);
+        if(current_group->l_id > 0)
+          current_group->l_id++;
+      }
+      else
+      {
+        new_point = plane.projection(l_polyline.back());
+        l_polyline.insert(
+            l_polyline.end(),
+            new_point);
+      }
+      current_group->leader_poly->invalidateOpenGLBuffers();
+      current_group->leader_poly->itemChanged();
+    }
+    else if(plane.orthogonal_direction() == current_group->l_plane->orthogonal_direction())
+    {
+
+        //report the vector between the closest point of the bordure and the picked point
+        // at the right end of the generator.
+        std::vector<Point_3>& g_polyline = current_group->generator_poly->polylines.back();
+        double dist = Kernel::Vector_3(g_polyline.front(), point).squared_length();
+        if(Kernel::Vector_3(g_polyline.back(), point).squared_length() > dist)
+        {
+          new_point = plane.projection(g_polyline.front());
+          g_polyline.insert(
+              g_polyline.begin(),
+              new_point);
+          if(current_group->g_id > 0)
+            current_group->g_id++;
+        }
+        else
+        {
+          new_point = plane.projection(g_polyline.back());
+          g_polyline.insert(
+              g_polyline.end(),
+              new_point);
+        }
+        current_group->generator_poly->invalidateOpenGLBuffers();
+        current_group->generator_poly->itemChanged();
+    }
+    else
+      return;
+    current_group->control_limit++;
+    current_group->control_points_item->point_set()->insert(new_point);
+    current_group->control_points_item->invalidateOpenGLBuffers();
+    current_group->control_points_item->itemChanged();
+    minEnergy();
+  }
 };
 
 bool SurfaceFromPickedPointsPlugin::find_plane(QMouseEvent* e, Kernel::Plane_3& plane)
@@ -817,10 +888,73 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
 {
   if (mode == IDLE)
     return false;
+  if(event->type() == QEvent::KeyPress
+     && static_cast<QKeyEvent*>(event)->key()==Qt::Key_E)
+  {
+    is_selecting= true;
+  }
+  else if(event->type() == QEvent::KeyRelease
+     && static_cast<QKeyEvent*>(event)->key()==Qt::Key_E)
+  {
+    is_selecting= false;
+  }
   if(event->type()==QEvent::MouseButtonPress)
   {
     QMouseEvent* e= static_cast<QMouseEvent*>(event);
-    if(e->modifiers() == Qt::ShiftModifier &&
+    if(e->modifiers() == Qt::NoModifier &&
+       e->buttons() == Qt::LeftButton)
+    {
+      QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
+      if(object == mw)
+      {
+        viewer->setFocus();
+        return false;
+      }
+      bool found = false;
+      qglviewer::Vec point = viewer->camera()->pointUnderPixel(e->pos(), found);
+      if(is_selecting)
+      {
+        if(mode != ADD_POINT_AND_DEFORM)
+          //return false;
+        if(object == mw)
+        {
+          viewer->setFocus();
+          //return false;
+        }
+        Point_3 p(point.x, point.y, point.z);
+        double min_dist = -1;
+        Q_FOREACH(Polyhedron::Vertex_handle vh, current_group->control_points)
+        {
+          double dist = Kernel::Vector_3(vh->point(), p).squared_length();
+          if(min_dist == -1 || dist < min_dist)
+          {
+            min_dist = dist;
+            sel_handle = vh;
+            is_editing = true;
+          }
+        }
+        Point_set_3<Kernel>::iterator pit;
+        current_group->control_points_item->point_set()->unselect_all();
+        for (pit = current_group->control_points_item->point_set()->begin();
+             pit != current_group->control_points_item->point_set()->end();
+             ++pit)
+        {
+
+          if(current_group->control_points_item->point_set()->point(*pit) == sel_handle->point())
+          {
+            current_group->control_points_item->point_set()->select(pit);
+            break;
+          }
+        }
+
+        current_group->control_points_item->invalidateOpenGLBuffers();
+        current_group->control_points_item->itemChanged();
+        is_selecting = false;
+        return false;
+
+      }
+    }
+    else if(e->modifiers() == Qt::ShiftModifier &&
        e->buttons() == Qt::LeftButton)
     {
       QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
@@ -940,113 +1074,183 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           Point_3 res = boost::get<Point_3>(*intersection(plane, ray));
           point = qglviewer::Vec(res.x(), res.y(), res.z());
         }
-        current_group->control_points_planes.push_back(plane);
         Polyhedron &polyhedron = *current_group->surface->polyhedron();
         // Init the indices of the halfedges and the vertices.
         set_halfedgeds_items_id(polyhedron);
-        //Slice the Polyhedron along the picked plane
-        std::vector<std::vector<Point_3> > slices;
-        AABB_tree tree(edges(polyhedron).first, edges(polyhedron).second, polyhedron);
-        CGAL::Polygon_mesh_slicer<Polyhedron, Kernel> slicer_aabb(polyhedron, tree);
-        slicer_aabb(plane, std::back_inserter(slices));
-        if(slices.empty())
+        if(!is_editing)
         {
-          messageInterface->warning("The picked plane must intersect the surface.");
-          return false;
-        }
-        //find the closest slice
-        boost::tuple<double, int, int> min_squared_dist(-1,-1, -1);
-        for(std::size_t i = 0; i<slices.size(); ++i)
-        {
-          for(std::size_t j = 0; j<slices[i].size()-1; ++j)
+          //Slice the Polyhedron along the picked plane
+          std::vector<std::vector<Point_3> > slices;
+          AABB_tree tree(edges(polyhedron).first, edges(polyhedron).second, polyhedron);
+          CGAL::Polygon_mesh_slicer<Polyhedron, Kernel> slicer_aabb(polyhedron, tree);
+          slicer_aabb(plane, std::back_inserter(slices));
+          if(slices.empty())
           {
-            Kernel::Segment_3 segment(slices[i][j], slices[i][j+1]);
-            double sq_dist = CGAL::squared_distance(Point_3(point.x, point.y, point.z), segment);
-            if(min_squared_dist.get<0>() == -1 ||
-               sq_dist < min_squared_dist.get<0>())
-            {
-              min_squared_dist.get<0>()= sq_dist;
-              min_squared_dist.get<1>() = i;
-              min_squared_dist.get<2>() = j;
-            }
+            extendSurface(point, plane);
+            return false;
           }
-        }
-        //find the edges intersected by this slice
-        AABB_traits::Primitive::Id pid1 = tree.closest_point_and_primitive(slices[min_squared_dist.get<1>()][min_squared_dist.get<2>()]).second;
-        AABB_traits::Primitive::Id pid2 = tree.closest_point_and_primitive(slices[min_squared_dist.get<1>()][min_squared_dist.get<2>()+1]).second;
-        Polyhedron::Halfedge_handle h1(halfedge(pid1, polyhedron));
-        Polyhedron::Halfedge_handle h2(halfedge(pid2, polyhedron));
-        //find the triangle that contains those two edges
-        Polyhedron::Facet_handle closest_triangle = h1->facet();
-        if(!(closest_triangle == h2->facet()
-             || closest_triangle == h2->opposite()->facet()))
-        {
-          closest_triangle = h1->opposite()->facet();
-        }
-        if(closest_triangle == NULL)
-        {
-          BOOST_FOREACH(Polyhedron::Facet_handle f1, CGAL::faces_around_target(h1, polyhedron))
+          //find the closest slice
+          boost::tuple<double, int, int> min_squared_dist(-1,-1, -1);
+          for(std::size_t i = 0; i<slices.size(); ++i)
           {
-            BOOST_FOREACH(Polyhedron::Facet_handle f2, CGAL::faces_around_target(h2, polyhedron))
+            for(std::size_t j = 0; j<slices[i].size()-1; ++j)
             {
-              if(f2==f1 && f2 != NULL)
+              Kernel::Segment_3 segment(slices[i][j], slices[i][j+1]);
+              double sq_dist = CGAL::squared_distance(Point_3(point.x, point.y, point.z), segment);
+              if(min_squared_dist.get<0>() == -1 ||
+                 sq_dist < min_squared_dist.get<0>())
               {
-                closest_triangle = f1;
-                break;
+                min_squared_dist.get<0>()= sq_dist;
+                min_squared_dist.get<1>() = i;
+                min_squared_dist.get<2>() = j;
               }
             }
           }
+          //find the edges intersected by this slice
+          AABB_traits::Primitive::Id pid1 = tree.closest_point_and_primitive(slices[min_squared_dist.get<1>()][min_squared_dist.get<2>()]).second;
+          AABB_traits::Primitive::Id pid2 = tree.closest_point_and_primitive(slices[min_squared_dist.get<1>()][min_squared_dist.get<2>()+1]).second;
+          Polyhedron::Halfedge_handle h1(halfedge(pid1, polyhedron));
+          Polyhedron::Halfedge_handle h2(halfedge(pid2, polyhedron));
+          //find the triangle that contains those two edges
+          Polyhedron::Facet_handle closest_triangle = h1->facet();
+          if(!(closest_triangle == h2->facet()
+               || closest_triangle == h2->opposite()->facet()))
+          {
+            closest_triangle = h1->opposite()->facet();
+          }
           if(closest_triangle == NULL)
           {
-            messageInterface->error("Cannot find the closest triangle.");
+            BOOST_FOREACH(Polyhedron::Facet_handle f1, CGAL::faces_around_target(h1, polyhedron))
+            {
+              BOOST_FOREACH(Polyhedron::Facet_handle f2, CGAL::faces_around_target(h2, polyhedron))
+              {
+                if(f2==f1 && f2 != NULL)
+                {
+                  closest_triangle = f1;
+                  break;
+                }
+              }
+            }
+            if(closest_triangle == NULL)
+            {
+              messageInterface->error("Cannot find the closest triangle.");
+              return false;
+            }
+          }
+
+
+          // add triangle's center to the mesh
+          double x(0), y(0), z(0);
+          Polyhedron::Halfedge_around_facet_circulator hafc = closest_triangle->facet_begin();
+          Polyhedron::Halfedge_around_facet_circulator end = hafc;
+          CGAL_For_all(hafc, end)
+          {
+            x+=hafc->vertex()->point().x(); y+=hafc->vertex()->point().y(); z+=hafc->vertex()->point().z();
+          }
+          Polyhedron::Halfedge_handle center = CGAL::Euler::add_center_vertex(closest_triangle->facet_begin(), polyhedron);
+          center->vertex()->point() = Point_3(x/3.0, y/3.0, z/3.0);
+          // Init the indices of the halfedges and the vertices.
+          set_halfedgeds_items_id(polyhedron);
+          Surface_mesh_deformation deform_mesh(polyhedron);
+          //Define the ROI
+          for(Polyhedron::Vertex_iterator vit = polyhedron.vertices_begin();
+              vit != polyhedron.vertices_end();
+              ++vit)
+          {
+            deform_mesh.insert_roi_vertex(vit);
+          }
+          current_group->control_points.push_back(center->vertex());
+          //add the control points
+          deform_mesh.insert_control_vertices(current_group->control_points.begin(), current_group->control_points.end());
+          //deform
+          bool is_matrix_factorization_OK = deform_mesh.preprocess();
+          if(!is_matrix_factorization_OK){
+            std::cerr << "Error in preprocessing, check documentation of preprocess()" << std::endl;
             return false;
           }
-        }
+          Surface_mesh_deformation::Point constrained_pos(point.x, point.y, point.z);
+          current_group->control_points_planes.push_back(plane);
+          current_group->ordered_control_points.push_back(Point_3(point.x, point.y, point.z));
+          deform_mesh.set_target_position(target(center, polyhedron), constrained_pos);
+          deform_mesh.deform(3, 1e-4);
+          //update the item
 
-
-        // add triangle's center to the mesh
-        double x(0), y(0), z(0);
-        Polyhedron::Halfedge_around_facet_circulator hafc = closest_triangle->facet_begin();
-        Polyhedron::Halfedge_around_facet_circulator end = hafc;
-        CGAL_For_all(hafc, end)
-        {
-          x+=hafc->vertex()->point().x(); y+=hafc->vertex()->point().y(); z+=hafc->vertex()->point().z();
-        }
-        Polyhedron::Halfedge_handle center = CGAL::Euler::add_center_vertex(closest_triangle->facet_begin(), polyhedron);
-        center->vertex()->point() = Point_3(x/3.0, y/3.0, z/3.0);
-        // Init the indices of the halfedges and the vertices.
-        set_halfedgeds_items_id(polyhedron);
-        Surface_mesh_deformation deform_mesh(polyhedron);
-        //Define the ROI
-        for(Polyhedron::Vertex_iterator vit = polyhedron.vertices_begin();
-            vit != polyhedron.vertices_end();
-            ++vit)
-        {
-          deform_mesh.insert_roi_vertex(vit);
-        }
-        current_group->control_points.push_back(center->vertex());
-        //add the control points
-        deform_mesh.insert_control_vertices(current_group->control_points.begin(), current_group->control_points.end());
-        //deform
-        bool is_matrix_factorization_OK = deform_mesh.preprocess();
-        if(!is_matrix_factorization_OK){
-          std::cerr << "Error in preprocessing, check documentation of preprocess()" << std::endl;
-          return false;
-        }
-        Surface_mesh_deformation::Point constrained_pos(point.x, point.y, point.z);
-        current_group->ordered_control_points.push_back(Point_3(point.x, point.y, point.z));
-        deform_mesh.set_target_position(target(center, polyhedron), constrained_pos);
-        deform_mesh.deform(3, 1e-4);
-        //update the item
-        if(current_group->control_points_item)
-        {
           current_group->control_points_item->point_set()->insert(constrained_pos);
-          current_group->control_points_item->invalidateOpenGLBuffers();
-          current_group->control_points_item->itemChanged();
-        }
-        current_group->surface->invalidateOpenGLBuffers();
-        current_group->surface->itemChanged();
 
+        }
+        else
+        {
+          int id = -1, i = 0;
+          std::vector<Point_3> &l_poly = current_group->leader_poly->polylines.back();
+          std::vector<Point_3> &g_poly = current_group->generator_poly->polylines.back();
+          Q_FOREACH(Point_3 cp, l_poly)
+          {
+            if(cp == sel_handle->point())
+            {
+              id = i;
+              break;
+            }
+            ++i;
+          }
+          if(id>-1)
+          {
+            *(l_poly.begin()+id) = Point_3(point.x, point.y, point.z);
+            current_group->leader_poly->invalidateOpenGLBuffers();
+            current_group->leader_poly->itemChanged();
+          }
+          else
+          {
+            i = 0;
+            Q_FOREACH(Point_3 cp, g_poly)
+            {
+              if(cp == sel_handle->point())
+              {
+                id = i;
+                break;
+              }
+              ++i;
+            }
+            if(id >-1)
+            {
+              *(g_poly.begin()+id) = Point_3(point.x, point.y, point.z);
+              current_group->generator_poly->invalidateOpenGLBuffers();
+              current_group->generator_poly->itemChanged();
+            }
+            else
+            {
+              id = -1;
+              Q_FOREACH(Point_3 cp, current_group->ordered_control_points)
+              {
+                ++id;
+                if(cp == sel_handle->point())
+                {
+                  break;
+                }
+              }
+              current_group->ordered_control_points[id] = Point_3(point.x, point.y, point.z);
+              current_group->control_points_planes[id] = plane;
+            }
+          }
+          Point_set_3<Kernel>::iterator pit;
+          for (pit = current_group->control_points_item->point_set()->begin();
+               pit != current_group->control_points_item->point_set()->end();
+               ++pit)
+          {
+            if(current_group->control_points_item->point_set()->point(*pit) == sel_handle->point())
+            {
+              current_group->control_points_item->point_set()->delete_selection();
+              current_group->control_points_item->point_set()->insert(Point_3(point.x, point.y, point.z));
+              break;
+            }
+          }
+
+          sel_handle->point() = Point_3(point.x, point.y, point.z);
+          is_editing = false;
+
+        }
+        current_group->control_points_item->invalidateOpenGLBuffers();
+        current_group->control_points_item->itemChanged();
+        minEnergy();
         break;
       }
       default:
@@ -1078,9 +1282,9 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
       Q_FOREACH(Polyhedron::Vertex_handle vh, current_group->control_points)
       {
         double dist = Kernel::Vector_3(vh->point(), point).squared_length();
-        if(current_group->min_dist == -1 || dist < current_group->min_dist)
+        if(min_dist == -1 || dist < min_dist)
         {
-          current_group->min_dist = dist;
+          min_dist = dist;
           id = i;
           target = vh->point();
         }
@@ -1120,7 +1324,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
       }
 
       current_group->control_points.erase(current_group->control_points.begin()+save_id);
-      current_group->min_dist = -1; id = -1; i = 0;
+      min_dist = -1; id = -1; i = 0;
       Q_FOREACH(Point_3 cp, current_group->ordered_control_points)
       {
         double dist = Kernel::Vector_3(cp, point).squared_length();

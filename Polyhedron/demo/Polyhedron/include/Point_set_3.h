@@ -211,6 +211,7 @@ public:
   {
     bool currently = is_selected (it);
     iterator first = this->first_selected();
+    --first;
     if (currently && !selected)
       {
         std::swap (*it, *first);
