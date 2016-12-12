@@ -789,17 +789,17 @@ private:
   QMap<Scene_polyhedron_item*, SurfaceGroup*> surface_groups;
   bool find_plane(QMouseEvent* e, Kernel::Plane_3& plane);
   std::vector<int> hidden_planes;
-  void extendSurface(const qglviewer::Vec& p, const Kernel::Plane_3& plane)
+  void extendSurface(const qglviewer::Vec& p)
   {
     Point_3 new_point = Point_3(0,0,0);
     Polyhedron* poly = current_group->surface->polyhedron();
     poly->normalize_border();
     Point_3 point(p.x, p.y, p.z);
-    //check to which plane the picked plane is parallel to
-    if(plane.orthogonal_direction() == current_group->g_plane->orthogonal_direction())
+    if(checkExtend(point) !=1)
     {
       //report the vector between the closest point of the bordure and the picked point
       // at the right end of the generator.
+      Kernel::Plane_3 plane(point,current_group->g_plane->orthogonal_direction());
       std::vector<Point_3>& l_polyline = current_group->leader_poly->polylines.back();
       double dist = Kernel::Vector_3(l_polyline.front(), point).squared_length();
       if(Kernel::Vector_3(l_polyline.back(), point).squared_length() > dist)
@@ -820,40 +820,88 @@ private:
       }
       current_group->leader_poly->invalidateOpenGLBuffers();
       current_group->leader_poly->itemChanged();
+      current_group->control_limit++;
+      current_group->control_points_item->point_set()->insert(new_point);
     }
-    else if(plane.orthogonal_direction() == current_group->l_plane->orthogonal_direction())
+    if(checkExtend(point) !=0)
     {
 
-        //report the vector between the closest point of the bordure and the picked point
-        // at the right end of the generator.
-        std::vector<Point_3>& g_polyline = current_group->generator_poly->polylines.back();
-        double dist = Kernel::Vector_3(g_polyline.front(), point).squared_length();
-        if(Kernel::Vector_3(g_polyline.back(), point).squared_length() > dist)
-        {
-          new_point = plane.projection(g_polyline.front());
-          g_polyline.insert(
+      //report the vector between the closest point of the bordure and the picked point
+      // at the right end of the generator.
+      Kernel::Plane_3 plane(point,current_group->l_plane->orthogonal_direction());
+      std::vector<Point_3>& g_polyline = current_group->generator_poly->polylines.back();
+      double dist = Kernel::Vector_3(g_polyline.front(), point).squared_length();
+      if(Kernel::Vector_3(g_polyline.back(), point).squared_length() > dist)
+      {
+        new_point = plane.projection(g_polyline.front());
+        g_polyline.insert(
               g_polyline.begin(),
               new_point);
-          if(current_group->g_id > 0)
-            current_group->g_id++;
-        }
-        else
-        {
-          new_point = plane.projection(g_polyline.back());
-          g_polyline.insert(
+        if(current_group->g_id > 0)
+          current_group->g_id++;
+      }
+      else
+      {
+        new_point = plane.projection(g_polyline.back());
+        g_polyline.insert(
               g_polyline.end(),
               new_point);
-        }
-        current_group->generator_poly->invalidateOpenGLBuffers();
-        current_group->generator_poly->itemChanged();
+      }
+      current_group->generator_poly->invalidateOpenGLBuffers();
+      current_group->generator_poly->itemChanged();
+      current_group->control_limit++;
+      current_group->control_points_item->point_set()->insert(new_point);
     }
-    else
-      return;
-    current_group->control_limit++;
-    current_group->control_points_item->point_set()->insert(new_point);
+
+
     current_group->control_points_item->invalidateOpenGLBuffers();
     current_group->control_points_item->itemChanged();
     minEnergy();
+  }
+
+  /*!
+   * \brief checkExtend distinguishes the 3 cases when extending the surface
+   * \param point the new point
+   * \param projGf the projection of the first point of the generator in g_plane
+   * \param projGl the projection of the last point of the generator in g_plane
+   * \param projLf the projection of the first point of the leader in l_plane
+   * \param projLl the projection of the last point of the leader in l_plane
+   * \param g_plane the plane in which the generator was picked
+   * \param l_plane the plane in which the leader was picked
+   * \return 0, 1 or 2
+   */
+  int checkExtend(Kernel::Point_3& point)
+  {
+    Kernel::Point_2 projGf(current_group->g_plane->to_2d(current_group->generator_poly->polylines.back().front())),
+                           projGl(current_group->g_plane->to_2d(current_group->generator_poly->polylines.back().back())),
+                           projLf(current_group->l_plane->to_2d(current_group->leader_poly->polylines.back().front())),
+                           projLl(current_group->l_plane->to_2d(current_group->leader_poly->polylines.back().back()));
+    //Find the varying coord in g_plane
+    int varCoord = 0;
+    double variation = CGAL::abs(projGf.x() - projGl.x());
+    if(CGAL::abs(projGf.y() - projGl.y()) > variation)
+      varCoord = 1;
+    //first check
+    Kernel::Point_2 projP = current_group->g_plane->to_2d(point);
+    if(projP[varCoord] >= (std::min)(projGf[varCoord], projGl[varCoord]) &&
+       projP[varCoord] <= (std::max)(projGf[varCoord], projGl[varCoord]))
+    {
+      return 0;
+    }
+
+    //Find the varying coord in l_plane
+    varCoord = 0;
+    variation = CGAL::abs(projLf.x() - projLl.x());
+    if(CGAL::abs(projLf.y() - projLl.y()) > variation)
+      varCoord = 1;
+    //first check
+    projP = current_group->l_plane->to_2d(point);
+    if(projP[varCoord] >= (std::min)(projLf[varCoord], projLl[varCoord]) &&
+       projP[varCoord] <= (std::max)(projLf[varCoord], projLl[varCoord]))
+    {
+      return 1;
+    }
+    return 2;
   }
 };
 
@@ -1086,7 +1134,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           slicer_aabb(plane, std::back_inserter(slices));
           if(slices.empty())
           {
-            extendSurface(point, plane);
+            extendSurface(point);
             return false;
           }
           //find the closest slice
@@ -1176,7 +1224,8 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           //update the item
 
           current_group->control_points_item->point_set()->insert(constrained_pos);
-
+          current_group->surface->invalidateOpenGLBuffers();
+          current_group->surface->itemChanged();
         }
         else
         {
@@ -1246,11 +1295,10 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
 
           sel_handle->point() = Point_3(point.x, point.y, point.z);
           is_editing = false;
-
+          minEnergy();
         }
         current_group->control_points_item->invalidateOpenGLBuffers();
         current_group->control_points_item->itemChanged();
-        minEnergy();
         break;
       }
       default:
