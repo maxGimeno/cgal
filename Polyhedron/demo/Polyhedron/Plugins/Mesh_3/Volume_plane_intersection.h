@@ -36,6 +36,7 @@ public:
 
 public Q_SLOTS:
   void planeRemoved(Volume_plane_interface* i);
+
 protected:
   friend struct Volume_plane_intersection_priv;
   Volume_plane_intersection_priv *d;

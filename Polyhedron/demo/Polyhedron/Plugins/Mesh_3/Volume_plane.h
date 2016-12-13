@@ -465,26 +465,29 @@ void Volume_plane<T>::draw(Viewer_interface *viewer) const {
 
   printGlError(__LINE__);
 
-  if(!are_buffers_filled)
-      initializeBuffers(viewer);
-  mvp = mvp*f;
-  vaos[0]->bind();
-  spheres_program = getShaderProgram(PROGRAM_INSTANCED, viewer);
-  attribBuffers(viewer, PROGRAM_INSTANCED);
-
-  spheres_program->bind();
-  spheres_program->setAttributeValue("colors", this->color());
-  spheres_program->setUniformValue("mvp_matrix", mvp);
-  viewer->glDrawArraysInstanced(GL_TRIANGLES, 0,
-                                static_cast<GLsizei>(v_spheres.size()/3),
-                                static_cast<GLsizei>(4));
-  spheres_program->release();
-  vaos[0]->release();
+  if(!hide_spheres)
+  {
+      if(!are_buffers_filled)
+          initializeBuffers(viewer);
+      mvp = mvp*f;
+      vaos[0]->bind();
+      spheres_program = getShaderProgram(PROGRAM_INSTANCED, viewer);
+      attribBuffers(viewer, PROGRAM_INSTANCED);
+      spheres_program->bind();
+      spheres_program->setAttributeValue("colors", this->color());
+      spheres_program->setUniformValue("mvp_matrix", mvp);
+      viewer->glDrawArraysInstanced(GL_TRIANGLES, 0,
+                                    static_cast<GLsizei>(v_spheres.size()/3),
+                                    static_cast<GLsizei>(4));
+      spheres_program->release();
+      vaos[0]->release();
+  }
 }
 
 template<typename T>
 void Volume_plane<T>::init() {
   is_grabbing = false;
+  hide_spheres = false;
   initShaders();
 
   // for each vertex

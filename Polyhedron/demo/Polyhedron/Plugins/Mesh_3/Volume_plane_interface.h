@@ -9,6 +9,8 @@
 
 
 #include <QObject>
+#include <QAction>
+#include <QMenu>
 #include <QGLViewer/qglviewer.h>
 #include <CGAL/Three/Scene_item.h>
 #include <iostream>
@@ -45,7 +47,30 @@ public:
   void emitSelection()  { Q_EMIT selected(this); }
 
   virtual qglviewer::ManipulatedFrame* manipulatedFrame() { return mFrame_; }
+  QMenu* contextMenu()
+  {
+    const char* prop_name = "Menu modified by Scene_c3t3_item.";
 
+    QMenu* menu = Scene_item::contextMenu();
+
+    // Use dynamic properties:
+    // http://doc.qt.io/qt-5/qobject.html#property
+    bool menuChanged = menu->property(prop_name).toBool();
+
+    if (!menuChanged) {
+      QAction* actionHideSpheres =
+        menu->addAction(tr("Hide Spheres"));
+      actionHideSpheres->setCheckable(true);
+      actionHideSpheres->setChecked(false);
+      actionHideSpheres->setObjectName("actionHideSpheres");
+      connect(actionHideSpheres,
+        SIGNAL(toggled(bool)), this,
+        SLOT(hideSpheres(bool)));
+
+      menu->setProperty(prop_name, true);
+    }
+    return menu;
+  }
 Q_SIGNALS:
   void planeDestructionIncoming(Volume_plane_interface*);
   void manipulated(int);
@@ -56,8 +81,14 @@ public Q_SLOTS:
   void propagateManipulation() {
     Q_EMIT manipulated(getCurrentCube());
   }
+  void hideSpheres(bool b)
+  {
+      hide_spheres = b;
+      itemChanged();
+  }
 protected:
   qglviewer::ManipulatedFrame* mFrame_;
+  bool hide_spheres;
 };
 
 
