@@ -26,8 +26,18 @@
 #include "Scene_polyhedron_item.h"
 #include "Scene_points_with_normal_item.h"
 #include "Plugins/Mesh_3/Volume_plane_interface.h"
+
 #include "ui_Create_surface.h"
 #include "Scene.h"
+
+#include <CGAL/jet_smooth_point_set.h>
+
+// Concurrency
+#ifdef CGAL_LINKED_WITH_TBB
+typedef CGAL::Parallel_tag Concurrency_tag;
+#else
+typedef CGAL::Sequential_tag Concurrency_tag;
+#endif
 typedef Scene_polylines_item::Point_3 Point_3;
 typedef Polyhedron::Traits Kernel;
 typedef CGAL::Surface_mesh_deformation<Polyhedron> Surface_mesh_deformation;
@@ -181,8 +191,10 @@ public:
             this, &SurfaceFromPickedPointsPlugin::edit);
     connect(ui_widget.edgeSpinBox, SIGNAL(valueChanged(double)),
             this, SLOT(setEdgeSize(double)));
-    connect(ui_widget.energyButton, &QPushButton::clicked,
+    connect(ui_widget.regenButton, &QPushButton::clicked,
             this, &SurfaceFromPickedPointsPlugin::minEnergy);
+    connect(ui_widget.smoothButton, &QPushButton::clicked,
+            this, &SurfaceFromPickedPointsPlugin::smooth);
     connect(static_cast<Scene*>(scene), SIGNAL(itemIndexSelected(int)),
             this, SLOT(checkEdit(int)));
     mode = IDLE;
@@ -194,7 +206,8 @@ public:
     mode = IDLE;
     ui_widget.cancelButton->setEnabled(false);
     ui_widget.edgeSpinBox->setEnabled(false);
-    ui_widget.energyButton->setEnabled(false);
+    ui_widget.regenButton->setEnabled(false);
+    ui_widget.smoothButton->setEnabled(false);
     current_group = NULL;
     is_editing = false;
     is_selecting = false;
@@ -207,6 +220,34 @@ private Q_SLOTS:
     if(dock_widget->isVisible()) { dock_widget->hide(); }
     else                         { dock_widget->show(); }
 
+  }
+
+  void smooth()
+  {
+    Polyhedron* polyhedron = current_group->surface->polyhedron();
+    Vertex_set is_constrained_set;
+    Q_FOREACH(Polyhedron::Vertex_handle vh, current_group->control_points)
+      is_constrained_set.insert(vh);
+    std::vector<Point_3> to_save;
+    to_save.reserve(current_group->control_points.size());
+    BOOST_FOREACH(Polyhedron::Vertex_handle vh, vertices(*polyhedron))
+    {
+      if(is_constrained_set.count(vh) == 1)
+        to_save.push_back(vh->point());
+    }
+
+    CGAL::jet_smooth_point_set<Concurrency_tag>(vertices(*polyhedron).first, vertices(*polyhedron).second,
+                                                get(CGAL::vertex_point, *polyhedron),
+                                                24, Kernel());
+    int id =-1;
+    BOOST_FOREACH(Polyhedron::Vertex_handle vh, vertices(*polyhedron))
+    {
+      if(is_constrained_set.count(vh) == 1)
+        vh->point() = to_save[++id];
+    }
+
+    current_group->surface->invalidateOpenGLBuffers();
+    current_group->surface->itemChanged();
   }
 
   void closure()
@@ -454,7 +495,8 @@ private Q_SLOTS:
     connect(ui_widget.createSurfaceButton, &QPushButton::clicked,
             this, &SurfaceFromPickedPointsPlugin::remesh);
     ui_widget.edgeSpinBox->setEnabled(true);
-    ui_widget.energyButton->setEnabled(true);
+    ui_widget.regenButton->setEnabled(true);
+    ui_widget.smoothButton->setEnabled(true);
   }
 
   void finish()
@@ -462,7 +504,8 @@ private Q_SLOTS:
     mode = IDLE;
     ui_widget.cancelButton->setEnabled(false);
     ui_widget.createSurfaceButton->setEnabled(false);
-    ui_widget.energyButton->setEnabled(false);
+    ui_widget.regenButton->setEnabled(false);
+    ui_widget.smoothButton->setEnabled(false);
     ui_widget.createSurfaceButton->setText("Create Surface");
     disconnect(ui_widget.createSurfaceButton, &QPushButton::clicked,
                this, &SurfaceFromPickedPointsPlugin::remesh);
@@ -532,7 +575,8 @@ private Q_SLOTS:
     CGAL::Polygon_mesh_processing::isotropic_remeshing(faces(*poly),
                                                        current_group->edgeSize,
                                                        *poly,
-                                                       CGAL::Polygon_mesh_processing::parameters::vertex_is_constrained_map(vcm));
+                                                       CGAL::Polygon_mesh_processing::parameters::vertex_is_constrained_map(vcm)
+                                                       .number_of_relaxation_steps(100));
     current_group->control_points.clear();
     Q_FOREACH(Polyhedron::Vertex_handle vh, is_constrained_set)
       current_group->control_points.push_back(vh);
@@ -772,7 +816,8 @@ private Q_SLOTS:
     }
     mode = ADD_POINT_AND_DEFORM;
     current_group = group;
-    ui_widget.energyButton->setEnabled(true);
+    ui_widget.regenButton->setEnabled(true);
+    ui_widget.smoothButton->setEnabled(true);
   }
 private:
 

@@ -48,7 +48,7 @@ p, li { white-space: pre-wrap; }
 &lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;  Tips:&lt;/p&gt;
 &lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt; - You can use &lt;span style=&quot; font-style:italic;&quot;&gt;Cancel Last Insertion&lt;/span&gt; to remove the last picked point from the current Polyline&lt;/p&gt;
 &lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;- You can use Ctrl+left click to remove a point from the deformation constraint if this point is not part of the initial polylines&lt;/p&gt;
-&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;- You can click &lt;span style=&quot; font-style:italic;&quot;&gt;Minimize Energy&lt;/span&gt; to remesh the surface and optimize the deformation. It will also re-initialize the ex-constrained points that you removed.&lt;/p&gt;
+&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;- You can click &lt;span style=&quot; font-style:italic;&quot;&gt;Regenerate from Constraints&lt;/span&gt; to remesh the surface and optimize the deformation. It will also re-initialize the ex-constrained points that you removed.&lt;/p&gt;
 &lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;- You can select any control point with E + Left click and select a new position to move it.&lt;/p&gt;
 &lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;- You can edit an old surface by selecting it and clicking &lt;span style=&quot; font-style:italic;&quot;&gt;Edit&lt;/span&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
@@ -95,9 +95,16 @@ p, li { white-space: pre-wrap; }
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="energyButton">
+            <widget class="QPushButton" name="regenButton">
              <property name="text">
-              <string>Minimize Energy</string>
+              <string>Regenerate from Constraints</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="smoothButton">
+             <property name="text">
+              <string>Smooth</string>
              </property>
             </widget>
            </item>
