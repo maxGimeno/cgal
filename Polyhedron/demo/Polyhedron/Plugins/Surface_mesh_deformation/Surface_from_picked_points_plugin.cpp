@@ -462,6 +462,7 @@ private Q_SLOTS:
     mode = IDLE;
     ui_widget.cancelButton->setEnabled(false);
     ui_widget.createSurfaceButton->setEnabled(false);
+    ui_widget.energyButton->setEnabled(false);
     ui_widget.createSurfaceButton->setText("Create Surface");
     disconnect(ui_widget.createSurfaceButton, &QPushButton::clicked,
                this, &SurfaceFromPickedPointsPlugin::remesh);
@@ -631,6 +632,10 @@ private Q_SLOTS:
       if(slices.empty())
       {
         messageInterface->warning("An error has occured.");
+        std::pair<Point_3, AABB_tree::Primitive_id> res=tree.closest_point_and_primitive(ctrl_p);
+        current_group->control_points.push_back(CGAL::Euler::split_edge(halfedge(res.second, *polyhedron), *polyhedron)->vertex());
+        current_group->control_points.back()->point() = res.first;
+        continue;
       }
       //find the closest slice
       boost::tuple<double, int, int> min_squared_dist(-1,-1, -1);
@@ -767,6 +772,7 @@ private Q_SLOTS:
     }
     mode = ADD_POINT_AND_DEFORM;
     current_group = group;
+    ui_widget.energyButton->setEnabled(true);
   }
 private:
 
@@ -789,7 +795,7 @@ private:
   QMap<Scene_polyhedron_item*, SurfaceGroup*> surface_groups;
   bool find_plane(QMouseEvent* e, Kernel::Plane_3& plane);
   std::vector<int> hidden_planes;
-  void extendSurface(const qglviewer::Vec& p)
+  void extendSurface(const qglviewer::Vec& p, Kernel::Plane_3 plane)
   {
     Point_3 new_point = Point_3(0,0,0);
     Polyhedron* poly = current_group->surface->polyhedron();
@@ -856,6 +862,9 @@ private:
 
     current_group->control_points_item->invalidateOpenGLBuffers();
     current_group->control_points_item->itemChanged();
+    current_group->control_points_planes.push_back(plane);
+    current_group->ordered_control_points.push_back(point);
+    current_group->control_points_item->point_set()->insert(point);
     minEnergy();
   }
 
@@ -1134,7 +1143,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           slicer_aabb(plane, std::back_inserter(slices));
           if(slices.empty())
           {
-            extendSurface(point);
+            extendSurface(point, plane);
             return false;
           }
           //find the closest slice
@@ -1371,18 +1380,17 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         return false;
       }
 
-      current_group->control_points.erase(current_group->control_points.begin()+save_id);
       min_dist = -1; id = -1; i = 0;
       Q_FOREACH(Point_3 cp, current_group->ordered_control_points)
       {
-        double dist = Kernel::Vector_3(cp, point).squared_length();
-        if(min_dist == -1 || dist < min_dist)
+        if(current_group->control_points[save_id]->point() == cp)
         {
-          min_dist = dist;
           id = i;
+          break;
         }
         ++i;
       }
+      current_group->control_points.erase(current_group->control_points.begin()+save_id);
       current_group->ordered_control_points.erase(current_group->ordered_control_points.begin()+id);
       current_group->control_points_planes.erase(current_group->control_points_planes.begin()+id);
 

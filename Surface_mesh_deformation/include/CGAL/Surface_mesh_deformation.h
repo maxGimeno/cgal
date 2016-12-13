@@ -797,6 +797,8 @@ public:
       {                                             // also no need compute energy if this iteration is the last iteration
         energy_last = energy_this;
         energy_this = energy();
+        if(energy_this == 0)
+            return;
         CGAL_warning(energy_this >= 0);
 
         if(ite != 0) // skip first iteration
