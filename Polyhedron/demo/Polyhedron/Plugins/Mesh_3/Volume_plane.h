@@ -394,6 +394,7 @@ Volume_plane<T>::~Volume_plane() {
       it->first.destroy();
   }
   program.release();
+  delete sphere_Slider;
 }
 
 template<typename T>

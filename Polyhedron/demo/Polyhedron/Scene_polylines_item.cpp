@@ -4,6 +4,8 @@
 #include <CGAL/bounding_box.h>
 #include <CGAL/gl.h>
 #include <QMenu>
+#include <QSlider>
+#include <QWidgetAction>
 #include <QAction>
 #include <QInputDialog>
 #include <QApplication>
@@ -16,9 +18,14 @@ struct Scene_polylines_item_private {
         draw_extremities(false),
         spheres_drawn_radius(0)
     {
+      line_Slider = new QSlider(Qt::Horizontal);
+      line_Slider->setMaximum(2);
+      line_Slider->setMinimum(1);
+      line_Slider->setValue(2);
       item = parent;
       invalidate_stats();
     }
+
     void invalidate_stats()
     {
       nb_vertices = 0;
@@ -55,12 +62,16 @@ struct Scene_polylines_item_private {
     mutable double max_length;
     mutable double mean_length;
     mutable bool computed_stats;
+    QSlider* line_Slider;
 };
 
 
 void
 Scene_polylines_item_private::initializeBuffers(CGAL::Three::Viewer_interface *viewer = 0) const
 {
+  float lineWidth[2];
+  viewer->glGetFloatv(GL_LINE_WIDTH_RANGE, lineWidth);
+  line_Slider->setMaximum(lineWidth[1]);
     QOpenGLShaderProgram *program;
    //vao for the lines
     {
@@ -256,7 +267,8 @@ Scene_polylines_item::Scene_polylines_item()
 
 Scene_polylines_item::~Scene_polylines_item()
 {
-    delete d;
+  delete d->line_Slider;
+  delete d;
 
 }
 
@@ -360,6 +372,7 @@ Scene_polylines_item::drawEdges(CGAL::Three::Viewer_interface* viewer) const {
         d->initializeBuffers(viewer);
     }
 
+    viewer->glLineWidth(d->line_Slider->value());
     vaos[Scene_polylines_item_private::Edges]->bind();
     attribBuffers(viewer, PROGRAM_NO_SELECTION);
     QOpenGLShaderProgram *program = getShaderProgram(PROGRAM_NO_SELECTION);
@@ -372,7 +385,7 @@ Scene_polylines_item::drawEdges(CGAL::Three::Viewer_interface* viewer) const {
     {
        Scene_group_item::drawEdges(viewer);
     }
-
+    viewer->glLineWidth(1.0f);
 }
 
 void 
@@ -420,6 +433,16 @@ QMenu* Scene_polylines_item::contextMenu()
                 menu->addAction(tr("Smooth polylines"));
         actionSmoothPolylines->setObjectName("actionSmoothPolylines");
         connect(actionSmoothPolylines, SIGNAL(triggered()),this, SLOT(smooth()));
+
+        QMenu *container = new QMenu(tr("Line Width"));
+        QWidgetAction *sliderAction = new QWidgetAction(0);
+        connect(d->line_Slider, &QSlider::valueChanged, this, &Scene_polylines_item::itemChanged);
+
+        sliderAction->setDefaultWidget(d->line_Slider);
+
+        container->addAction(sliderAction);
+        menu->addMenu(container);
+
         menu->setProperty(prop_name, true);
     }
     return menu;
