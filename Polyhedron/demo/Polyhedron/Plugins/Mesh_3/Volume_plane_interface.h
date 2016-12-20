@@ -11,6 +11,8 @@
 #include <QObject>
 #include <QAction>
 #include <QMenu>
+#include <QSlider>
+#include <QWidgetAction>
 #include <QGLViewer/qglviewer.h>
 #include <CGAL/Three/Scene_item.h>
 #include <iostream>
@@ -67,6 +69,14 @@ public:
         SIGNAL(toggled(bool)), this,
         SLOT(hideSpheres(bool)));
 
+      QMenu *container = new QMenu(tr("Spheres Size"));
+      QWidgetAction *sliderAction = new QWidgetAction(0);
+      connect(sphere_Slider, &QSlider::valueChanged, this, &Volume_plane_interface::itemChanged);
+
+      sliderAction->setDefaultWidget(sphere_Slider);
+
+      container->addAction(sliderAction);
+      menu->addMenu(container);
       menu->setProperty(prop_name, true);
     }
     return menu;
@@ -89,6 +99,7 @@ public Q_SLOTS:
 protected:
   qglviewer::ManipulatedFrame* mFrame_;
   bool hide_spheres;
+  QSlider* sphere_Slider;
 };
 
 
