@@ -111,7 +111,7 @@ class SurfaceGroup :
 {
   Q_OBJECT
 public:
-  SurfaceGroup()
+  SurfaceGroup(std::vector<SurfaceGroup*>* list)
     :Scene_group_item()
   {
     generator_poly = NULL;
@@ -120,22 +120,39 @@ public:
     leader_poly = NULL;
     l_plane = NULL;
     surface = NULL;
+    last_remesh = -1;
     generator_is_created = false;
+    surface_groups = list;
+    surface_groups->push_back(this);
   }
   Scene_polylines_item* generator_poly;
   Scene_polylines_item* leader_poly;
   Scene_points_with_normal_item* initial_mesh_item;
   Scene_points_with_normal_item* control_points_item;
   Scene_polyhedron_item* surface;
+  std::vector<SurfaceGroup*>* surface_groups;
   bool generator_is_created;
   double edgeSize;
   double min_dist;
+  double last_remesh;
   std::vector<Polyhedron::Vertex_handle > control_points;
   Kernel::Plane_3* l_plane;
   Kernel::Plane_3* g_plane;
   int control_limit, g_id, l_id;
   std::vector<Kernel::Plane_3> control_points_planes; //control_points_planes[i] is the plane associated to control_points[i+control_limit]
   std::vector<Point_3> ordered_control_points;
+public Q_SLOTS:
+  void quitList()
+  {
+    int i=0;
+    Q_FOREACH(SurfaceGroup* suspect, *surface_groups)
+    {
+      if(suspect == this)
+        break;
+      ++i;
+    }
+    surface_groups->erase(surface_groups->begin()+i);
+  }
 };
 
 class SurfaceFromPickedPointsPlugin :
@@ -267,9 +284,11 @@ private Q_SLOTS:
 
     if(!current_group)
     {
-     current_group = new SurfaceGroup();
+     current_group = new SurfaceGroup(&surface_groups);
      connect(current_group, &SurfaceGroup::aboutToBeDestroyed,
              this, &SurfaceFromPickedPointsPlugin::finish);
+     connect(current_group, &SurfaceGroup::aboutToBeDestroyed,
+             current_group, &SurfaceGroup::quitList);
      static int rift_nb = 0;
      scene->addItem(current_group);
      current_group->setName(QString("Rift #%1").arg(rift_nb++));
@@ -540,12 +559,14 @@ private Q_SLOTS:
     }
 
     std::vector<Point_3>& polyline = current_polyline->polylines.back();
-    if(polyline.size() >= 1)
+    if(polyline.size() > 0)
     {
       polyline.pop_back();
       current_polyline->invalidateOpenGLBuffers();
       current_polyline->itemChanged();
       current_group->min_dist = -1;
+      if(polyline.size()==0)
+        return;
       for(std::size_t i=0; i<polyline.size()-1; ++i)
       {
         Kernel::Vector_3 v = polyline[i+1] - polyline[i];
@@ -559,12 +580,20 @@ private Q_SLOTS:
     }
   }
 
+  void removeGroup()
+  {
+
+  }
+
   void setEdgeSize(double d) { current_group->edgeSize = d; }
 
   //remesh the polyhedron to optimize the surface
   void remesh()
   {
-    if(!current_group->surface)
+    if(!current_group->surface )
+      return;
+    current_group->last_remesh = current_group->edgeSize;
+    if(current_group->edgeSize == 0)
       return;
     Polyhedron* poly = current_group->surface->polyhedron();
     Vertex_set is_constrained_set;
@@ -647,19 +676,22 @@ private Q_SLOTS:
         break;
     }
     //remesh
-    Vertex_set is_constrained_set;
-    Q_FOREACH(Polyhedron::Vertex_handle vh, current_group->control_points)
-      is_constrained_set.insert(vh);
+    if(current_group->last_remesh > 0)
+    {
+      Vertex_set is_constrained_set;
+      Q_FOREACH(Polyhedron::Vertex_handle vh, current_group->control_points)
+        is_constrained_set.insert(vh);
 
-    Is_constrained_map vcm(&is_constrained_set);
-    CGAL::Polygon_mesh_processing::isotropic_remeshing(faces(*polyhedron),
-                                                       current_group->edgeSize,
-                                                       *polyhedron,
-                                                       CGAL::Polygon_mesh_processing::parameters::vertex_is_constrained_map(vcm));
-    current_group->control_points.clear();
-    Q_FOREACH(Polyhedron::Vertex_handle vh, is_constrained_set)
-      current_group->control_points.push_back(vh);
+      Is_constrained_map vcm(&is_constrained_set);
+      CGAL::Polygon_mesh_processing::isotropic_remeshing(faces(*polyhedron),
+                                                         current_group->last_remesh,
+                                                         *polyhedron,
+                                                         CGAL::Polygon_mesh_processing::parameters::vertex_is_constrained_map(vcm));
 
+      current_group->control_points.clear();
+      Q_FOREACH(Polyhedron::Vertex_handle vh, is_constrained_set)
+        current_group->control_points.push_back(vh);
+    }
     //deform
     typedef CGAL::AABB_halfedge_graph_segment_primitive<Polyhedron> HGSP;
     typedef CGAL::AABB_traits<Kernel, HGSP>                         AABB_traits;
@@ -816,8 +848,23 @@ private Q_SLOTS:
     }
     mode = ADD_POINT_AND_DEFORM;
     current_group = group;
+    Q_FOREACH(SurfaceGroup* sgroup, surface_groups)
+    {
+     if(sgroup != current_group)
+     {
+      sgroup->setVisible(false);
+     }
+    }
+    ui_widget.newPolylineButton->setEnabled(false);
     ui_widget.regenButton->setEnabled(true);
     ui_widget.smoothButton->setEnabled(true);
+    ui_widget.createSurfaceButton->setText("Remesh");
+    disconnect(ui_widget.createSurfaceButton, &QPushButton::clicked,
+               this, &SurfaceFromPickedPointsPlugin::add_surface);
+    connect(ui_widget.createSurfaceButton, &QPushButton::clicked,
+            this, &SurfaceFromPickedPointsPlugin::remesh);
+    ui_widget.createSurfaceButton->setEnabled(true);
+
   }
 private:
 
@@ -837,7 +884,7 @@ private:
   Polyhedron::Vertex_handle sel_handle;
   bool is_editing;
   bool is_selecting;
-  QMap<Scene_polyhedron_item*, SurfaceGroup*> surface_groups;
+  std::vector<SurfaceGroup*> surface_groups;
   bool find_plane(QMouseEvent* e, Kernel::Plane_3& plane);
   std::vector<int> hidden_planes;
   void extendSurface(const qglviewer::Vec& p, Kernel::Plane_3 plane)
