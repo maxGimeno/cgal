@@ -131,6 +131,17 @@ public:
   Scene_points_with_normal_item* control_points_item;
   Scene_polyhedron_item* surface;
   std::vector<SurfaceGroup*>* surface_groups;
+  std::vector<Point_3> points_stack;
+  std::vector<Point_3> repoints_stack;
+  std::vector<Point_3> edit_points_stack;
+  std::vector<Point_3> reedit_points_stack;
+  std::vector<Point_3> extend_points_stack;
+  std::vector<Kernel::Plane_3> planes_stack;
+  std::vector<Kernel::Plane_3> replanes_stack;
+  std::vector<Kernel::Plane_3> edit_planes_stack;
+  std::vector<Kernel::Plane_3> reedit_planes_stack;
+  std::vector<char> operations_done; // 0 =  insertion, 1 = removal, 2 = an edition , 3 = extension
+  std::vector<char> operations_redone;// 0 =  insertion, 1 = removal, 2 = an edition, 3 = extension
   bool generator_is_created;
   double edgeSize;
   double min_dist;
@@ -202,8 +213,10 @@ public:
             this, &SurfaceFromPickedPointsPlugin::add_polyline);
     connect(ui_widget.finishButton, &QPushButton::clicked,
             this, &SurfaceFromPickedPointsPlugin::finish);
-    connect(ui_widget.cancelButton, &QPushButton::clicked,
+    connect(ui_widget.UndoButton, &QPushButton::clicked,
             this, &SurfaceFromPickedPointsPlugin::cancel);
+    connect(ui_widget.redoButton, &QPushButton::clicked,
+            this, &SurfaceFromPickedPointsPlugin::redo);
     connect(ui_widget.editButton, &QPushButton::clicked,
             this, &SurfaceFromPickedPointsPlugin::edit);
     connect(ui_widget.edgeSpinBox, SIGNAL(valueChanged(double)),
@@ -214,14 +227,13 @@ public:
             this, &SurfaceFromPickedPointsPlugin::smooth);
     connect(static_cast<Scene*>(scene), SIGNAL(itemIndexSelected(int)),
             this, SLOT(checkEdit(int)));
-    mode = IDLE;
-    ui_widget.cancelButton->setEnabled(false);
     QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
     viewer->installEventFilter(this);
     mw->installEventFilter(this);
     addDockWidget(dock_widget);
     mode = IDLE;
-    ui_widget.cancelButton->setEnabled(false);
+    ui_widget.UndoButton->setEnabled(false);
+    ui_widget.redoButton->setEnabled(false);
     ui_widget.edgeSpinBox->setEnabled(false);
     ui_widget.regenButton->setEnabled(false);
     ui_widget.smoothButton->setEnabled(false);
@@ -273,6 +285,7 @@ private Q_SLOTS:
   }
   void add_polyline()
   {
+    ui_widget.UndoButton->setEnabled(false);
     mode = ADD_POLYLINE;
     Q_FOREACH(int id, hidden_planes)
     {
@@ -280,18 +293,16 @@ private Q_SLOTS:
         scene->item(id)->setVisible(true);
     }
     hidden_planes.clear();
-    ui_widget.cancelButton->setEnabled(true);
-
     if(!current_group)
     {
-     current_group = new SurfaceGroup(&surface_groups);
-     connect(current_group, &SurfaceGroup::aboutToBeDestroyed,
-             this, &SurfaceFromPickedPointsPlugin::finish);
-     connect(current_group, &SurfaceGroup::aboutToBeDestroyed,
-             current_group, &SurfaceGroup::quitList);
-     static int rift_nb = 0;
-     scene->addItem(current_group);
-     current_group->setName(QString("Rift #%1").arg(rift_nb++));
+      current_group = new SurfaceGroup(&surface_groups);
+      connect(current_group, &SurfaceGroup::aboutToBeDestroyed,
+              this, &SurfaceFromPickedPointsPlugin::finish);
+      connect(current_group, &SurfaceGroup::aboutToBeDestroyed,
+              current_group, &SurfaceGroup::quitList);
+      static int rift_nb = 0;
+      scene->addItem(current_group);
+      current_group->setName(QString("Rift #%1").arg(rift_nb++));
     }
     if(!current_group->generator_is_created)
     {
@@ -335,7 +346,9 @@ private Q_SLOTS:
     }
     hidden_planes.clear();
     mode = ADD_POINT_AND_DEFORM;
-    ui_widget.cancelButton->setEnabled(false);
+    ui_widget.UndoButton->setEnabled(false);
+    clear_redo();
+    current_group->operations_done.clear();
     //create points
     std::vector<Point_3> points;
     std::vector<Point_3>& g_polyline = current_group->generator_poly->polylines.back();
@@ -389,8 +402,8 @@ private Q_SLOTS:
       {
         current_group->g_id = i;
         if(current_group->l_plane->oriented_side(g_polyline[i]) != CGAL::ON_ORIENTED_BOUNDARY)
-        o = *intersection(
-              Kernel::Segment_3(g_polyline[i-1], g_polyline[i]),*current_group->l_plane);
+          o = *intersection(
+                Kernel::Segment_3(g_polyline[i-1], g_polyline[i]),*current_group->l_plane);
         break;
       }
     }
@@ -427,7 +440,7 @@ private Q_SLOTS:
     //get the intersection point between the generator and the leader's plane
     Point_3 p;
     if(o!=boost::none)
-       p = boost::get<Point_3>(*o);
+      p = boost::get<Point_3>(*o);
 
     g_polyline.insert(g_polyline.begin()+current_group->g_id, p);
     current_group->generator_poly->invalidateOpenGLBuffers();
@@ -521,7 +534,7 @@ private Q_SLOTS:
   void finish()
   {
     mode = IDLE;
-    ui_widget.cancelButton->setEnabled(false);
+    ui_widget.UndoButton->setEnabled(false);
     ui_widget.createSurfaceButton->setEnabled(false);
     ui_widget.regenButton->setEnabled(false);
     ui_widget.smoothButton->setEnabled(false);
@@ -530,8 +543,6 @@ private Q_SLOTS:
                this, &SurfaceFromPickedPointsPlugin::remesh);
     connect(ui_widget.createSurfaceButton, &QPushButton::clicked,
             this, &SurfaceFromPickedPointsPlugin::add_surface);
-    disconnect(current_group, &SurfaceGroup::aboutToBeDestroyed,
-            this, &SurfaceFromPickedPointsPlugin::finish);
     ui_widget.newPolylineButton->setText("New Generator");
     ui_widget.newPolylineButton->setEnabled(true);
     Q_FOREACH(int id, hidden_planes)
@@ -541,47 +552,566 @@ private Q_SLOTS:
     }
     hidden_planes.clear();
     current_group = NULL;
+    if(!current_group)
+      return;
+    current_group->operations_done.clear();
+    clear_redo();
+    disconnect(current_group, &SurfaceGroup::aboutToBeDestroyed,
+               this, &SurfaceFromPickedPointsPlugin::finish);
   }
 
   void cancel()
   {
-    if(mode != ADD_POLYLINE)
+    is_editing = false;
+    if(mode != ADD_POLYLINE && mode != ADD_POINT_AND_DEFORM)
       return;
-    Scene_polylines_item* current_polyline = NULL;
-    QDoubleSpinBox* current_spin = ui_widget.edgeSpinBox;
-    if(current_group->generator_is_created)
+    ui_widget.redoButton->setEnabled(true);
+    if(mode == ADD_POLYLINE)
     {
-      current_polyline = current_group->generator_poly;
-    }
-    else
-    {
-      current_polyline = current_group->leader_poly;
-    }
-
-    std::vector<Point_3>& polyline = current_polyline->polylines.back();
-    if(polyline.size() > 0)
-    {
-      polyline.pop_back();
-      current_polyline->invalidateOpenGLBuffers();
-      current_polyline->itemChanged();
-      current_group->min_dist = -1;
-      if(polyline.size()==0)
-        return;
-      for(std::size_t i=0; i<polyline.size()-1; ++i)
+      Scene_polylines_item* current_polyline = NULL;
+      bool plane_is_generator = false;
+      if(current_group->generator_is_created)
       {
-        Kernel::Vector_3 v = polyline[i+1] - polyline[i];
+        current_polyline = current_group->generator_poly;
+        plane_is_generator = true;
+      }
+      else
+      {
+        current_polyline = current_group->leader_poly;
+      }
+
+      std::vector<Point_3>& polyline = current_polyline->polylines.back();
+      if(polyline.size() > 0)
+      {
+        current_group->points_stack.push_back(polyline.back());
+        polyline.pop_back();
+        current_polyline->invalidateOpenGLBuffers();
+        current_polyline->itemChanged();
+      }
+      if(polyline.empty())
+      {
+        Q_FOREACH(int id, hidden_planes)
+        {
+          if(scene->item(id))
+            scene->item(id)->setVisible(true);
+        }
+        hidden_planes.clear();
+        if(plane_is_generator)
+        {
+          delete current_group->g_plane;
+          current_group->g_plane = NULL;
+          current_group->generator_is_created = true;
+        }
+        else
+        {
+          delete current_group->l_plane;
+          current_group->l_plane = NULL;
+        }
+        ui_widget.redoButton->setEnabled(false);
+      }
+    }
+    else if(mode == ADD_POINT_AND_DEFORM)
+    {
+      if(current_group->operations_done.back() == 0)
+      {
+        if(current_group->ordered_control_points.size()==0)
+          return;
+        int i=0;
+        Q_FOREACH(Polyhedron::Vertex_handle vh, current_group->control_points)
+        {
+          if(vh->point() == current_group->ordered_control_points.back())
+          {
+            current_group->control_points.erase(current_group->control_points.begin()+i);
+            break;
+          }
+          ++i;
+        }
+        current_group->points_stack.push_back(current_group->ordered_control_points.back());
+        current_group->ordered_control_points.pop_back();
+        current_group->planes_stack.push_back(current_group->control_points_planes.back());
+        current_group->control_points_planes.pop_back();
+        current_group->control_points_item->point_set()->clear();
+        Q_FOREACH(Polyhedron::Vertex_iterator vit, current_group->control_points)
+        {
+          current_group->control_points_item->point_set()->insert(vit->point());
+        }
+        current_group->control_points_item->invalidateOpenGLBuffers();
+        current_group->control_points_item->itemChanged();
+      }
+      else if(current_group->operations_done.back() == 1)
+      {
+        if(current_group->repoints_stack.size()==0)
+          return;
+        Point_3 point = current_group->repoints_stack.back();
+        for(
+            Polyhedron::Vertex_iterator vit = current_group->surface->polyhedron()->vertices_begin();
+            vit != current_group->surface->polyhedron()->vertices_end();
+            ++vit)
+        {
+          if(vit->point() == point)
+          {
+            current_group->control_points.push_back(vit);
+            break;
+          }
+        }
+        current_group->ordered_control_points.push_back(point);
+        current_group->control_points_planes.push_back(current_group->replanes_stack.back());
+        current_group->replanes_stack.pop_back();
+        current_group->repoints_stack.pop_back();
+
+        current_group->control_points_item->point_set()->insert(point);
+        current_group->control_points_item->invalidateOpenGLBuffers();
+        current_group->control_points_item->itemChanged();
+      }
+      else if(current_group->operations_done.back() == 2)
+      {
+        //case point is on polyline
+        if(current_group->edit_planes_stack.back() == Kernel::Plane_3(1,1,1,0) &&
+           current_group->edit_planes_stack[current_group->edit_planes_stack.size()-2] == Kernel::Plane_3(1,1,1,0))
+        {
+          Point_3 first = current_group->edit_points_stack.back();
+          current_group->reedit_points_stack.push_back(first);
+          current_group->edit_points_stack.pop_back();
+          Point_3 second = current_group->edit_points_stack.back();
+          current_group->reedit_points_stack.push_back(second);
+          current_group->edit_points_stack.pop_back();
+          current_group->reedit_planes_stack.push_back(Kernel::Plane_3(1,1,1,0));
+          current_group->reedit_planes_stack.push_back(Kernel::Plane_3(1,1,1,0));
+          current_group->edit_planes_stack.pop_back();
+          current_group->edit_planes_stack.pop_back();
+         ////////////////////////////////////
+          int id = -1, i = 0;
+          std::vector<Point_3> &l_poly = current_group->leader_poly->polylines.back();
+          std::vector<Point_3> &g_poly = current_group->generator_poly->polylines.back();
+          Q_FOREACH(Point_3 cp, l_poly)
+          {
+            if(cp == first)
+            {
+              id = i;
+              break;
+            }
+            ++i;
+          }
+          if(id>-1)
+          {
+            *(l_poly.begin()+id) = second;
+            current_group->leader_poly->invalidateOpenGLBuffers();
+            current_group->leader_poly->itemChanged();
+          }
+          else
+          {
+            i = 0;
+            Q_FOREACH(Point_3 cp, g_poly)
+            {
+              if(cp == first)
+              {
+                id = i;
+                break;
+              }
+              ++i;
+            }
+            if(id >-1)
+            {
+              *(g_poly.begin()+id) = second;
+              current_group->generator_poly->invalidateOpenGLBuffers();
+              current_group->generator_poly->itemChanged();
+            }
+            else
+            {
+              std::cerr<<"cannot find point to edit back."<<std::endl;
+              return;
+            }
+          }
+          Point_set_3<Kernel>::iterator pit;
+          for (pit = current_group->control_points_item->point_set()->begin();
+               pit != current_group->control_points_item->point_set()->end();
+               ++pit)
+          {
+            if(current_group->control_points_item->point_set()->point(*pit) == first)
+            {
+              current_group->control_points_item->point_set()->select(pit);
+              current_group->control_points_item->point_set()->delete_selection();
+              current_group->control_points_item->point_set()->insert(second);
+              break;
+            }
+          }
+          minEnergy();
+          //////////////////////////////////
+        }
+        //case point is simple control_point
+        else
+        {
+          Point_3 first = current_group->edit_points_stack.back();
+          current_group->reedit_points_stack.push_back(first);
+          current_group->edit_points_stack.pop_back();
+          Point_3 second = current_group->edit_points_stack.back();
+          current_group->reedit_points_stack.push_back(second);
+          current_group->edit_points_stack.pop_back();
+
+          Kernel::Plane_3 first_plane = current_group->edit_planes_stack.back();
+          current_group->reedit_planes_stack.push_back(first_plane);
+          current_group->edit_planes_stack.pop_back();
+          Kernel::Plane_3 second_plane = current_group->edit_planes_stack.back();
+          current_group->reedit_planes_stack.push_back(second_plane);
+          current_group->edit_planes_stack.pop_back();
+
+          int id = -1;
+          Q_FOREACH(Point_3 cp, current_group->ordered_control_points)
+          {
+            ++id;
+            if(cp == first)
+            {
+              break;
+            }
+          }
+          current_group->ordered_control_points[id] = second;
+          current_group->control_points_planes[id] = second_plane;
+
+          current_group->control_points_item->point_set()->clear();
+          Point_set_3<Kernel>::iterator pit;
+          for (pit = current_group->control_points_item->point_set()->begin();
+               pit != current_group->control_points_item->point_set()->end();
+               ++pit)
+          {
+            if(current_group->control_points_item->point_set()->point(*pit) == first)
+            {
+              current_group->control_points_item->point_set()->select(pit);
+              current_group->control_points_item->point_set()->delete_selection();
+              current_group->control_points_item->point_set()->insert(second);
+              break;
+            }
+          }
+          minEnergy();
+        }
+
+        current_group->control_points_item->point_set()->clear();
+        Q_FOREACH(Polyhedron::Vertex_iterator vit, current_group->control_points)
+        {
+          current_group->control_points_item->point_set()->insert(vit->point());
+        }
+        current_group->control_points_item->invalidateOpenGLBuffers();
+        current_group->control_points_item->itemChanged();
+      }
+      else if(current_group->operations_done.back() == 3)
+      {
+        Point_3 point = current_group->extend_points_stack.back();
+        current_group->extend_points_stack.pop_back();
+        int id = -1, i = 0;
+        std::vector<Point_3> &l_poly = current_group->leader_poly->polylines.back();
+        std::vector<Point_3> &g_poly = current_group->generator_poly->polylines.back();
+        Q_FOREACH(Point_3 cp, l_poly)
+        {
+          if(cp == point)
+          {
+            id = i;
+            break;
+          }
+          ++i;
+        }
+        if(id>-1)
+        {
+          l_poly.erase(l_poly.begin()+id);
+          double dist = Kernel::Vector_3(l_poly.front(), point).squared_length();
+          if(Kernel::Vector_3(l_poly.back(), point).squared_length() > dist)
+          {
+            if(current_group->l_id > 0)
+              --current_group->l_id;
+          }
+          current_group->leader_poly->invalidateOpenGLBuffers();
+          current_group->leader_poly->itemChanged();
+        }
+        else
+        {
+          i = 0;
+          Q_FOREACH(Point_3 cp, g_poly)
+          {
+            if(cp == point)
+            {
+              id = i;
+              break;
+            }
+            ++i;
+          }
+          if(id >-1)
+          {
+            g_poly.erase(g_poly.begin()+id);
+            double dist = Kernel::Vector_3(g_poly.front(), point).squared_length();
+            if(Kernel::Vector_3(g_poly.back(), point).squared_length() > dist)
+            {
+              if(current_group->g_id>0)
+                --current_group->g_id;
+            }
+            current_group->generator_poly->invalidateOpenGLBuffers();
+            current_group->generator_poly->itemChanged();
+          }
+          else
+          {
+            std::cerr<<"cannot find point to erase."<<std::endl;
+            return;
+          }
+        }
+
+        Point_set_3<Kernel>::iterator pit;
+        for (pit = current_group->control_points_item->point_set()->begin();
+             pit != current_group->control_points_item->point_set()->end();
+             ++pit)
+        {
+          if(current_group->control_points_item->point_set()->point(*pit) == point)
+          {
+            current_group->control_points_item->point_set()->select(pit);
+            current_group->control_points_item->point_set()->delete_selection();
+            break;
+          }
+        }
+        current_group->control_limit--;
+        current_group->control_points_item->invalidateOpenGLBuffers();
+        current_group->control_points_item->itemChanged();
+        minEnergy();
+        current_group->operations_redone.pop_back(); //get rid of the added point in the redo-list.
+        if(current_group->operations_redone.size() == 0)
+          ui_widget.redoButton->setEnabled(false);
+
+      }
+      current_group->operations_redone.push_back(current_group->operations_done.back());
+      current_group->operations_done.pop_back();
+      if(current_group->operations_done.size() == 0)
+        ui_widget.UndoButton->setEnabled(false);
+    }
+  }
+
+  void redo()
+  {
+    ui_widget.UndoButton->setEnabled(true);
+    if(mode == ADD_POLYLINE)
+    {
+      if(current_group->points_stack.size() == 0)
+        return;
+      Point_3 point = current_group->points_stack.back();
+      Scene_polylines_item* current_polyline = NULL;
+      QDoubleSpinBox* current_spin = ui_widget.edgeSpinBox;
+      if(current_group->generator_is_created)
+      {
+        current_polyline = current_group->generator_poly;
+      }
+      else
+      {
+        current_polyline = current_group->leader_poly;
+      }
+
+      std::vector<Point_3>& polyline = current_polyline->polylines.back();
+      polyline.push_back(point);
+      if(polyline.size() >= 2)
+      {
+        Kernel::Vector_3 v = polyline[polyline.size()-1] - polyline[polyline.size()-2];
         double dist = CGAL::sqrt(v.squared_length());
         if(current_group->min_dist == -1 || dist<current_group->min_dist)
         {
           current_group->min_dist = dist;
-          current_spin->setValue(current_group->min_dist);
+          current_spin->setValue(current_group->min_dist/2.0);
         }
       }
+      current_group->points_stack.pop_back();
+      current_polyline->invalidateOpenGLBuffers();
+      current_polyline->itemChanged();
+      if(current_group->points_stack.size() == 0)
+        ui_widget.redoButton->setEnabled(false);
+    }
+    else if (mode == ADD_POINT_AND_DEFORM)
+    {
+      if(current_group->operations_redone.back() == 0)
+      {
+        if(current_group->points_stack.size() == 0)
+          return;
+        Point_3 point = current_group->points_stack.back();
+        for(
+            Polyhedron::Vertex_iterator vit = current_group->surface->polyhedron()->vertices_begin();
+            vit != current_group->surface->polyhedron()->vertices_end();
+            ++vit)
+        {
+          if(vit->point() == point)
+          {
+            current_group->control_points.push_back(vit);
+            break;
+          }
+        }
+        current_group->ordered_control_points.push_back(point);
+        current_group->control_points_planes.push_back(current_group->planes_stack.back());
+        current_group->planes_stack.pop_back();
+        current_group->points_stack.pop_back();
+
+        current_group->control_points_item->point_set()->insert(point);
+        current_group->control_points_item->invalidateOpenGLBuffers();
+        current_group->control_points_item->itemChanged();
+      }
+      else if (current_group->operations_redone.back() == 1)
+      {
+        int i=0;
+        Q_FOREACH(Polyhedron::Vertex_handle vh, current_group->control_points)
+        {
+          if(vh->point() == current_group->ordered_control_points.back())
+          {
+            current_group->control_points.erase(current_group->control_points.begin()+i);
+            break;
+          }
+          ++i;
+        }
+        current_group->repoints_stack.push_back(current_group->ordered_control_points.back());
+        current_group->ordered_control_points.pop_back();
+        current_group->replanes_stack.push_back(current_group->control_points_planes.back());
+        current_group->control_points_planes.pop_back();
+        current_group->control_points_item->point_set()->clear();
+        Q_FOREACH(Polyhedron::Vertex_iterator vit, current_group->control_points)
+        {
+          current_group->control_points_item->point_set()->insert(vit->point());
+        }
+        current_group->control_points_item->invalidateOpenGLBuffers();
+        current_group->control_points_item->itemChanged();
+      }
+      else if(current_group->operations_redone.back() == 2)
+      {
+        //case point is on polyline
+        if(current_group->reedit_planes_stack.back() == Kernel::Plane_3(1,1,1,0) &&
+           current_group->reedit_planes_stack[current_group->reedit_planes_stack.size()-2] == Kernel::Plane_3(1,1,1,0))
+        {
+          Point_3 first = current_group->reedit_points_stack.back();
+          current_group->edit_points_stack.push_back(first);
+          current_group->reedit_points_stack.pop_back();
+          Point_3 second = current_group->reedit_points_stack.back();
+          current_group->edit_points_stack.push_back(second);
+          current_group->reedit_points_stack.pop_back();
+          current_group->edit_planes_stack.push_back(Kernel::Plane_3(1,1,1,0));
+          current_group->edit_planes_stack.push_back(Kernel::Plane_3(1,1,1,0));
+          current_group->reedit_planes_stack.pop_back();
+          current_group->reedit_planes_stack.pop_back();
+         ////////////////////////////////////
+          int id = -1, i = 0;
+          std::vector<Point_3> &l_poly = current_group->leader_poly->polylines.back();
+          std::vector<Point_3> &g_poly = current_group->generator_poly->polylines.back();
+          Q_FOREACH(Point_3 cp, l_poly)
+          {
+            if(cp == first)
+            {
+              id = i;
+              break;
+            }
+            ++i;
+          }
+          if(id>-1)
+          {
+            *(l_poly.begin()+id) = second;
+            current_group->leader_poly->invalidateOpenGLBuffers();
+            current_group->leader_poly->itemChanged();
+          }
+          else
+          {
+            i = 0;
+            Q_FOREACH(Point_3 cp, g_poly)
+            {
+              if(cp == first)
+              {
+                id = i;
+                break;
+              }
+              ++i;
+            }
+            if(id >-1)
+            {
+              *(g_poly.begin()+id) = second;
+              current_group->generator_poly->invalidateOpenGLBuffers();
+              current_group->generator_poly->itemChanged();
+            }
+            else
+            {
+              std::cerr<<"cannot find point to edit back."<<std::endl;
+              return;
+            }
+          }
+          Point_set_3<Kernel>::iterator pit;
+          for (pit = current_group->control_points_item->point_set()->begin();
+               pit != current_group->control_points_item->point_set()->end();
+               ++pit)
+          {
+            if(current_group->control_points_item->point_set()->point(*pit) == first)
+            {
+              current_group->control_points_item->point_set()->select(pit);
+              current_group->control_points_item->point_set()->delete_selection();
+              current_group->control_points_item->point_set()->insert(second);
+              break;
+            }
+          }
+          minEnergy();
+          //////////////////////////////////
+        }
+        //case point is simple control_point
+        else
+        {
+          Point_3 first = current_group->reedit_points_stack.back();
+          current_group->edit_points_stack.push_back(first);
+          current_group->reedit_points_stack.pop_back();
+          Point_3 second = current_group->reedit_points_stack.back();
+          current_group->edit_points_stack.push_back(second);
+          current_group->reedit_points_stack.pop_back();
+
+          Kernel::Plane_3 first_plane = current_group->reedit_planes_stack.back();
+          current_group->edit_planes_stack.push_back(first_plane);
+          current_group->reedit_planes_stack.pop_back();
+          Kernel::Plane_3 second_plane = current_group->reedit_planes_stack.back();
+          current_group->edit_planes_stack.push_back(second_plane);
+          current_group->reedit_planes_stack.pop_back();
+
+          int id = -1;
+          Q_FOREACH(Point_3 cp, current_group->ordered_control_points)
+          {
+            ++id;
+            if(cp == first)
+            {
+              break;
+            }
+          }
+          current_group->ordered_control_points[id] = second;
+          current_group->control_points_planes[id] = second_plane;
+
+          current_group->control_points_item->point_set()->clear();
+          Point_set_3<Kernel>::iterator pit;
+          for (pit = current_group->control_points_item->point_set()->begin();
+               pit != current_group->control_points_item->point_set()->end();
+               ++pit)
+          {
+            if(current_group->control_points_item->point_set()->point(*pit) == first)
+            {
+              current_group->control_points_item->point_set()->select(pit);
+              current_group->control_points_item->point_set()->delete_selection();
+              current_group->control_points_item->point_set()->insert(second);
+              break;
+            }
+          }
+          minEnergy();
+        }
+
+        current_group->control_points_item->point_set()->clear();
+        Q_FOREACH(Polyhedron::Vertex_iterator vit, current_group->control_points)
+        {
+          current_group->control_points_item->point_set()->insert(vit->point());
+        }
+        current_group->control_points_item->invalidateOpenGLBuffers();
+        current_group->control_points_item->itemChanged();
+      }
+
+      current_group->operations_done.push_back(current_group->operations_redone.back());
+      current_group->operations_redone.pop_back();
+      if(current_group->operations_redone.size() == 0)
+        ui_widget.redoButton->setEnabled(false);
     }
   }
 
-  void removeGroup()
+  void clear_redo()
   {
+    ui_widget.redoButton->setEnabled(false);
+    current_group->points_stack.clear();
+    current_group->planes_stack.clear();
+    current_group->reedit_planes_stack.clear();
+    current_group->reedit_points_stack.clear();
+    current_group->operations_redone.clear();
 
   }
 
@@ -850,10 +1380,10 @@ private Q_SLOTS:
     current_group = group;
     Q_FOREACH(SurfaceGroup* sgroup, surface_groups)
     {
-     if(sgroup != current_group)
-     {
-      sgroup->setVisible(false);
-     }
+      if(sgroup != current_group)
+      {
+        sgroup->setVisible(false);
+      }
     }
     ui_widget.newPolylineButton->setEnabled(false);
     ui_widget.regenButton->setEnabled(true);
@@ -904,8 +1434,8 @@ private:
       {
         new_point = plane.projection(l_polyline.front());
         l_polyline.insert(
-            l_polyline.begin(),
-            new_point);
+              l_polyline.begin(),
+              new_point);
         if(current_group->l_id > 0)
           current_group->l_id++;
       }
@@ -913,13 +1443,16 @@ private:
       {
         new_point = plane.projection(l_polyline.back());
         l_polyline.insert(
-            l_polyline.end(),
-            new_point);
+              l_polyline.end(),
+              new_point);
       }
+      //3
+      current_group->extend_points_stack.push_back(new_point);
       current_group->leader_poly->invalidateOpenGLBuffers();
       current_group->leader_poly->itemChanged();
       current_group->control_limit++;
       current_group->control_points_item->point_set()->insert(new_point);
+      current_group->operations_done.push_back(3);
     }
     if(checkExtend(point) !=0)
     {
@@ -945,10 +1478,13 @@ private:
               g_polyline.end(),
               new_point);
       }
+      //3
+      current_group->extend_points_stack.push_back(new_point);
       current_group->generator_poly->invalidateOpenGLBuffers();
       current_group->generator_poly->itemChanged();
       current_group->control_limit++;
       current_group->control_points_item->point_set()->insert(new_point);
+      current_group->operations_done.push_back(3);
     }
 
 
@@ -958,6 +1494,7 @@ private:
     current_group->ordered_control_points.push_back(point);
     current_group->control_points_item->point_set()->insert(point);
     minEnergy();
+    current_group->operations_done.push_back(0);
   }
 
   /*!
@@ -974,9 +1511,9 @@ private:
   int checkExtend(Kernel::Point_3& point)
   {
     Kernel::Point_2 projGf(current_group->g_plane->to_2d(current_group->generator_poly->polylines.back().front())),
-                           projGl(current_group->g_plane->to_2d(current_group->generator_poly->polylines.back().back())),
-                           projLf(current_group->l_plane->to_2d(current_group->leader_poly->polylines.back().front())),
-                           projLl(current_group->l_plane->to_2d(current_group->leader_poly->polylines.back().back()));
+        projGl(current_group->g_plane->to_2d(current_group->generator_poly->polylines.back().back())),
+        projLf(current_group->l_plane->to_2d(current_group->leader_poly->polylines.back().front())),
+        projLl(current_group->l_plane->to_2d(current_group->leader_poly->polylines.back().back()));
     //Find the varying coord in g_plane
     int varCoord = 0;
     double variation = CGAL::abs(projGf.x() - projGl.x());
@@ -1043,7 +1580,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
     is_selecting= true;
   }
   else if(event->type() == QEvent::KeyRelease
-     && static_cast<QKeyEvent*>(event)->key()==Qt::Key_E)
+          && static_cast<QKeyEvent*>(event)->key()==Qt::Key_E)
   {
     is_selecting= false;
   }
@@ -1061,15 +1598,17 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
       }
       bool found = false;
       qglviewer::Vec point = viewer->camera()->pointUnderPixel(e->pos(), found);
+      if(!found)
+        return false;
       if(is_selecting)
       {
         if(mode != ADD_POINT_AND_DEFORM)
           //return false;
-        if(object == mw)
-        {
-          viewer->setFocus();
-          //return false;
-        }
+          if(object == mw)
+          {
+            viewer->setFocus();
+            //return false;
+          }
         Point_3 p(point.x, point.y, point.z);
         double min_dist = -1;
         Q_FOREACH(Polyhedron::Vertex_handle vh, current_group->control_points)
@@ -1104,7 +1643,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
       }
     }
     else if(e->modifiers() == Qt::ShiftModifier &&
-       e->buttons() == Qt::LeftButton)
+            e->buttons() == Qt::LeftButton)
     {
       QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
       if(object == mw)
@@ -1114,11 +1653,14 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
       }
       bool found = false;
       qglviewer::Vec point = viewer->camera()->pointUnderPixel(e->pos(), found);
+      if(!found)
+        return false;
       switch(mode)
       {
       case ADD_POLYLINE:
       {
-
+        clear_redo();
+        ui_widget.UndoButton->setEnabled(true);
         Scene_polylines_item* current_polyline = NULL;
         QDoubleSpinBox* current_spin = ui_widget.edgeSpinBox;
         if(current_group->generator_is_created)
@@ -1187,7 +1729,6 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           }
 
         }
-        if(found) {
           std::vector<Point_3>& polyline = current_polyline->polylines.back();
           polyline.push_back(Point_3(point.x, point.y, point.z));
           if(polyline.size() >= 2)
@@ -1202,11 +1743,11 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           }
           current_polyline->invalidateOpenGLBuffers();
           current_polyline->itemChanged();
-        }
         break;
       }
       case ADD_POINT_AND_DEFORM:
       {
+        ui_widget.UndoButton->setEnabled(true);
         typedef CGAL::AABB_halfedge_graph_segment_primitive<Polyhedron> HGSP;
         typedef CGAL::AABB_traits<Kernel, HGSP>                         AABB_traits;
         typedef CGAL::AABB_tree<AABB_traits>                            AABB_tree;
@@ -1228,6 +1769,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         set_halfedgeds_items_id(polyhedron);
         if(!is_editing)
         {
+          clear_redo();
           //Slice the Polyhedron along the picked plane
           std::vector<std::vector<Point_3> > slices;
           AABB_tree tree(edges(polyhedron).first, edges(polyhedron).second, polyhedron);
@@ -1327,6 +1869,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           current_group->control_points_item->point_set()->insert(constrained_pos);
           current_group->surface->invalidateOpenGLBuffers();
           current_group->surface->itemChanged();
+          current_group->operations_done.push_back(0);
         }
         else
         {
@@ -1344,7 +1887,11 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           }
           if(id>-1)
           {
+            current_group->edit_points_stack.push_back(*(l_poly.begin()+id));
             *(l_poly.begin()+id) = Point_3(point.x, point.y, point.z);
+            current_group->edit_points_stack.push_back(*(l_poly.begin()+id));
+            current_group->edit_planes_stack.push_back(Kernel::Plane_3(1,1,1,0));
+            current_group->edit_planes_stack.push_back(Kernel::Plane_3(1,1,1,0));
             current_group->leader_poly->invalidateOpenGLBuffers();
             current_group->leader_poly->itemChanged();
           }
@@ -1362,7 +1909,11 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
             }
             if(id >-1)
             {
+              current_group->edit_points_stack.push_back(*(g_poly.begin()+id));
               *(g_poly.begin()+id) = Point_3(point.x, point.y, point.z);
+              current_group->edit_points_stack.push_back(*(g_poly.begin()+id));
+              current_group->edit_planes_stack.push_back(Kernel::Plane_3(1,1,1,0));
+              current_group->edit_planes_stack.push_back(Kernel::Plane_3(1,1,1,0));
               current_group->generator_poly->invalidateOpenGLBuffers();
               current_group->generator_poly->itemChanged();
             }
@@ -1377,8 +1928,12 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
                   break;
                 }
               }
+              current_group->edit_points_stack.push_back(current_group->ordered_control_points[id]);
               current_group->ordered_control_points[id] = Point_3(point.x, point.y, point.z);
+              current_group->edit_points_stack.push_back(current_group->ordered_control_points[id]);
+              current_group->edit_planes_stack.push_back(current_group->control_points_planes[id]);
               current_group->control_points_planes[id] = plane;
+              current_group->edit_planes_stack.push_back(current_group->control_points_planes[id]);
             }
           }
           Point_set_3<Kernel>::iterator pit;
@@ -1397,6 +1952,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           sel_handle->point() = Point_3(point.x, point.y, point.z);
           is_editing = false;
           minEnergy();
+          current_group->operations_done.push_back(2);
         }
         current_group->control_points_item->invalidateOpenGLBuffers();
         current_group->control_points_item->itemChanged();
@@ -1483,7 +2039,9 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         ++i;
       }
       current_group->control_points.erase(current_group->control_points.begin()+save_id);
+      current_group->repoints_stack.push_back(*(current_group->ordered_control_points.begin()+id));
       current_group->ordered_control_points.erase(current_group->ordered_control_points.begin()+id);
+      current_group->replanes_stack.push_back(*(current_group->control_points_planes.begin()+id));
       current_group->control_points_planes.erase(current_group->control_points_planes.begin()+id);
 
       current_group->control_points_item->point_set()->clear();
@@ -1493,6 +2051,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
       }
       current_group->control_points_item->invalidateOpenGLBuffers();
       current_group->control_points_item->itemChanged();
+      current_group->operations_done.push_back(1);
       return true;
     }
   }

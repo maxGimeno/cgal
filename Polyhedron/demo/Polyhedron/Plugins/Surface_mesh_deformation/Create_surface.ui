@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>379</width>
-    <height>411</height>
+    <height>461</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -113,6 +113,20 @@ p, li { white-space: pre-wrap; }
         </layout>
        </widget>
       </item>
+      <item row="3" column="2">
+       <widget class="QPushButton" name="finishButton">
+        <property name="text">
+         <string>Finish</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QPushButton" name="UndoButton">
+        <property name="text">
+         <string>Undo</string>
+        </property>
+       </widget>
+      </item>
       <item row="2" column="2">
        <widget class="QGroupBox" name="groupBox_3">
         <property name="title">
@@ -140,17 +154,10 @@ p, li { white-space: pre-wrap; }
         </layout>
        </widget>
       </item>
-      <item row="3" column="2">
-       <widget class="QPushButton" name="finishButton">
+      <item row="4" column="0">
+       <widget class="QPushButton" name="redoButton">
         <property name="text">
-         <string>Finish</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QPushButton" name="cancelButton">
-        <property name="text">
-         <string>Cancel Last Insertion</string>
+         <string>Redo</string>
         </property>
        </widget>
       </item>
