@@ -867,12 +867,10 @@ private Q_SLOTS:
         current_group->control_points_item->invalidateOpenGLBuffers();
         current_group->control_points_item->itemChanged();
         minEnergy();
-        current_group->operations_redone.pop_back(); //get rid of the added point in the redo-list.
-        if(current_group->operations_redone.size() == 0)
-          ui_widget.redoButton->setEnabled(false);
-
       }
-      current_group->operations_redone.push_back(current_group->operations_done.back());
+      //No redo for an extension, so don't push it into the redo-list
+      if(current_group->operations_done.back() != 3)
+         current_group->operations_redone.push_back(current_group->operations_done.back());
       current_group->operations_done.pop_back();
       if(current_group->operations_done.size() == 0)
         ui_widget.UndoButton->setEnabled(false);
@@ -1417,13 +1415,13 @@ private:
   std::vector<SurfaceGroup*> surface_groups;
   bool find_plane(QMouseEvent* e, Kernel::Plane_3& plane);
   std::vector<int> hidden_planes;
-  void extendSurface(const qglviewer::Vec& p, Kernel::Plane_3 plane)
+  void extendSurface(const qglviewer::Vec& p, int checked)
   {
     Point_3 new_point = Point_3(0,0,0);
     Polyhedron* poly = current_group->surface->polyhedron();
     poly->normalize_border();
     Point_3 point(p.x, p.y, p.z);
-    if(checkExtend(point) !=1)
+    if(checked !=1)
     {
       //report the vector between the closest point of the bordure and the picked point
       // at the right end of the generator.
@@ -1446,7 +1444,6 @@ private:
               l_polyline.end(),
               new_point);
       }
-      //3
       current_group->extend_points_stack.push_back(new_point);
       current_group->leader_poly->invalidateOpenGLBuffers();
       current_group->leader_poly->itemChanged();
@@ -1454,7 +1451,7 @@ private:
       current_group->control_points_item->point_set()->insert(new_point);
       current_group->operations_done.push_back(3);
     }
-    if(checkExtend(point) !=0)
+    if(checked !=0)
     {
 
       //report the vector between the closest point of the bordure and the picked point
@@ -1478,7 +1475,6 @@ private:
               g_polyline.end(),
               new_point);
       }
-      //3
       current_group->extend_points_stack.push_back(new_point);
       current_group->generator_poly->invalidateOpenGLBuffers();
       current_group->generator_poly->itemChanged();
@@ -1490,11 +1486,7 @@ private:
 
     current_group->control_points_item->invalidateOpenGLBuffers();
     current_group->control_points_item->itemChanged();
-    current_group->control_points_planes.push_back(plane);
-    current_group->ordered_control_points.push_back(point);
-    current_group->control_points_item->point_set()->insert(point);
     minEnergy();
-    current_group->operations_done.push_back(0);
   }
 
   /*!
@@ -1507,9 +1499,22 @@ private:
    * \param g_plane the plane in which the generator was picked
    * \param l_plane the plane in which the leader was picked
    * \return 0, 1 or 2
+   *  2   |      0      | 2
+   *___________________________
+   *      |             |
+   *      |             |
+   *      |             |
+   *   1  |      3      | 1
+   *      |             |
+   *      |             |
+   *__________________________
+   *      |             |
+   *   2  |      0      | 2
    */
   int checkExtend(Kernel::Point_3& point)
   {
+    bool is_in_g_bounds = false;
+    bool is_in_l_bounds = false;
     Kernel::Point_2 projGf(current_group->g_plane->to_2d(current_group->generator_poly->polylines.back().front())),
         projGl(current_group->g_plane->to_2d(current_group->generator_poly->polylines.back().back())),
         projLf(current_group->l_plane->to_2d(current_group->leader_poly->polylines.back().front())),
@@ -1524,7 +1529,7 @@ private:
     if(projP[varCoord] >= (std::min)(projGf[varCoord], projGl[varCoord]) &&
        projP[varCoord] <= (std::max)(projGf[varCoord], projGl[varCoord]))
     {
-      return 0;
+      is_in_g_bounds = true;
     }
 
     //Find the varying coord in l_plane
@@ -1537,9 +1542,18 @@ private:
     if(projP[varCoord] >= (std::min)(projLf[varCoord], projLl[varCoord]) &&
        projP[varCoord] <= (std::max)(projLf[varCoord], projLl[varCoord]))
     {
-      return 1;
+      is_in_l_bounds = true;
     }
-    return 2;
+
+    if(!is_in_g_bounds && is_in_l_bounds)
+      return 1;
+    if(is_in_g_bounds && !is_in_l_bounds)
+      return 0;
+    if(!is_in_g_bounds && !is_in_l_bounds)
+      return 2;
+    //if(is_in_g_bounds && is_in_l_bounds)
+    return 3;
+
   }
 };
 
@@ -1770,16 +1784,18 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         if(!is_editing)
         {
           clear_redo();
+          Kernel::Point_3 p(point.x, point.y, point.z);
           //Slice the Polyhedron along the picked plane
           std::vector<std::vector<Point_3> > slices;
           AABB_tree tree(edges(polyhedron).first, edges(polyhedron).second, polyhedron);
-          CGAL::Polygon_mesh_slicer<Polyhedron, Kernel> slicer_aabb(polyhedron, tree);
-          slicer_aabb(plane, std::back_inserter(slices));
-          if(slices.empty())
+          int checked = checkExtend(p);
+          if(checked !=3)
           {
-            extendSurface(point, plane);
+            extendSurface(point, checked);
             return false;
           }
+          CGAL::Polygon_mesh_slicer<Polyhedron, Kernel> slicer_aabb(polyhedron, tree);
+          slicer_aabb(plane, std::back_inserter(slices));
           //find the closest slice
           boost::tuple<double, int, int> min_squared_dist(-1,-1, -1);
           for(std::size_t i = 0; i<slices.size(); ++i)
