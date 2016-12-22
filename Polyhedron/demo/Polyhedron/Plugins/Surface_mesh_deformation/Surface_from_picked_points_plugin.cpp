@@ -679,7 +679,7 @@ private Q_SLOTS:
           current_group->reedit_planes_stack.push_back(Kernel::Plane_3(1,1,1,0));
           current_group->edit_planes_stack.pop_back();
           current_group->edit_planes_stack.pop_back();
-         ////////////////////////////////////
+          ////////////////////////////////////
           int id = -1, i = 0;
           std::vector<Point_3> &l_poly = current_group->leader_poly->polylines.back();
           std::vector<Point_3> &g_poly = current_group->generator_poly->polylines.back();
@@ -870,7 +870,7 @@ private Q_SLOTS:
       }
       //No redo for an extension, so don't push it into the redo-list
       if(current_group->operations_done.back() != 3)
-         current_group->operations_redone.push_back(current_group->operations_done.back());
+        current_group->operations_redone.push_back(current_group->operations_done.back());
       current_group->operations_done.pop_back();
       if(current_group->operations_done.size() == 0)
         ui_widget.UndoButton->setEnabled(false);
@@ -981,7 +981,7 @@ private Q_SLOTS:
           current_group->edit_planes_stack.push_back(Kernel::Plane_3(1,1,1,0));
           current_group->reedit_planes_stack.pop_back();
           current_group->reedit_planes_stack.pop_back();
-         ////////////////////////////////////
+          ////////////////////////////////////
           int id = -1, i = 0;
           std::vector<Point_3> &l_poly = current_group->leader_poly->polylines.back();
           std::vector<Point_3> &g_poly = current_group->generator_poly->polylines.back();
@@ -1421,15 +1421,82 @@ private:
     Polyhedron* poly = current_group->surface->polyhedron();
     poly->normalize_border();
     Point_3 point(p.x, p.y, p.z);
+    std::vector<Point_3>& l_polyline = current_group->leader_poly->polylines.back();
+    std::vector<Point_3>& g_polyline = current_group->generator_poly->polylines.back();
+    //append to leader
     if(checked !=1)
     {
       //report the vector between the closest point of the bordure and the picked point
       // at the right end of the generator.
-      std::vector<Point_3>& l_polyline = current_group->leader_poly->polylines.back();
+
+      //translate l_plane to point
+      Kernel::Plane_3 t_l_plane(point, current_group->l_plane->orthogonal_vector());
+
+      //get intersection between generator and t_l_plane
+      CGAL::Oriented_side first_side= t_l_plane.oriented_side(g_polyline[0]);
+      boost::optional<boost::variant<Point_3, Kernel::Segment_3, Kernel::Line_3> > o;
+
+      for(std::size_t i=1; i< g_polyline.size(); ++i)
+      {
+        if(t_l_plane.oriented_side(g_polyline[i]) !=
+           first_side)
+        {
+          if(t_l_plane.oriented_side(g_polyline[i]) != CGAL::ON_ORIENTED_BOUNDARY)
+            o = *intersection(
+                  Kernel::Segment_3(g_polyline[i-1], g_polyline[i]),t_l_plane);
+          break;
+        }
+      }
+
+      Point_3 *intersection_point = NULL;
+      if ( o!=boost::none)
+      {
+        intersection_point = boost::get<Point_3>(&*o);
+      }
+      if(!intersection_point)
+      {
+        messageInterface->information("no intersection found");
+        return;
+      }
+      Kernel::Vector_3 trans(*intersection_point, point);
+
+      //get translated generator
+      std::vector<Point_3> t_generator;
+      for(std::size_t i=0; i<g_polyline.size(); ++i)
+      {
+        t_generator.push_back(g_polyline[i]+trans);
+      }
+
+      // get intersection between t_generator and l_plane
+
+      first_side= current_group->l_plane->oriented_side(t_generator[0]);
+      o = boost::none;
+      for(std::size_t i=1; i< t_generator.size(); ++i)
+      {
+        if(current_group->l_plane->oriented_side(t_generator[i]) !=
+           first_side)
+        {
+          if(current_group->l_plane->oriented_side(t_generator[i]) != CGAL::ON_ORIENTED_BOUNDARY)
+          {
+            o = *intersection(
+                  Kernel::Segment_3(t_generator[i-1], t_generator[i]), *current_group->l_plane);
+            break;
+          }
+        }
+      }
+      if ( o!=boost::none)
+      {
+        intersection_point = boost::get<Point_3>(&*o);
+      }
+      if(!intersection_point)
+      {
+        messageInterface->information("no intersection found");
+        return;
+      }
+      new_point = *intersection_point;
       double dist = Kernel::Vector_3(l_polyline.front(), point).squared_length();
       if(Kernel::Vector_3(l_polyline.back(), point).squared_length() > dist)
       {
-        new_point = current_group->l_plane->projection(point);
         l_polyline.insert(
               l_polyline.begin(),
               new_point);
@@ -1438,7 +1505,6 @@ private:
       }
       else
       {
-        new_point = current_group->l_plane->projection(point);
         l_polyline.insert(
               l_polyline.end(),
               new_point);
@@ -1450,16 +1516,84 @@ private:
       current_group->control_points_item->point_set()->insert(new_point);
       current_group->operations_done.push_back(3);
     }
+
+    //append to generator
     if(checked !=0)
     {
 
       //report the vector between the closest point of the bordure and the picked point
       // at the right end of the generator.
-      std::vector<Point_3>& g_polyline = current_group->generator_poly->polylines.back();
+
+      //translate g_plane to point
+      Kernel::Plane_3 t_g_plane(point, current_group->g_plane->orthogonal_vector());
+
+      //get intersection between leader and t_l_plane
+      CGAL::Oriented_side first_side= t_g_plane.oriented_side(l_polyline[0]);
+      boost::optional<boost::variant<Point_3, Kernel::Segment_3, Kernel::Line_3> > o;
+
+      for(std::size_t i=1; i< l_polyline.size(); ++i)
+      {
+        if(t_g_plane.oriented_side(l_polyline[i]) !=
+           first_side)
+        {
+          if(t_g_plane.oriented_side(l_polyline[i]) != CGAL::ON_ORIENTED_BOUNDARY)
+            o = *intersection(
+                  Kernel::Segment_3(l_polyline[i-1], l_polyline[i]),t_g_plane);
+          break;
+        }
+      }
+
+      Point_3 *intersection_point = NULL;
+      if ( o!=boost::none)
+      {
+        intersection_point = boost::get<Point_3>(&*o);
+      }
+      if(!intersection_point)
+      {
+        messageInterface->information("no intersection found");
+        return;
+      }
+      Kernel::Vector_3 trans(*intersection_point, point);
+
+      //get translated leader
+      std::vector<Point_3> t_leader;
+      for(std::size_t i=0; i<l_polyline.size(); ++i)
+      {
+        t_leader.push_back(l_polyline[i]+trans);
+      }
+
+      // get intersection between t_leader and g_plane
+
+      first_side= current_group->g_plane->oriented_side(t_leader[0]);
+      o = boost::none;
+      for(std::size_t i=1; i< t_leader.size(); ++i)
+      {
+        if(current_group->g_plane->oriented_side(t_leader[i]) !=
+           first_side)
+        {
+          if(current_group->g_plane->oriented_side(t_leader[i]) != CGAL::ON_ORIENTED_BOUNDARY)
+          {
+            o = *intersection(
+                  Kernel::Segment_3(t_leader[i-1], t_leader[i]), *current_group->g_plane);
+            break;
+          }
+        }
+      }
+      if ( o!=boost::none)
+      {
+        intersection_point = boost::get<Point_3>(&*o);
+      }
+      if(!intersection_point)
+      {
+        messageInterface->information("no intersection found");
+        return;
+      }
+      new_point = *intersection_point;
+
+
       double dist = Kernel::Vector_3(g_polyline.front(), point).squared_length();
       if(Kernel::Vector_3(g_polyline.back(), point).squared_length() > dist)
       {
-        new_point = current_group->g_plane->projection(point);
         g_polyline.insert(
               g_polyline.begin(),
               new_point);
@@ -1468,7 +1602,6 @@ private:
       }
       else
       {
-        new_point = current_group->g_plane->projection(point);
         g_polyline.insert(
               g_polyline.end(),
               new_point);
@@ -1591,11 +1724,15 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
   if(event->type() == QEvent::KeyPress
      && static_cast<QKeyEvent*>(event)->key()==Qt::Key_E)
   {
+    if(mode != ADD_POINT_AND_DEFORM)
+      return false;
     is_selecting= true;
   }
   else if(event->type() == QEvent::KeyRelease
           && static_cast<QKeyEvent*>(event)->key()==Qt::Key_E)
   {
+    if(mode != ADD_POINT_AND_DEFORM)
+      return false;
     is_selecting= false;
   }
   if(event->type()==QEvent::MouseButtonPress)
@@ -1743,20 +1880,20 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           }
 
         }
-          std::vector<Point_3>& polyline = current_polyline->polylines.back();
-          polyline.push_back(Point_3(point.x, point.y, point.z));
-          if(polyline.size() >= 2)
+        std::vector<Point_3>& polyline = current_polyline->polylines.back();
+        polyline.push_back(Point_3(point.x, point.y, point.z));
+        if(polyline.size() >= 2)
+        {
+          Kernel::Vector_3 v = polyline[polyline.size()-1] - polyline[polyline.size()-2];
+          double dist = CGAL::sqrt(v.squared_length());
+          if(current_group->min_dist == -1 || dist<current_group->min_dist)
           {
-            Kernel::Vector_3 v = polyline[polyline.size()-1] - polyline[polyline.size()-2];
-            double dist = CGAL::sqrt(v.squared_length());
-            if(current_group->min_dist == -1 || dist<current_group->min_dist)
-            {
-              current_group->min_dist = dist;
-              current_spin->setValue(current_group->min_dist/2.0);
-            }
+            current_group->min_dist = dist;
+            current_spin->setValue(current_group->min_dist/2.0);
           }
-          current_polyline->invalidateOpenGLBuffers();
-          current_polyline->itemChanged();
+        }
+        current_polyline->invalidateOpenGLBuffers();
+        current_polyline->itemChanged();
         break;
       }
       case ADD_POINT_AND_DEFORM:
