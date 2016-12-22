@@ -1425,12 +1425,11 @@ private:
     {
       //report the vector between the closest point of the bordure and the picked point
       // at the right end of the generator.
-      Kernel::Plane_3 plane(point,current_group->g_plane->orthogonal_direction());
       std::vector<Point_3>& l_polyline = current_group->leader_poly->polylines.back();
       double dist = Kernel::Vector_3(l_polyline.front(), point).squared_length();
       if(Kernel::Vector_3(l_polyline.back(), point).squared_length() > dist)
       {
-        new_point = plane.projection(l_polyline.front());
+        new_point = current_group->l_plane->projection(point);
         l_polyline.insert(
               l_polyline.begin(),
               new_point);
@@ -1439,7 +1438,7 @@ private:
       }
       else
       {
-        new_point = plane.projection(l_polyline.back());
+        new_point = current_group->l_plane->projection(point);
         l_polyline.insert(
               l_polyline.end(),
               new_point);
@@ -1456,12 +1455,11 @@ private:
 
       //report the vector between the closest point of the bordure and the picked point
       // at the right end of the generator.
-      Kernel::Plane_3 plane(point,current_group->l_plane->orthogonal_direction());
       std::vector<Point_3>& g_polyline = current_group->generator_poly->polylines.back();
       double dist = Kernel::Vector_3(g_polyline.front(), point).squared_length();
       if(Kernel::Vector_3(g_polyline.back(), point).squared_length() > dist)
       {
-        new_point = plane.projection(g_polyline.front());
+        new_point = current_group->g_plane->projection(point);
         g_polyline.insert(
               g_polyline.begin(),
               new_point);
@@ -1470,7 +1468,7 @@ private:
       }
       else
       {
-        new_point = plane.projection(g_polyline.back());
+        new_point = current_group->g_plane->projection(point);
         g_polyline.insert(
               g_polyline.end(),
               new_point);
