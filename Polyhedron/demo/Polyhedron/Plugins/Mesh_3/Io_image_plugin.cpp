@@ -815,7 +815,7 @@ private Q_SLOTS:
       connect(z_slider, SIGNAL(realChange(int)), z_cubeLabel, SLOT(setNum(int)));
       connect(z_plane, SIGNAL(manipulated(int)), z_cubeLabel, SLOT(setNum(int)));
       connect(z_plane, SIGNAL(aboutToBeDestroyed()), this, SLOT(destroy_z_item()));
-      connect(x_slider, SIGNAL(sliderMoved(int)), z_slider, SLOT(updateFramePosition()));
+      connect(z_slider, SIGNAL(sliderMoved(int)), z_slider, SLOT(updateFramePosition()));
       connect(z_slider, SIGNAL(realChange(int)), this, SLOT(set_value()));
       z_slider->setValue(c.z_value);
       z_box->addWidget(z_slider);

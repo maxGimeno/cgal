@@ -1511,43 +1511,45 @@ private:
    */
   int checkExtend(Kernel::Point_3& point)
   {
-    bool is_in_g_bounds = false;
-    bool is_in_l_bounds = false;
-    Kernel::Point_2 projGf(current_group->g_plane->to_2d(current_group->generator_poly->polylines.back().front())),
-        projGl(current_group->g_plane->to_2d(current_group->generator_poly->polylines.back().back())),
-        projLf(current_group->l_plane->to_2d(current_group->leader_poly->polylines.back().front())),
-        projLl(current_group->l_plane->to_2d(current_group->leader_poly->polylines.back().back()));
-    //Find the varying coord in g_plane
-    int varCoord = 0;
-    double variation = CGAL::abs(projGf.x() - projGl.x());
-    if(CGAL::abs(projGf.y() - projGl.y()) > variation)
-      varCoord = 1;
+    bool is_in_x_bounds = false;
+    bool is_in_y_bounds = false;
+
+    // find the third plane
+    Kernel::Vector_3 normal = CGAL::cross_product(current_group->g_plane->orthogonal_vector(), current_group->l_plane->orthogonal_vector());
+    Kernel::Plane_3 plane(Point_3(0,0,0), normal);
+    //project the polylines extremities in the plane to find the coords range
+    Kernel::Point_2 projGf(plane.to_2d(current_group->generator_poly->polylines.back().front())),
+        projGl(plane.to_2d(current_group->generator_poly->polylines.back().back())),
+        projLf(plane.to_2d(current_group->leader_poly->polylines.back().front())),
+        projLl(plane.to_2d(current_group->leader_poly->polylines.back().back()));
+    double range[4]; // 0 = minX, 1=maxX, 2=minY, 3=maxY
+    range[0] = (std::min)((std::min)(projGf[0], projGl[0]), (std::min)(projLf[0], projLl[0]));
+    range[1] = (std::max)((std::max)(projGf[0], projGl[0]), (std::max)(projLf[0], projLl[0]));
+    range[2] = (std::min)((std::min)(projGf[1], projGl[1]), (std::min)(projLf[1], projLl[1]));
+    range[3] = (std::max)((std::max)(projGf[1], projGl[1]), (std::max)(projLf[1], projLl[1]));
+
+    //Project the picked point in the plane and check its position in the range
+    Kernel::Point_2 projP = plane.to_2d(point);
     //first check
-    Kernel::Point_2 projP = current_group->g_plane->to_2d(point);
-    if(projP[varCoord] >= (std::min)(projGf[varCoord], projGl[varCoord]) &&
-       projP[varCoord] <= (std::max)(projGf[varCoord], projGl[varCoord]))
+    if(projP[0] >= range[0] &&
+       projP[0] <= range[1]  )
     {
-      is_in_g_bounds = true;
+      is_in_x_bounds = true;
     }
 
-    //Find the varying coord in l_plane
-    varCoord = 0;
-    variation = CGAL::abs(projLf.x() - projLl.x());
-    if(CGAL::abs(projLf.y() - projLl.y()) > variation)
-      varCoord = 1;
-    //first check
-    projP = current_group->l_plane->to_2d(point);
-    if(projP[varCoord] >= (std::min)(projLf[varCoord], projLl[varCoord]) &&
-       projP[varCoord] <= (std::max)(projLf[varCoord], projLl[varCoord]))
+    //second check
+    projP = plane.to_2d(point);
+    if(projP[1] >= range[2] &&
+       projP[1] <= range[3])
     {
-      is_in_l_bounds = true;
+      is_in_y_bounds = true;
     }
 
-    if(!is_in_g_bounds && is_in_l_bounds)
+    if(!is_in_x_bounds && is_in_y_bounds)
       return 1;
-    if(is_in_g_bounds && !is_in_l_bounds)
+    if(is_in_x_bounds && !is_in_y_bounds)
       return 0;
-    if(!is_in_g_bounds && !is_in_l_bounds)
+    if(!is_in_x_bounds && !is_in_y_bounds)
       return 2;
     //if(is_in_g_bounds && is_in_l_bounds)
     return 3;
