@@ -445,6 +445,8 @@ private Q_SLOTS:
     g_polyline.insert(g_polyline.begin()+current_group->g_id, p);
     current_group->generator_poly->invalidateOpenGLBuffers();
     current_group->generator_poly->itemChanged();
+    current_group->leader_poly->invalidateOpenGLBuffers();
+    current_group->leader_poly->itemChanged();
     //compute the points
     for(std::size_t i=0; i< g_polyline.size(); ++i)
     {
@@ -1415,6 +1417,7 @@ private:
   std::vector<SurfaceGroup*> surface_groups;
   bool find_plane(QMouseEvent* e, Kernel::Plane_3& plane);
   std::vector<int> hidden_planes;
+
   void extendSurface(const qglviewer::Vec& p, int checked)
   {
     Point_3 new_point = Point_3(0,0,0);
@@ -1435,16 +1438,46 @@ private:
       //get intersection between generator and t_l_plane
       CGAL::Oriented_side first_side= t_l_plane.oriented_side(g_polyline[0]);
       boost::optional<boost::variant<Point_3, Kernel::Segment_3, Kernel::Line_3> > o;
-
+      bool found = false;
       for(std::size_t i=1; i< g_polyline.size(); ++i)
       {
         if(t_l_plane.oriented_side(g_polyline[i]) !=
            first_side)
         {
           if(t_l_plane.oriented_side(g_polyline[i]) != CGAL::ON_ORIENTED_BOUNDARY)
-            o = *intersection(
+            o = intersection(
                   Kernel::Segment_3(g_polyline[i-1], g_polyline[i]),t_l_plane);
+          found = true;
           break;
+        }
+      }
+
+
+      if(!found)
+      {
+        o =intersection(
+              Kernel::Line_3(g_polyline[0], g_polyline[1])
+            ,t_l_plane);
+        Kernel::Vector_3 diff = boost::get<Point_3>(*o)-g_polyline[0];
+        double sq_dist = diff.squared_length();
+        o =intersection(
+              Kernel::Line_3(g_polyline[g_polyline.size()-1], g_polyline[g_polyline.size()-2])
+            ,t_l_plane);
+        diff = boost::get<Point_3>(*o)-g_polyline[g_polyline.size()-1];
+
+        if(sq_dist < diff.squared_length())
+        {
+          o =intersection(
+                Kernel::Line_3(g_polyline[0], g_polyline[1])
+              ,t_l_plane);
+
+        }
+        else
+        {
+          o = intersection(
+                Kernel::Line_3(g_polyline[g_polyline.size()-1], g_polyline[g_polyline.size()-2])
+              ,t_l_plane);
+
         }
       }
 
@@ -1455,7 +1488,7 @@ private:
       }
       if(!intersection_point)
       {
-        messageInterface->information("no intersection found ");
+        messageInterface->information("no intersection found");
         return;
       }
       Kernel::Vector_3 trans(*intersection_point, point);
@@ -1471,6 +1504,7 @@ private:
 
       first_side= current_group->l_plane->oriented_side(t_generator[0]);
       o = boost::none;
+      found = false;
       for(std::size_t i=1; i< t_generator.size(); ++i)
       {
         if(current_group->l_plane->oriented_side(t_generator[i]) !=
@@ -1478,10 +1512,38 @@ private:
         {
           if(current_group->l_plane->oriented_side(t_generator[i]) != CGAL::ON_ORIENTED_BOUNDARY)
           {
-            o = *intersection(
+            o = intersection(
                   Kernel::Segment_3(t_generator[i-1], t_generator[i]), *current_group->l_plane);
+            found = true;
             break;
           }
+        }
+      }
+      if(!found)
+      {
+        o =intersection(
+              Kernel::Line_3(t_generator[0], t_generator[1])
+            ,*current_group->l_plane);
+        Kernel::Vector_3 diff = boost::get<Point_3>(*o)-t_generator[0];
+        double sq_dist = diff.squared_length();
+        o =intersection(
+              Kernel::Line_3(t_generator[t_generator.size()-1], t_generator[t_generator.size()-2])
+            ,*current_group->l_plane);
+        diff = boost::get<Point_3>(*o)-t_generator[t_generator.size()-1];
+
+        if(sq_dist < diff.squared_length())
+        {
+          o =intersection(
+                Kernel::Line_3(t_generator[0], t_generator[1])
+              ,*current_group->l_plane);
+
+        }
+        else
+        {
+          o = intersection(
+                Kernel::Line_3(t_generator[t_generator.size()-1], t_generator[t_generator.size()-2])
+              ,*current_group->l_plane);
+
         }
       }
       intersection_point = NULL;
@@ -1491,7 +1553,7 @@ private:
       }
       if(!intersection_point)
       {
-        messageInterface->information("no intersection found ");
+        messageInterface->information("no intersection found");
         return;
       }
       new_point = *intersection_point;
@@ -1528,19 +1590,50 @@ private:
       //translate g_plane to point
       Kernel::Plane_3 t_g_plane(point, current_group->g_plane->orthogonal_vector());
 
-      //get intersection between leader and t_l_plane
+      //get intersection between leader and t_g_plane
       CGAL::Oriented_side first_side= t_g_plane.oriented_side(l_polyline[0]);
       boost::optional<boost::variant<Point_3, Kernel::Segment_3, Kernel::Line_3> > o;
-
+      bool found = false;
       for(std::size_t i=1; i< l_polyline.size(); ++i)
       {
         if(t_g_plane.oriented_side(l_polyline[i]) !=
            first_side)
         {
           if(t_g_plane.oriented_side(l_polyline[i]) != CGAL::ON_ORIENTED_BOUNDARY)
-            o = *intersection(
+            o = intersection(
                   Kernel::Segment_3(l_polyline[i-1], l_polyline[i]),t_g_plane);
+          found = true;
           break;
+        }
+      }
+
+      if(!found)
+      {
+        o =intersection(
+              Kernel::Line_3(l_polyline[0], l_polyline[1])
+            ,t_g_plane);
+        Kernel::Vector_3 diff = boost::get<Point_3>(*o)-l_polyline[0];
+        double sq_dist = diff.squared_length();
+        o =intersection(
+              Kernel::Line_3(l_polyline[l_polyline.size()-1], l_polyline[l_polyline.size()-2])
+            ,t_g_plane);
+        diff = boost::get<Point_3>(*o)-l_polyline[l_polyline.size()-1];
+        double sq_dist_2 = diff.squared_length();
+
+        if(sq_dist < sq_dist_2)
+        {
+          o =intersection(
+                Kernel::Line_3(l_polyline[0], l_polyline[1])
+              ,t_g_plane);
+
+        }
+        else
+        {
+
+          o = intersection(
+                Kernel::Line_3(l_polyline[l_polyline.size()-1], l_polyline[l_polyline.size()-2])
+              ,t_g_plane);
+
         }
       }
 
@@ -1551,7 +1644,7 @@ private:
       }
       if(!intersection_point)
       {
-        messageInterface->information("no intersection found ");
+        messageInterface->information("no intersection found");
         return;
       }
       Kernel::Vector_3 trans(*intersection_point, point);
@@ -1567,6 +1660,7 @@ private:
 
       first_side= current_group->g_plane->oriented_side(t_leader[0]);
       o = boost::none;
+      found = false;
       for(std::size_t i=1; i< t_leader.size(); ++i)
       {
         if(current_group->g_plane->oriented_side(t_leader[i]) !=
@@ -1574,10 +1668,40 @@ private:
         {
           if(current_group->g_plane->oriented_side(t_leader[i]) != CGAL::ON_ORIENTED_BOUNDARY)
           {
-            o = *intersection(
+            o = intersection(
                   Kernel::Segment_3(t_leader[i-1], t_leader[i]), *current_group->g_plane);
+            found = true;
             break;
           }
+        }
+      }
+
+
+      if(!found)
+      {
+        o =intersection(
+              Kernel::Line_3(t_leader[0], t_leader[1])
+            ,*current_group->g_plane);
+        Kernel::Vector_3 diff = boost::get<Point_3>(*o)-t_leader[0];
+        double sq_dist = diff.squared_length();
+        o =intersection(
+              Kernel::Line_3(t_leader[t_leader.size()-1], t_leader[t_leader.size()-2])
+            ,*current_group->g_plane);
+        diff = boost::get<Point_3>(*o)-t_leader[t_leader.size()-1];
+
+        if(sq_dist < diff.squared_length())
+        {
+          o =intersection(
+                Kernel::Line_3(t_leader[0], t_leader[1])
+              ,*current_group->g_plane);
+
+        }
+        else
+        {
+          o = intersection(
+                Kernel::Line_3(t_leader[t_leader.size()-1], t_leader[t_leader.size()-2])
+              ,*current_group->g_plane);
+
         }
       }
       intersection_point = NULL;
@@ -1587,7 +1711,7 @@ private:
       }
       if(!intersection_point)
       {
-        messageInterface->information("no intersection found ");
+        messageInterface->information("no intersection found");
         return;
       }
       new_point = *intersection_point;
@@ -1645,7 +1769,6 @@ private:
    *   2  |      0      | 2
    */
 
-  //! \todo check si ca marche dans les images en float
   int checkExtend(Kernel::Point_3& point)
   {
     bool is_in_x_bounds = false;
@@ -1684,11 +1807,6 @@ private:
 
     bool is_in_g_bounds = false;
     bool is_in_l_bounds = false;
-
-    /*static_cast<int>((std::max)(projGf[0],projGl[0]) - (std::min)(projGf[0],projGl[0]))
-    static_cast<int>((std::max)(projGf[1],projGl[1]) - (std::min)(projGf[1],projGl[1]))
-    static_cast<int>((std::max)(projLf[0],projLl[0]) - (std::min)(projLf[0],projLl[0]))
-    static_cast<int>((std::max)(projLf[1],projLl[1]) - (std::min)(projLf[1],projLl[1]))*/
 
     if(is_in_x_bounds)
     {
