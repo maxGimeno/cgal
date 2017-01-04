@@ -281,7 +281,8 @@ void
 Scene_polylines_item::compute_bbox() const {
     typedef K::Iso_cuboid_3 Iso_cuboid_3;
 
-    if(isEmpty())
+    if(isEmpty() ||
+       (polylines.size() == 1 && polylines.back().empty()))
     {
         _bbox =Bbox();
         return;
