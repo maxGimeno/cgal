@@ -1455,7 +1455,7 @@ private:
       }
       if(!intersection_point)
       {
-        messageInterface->information("no intersection found");
+        messageInterface->information("no intersection found ");
         return;
       }
       Kernel::Vector_3 trans(*intersection_point, point);
@@ -1484,13 +1484,14 @@ private:
           }
         }
       }
+      intersection_point = NULL;
       if ( o!=boost::none)
       {
         intersection_point = boost::get<Point_3>(&*o);
       }
       if(!intersection_point)
       {
-        messageInterface->information("no intersection found");
+        messageInterface->information("no intersection found ");
         return;
       }
       new_point = *intersection_point;
@@ -1550,7 +1551,7 @@ private:
       }
       if(!intersection_point)
       {
-        messageInterface->information("no intersection found");
+        messageInterface->information("no intersection found ");
         return;
       }
       Kernel::Vector_3 trans(*intersection_point, point);
@@ -1579,13 +1580,14 @@ private:
           }
         }
       }
+      intersection_point = NULL;
       if ( o!=boost::none)
       {
         intersection_point = boost::get<Point_3>(&*o);
       }
       if(!intersection_point)
       {
-        messageInterface->information("no intersection found");
+        messageInterface->information("no intersection found ");
         return;
       }
       new_point = *intersection_point;
