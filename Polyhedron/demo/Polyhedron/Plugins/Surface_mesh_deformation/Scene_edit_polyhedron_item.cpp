@@ -245,6 +245,9 @@ void Scene_edit_polyhedron_item_priv::initializeBuffers(CGAL::Three::Viewer_inte
         item->buffers[Facet_normals].release();
         item->vaos[Facets]->release();
         program->release();
+
+        if(offset.norm() !=0)
+          delete vertices;
     }
     //vao for the ROI points
     {   program = item->getShaderProgram(Scene_edit_polyhedron_item::PROGRAM_NO_SELECTION, viewer);
