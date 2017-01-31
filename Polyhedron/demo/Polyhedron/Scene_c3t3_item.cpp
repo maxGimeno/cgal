@@ -230,6 +230,7 @@ struct Scene_c3t3_item_priv {
     , data_item_(NULL)
     , histogram_()
     , indices_()
+    , is_valid(true)
   {
     init_default_values();
   }
@@ -239,6 +240,7 @@ struct Scene_c3t3_item_priv {
     , data_item_(NULL)
     , histogram_()
     , indices_()
+    , is_valid(true)
   {
     init_default_values();
   }
@@ -385,6 +387,7 @@ struct Scene_c3t3_item_priv {
   bool show_tetrahedra;
   bool is_aabb_tree_built;
   bool cnc_are_shown;
+  bool is_valid;
 };
 
 struct Set_show_tetrahedra {
@@ -1113,20 +1116,22 @@ QMenu* Scene_c3t3_item::contextMenu()
       SIGNAL(triggered()), this,
       SLOT(export_facets_in_complex()));
 
-    QAction* actionShowSpheres =
-      menu->addAction(tr("Show protecting &spheres"));
-    actionShowSpheres->setCheckable(true);
-    actionShowSpheres->setObjectName("actionShowSpheres");
-    connect(actionShowSpheres, SIGNAL(toggled(bool)),
-            this, SLOT(show_spheres(bool)));
+    if(is_valid())
+    {
+      QAction* actionShowSpheres =
+          menu->addAction(tr("Show protecting &spheres"));
+      actionShowSpheres->setCheckable(true);
+      actionShowSpheres->setObjectName("actionShowSpheres");
+      connect(actionShowSpheres, SIGNAL(toggled(bool)),
+              this, SLOT(show_spheres(bool)));
 
-    QAction* actionShowCNC =
-      menu->addAction(tr("Show cells not in complex"));
-    actionShowCNC->setCheckable(true);
-    actionShowCNC->setObjectName("actionShowCNC");
-    connect(actionShowCNC, SIGNAL(toggled(bool)),
-            this, SLOT(show_cnc(bool)));
-
+      QAction* actionShowCNC =
+          menu->addAction(tr("Show cells not in complex"));
+      actionShowCNC->setCheckable(true);
+      actionShowCNC->setObjectName("actionShowCNC");
+      connect(actionShowCNC, SIGNAL(toggled(bool)),
+              this, SLOT(show_cnc(bool)));
+    }
     QAction* actionShowTets =
       menu->addAction(tr("Show &tetrahedra"));
     actionShowTets->setCheckable(true);
@@ -1608,5 +1613,14 @@ void Scene_c3t3_item::copyProperties(Scene_item *item)
   show_cnc(c3t3_item->has_cnc());
 
   show_grid(c3t3_item->has_grid());
+}
+
+bool Scene_c3t3_item::is_valid() const
+{
+  return d->is_valid;
+}
+void Scene_c3t3_item::set_valid(bool b)
+{
+  d->is_valid = b;
 }
 #include "Scene_c3t3_item.moc"
