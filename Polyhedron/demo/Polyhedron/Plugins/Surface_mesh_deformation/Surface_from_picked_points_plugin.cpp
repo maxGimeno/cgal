@@ -1805,48 +1805,23 @@ private:
       is_in_y_bounds = true;
     }
 
-    bool is_in_g_bounds = false;
-    bool is_in_l_bounds = false;
+    if (is_in_x_bounds && is_in_y_bounds) return 3;
+    if (!is_in_x_bounds && !is_in_y_bounds) return 2;
 
-    if(is_in_x_bounds)
-    {
-      //if G is projected along X, the point is within g_bounds
-      if(static_cast<int>((std::max)(projGf[0],projGl[0]) - (std::min)(projGf[0],projGl[0])) > 0 )
-        is_in_g_bounds = true;
-      //else check G's y-bounds
-      else if(is_in_y_bounds)
-        is_in_g_bounds = true;
-      //if L is projected along X, the point is within l_bounds
-      if(static_cast<int>((std::max)(projLf[0],projLl[0]) - (std::min)(projLf[0],projLl[0])) > 0)
-        is_in_l_bounds = true;
-      //else check L's x-bounds
-      else if(is_in_y_bounds)
-        is_in_l_bounds = true;
-    }
-    if(is_in_y_bounds)
-    {
-      //if G is projected along Y, the point is within g_bounds
-      if(static_cast<int>((std::max)(projGf[1],projGl[1]) - (std::min)(projGf[1],projGl[1])) > 0)
-        is_in_g_bounds = true;
-      //else check G's x-bounds
-      else if(is_in_x_bounds)
-        is_in_g_bounds = true;
-      //if L is projected along Y, the point is within l_bounds
-      if(static_cast<int>((std::max)(projLf[1],projLl[1]) - (std::min)(projLf[1],projLl[1])) > 0)
-        is_in_l_bounds = true;
-      //else check L's x-bounds
-      else if(is_in_x_bounds)
-        is_in_l_bounds = true;
-    }
-    if(!is_in_g_bounds && is_in_l_bounds)
-      return 1;
-    if(is_in_g_bounds && !is_in_l_bounds)
-      return 0;
-    if(!is_in_g_bounds && !is_in_l_bounds)
-      return 2;
-    //if(is_in_g_bounds && is_in_l_bounds)
-    return 3;
+    bool genetrice_spans_in_x =
+      static_cast<int>((std::max)(projGf[0],projGl[0]) - (std::min)(projGf[0],projGl[0])) >
+      static_cast<int>((std::max)(projGf[1],projGl[1]) - (std::min)(projGf[1],projGl[1]));
 
+    CGAL_assertion( (static_cast<int>((std::max)(projLf[0],projLl[0]) - (std::min)(projLf[0],projLl[0])) >
+                     static_cast<int>((std::max)(projLf[1],projLl[1]) - (std::min)(projLf[1],projLl[1])))
+      != genetrice_spans_in_x );
+
+    if (!is_in_x_bounds)
+      return genetrice_spans_in_x ? 1:0;
+    
+    CGAL_assertion(!is_in_y_bounds);
+    
+    return genetrice_spans_in_x ? 0:1;
   }
 };
 
