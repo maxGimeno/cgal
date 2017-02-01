@@ -1748,13 +1748,7 @@ private:
 
   /*!
    * \brief checkExtend distinguishes the 3 cases when extending the surface
-   * \param point the new point
-   * \param projGf the projection of the first point of the generator in g_plane
-   * \param projGl the projection of the last point of the generator in g_plane
-   * \param projLf the projection of the first point of the leader in l_plane
-   * \param projLl the projection of the last point of the leader in l_plane
-   * \param g_plane the plane in which the generator was picked
-   * \param l_plane the plane in which the leader was picked
+   * \param p the new point
    * \return 0, 1 or 2
    *  2   |      0      | 2
    *___________________________
@@ -1769,59 +1763,58 @@ private:
    *   2  |      0      | 2
    */
 
-  int checkExtend(Kernel::Point_3& point)
+  int checkExtend(Kernel::Point_3& p)
   {
-    bool is_in_x_bounds = false;
-    bool is_in_y_bounds = false;
+    // The surface is generated using a generator and a leader that lie in two planes
+    // that are perpendicular. The way the surface is generated implies that is bounded
+    // in the third plane by two pairs of planes: one pair is parallel to the plane of the leader,
+    // and the other to the plane of the generator. We check where in which cell of the space
+    // divided by the four planes of the pairs `p` belongs.
 
     // find the third plane
     Kernel::Vector_3 normal = CGAL::cross_product(current_group->g_plane->orthogonal_vector(), current_group->l_plane->orthogonal_vector());
-    Kernel::Plane_3 plane(Point_3(0,0,0), normal);
-    //project the polylines extremities in the plane to find the coords range
-    Kernel::Point_2 projGf(plane.to_2d(current_group->generator_poly->polylines.back().front())),
-        projGl(plane.to_2d(current_group->generator_poly->polylines.back().back())),
-        projLf(plane.to_2d(current_group->leader_poly->polylines.back().front())),
-        projLl(plane.to_2d(current_group->leader_poly->polylines.back().back()));
-    double range[4]; // 0 = minX, 1=maxX, 2=minY, 3=maxY
-    range[0] = (std::min)((std::min)(projGf[0], projGl[0]), (std::min)(projLf[0], projLl[0]));
-    range[1] = (std::max)((std::max)(projGf[0], projGl[0]), (std::max)(projLf[0], projLl[0]));
-    range[2] = (std::min)((std::min)(projGf[1], projGl[1]), (std::min)(projLf[1], projLl[1]));
-    range[3] = (std::max)((std::max)(projGf[1], projGl[1]), (std::max)(projLf[1], projLl[1]));
 
-    //Project the picked point in the plane and check its position in the range
-    Kernel::Point_2 projP = plane.to_2d(point);
-    //first check
-    if(projP[0] >= range[0] &&
-       projP[0] <= range[1]  )
-    {
-      is_in_x_bounds = true;
-    }
+    const int proj_coord = normal.x()==1 ? 0 : normal.y()==1 ? 1:2;
+    const int X = (proj_coord+1)%3;
+    const int Y = (proj_coord+2)%3;
 
-    //second check
-    projP = plane.to_2d(point);
-    if(projP[1] >= range[2] &&
-       projP[1] <= range[3])
-    {
-      is_in_y_bounds = true;
-    }
+    // determine the coordinate range span by the surface
+    Kernel::Point_3 first_gen_pt = current_group->generator_poly->polylines.back().front();
+    Kernel::Point_3 last_gen_pt  = current_group->generator_poly->polylines.back().back();
+    Kernel::Point_3 first_lead_pt = current_group->leader_poly->polylines.back().front();
+    Kernel::Point_3 last_lead_pt  = current_group->leader_poly->polylines.back().back();
 
-    if (is_in_x_bounds && is_in_y_bounds) return 3;
-    if (!is_in_x_bounds && !is_in_y_bounds) return 2;
+    double range[4]; // 0 = min_X, 1=max_X, 2=min_Y, 3=max_Y
+    range[0] = (std::min)((std::min)(first_gen_pt[X], last_gen_pt[X]),
+                          (std::min)(first_lead_pt[X], last_lead_pt[X]));
+    range[1] = (std::max)((std::max)(first_gen_pt[X], last_gen_pt[X]),
+                          (std::max)(first_lead_pt[X], last_lead_pt[X]));
+    range[2] = (std::min)((std::min)(first_gen_pt[Y], last_gen_pt[Y]),
+                          (std::min)(first_lead_pt[Y], last_lead_pt[Y]));
+    range[3] = (std::max)((std::max)(first_gen_pt[Y], last_gen_pt[Y]),
+                          (std::max)(first_lead_pt[Y], last_lead_pt[Y]));
 
-    bool genetrice_spans_in_x =
-      static_cast<int>((std::max)(projGf[0],projGl[0]) - (std::min)(projGf[0],projGl[0])) >
-      static_cast<int>((std::max)(projGf[1],projGl[1]) - (std::min)(projGf[1],projGl[1]));
+    // check if `p` is in these ranges
+    bool is_in_X_bounds = p[X]>=range[0] && p[X]<=range[1];
+    bool is_in_Y_bounds = p[Y]>=range[2] && p[Y]<=range[3];
 
-    CGAL_assertion( (static_cast<int>((std::max)(projLf[0],projLl[0]) - (std::min)(projLf[0],projLl[0])) >
-                     static_cast<int>((std::max)(projLf[1],projLl[1]) - (std::min)(projLf[1],projLl[1])))
-      != genetrice_spans_in_x );
+    if (is_in_X_bounds && is_in_Y_bounds) return 3;
+    if (!is_in_X_bounds && !is_in_Y_bounds) return 2;
 
-    if (!is_in_x_bounds)
-      return genetrice_spans_in_x ? 1:0;
-    
-    CGAL_assertion(!is_in_y_bounds);
-    
-    return genetrice_spans_in_x ? 0:1;
+    bool genetrice_spans_X =
+      (std::max)(first_gen_pt[X],last_gen_pt[X]) - (std::min)(first_gen_pt[X],last_gen_pt[X]) >
+      (std::max)(first_gen_pt[Y],last_gen_pt[Y]) - (std::min)(first_gen_pt[Y],last_gen_pt[Y]);
+
+    CGAL_assertion( ((std::max)(first_lead_pt[X],last_lead_pt[X]) - (std::min)(first_lead_pt[X],last_lead_pt[X]) >
+                     (std::max)(first_lead_pt[Y],last_lead_pt[Y]) - (std::min)(first_lead_pt[Y],last_lead_pt[Y]))
+      != genetrice_spans_X );
+
+    if (!is_in_X_bounds)
+      return genetrice_spans_X ? 1:0;
+
+    CGAL_assertion(!is_in_Y_bounds);
+
+    return genetrice_spans_X ? 0:1;
   }
 };
 
