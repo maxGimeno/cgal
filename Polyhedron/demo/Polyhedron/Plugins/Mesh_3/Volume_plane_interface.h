@@ -1,6 +1,13 @@
 #ifndef CGAL_VOLUME_PLANE_INTERFACE_H_
 #define CGAL_VOLUME_PLANE_INTERFACE_H_
 
+#ifdef volume_plane_interface_EXPORTS
+#  define VOLUME_PLANE_INTERFACE_EXPORT Q_DECL_EXPORT
+#else
+#  define VOLUME_PLANE_INTERFACE_EXPORT Q_DECL_IMPORT
+#endif
+
+
 #include <QObject>
 #include <QAction>
 #include <QMenu>
@@ -10,6 +17,8 @@
 #include <CGAL/Three/Scene_item.h>
 #include <iostream>
 #include <QGLViewer/manipulatedFrame.h>
+
+
 using namespace CGAL::Three;
 class Volume_plane_interface : public Scene_item {
 Q_OBJECT
@@ -68,7 +77,8 @@ Q_SIGNALS:
   void planeDestructionIncoming(Volume_plane_interface*);
   void manipulated(int);
   void selected(CGAL::Three::Scene_item*);
-private Q_SLOTS:
+public Q_SLOTS:
+  virtual void do_reverse_colors(bool b) = 0;
   void propagateManipulation() {
     Q_EMIT manipulated(getCurrentCube());
   }

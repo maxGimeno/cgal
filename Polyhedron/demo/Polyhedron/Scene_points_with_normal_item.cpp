@@ -682,7 +682,10 @@ void Scene_points_with_normal_item::drawPoints(CGAL::Three::Viewer_interface* vi
       attribBuffers(viewer,PROGRAM_NO_SELECTION);
     }
     d->program->bind();
-    d->program->setAttributeValue("colors", QColor(255,0,0));
+    d->program->setAttributeValue("colors", QColor(
+                                    255 - color().red(),
+                                    255 - color().green(),
+                                    255 - color().blue()));
     viewer->glDrawArrays(GL_POINTS, 0,
                          static_cast<GLsizei>(((std::size_t)(ratio_displayed * d->nb_selected_points)/3)));
     vaos[Scene_points_with_normal_item_priv::Selected_points]->release();

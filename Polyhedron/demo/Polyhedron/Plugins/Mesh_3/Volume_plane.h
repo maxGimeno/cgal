@@ -92,7 +92,7 @@ public:
 
  void setData(unsigned int adim, unsigned int bdim, unsigned int cdim,
                  float xscale, float yscale, float zscale, std::vector<float>& colors);
-
+  void do_reverse_colors(bool b) {;are_colors_reversed = b;}
   virtual ~Volume_plane();
 
   Volume_plane* clone() const { return NULL; }
@@ -187,6 +187,7 @@ private:
   mutable std::vector< std::pair<QOpenGLBuffer, unsigned int> > ebos;
   mutable double sphere_radius;
   std::vector< float > colors_;
+  bool are_colors_reversed;
 
   QString name(x_tag) const { return tr("X Slice for %1").arg(name_); }
   QString name(y_tag) const { return tr("Y Slice for %2").arg(name_); }
@@ -347,10 +348,15 @@ const char* Volume_plane<T>::vertexShader_source =
       "attribute highp float color; \n"
       "uniform highp mat4 mvp_matrix; \n"
       "uniform highp mat4 f_matrix; \n"
+      "uniform int reverse;         \n "
       "varying highp vec4 fullColor; \n"
       "void main() \n"
       "{ gl_Position = mvp_matrix * f_matrix * vertex; \n"
-      " fullColor = vec4(color, color, color, 1.0); } \n";
+      "if(reverse == 0) \n"
+      "  fullColor = vec4(color, color, color, 1.0); \n"
+      "else \n"
+      "  fullColor = vec4(1.0-color, 1.0-color, 1.0-color, 1.0); } \n";
+
 
 template<typename T>
 const char* Volume_plane<T>::fragmentShader_source =
@@ -380,7 +386,8 @@ const char* Volume_plane<T>::fragmentShader_bordures_source =
 
 template<typename T>
 Volume_plane<T>::Volume_plane()
-  : Volume_plane_interface(new qglviewer::ManipulatedFrame)
+  : Volume_plane_interface(new qglviewer::ManipulatedFrame),
+    are_colors_reversed(false)
  {
     const qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first())->offset();
     mFrame_->setPosition(offset.x, offset.y, offset.z);
@@ -462,6 +469,10 @@ void Volume_plane<T>::draw(Viewer_interface *viewer) const {
   int mvpLoc = program.uniformLocation("mvp_matrix");
   int fLoc = program.uniformLocation("f_matrix");
   program.setUniformValue(mvpLoc, mvp);
+  if(are_colors_reversed)
+      program.setUniformValue("reverse",1);
+  else
+      program.setUniformValue("reverse",0);
   program.setUniformValue(fLoc, f);
   vVBO.bind();
   int vloc = program.attributeLocation("vertex");
@@ -532,7 +543,7 @@ void Volume_plane<T>::init() {
   int maxi, maxv;
   glGetIntegerv(GL_MAX_ELEMENTS_INDICES, &maxi);
   glGetIntegerv(GL_MAX_ELEMENTS_VERTICES, &maxv);
-  assert((vertices.size( ) / 3) < (unsigned int)maxi);
+  CGAL_warning_msg((vertices.size( ) / 3) < (unsigned int)maxi, "The image may be too large to be displayed exactly. There might be a loss of precision.");
   vVBO.create();
   vVBO.bind();
   vVBO.allocate(vertices.data(),static_cast<int>(sizeof(float) * vertices.size()));

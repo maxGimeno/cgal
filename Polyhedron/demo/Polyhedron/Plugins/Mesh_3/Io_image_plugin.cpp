@@ -204,8 +204,18 @@ class Io_image_plugin :
 
 public:
 
-  bool applicable(QAction*) const {
-    return qobject_cast<Scene_image_item*>(scene->item(scene->mainSelectionIndex()));
+  bool applicable(QAction*a) const {
+    if(a==actionReverseColors)
+    {
+      for(int i=0; i<scene->numberOfEntries(); ++i)
+      {
+        if(qobject_cast<Volume_plane_interface*>(scene->item(i)))
+          return true;
+      }
+      return false;
+    }
+    else
+      return qobject_cast<Scene_image_item*>(scene->item(scene->mainSelectionIndex()));
   }
 
 
@@ -214,6 +224,7 @@ public:
     this->scene = scene_interface;
     this->mw = mainWindow;
     this->is_gray = false;
+    this->reverse_colors = false;
     x_control = NULL;
     y_control = NULL;
     z_control = NULL;
@@ -229,6 +240,8 @@ public:
       connect(true_scene,SIGNAL(itemIndexSelected(int)),
               this, SLOT(connect_controls(int)));
     }
+    actionReverseColors = new QAction("Reverse Volume Planes Colors", mw);
+    connect(actionReverseColors, SIGNAL(triggered()), this, SLOT(do_reverse_colors()));
     Viewer_interface* v = mw->findChild<Viewer_interface*>("viewer");
     CGAL_assertion(v != 0);
     pxr_.setViewer(v);
@@ -263,7 +276,8 @@ public:
     }
   }
   QList<QAction*> actions() const {
-    return QList<QAction*>() << planeSwitch;
+    return QList<QAction*>() << planeSwitch
+                             << actionReverseColors;
   }
   virtual void closure()
   {
@@ -321,6 +335,18 @@ public Q_SLOTS:
     z_slider->sliderMoved(i);
 
   }
+
+  void do_reverse_colors() {reverse_colors = !reverse_colors;
+                            for(int i=0; i<scene->numberOfEntries(); ++i)
+                            {
+                              Volume_plane_interface* vpi = qobject_cast<Volume_plane_interface*>(scene->item(i));
+                              if(vpi)
+                              {
+                                vpi->do_reverse_colors(reverse_colors);
+                                vpi->itemChanged();
+                              }
+                            }
+                           }
 
   void on_imageType_changed(int index)
   {
@@ -491,9 +517,11 @@ private:
   vtkImageGaussianSmooth* smoother;
 #endif // CGAL_USE_VTK
   bool is_gray;
+  bool reverse_colors;
   Messages_interface* message_interface;
   QMessageBox msgBox;
   QAction* planeSwitch;
+  QAction* actionReverseColors;
   QWidget *x_control, *y_control, *z_control;
   QSlider *x_slider, *y_slider, *z_slider;
   QLineEdit*x_cubeLabel, *y_cubeLabel, *z_cubeLabel;
