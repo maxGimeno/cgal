@@ -874,13 +874,19 @@ private Q_SLOTS:
       if(current_group->operations_done.back() != 3)
         current_group->operations_redone.push_back(current_group->operations_done.back());
       current_group->operations_done.pop_back();
+      //If their stack is empty, disable the buttons.
       if(current_group->operations_done.size() == 0)
         ui_widget.UndoButton->setEnabled(false);
+      if(current_group->operations_redone.size() == 0)
+        ui_widget.redoButton->setEnabled(false);
     }
   }
 
   void redo()
   {
+    //secure the next calls. Should be useless but better safe than sorry.
+    if(current_group->operations_redone.size() == 0 )
+      return;
     ui_widget.UndoButton->setEnabled(true);
     if(mode == ADD_POLYLINE)
     {
