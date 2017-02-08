@@ -1779,8 +1779,8 @@ private:
 
     // find the third plane
     Kernel::Vector_3 normal = CGAL::cross_product(current_group->g_plane->orthogonal_vector(), current_group->l_plane->orthogonal_vector());
-
-    const int proj_coord = normal.x()==1 ? 0 : normal.y()==1 ? 1:2;
+    //use abs because the normal's coords are not always positive
+    const int proj_coord = std::abs(normal.x())==1 ? 0 : std::abs(normal.y())==1 ? 1:2;
     const int X = (proj_coord+1)%3;
     const int Y = (proj_coord+2)%3;
 
@@ -2032,7 +2032,6 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
       }
       case ADD_POINT_AND_DEFORM:
       {
-        ui_widget.UndoButton->setEnabled(true);
         typedef CGAL::AABB_halfedge_graph_segment_primitive<Polyhedron> HGSP;
         typedef CGAL::AABB_traits<Kernel, HGSP>                         AABB_traits;
         typedef CGAL::AABB_tree<AABB_traits>                            AABB_tree;
@@ -2040,7 +2039,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           return false;
         Kernel::Plane_3 plane;
         if(!find_plane(e,plane))
-          return false;
+          return false;ui_widget.UndoButton->setEnabled(true);
         //project point on plane
         if ( !plane.has_on(Point_3(point.x, point.y, point.z)))
         {
@@ -2160,9 +2159,11 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         }
         else
         {
+          int category = 0; //0 = classic control point, 1 = leader control point, 2 = generator control point
           int id = -1, i = 0;
           std::vector<Point_3> &l_poly = current_group->leader_poly->polylines.back();
           std::vector<Point_3> &g_poly = current_group->generator_poly->polylines.back();
+          //find the closest point
           Q_FOREACH(Point_3 cp, l_poly)
           {
             if(cp == sel_handle->point())
@@ -2174,11 +2175,14 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           }
           if(id>-1)
           {
+            category = 1;
             current_group->edit_points_stack.push_back(*(l_poly.begin()+id));
-            *(l_poly.begin()+id) = Point_3(point.x, point.y, point.z);
+            //project on l_plane to keep checkExtend working
+            Point_3 proj = current_group->l_plane->projection(Point_3(point.x, point.y, point.z));
+            *(l_poly.begin()+id) = Point_3(proj.x(), proj.y(), proj.z());
             current_group->edit_points_stack.push_back(*(l_poly.begin()+id));
-            current_group->edit_planes_stack.push_back(Kernel::Plane_3(1,1,1,0));
-            current_group->edit_planes_stack.push_back(Kernel::Plane_3(1,1,1,0));
+            current_group->edit_planes_stack.push_back(*current_group->l_plane);
+            current_group->edit_planes_stack.push_back(*current_group->l_plane);
             current_group->leader_poly->invalidateOpenGLBuffers();
             current_group->leader_poly->itemChanged();
           }
@@ -2196,11 +2200,14 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
             }
             if(id >-1)
             {
+              category = 2;
               current_group->edit_points_stack.push_back(*(g_poly.begin()+id));
-              *(g_poly.begin()+id) = Point_3(point.x, point.y, point.z);
+              //project on g_plane to keep checkExtend working
+              Point_3 proj = current_group->g_plane->projection(Point_3(point.x, point.y, point.z));
+              *(g_poly.begin()+id) = Point_3(proj.x(), proj.y(), proj.z());
               current_group->edit_points_stack.push_back(*(g_poly.begin()+id));
-              current_group->edit_planes_stack.push_back(Kernel::Plane_3(1,1,1,0));
-              current_group->edit_planes_stack.push_back(Kernel::Plane_3(1,1,1,0));
+              current_group->edit_planes_stack.push_back(*current_group->g_plane);
+              current_group->edit_planes_stack.push_back(*current_group->g_plane);
               current_group->generator_poly->invalidateOpenGLBuffers();
               current_group->generator_poly->itemChanged();
             }
@@ -2222,7 +2229,9 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
               current_group->control_points_planes[id] = plane;
               current_group->edit_planes_stack.push_back(current_group->control_points_planes[id]);
             }
-          }
+          }//end find closest point
+
+          //replace the selected point by the new picked one
           Point_set_3<Kernel>::iterator pit;
           for (pit = current_group->control_points_item->point_set()->begin();
                pit != current_group->control_points_item->point_set()->end();
@@ -2231,15 +2240,39 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
             if(current_group->control_points_item->point_set()->point(*pit) == sel_handle->point())
             {
               current_group->control_points_item->point_set()->delete_selection();
-              current_group->control_points_item->point_set()->insert(Point_3(point.x, point.y, point.z));
+              switch(category)
+              {
+              case 1:
+              {
+                //project on l_plane to keep checkExtend working
+                Point_3 proj = current_group->l_plane->projection(Point_3(point.x, point.y, point.z));
+                current_group->control_points_item->point_set()->insert(Point_3(proj.x(), proj.y(), proj.z()));
+                sel_handle->point() = Point_3(proj.x(), proj.y(), proj.z());
+                break;
+              }
+              case 2:
+              {
+                //project on g_plane to keep checkExtend working
+                Point_3 proj = current_group->g_plane->projection(Point_3(point.x, point.y, point.z));
+                current_group->control_points_item->point_set()->insert(Point_3(proj.x(), proj.y(), proj.z()));
+                sel_handle->point() = Point_3(proj.x(), proj.y(), proj.z());
+                break;
+              }
+              default:
+                current_group->control_points_item->point_set()->insert(Point_3(point.x, point.y, point.z));
+                sel_handle->point() = Point_3(point.x, point.y, point.z);
+                current_group->operations_done.push_back(2);
+                break;
+              }
               break;
             }
           }
 
-          sel_handle->point() = Point_3(point.x, point.y, point.z);
           is_editing = false;
+          if(current_group->operations_done.empty())
+            ui_widget.UndoButton->setEnabled(false);
+          //reconstruct the surface
           minEnergy();
-          current_group->operations_done.push_back(2);
         }
         current_group->control_points_item->invalidateOpenGLBuffers();
         current_group->control_points_item->itemChanged();
