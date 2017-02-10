@@ -32,6 +32,14 @@
 
 #include <CGAL/jet_smooth_point_set.h>
 
+template <class PointOrVector>
+void set_coordinate(PointOrVector& pov, int coord, double value)
+{
+    double coords[] = {pov[0], pov[1], pov[2]};
+    coords[coord]=value;
+    pov=PointOrVector(coords[0], coords[1], coords[2]);
+}
+
 // Concurrency
 #ifdef CGAL_LINKED_WITH_TBB
 typedef CGAL::Parallel_tag Concurrency_tag;
@@ -44,7 +52,7 @@ typedef CGAL::Surface_mesh_deformation<Polyhedron> Surface_mesh_deformation;
 // A modifier creating a Polyhedron with the incremental builder.
 template <class HDS>
 class Build_polyhedron : public CGAL::Modifier_base<HDS> {
-  std::vector<Point_3> points;
+  const std::vector<Point_3>& points;
   int size_generator;
   int size_leader;
 public:
@@ -166,6 +174,89 @@ public Q_SLOTS:
   }
 };
 
+struct Border_vertex_reprojector
+{
+  typedef Polyhedron::Vertex_handle Vertex_handle;
+
+  std::vector<Vertex_handle> back_g_border;
+  std::vector<Vertex_handle> front_g_border;
+  std::vector<Vertex_handle> back_l_border;
+  std::vector<Vertex_handle> front_l_border;
+  const int G;
+  const int L;
+  const double front_G_coord;
+  const double back_G_coord;
+  const double front_L_coord;
+  const double back_L_coord;
+
+
+  // collect vertices on the border of the surface and dispatch them
+  // according to which extreme they are. This is used to make sure the
+  // 2D projection after deformation does not change
+  Border_vertex_reprojector(Polyhedron& polyhedron,
+                            const Kernel::Plane_3& g_plane,
+                            const Kernel::Plane_3& l_plane,
+                            const std::vector<Kernel::Point_3>& g_polyline,
+                            const std::vector<Kernel::Point_3>& l_polyline)
+    : G(g_plane.orthogonal_vector()[0]==1?0:g_plane.orthogonal_vector()[1]==1?1:2)
+    , L(l_plane.orthogonal_vector()[0]==1?0:l_plane.orthogonal_vector()[1]==1?1:2)
+    , front_G_coord(l_polyline.front()[G])
+    , back_G_coord(l_polyline.back()[G])
+    , front_L_coord(g_polyline.front()[L])
+    , back_L_coord(g_polyline.back()[L])
+  {
+    polyhedron.normalize_border();
+
+    for(Polyhedron::Edge_iterator hit = polyhedron.border_edges_begin();
+      hit != polyhedron.halfedges_end();
+      ++hit)
+    {
+      Polyhedron::Halfedge_handle h = hit;
+      if (!h->is_border()) h=h->opposite();
+      const Kernel::Point_3& pt = h->vertex()->point();
+      bool catched = false;
+
+      if ( pt[G]==back_G_coord)
+      {
+        back_g_border.push_back(h->vertex());
+        catched=true;
+      }
+      else
+        if ( pt[G]==front_G_coord)
+        {
+          front_g_border.push_back(h->vertex());
+          catched=true;
+        }
+      if ( pt[L]==back_L_coord)
+      {
+        back_l_border.push_back(h->vertex());
+        catched=true;
+      }
+      else
+        if ( pt[L]==front_L_coord)
+        {
+          front_l_border.push_back(h->vertex());
+          catched=true;
+        }
+      if (!catched)
+        std::cerr<< "WARNING: boundary point " << pt << " not attached\n";
+    }
+  }
+
+  // force the border to stay on the extreme planes bounding the surface
+  void reproject()
+  {
+    BOOST_FOREACH(Vertex_handle vh, back_g_border)
+      set_coordinate(vh->point(), G, back_G_coord);
+    BOOST_FOREACH(Vertex_handle vh, front_g_border)
+      set_coordinate(vh->point(), G, front_G_coord);
+    BOOST_FOREACH(Vertex_handle vh, back_l_border)
+      set_coordinate(vh->point(), L, back_L_coord);
+    BOOST_FOREACH(Vertex_handle vh, front_l_border)
+      set_coordinate(vh->point(), L, front_L_coord);
+  }
+};
+
 class SurfaceFromPickedPointsPlugin :
     public QObject,
     public CGAL::Three::Polyhedron_demo_plugin_helper
@@ -242,6 +333,7 @@ public:
     is_selecting = false;
   }
   bool eventFilter(QObject *, QEvent *event);
+
 private Q_SLOTS:
   void pick()
   {
@@ -265,9 +357,17 @@ private Q_SLOTS:
         to_save.push_back(vh->point());
     }
 
+    // collect and sort border vertices
+    Border_vertex_reprojector reproj(*polyhedron,
+      *current_group->g_plane, *current_group->l_plane,
+      current_group->generator_poly->polylines.back(), current_group->leader_poly->polylines.back());
+
     CGAL::jet_smooth_point_set<Concurrency_tag>(vertices(*polyhedron).first, vertices(*polyhedron).second,
                                                 get(CGAL::vertex_point, *polyhedron),
                                                 24, Kernel());
+    // force the border to stay on the extreme planes bounding the surface
+    reproj.reproject();
+
     int id =-1;
     BOOST_FOREACH(Polyhedron::Vertex_handle vh, vertices(*polyhedron))
     {
@@ -448,9 +548,15 @@ private Q_SLOTS:
     current_group->leader_poly->invalidateOpenGLBuffers();
     current_group->leader_poly->itemChanged();
     //compute the points
+
+    const Kernel::Vector_3 g_vector = current_group->g_plane->orthogonal_vector();
+    const int G = g_vector[0]==1?0:g_vector[1]==1?1:2;
+
     for(std::size_t i=0; i< g_polyline.size(); ++i)
     {
       Kernel::Vector_3 offset = g_polyline[i]-p;
+      set_coordinate(offset, G, 0); // make sure that points have an identical coordinate after the translation
+
       for(std::size_t j=0; j<l_polyline.size(); ++j)
       {
         if(j==static_cast<std::size_t>(current_group->l_id))
@@ -1315,13 +1421,17 @@ private Q_SLOTS:
 
     Surface_mesh_deformation deform_mesh(*polyhedron);
     //Define the ROI
-    polyhedron->normalize_border();
     for(Polyhedron::Vertex_iterator vit = polyhedron->vertices_begin();
         vit != polyhedron->vertices_end();
         ++vit)
     {
       deform_mesh.insert_roi_vertex(vit);
     }
+    // collect and dispatch border vertices
+    Border_vertex_reprojector reproj(*polyhedron,
+      *current_group->g_plane, *current_group->l_plane,
+      current_group->generator_poly->polylines.back(), current_group->leader_poly->polylines.back());
+
     //add the control points
     deform_mesh.insert_control_vertices(current_group->control_points.begin(), current_group->control_points.end());
     //deform
@@ -1337,6 +1447,9 @@ private Q_SLOTS:
       deform_mesh.set_target_position(current_group->control_points[ctrl_id++], constrained_pos);
     }
     deform_mesh.deform(100, 1e-8);
+
+    // force the border to stay on the extreme planes bounding the surface
+    reproj.reproject();
 
     current_group->surface->invalidateOpenGLBuffers();
     current_group->surface->itemChanged();
@@ -1422,6 +1535,8 @@ private:
   bool is_selecting;
   std::vector<SurfaceGroup*> surface_groups;
   bool find_plane(QMouseEvent* e, Kernel::Plane_3& plane);
+  void project_on_plane(QMouseEvent* e, qglviewer::Vec& point);
+  void project_on_plane(const Kernel::Plane_3& plane, qglviewer::Vec& point);
   std::vector<int> hidden_planes;
 
   void extendSurface(const qglviewer::Vec& p, int checked)
@@ -1851,6 +1966,33 @@ bool SurfaceFromPickedPointsPlugin::find_plane(QMouseEvent* e, Kernel::Plane_3& 
   return true;
 }
 
+
+void SurfaceFromPickedPointsPlugin::project_on_plane(const Kernel::Plane_3& plane, qglviewer::Vec& point)
+{
+  QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
+  qglviewer::Vec pos = viewer->camera()->position();
+  Kernel::Line_3 ray(Point_3(pos.x, pos.y, pos.z), Point_3(point.x, point.y, point.z));
+  Point_3 res = boost::get<Point_3>(*intersection(plane, ray));
+  point = qglviewer::Vec(res.x(), res.y(), res.z());
+  Kernel::Vector_3 v = plane.orthogonal_vector();
+  if ( v[0]==1 )
+    point[0] = -plane.d();
+  else
+  {
+    if ( v[1]==1 )
+      point[1] = -plane.d();
+    else
+      point[2] = -plane.d();
+  }
+}
+
+void SurfaceFromPickedPointsPlugin::project_on_plane(QMouseEvent* e, qglviewer::Vec& point)
+{
+  Kernel::Plane_3 plane;
+  find_plane(e, plane);
+  project_on_plane(plane, point);
+}
+
 bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
 {
   if (mode == IDLE)
@@ -1961,17 +2103,9 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
               return false;
             }
           }
-          else
-          {
-            //project point on plane
-            if ( !current_group->g_plane->has_on(Point_3(point.x, point.y, point.z)))
-            {
-              qglviewer::Vec pos = viewer->camera()->position();
-              Kernel::Line_3 ray(Point_3(pos.x, pos.y, pos.z), Point_3(point.x, point.y, point.z));
-              Point_3 res = boost::get<Point_3>(*intersection(*current_group->g_plane, ray));
-              point = qglviewer::Vec(res.x(), res.y(), res.z());
-            }
-          }
+          //project point on plane
+          project_on_plane(*current_group->g_plane, point);
+
           if(current_group->generator_poly->polylines.back().size() >=1)
             ui_widget.newPolylineButton->setEnabled(true);
         }
@@ -1988,17 +2122,9 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
               return false;
             }
           }
-          else
-          {
-            //project point on plane
-            if ( !current_group->l_plane->has_on(Point_3(point.x, point.y, point.z)))
-            {
-              qglviewer::Vec pos = viewer->camera()->position();
-              Kernel::Line_3 ray(Point_3(pos.x, pos.y, pos.z), Point_3(point.x, point.y, point.z));
-              Point_3 res = boost::get<Point_3>(*intersection(*current_group->l_plane, ray));
-              point = qglviewer::Vec(res.x(), res.y(), res.z());
-            }
-          }
+          //project point on plane
+          project_on_plane(*current_group->l_plane, point);
+
           if(current_group->leader_poly->polylines.back().size() >=1)
             ui_widget.createSurfaceButton->setEnabled(true);
         }
@@ -2041,13 +2167,8 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         if(!find_plane(e,plane))
           return false;ui_widget.UndoButton->setEnabled(true);
         //project point on plane
-        if ( !plane.has_on(Point_3(point.x, point.y, point.z)))
-        {
-          qglviewer::Vec pos = viewer->camera()->position();
-          Kernel::Line_3 ray(Point_3(pos.x, pos.y, pos.z), Point_3(point.x, point.y, point.z));
-          Point_3 res = boost::get<Point_3>(*intersection(plane, ray));
-          point = qglviewer::Vec(res.x(), res.y(), res.z());
-        }
+        project_on_plane(e, point);
+
         Polyhedron &polyhedron = *current_group->surface->polyhedron();
         // Init the indices of the halfedges and the vertices.
         set_halfedgeds_items_id(polyhedron);
@@ -2136,6 +2257,12 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           {
             deform_mesh.insert_roi_vertex(vit);
           }
+
+          Border_vertex_reprojector reproj(polyhedron,
+            *current_group->g_plane, *current_group->l_plane,
+            current_group->generator_poly->polylines.back(), current_group->leader_poly->polylines.back());
+
+
           current_group->control_points.push_back(center->vertex());
           //add the control points
           deform_mesh.insert_control_vertices(current_group->control_points.begin(), current_group->control_points.end());
@@ -2151,6 +2278,9 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           deform_mesh.set_target_position(target(center, polyhedron), constrained_pos);
           deform_mesh.deform(3, 1e-4);
           //update the item
+
+          // force the border to stay on the extreme planes bounding the surface
+          reproj.reproject();
 
           current_group->control_points_item->point_set()->insert(constrained_pos);
           current_group->surface->invalidateOpenGLBuffers();
