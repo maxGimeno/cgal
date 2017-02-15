@@ -1533,7 +1533,6 @@ private:
   bool is_selecting;
   std::vector<SurfaceGroup*> surface_groups;
   bool find_plane(QMouseEvent* e, Kernel::Plane_3& plane);
-  void project_on_plane(QMouseEvent* e, qglviewer::Vec& point);
   void project_on_plane(const Kernel::Plane_3& plane, qglviewer::Vec& point);
   std::vector<int> hidden_planes;
 
@@ -1545,6 +1544,12 @@ private:
     Point_3 point(p.x, p.y, p.z);
     std::vector<Point_3>& l_polyline = current_group->leader_poly->polylines.back();
     std::vector<Point_3>& g_polyline = current_group->generator_poly->polylines.back();
+
+    int G = current_group->g_plane->orthogonal_vector()[0]==1?
+      0:current_group->g_plane->orthogonal_vector()[1]==1?1:2;
+    int L = current_group->l_plane->orthogonal_vector()[0]==1?
+      0:current_group->l_plane->orthogonal_vector()[1]==1?1:2;
+
     //append to leader
     if(checked !=1)
     {
@@ -1679,6 +1684,9 @@ private:
         return;
       }
       new_point = *intersection_point;
+
+      // force the intersection point to be in l_plane
+      set_coordinate(new_point, L, l_polyline[0][L]);
       double dist = Kernel::Vector_3(l_polyline.front(), point).squared_length();
       if(Kernel::Vector_3(l_polyline.back(), point).squared_length() > dist)
       {
@@ -1840,7 +1848,8 @@ private:
       }
       new_point = *intersection_point;
 
-
+      // force the intersection point to be in g_plane
+      set_coordinate(new_point, G, g_polyline[0][G]);
       double dist = Kernel::Vector_3(g_polyline.front(), point).squared_length();
       if(Kernel::Vector_3(g_polyline.back(), point).squared_length() > dist)
       {
@@ -1987,13 +1996,6 @@ void SurfaceFromPickedPointsPlugin::project_on_plane(const Kernel::Plane_3& plan
     else
       point[2] = -plane.d();
   }
-}
-
-void SurfaceFromPickedPointsPlugin::project_on_plane(QMouseEvent* e, qglviewer::Vec& point)
-{
-  Kernel::Plane_3 plane;
-  find_plane(e, plane);
-  project_on_plane(plane, point);
 }
 
 bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
