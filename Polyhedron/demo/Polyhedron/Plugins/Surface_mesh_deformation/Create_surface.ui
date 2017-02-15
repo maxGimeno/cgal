@@ -121,7 +121,7 @@ p, li { white-space: pre-wrap; }
        </widget>
       </item>
       <item row="3" column="0">
-       <widget class="QPushButton" name="UndoButton">
+       <widget class="QPushButton" name="undoButton">
         <property name="text">
          <string>Undo</string>
         </property>

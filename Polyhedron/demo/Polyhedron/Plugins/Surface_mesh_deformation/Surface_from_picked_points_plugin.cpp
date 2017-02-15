@@ -305,7 +305,7 @@ public:
             this, &SurfaceFromPickedPointsPlugin::add_polyline);
     connect(ui_widget.finishButton, &QPushButton::clicked,
             this, &SurfaceFromPickedPointsPlugin::finish);
-    connect(ui_widget.UndoButton, &QPushButton::clicked,
+    connect(ui_widget.undoButton, &QPushButton::clicked,
             this, &SurfaceFromPickedPointsPlugin::cancel);
     connect(ui_widget.redoButton, &QPushButton::clicked,
             this, &SurfaceFromPickedPointsPlugin::redo);
@@ -324,7 +324,7 @@ public:
     mw->installEventFilter(this);
     addDockWidget(dock_widget);
     mode = IDLE;
-    ui_widget.UndoButton->setEnabled(false);
+    ui_widget.undoButton->setEnabled(false);
     ui_widget.redoButton->setEnabled(false);
     ui_widget.edgeSpinBox->setEnabled(false);
     ui_widget.regenButton->setEnabled(false);
@@ -383,7 +383,7 @@ private Q_SLOTS:
   }
   void add_polyline()
   {
-    ui_widget.UndoButton->setEnabled(false);
+    ui_widget.undoButton->setEnabled(false);
     mode = ADD_POLYLINE;
     Q_FOREACH(int id, hidden_planes)
     {
@@ -444,7 +444,7 @@ private Q_SLOTS:
     }
     hidden_planes.clear();
     mode = ADD_POINT_AND_DEFORM;
-    ui_widget.UndoButton->setEnabled(false);
+    ui_widget.undoButton->setEnabled(false);
     clear_redo();
     current_group->operations_done.clear();
     //create points
@@ -641,7 +641,7 @@ private Q_SLOTS:
   void finish()
   {
     mode = IDLE;
-    ui_widget.UndoButton->setEnabled(false);
+    ui_widget.undoButton->setEnabled(false);
     ui_widget.createSurfaceButton->setEnabled(false);
     ui_widget.regenButton->setEnabled(false);
     ui_widget.smoothButton->setEnabled(false);
@@ -714,7 +714,8 @@ private Q_SLOTS:
           delete current_group->l_plane;
           current_group->l_plane = NULL;
         }
-        ui_widget.redoButton->setEnabled(false);
+        //ui_widget.redoButton->setEnabled(false);
+        ui_widget.undoButton->setEnabled(false);
       }
     }
     else if(mode == ADD_POINT_AND_DEFORM)
@@ -983,7 +984,7 @@ private Q_SLOTS:
       current_group->operations_done.pop_back();
       //If their stack is empty, disable the buttons.
       if(current_group->operations_done.size() == 0)
-        ui_widget.UndoButton->setEnabled(false);
+        ui_widget.undoButton->setEnabled(false);
       if(current_group->operations_redone.size() == 0)
         ui_widget.redoButton->setEnabled(false);
     }
@@ -991,10 +992,8 @@ private Q_SLOTS:
 
   void redo()
   {
-    //secure the next calls. Should be useless but better safe than sorry.
-    if(current_group->operations_redone.size() == 0 )
-      return;
-    ui_widget.UndoButton->setEnabled(true);
+
+    ui_widget.undoButton->setEnabled(true);
     if(mode == ADD_POLYLINE)
     {
       if(current_group->points_stack.size() == 0)
@@ -2034,12 +2033,12 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
       if(is_selecting)
       {
         if(mode != ADD_POINT_AND_DEFORM)
-          //return false;
+        {
           if(object == mw)
           {
             viewer->setFocus();
-            //return false;
           }
+        }
         Point_3 p(point.x, point.y, point.z);
         double min_dist = -1;
         Q_FOREACH(Polyhedron::Vertex_handle vh, current_group->control_points)
@@ -2091,7 +2090,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
       case ADD_POLYLINE:
       {
         clear_redo();
-        ui_widget.UndoButton->setEnabled(true);
+        ui_widget.undoButton->setEnabled(true);
         Scene_polylines_item* current_polyline = NULL;
         QDoubleSpinBox* current_spin = ui_widget.edgeSpinBox;
         if(current_group->generator_is_created)
@@ -2170,7 +2169,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         Kernel::Plane_3 plane;
         if(!find_plane(e,plane))
           return false;
-        ui_widget.UndoButton->setEnabled(true);
+        ui_widget.undoButton->setEnabled(true);
         //project point on plane
         project_on_plane(plane, point);
 
@@ -2428,6 +2427,10 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
                 Point_3 proj = current_group->l_plane->projection(Point_3(point.x, point.y, point.z));
                 current_group->control_points_item->point_set()->insert(Point_3(proj.x(), proj.y(), proj.z()));
                 sel_handle->point() = Point_3(proj.x(), proj.y(), proj.z());
+                current_group->operations_done.clear();
+                current_group->operations_redone.clear();
+                ui_widget.undoButton->setEnabled(false);
+                ui_widget.redoButton->setEnabled(false);
                 break;
               }
               case 2:
@@ -2436,6 +2439,10 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
                 Point_3 proj = current_group->g_plane->projection(Point_3(point.x, point.y, point.z));
                 current_group->control_points_item->point_set()->insert(Point_3(proj.x(), proj.y(), proj.z()));
                 sel_handle->point() = Point_3(proj.x(), proj.y(), proj.z());
+                current_group->operations_done.clear();
+                current_group->operations_redone.clear();
+                ui_widget.undoButton->setEnabled(false);
+                ui_widget.redoButton->setEnabled(false);
                 break;
               }
               default:
@@ -2450,7 +2457,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
 
           is_editing = false;
           if(current_group->operations_done.empty())
-            ui_widget.UndoButton->setEnabled(false);
+            ui_widget.undoButton->setEnabled(false);
           //reconstruct the surface
           minEnergy();
         }
