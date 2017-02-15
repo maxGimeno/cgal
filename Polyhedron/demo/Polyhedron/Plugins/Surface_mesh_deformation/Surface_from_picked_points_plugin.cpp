@@ -1556,6 +1556,8 @@ private:
       //translate l_plane to point
       Kernel::Plane_3 t_l_plane(point, current_group->l_plane->orthogonal_vector());
 
+      Point_3 *intersection_point = NULL;
+
       //get intersection between generator and t_l_plane
       CGAL::Oriented_side first_side= t_l_plane.oriented_side(g_polyline[0]);
       boost::optional<boost::variant<Point_3, Kernel::Segment_3, Kernel::Line_3> > o;
@@ -1568,6 +1570,8 @@ private:
           if(t_l_plane.oriented_side(g_polyline[i]) != CGAL::ON_ORIENTED_BOUNDARY)
             o = intersection(
                   Kernel::Segment_3(g_polyline[i-1], g_polyline[i]),t_l_plane);
+          else
+            intersection_point = &g_polyline[i];
           found = true;
           break;
         }
@@ -1602,7 +1606,6 @@ private:
         }
       }
 
-      Point_3 *intersection_point = NULL;
       if ( o!=boost::none)
       {
         intersection_point = boost::get<Point_3>(&*o);
@@ -1712,6 +1715,7 @@ private:
       Kernel::Plane_3 t_g_plane(point, current_group->g_plane->orthogonal_vector());
 
       //get intersection between leader and t_g_plane
+      Point_3 *intersection_point = NULL;
       CGAL::Oriented_side first_side= t_g_plane.oriented_side(l_polyline[0]);
       boost::optional<boost::variant<Point_3, Kernel::Segment_3, Kernel::Line_3> > o;
       bool found = false;
@@ -1723,6 +1727,8 @@ private:
           if(t_g_plane.oriented_side(l_polyline[i]) != CGAL::ON_ORIENTED_BOUNDARY)
             o = intersection(
                   Kernel::Segment_3(l_polyline[i-1], l_polyline[i]),t_g_plane);
+          else
+            intersection_point = &l_polyline[i];
           found = true;
           break;
         }
@@ -1758,7 +1764,6 @@ private:
         }
       }
 
-      Point_3 *intersection_point = NULL;
       if ( o!=boost::none)
       {
         intersection_point = boost::get<Point_3>(&*o);
