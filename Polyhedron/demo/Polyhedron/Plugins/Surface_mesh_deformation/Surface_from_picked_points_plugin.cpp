@@ -155,6 +155,7 @@ public:
   double min_dist;
   double last_remesh;
   std::vector<Polyhedron::Vertex_handle > control_points;
+  Vertex_set control_point_set;
   Kernel::Plane_3* l_plane;
   Kernel::Plane_3* g_plane;
   int control_limit, g_id, l_id;
@@ -346,14 +347,11 @@ private Q_SLOTS:
   void smooth()
   {
     Polyhedron* polyhedron = current_group->surface->polyhedron();
-    Vertex_set is_constrained_set;
-    Q_FOREACH(Polyhedron::Vertex_handle vh, current_group->control_points)
-      is_constrained_set.insert(vh);
     std::vector<Point_3> to_save;
     to_save.reserve(current_group->control_points.size());
     BOOST_FOREACH(Polyhedron::Vertex_handle vh, vertices(*polyhedron))
     {
-      if(is_constrained_set.count(vh) == 1)
+      if(current_group->control_point_set.count(vh) == 1)
         to_save.push_back(vh->point());
     }
 
@@ -371,7 +369,7 @@ private Q_SLOTS:
     int id =-1;
     BOOST_FOREACH(Polyhedron::Vertex_handle vh, vertices(*polyhedron))
     {
-      if(is_constrained_set.count(vh) == 1)
+      if(current_group->control_point_set.count(vh) == 1)
         vh->point() = to_save[++id];
     }
 
@@ -605,6 +603,7 @@ private Q_SLOTS:
         if(vit->point() == p)
         {
           current_group->control_points.push_back(vit);
+          current_group->control_point_set.insert(vit);
           control_pos.erase(control_pos.begin()+i);
           break;
         }
@@ -729,6 +728,7 @@ private Q_SLOTS:
         {
           if(vh->point() == current_group->ordered_control_points.back())
           {
+            current_group->control_point_set.erase(*(current_group->control_points.begin()+i));
             current_group->control_points.erase(current_group->control_points.begin()+i);
             break;
           }
@@ -758,6 +758,7 @@ private Q_SLOTS:
         {
           if(vit->point() == point)
           {
+            current_group->control_point_set.insert(vit);
             current_group->control_points.push_back(vit);
             break;
           }
@@ -1042,6 +1043,7 @@ private Q_SLOTS:
         {
           if(vit->point() == point)
           {
+            current_group->control_point_set.insert(vit);
             current_group->control_points.push_back(vit);
             break;
           }
@@ -1062,6 +1064,7 @@ private Q_SLOTS:
         {
           if(vh->point() == current_group->ordered_control_points.back())
           {
+            current_group->control_point_set.erase(*(current_group->control_points.begin()+i));
             current_group->control_points.erase(current_group->control_points.begin()+i);
             break;
           }
@@ -1238,18 +1241,15 @@ private Q_SLOTS:
     if(current_group->edgeSize == 0)
       return;
     Polyhedron* poly = current_group->surface->polyhedron();
-    Vertex_set is_constrained_set;
-    Q_FOREACH(Polyhedron::Vertex_handle vh, current_group->control_points)
-      is_constrained_set.insert(vh);
 
-    Is_constrained_map vcm(&is_constrained_set);
+    Is_constrained_map vcm(&current_group->control_point_set);
     CGAL::Polygon_mesh_processing::isotropic_remeshing(faces(*poly),
                                                        current_group->edgeSize,
                                                        *poly,
                                                        CGAL::Polygon_mesh_processing::parameters::vertex_is_constrained_map(vcm)
                                                        .number_of_relaxation_steps(100));
     current_group->control_points.clear();
-    Q_FOREACH(Polyhedron::Vertex_handle vh, is_constrained_set)
+    Q_FOREACH(Polyhedron::Vertex_handle vh, current_group->control_point_set)
       current_group->control_points.push_back(vh);
 
     current_group->surface->invalidateOpenGLBuffers();
@@ -1309,6 +1309,7 @@ private Q_SLOTS:
         if(vit->point() == p)
         {
           current_group->control_points.push_back(vit);
+          current_group->control_point_set.insert(vit);
           control_pos.erase(control_pos.begin()+i);
           break;
         }
@@ -1320,18 +1321,14 @@ private Q_SLOTS:
     //remesh
     if(current_group->last_remesh > 0)
     {
-      Vertex_set is_constrained_set;
-      Q_FOREACH(Polyhedron::Vertex_handle vh, current_group->control_points)
-        is_constrained_set.insert(vh);
-
-      Is_constrained_map vcm(&is_constrained_set);
+      Is_constrained_map vcm(&current_group->control_point_set);
       CGAL::Polygon_mesh_processing::isotropic_remeshing(faces(*polyhedron),
                                                          current_group->last_remesh,
                                                          *polyhedron,
                                                          CGAL::Polygon_mesh_processing::parameters::vertex_is_constrained_map(vcm));
 
       current_group->control_points.clear();
-      Q_FOREACH(Polyhedron::Vertex_handle vh, is_constrained_set)
+      Q_FOREACH(Polyhedron::Vertex_handle vh, current_group->control_point_set)
         current_group->control_points.push_back(vh);
     }
     //deform
@@ -1352,6 +1349,7 @@ private Q_SLOTS:
         messageInterface->warning("An error has occured.");
         std::pair<Point_3, AABB_tree::Primitive_id> res=tree.closest_point_and_primitive(ctrl_p);
         current_group->control_points.push_back(CGAL::Euler::split_edge(halfedge(res.second, *polyhedron), *polyhedron)->vertex());
+        current_group->control_point_set.insert(current_group->control_points.back());
         current_group->control_points.back()->point() = res.first;
         continue;
       }
@@ -1415,6 +1413,7 @@ private Q_SLOTS:
       Polyhedron::Halfedge_handle center = CGAL::Euler::add_center_vertex(closest_triangle->facet_begin(), *polyhedron);
       center->vertex()->point() = Point_3(x/3.0, y/3.0, z/3.0);
       current_group->control_points.push_back(center->vertex());
+      current_group->control_point_set.insert(current_group->control_points.back());
     }
     // Init the indices of the halfedges and the vertices.
     set_halfedgeds_items_id(*polyhedron);
@@ -2269,6 +2268,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
 
 
           current_group->control_points.push_back(center->vertex());
+          current_group->control_point_set.insert(center->vertex());
           //add the control points
           deform_mesh.insert_control_vertices(current_group->control_points.begin(), current_group->control_points.end());
           //deform
@@ -2493,6 +2493,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         }
         ++i;
       }
+      current_group->control_point_set.erase(*(current_group->control_points.begin()+save_id));
       current_group->control_points.erase(current_group->control_points.begin()+save_id);
       current_group->repoints_stack.push_back(*(current_group->ordered_control_points.begin()+id));
       current_group->ordered_control_points.erase(current_group->ordered_control_points.begin()+id);
