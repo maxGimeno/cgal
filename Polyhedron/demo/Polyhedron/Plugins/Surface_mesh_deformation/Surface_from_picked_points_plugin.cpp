@@ -1331,88 +1331,17 @@ private Q_SLOTS:
         current_group->control_points.push_back(vh);
     }
     //deform
-    typedef CGAL::AABB_halfedge_graph_segment_primitive<Polyhedron> HGSP;
-    typedef CGAL::AABB_traits<Kernel, HGSP>                         AABB_traits;
-    typedef CGAL::AABB_tree<AABB_traits>                            AABB_tree;
     //Slice the Polyhedron along the picked plane
     int plane_id = 0;
     Q_FOREACH(Point_3 ctrl_p, current_group->ordered_control_points)
     {
       Kernel::Plane_3 &plane = current_group->control_points_planes[plane_id++];
-      std::vector<std::vector<Point_3> > slices;
-      AABB_tree tree(edges(*polyhedron).first, edges(*polyhedron).second, *polyhedron);
-      CGAL::Polygon_mesh_slicer<Polyhedron, Kernel> slicer_aabb(*polyhedron, tree);
-      slicer_aabb(plane, std::back_inserter(slices));
-      if(slices.empty())
-      {
-        messageInterface->warning("An error has occured.");
-        std::pair<Point_3, AABB_tree::Primitive_id> res=tree.closest_point_and_primitive(ctrl_p);
-        current_group->control_points.push_back(CGAL::Euler::split_edge(halfedge(res.second, *polyhedron), *polyhedron)->vertex());
-        current_group->control_point_set.insert(current_group->control_points.back());
-        current_group->control_points.back()->point() = res.first;
-        continue;
-      }
-      //find the closest slice
-      boost::tuple<double, int, int> min_squared_dist(-1,-1, -1);
-      for(std::size_t i = 0; i<slices.size(); ++i)
-      {
-        for(std::size_t j = 0; j<slices[i].size()-1; ++j)
-        {
-          Kernel::Segment_3 segment(slices[i][j], slices[i][j+1]);
-          double sq_dist = CGAL::squared_distance(ctrl_p, segment);
-          if(min_squared_dist.get<0>() == -1 ||
-             sq_dist < min_squared_dist.get<0>())
-          {
-            min_squared_dist.get<0>()= sq_dist;
-            min_squared_dist.get<1>() = i;
-            min_squared_dist.get<2>() = j;
-          }
-        }
-      }
 
-      //find the edges intersected by this slice
-      AABB_traits::Primitive::Id pid1 = tree.closest_point_and_primitive(slices[min_squared_dist.get<1>()][min_squared_dist.get<2>()]).second;
-      AABB_traits::Primitive::Id pid2 = tree.closest_point_and_primitive(slices[min_squared_dist.get<1>()][min_squared_dist.get<2>()+1]).second;
-      Polyhedron::Halfedge_handle h1(halfedge(pid1, *polyhedron));
-      Polyhedron::Halfedge_handle h2(halfedge(pid2, *polyhedron));
-      //find the triangle that contains those two edges
-      Polyhedron::Facet_handle closest_triangle = h1->facet();
-      if(!(closest_triangle == h2->facet()
-           || closest_triangle == h2->opposite()->facet()))
-      {
-        closest_triangle = h1->opposite()->facet();
-      }
-      if(closest_triangle == NULL)
-      {
-        BOOST_FOREACH(Polyhedron::Facet_handle f1, CGAL::faces_around_target(h1, *polyhedron))
-        {
-          BOOST_FOREACH(Polyhedron::Facet_handle f2, CGAL::faces_around_target(h2, *polyhedron))
-          {
-            if(f2==f1 && f2 != NULL)
-            {
-              closest_triangle = f1;
-              break;
-            }
-          }
-        }
-        if(closest_triangle == NULL)
-        {
-          messageInterface->error("Cannot find the closest triangle.");
-          return ;
-        }
-      }
-      // add triangle's center to the mesh
-      double x(0), y(0), z(0);
-      Polyhedron::Halfedge_around_facet_circulator hafc = closest_triangle->facet_begin();
-      Polyhedron::Halfedge_around_facet_circulator end = hafc;
-      CGAL_For_all(hafc, end)
-      {
-        x+=hafc->vertex()->point().x(); y+=hafc->vertex()->point().y(); z+=hafc->vertex()->point().z();
-      }
-      Polyhedron::Halfedge_handle center = CGAL::Euler::add_center_vertex(closest_triangle->facet_begin(), *polyhedron);
-      center->vertex()->point() = Point_3(x/3.0, y/3.0, z/3.0);
-      current_group->control_points.push_back(center->vertex());
-      current_group->control_point_set.insert(current_group->control_points.back());
+      Polyhedron::Vertex_handle new_ctrl_vertex;
+      if ( !get_closest_handle(ctrl_p, plane, new_ctrl_vertex) )
+        continue;
+      current_group->control_points.push_back(new_ctrl_vertex);
+      current_group->control_point_set.insert(new_ctrl_vertex);
     }
     // Init the indices of the halfedges and the vertices.
     set_halfedgeds_items_id(*polyhedron);
