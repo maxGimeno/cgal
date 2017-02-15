@@ -2228,6 +2228,11 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
           // if the point is at 10% of the edge target, use the target
           if ( std::sqrt( CGAL::squared_distance(e1, closest_point) ) < edge_length/10)
           {
+            if (h->is_border_edge())
+            {
+              messageInterface->information("Cannot extend the surface in a bounding plane.");
+              return false;
+            }
             new_ctrl_vertex=h->vertex();
             if (current_group->control_point_set.count(new_ctrl_vertex)!=0)
             {
@@ -2239,6 +2244,11 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
             // if the point is at 10% of the edge source, use the source
             if ( std::sqrt( CGAL::squared_distance(e2, closest_point) ) < edge_length/10)
             {
+              if (h->is_border_edge())
+              {
+                messageInterface->information("Cannot extend the surface in a bounding plane.");
+                return false;
+              }
               new_ctrl_vertex=h->opposite()->vertex();
               if (current_group->control_point_set.count(new_ctrl_vertex)!=0)
               {
@@ -2253,6 +2263,12 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
 
               if ( v1 * v2  < -0.866 * std::sqrt(v1*v1) * std::sqrt(v2*v2)) // angle larger than 150 degree
               {
+                if (h->is_border_edge())
+                {
+                  messageInterface->information("Cannot extend the surface in a bounding plane.");
+                  return false;
+                }
+
                 Polyhedron::Halfedge_handle hcut = CGAL::Euler::split_edge(h, polyhedron);
                 new_ctrl_vertex = hcut->vertex();
                 // retriangulate incident faces
@@ -2264,13 +2280,15 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
               }
               else
               {
+                if (h->opposite()->is_border()) h=h->opposite();
+
                 const Kernel::Point_3& o1 = h->next()->vertex()->point();
                 const Kernel::Point_3& o2 = h->opposite()->next()->vertex()->point();
 
                 Kernel::Point_3 p1 = project(Kernel::Triangle_3(e1,e2,o1), closest_point);
                 Kernel::Point_3 p2 = project(Kernel::Triangle_3(e1,e2,o2), closest_point);
 
-                if (CGAL::compare_distance_to_point(closest_point, p1,p2) ==CGAL::SMALLER )
+                if (!h->is_border() && CGAL::compare_distance_to_point(closest_point, p1,p2) ==CGAL::SMALLER )
                   new_ctrl_vertex=CGAL::Euler::add_center_vertex(h,polyhedron)->vertex();
                 else
                   new_ctrl_vertex=CGAL::Euler::add_center_vertex(h->opposite(), polyhedron)->vertex();
