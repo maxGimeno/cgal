@@ -545,11 +545,11 @@ private Q_SLOTS:
     current_group->generator_poly->itemChanged();
     current_group->leader_poly->invalidateOpenGLBuffers();
     current_group->leader_poly->itemChanged();
-    //compute the points
 
     const Kernel::Vector_3 g_vector = current_group->g_plane->orthogonal_vector();
     const int G = g_vector[0]==1?0:g_vector[1]==1?1:2;
 
+    //compute the points
     for(std::size_t i=0; i< g_polyline.size(); ++i)
     {
       Kernel::Vector_3 offset = g_polyline[i]-p;
@@ -1534,6 +1534,9 @@ private:
   std::vector<SurfaceGroup*> surface_groups;
   bool find_plane(QMouseEvent* e, Kernel::Plane_3& plane);
   void project_on_plane(const Kernel::Plane_3& plane, qglviewer::Vec& point);
+  bool get_closest_handle(const Kernel::Point_3& picked_point,
+                          const Kernel::Plane_3& plane,
+                          Polyhedron::Vertex_handle& new_ctrl_vertex);
   std::vector<int> hidden_planes;
 
   void extendSurface(const qglviewer::Vec& p, int checked)
@@ -1998,6 +2001,128 @@ void SurfaceFromPickedPointsPlugin::project_on_plane(const Kernel::Plane_3& plan
   }
 }
 
+bool SurfaceFromPickedPointsPlugin::
+get_closest_handle(const Kernel::Point_3& picked_point,
+                   const Kernel::Plane_3& plane,
+                   Polyhedron::Vertex_handle& new_ctrl_vertex)
+{
+  typedef CGAL::AABB_halfedge_graph_segment_primitive<Polyhedron> HGSP;
+  typedef CGAL::AABB_traits<Kernel, HGSP>                         AABB_traits;
+  typedef CGAL::AABB_tree<AABB_traits>                            AABB_tree;
+
+  Polyhedron &polyhedron = *current_group->surface->polyhedron();
+
+  //Slice the Polyhedron along the picked plane
+  std::vector<std::vector<Kernel::Point_3> > slices;
+  AABB_tree tree(edges(polyhedron).first, edges(polyhedron).second, polyhedron);
+
+  CGAL::Polygon_mesh_slicer<Polyhedron, Kernel> slicer_aabb(polyhedron, tree);
+  slicer_aabb(plane, std::back_inserter(slices));
+
+  //find the closest slicing edge
+  Kernel::Point_3 closest_point;
+  Kernel::Construct_projected_point_3 project;
+  double min_squared_dist = (std::numeric_limits<double>::max)();
+
+  for(std::size_t i = 0; i<slices.size(); ++i)
+  {
+    for(std::size_t j = 0; j<slices[i].size()-1; ++j)
+    {
+      Kernel::Point_3 projected_point  = project(Kernel::Segment_3(slices[i][j], slices[i][j+1]), picked_point);
+      double sq_dist = CGAL::squared_distance(picked_point, projected_point);
+      if(sq_dist < min_squared_dist)
+      {
+        min_squared_dist = sq_dist;
+        closest_point = projected_point;
+      }
+    }
+  }
+
+  // check if closest_point is close to a vertex, an edge or to the interior of the triangle.
+  //add a new vertex in the mesh if closest to an edge or a triangle
+  std::pair<Kernel::Point_3, boost::graph_traits<Polyhedron>::edge_descriptor > point_and_primitive =
+    tree.closest_point_and_primitive(closest_point);
+
+  Polyhedron::Halfedge_handle h = point_and_primitive.second.halfedge();
+  const Kernel::Point_3& e1 = h->vertex()->point();
+  const Kernel::Point_3& e2 = h->opposite()->vertex()->point();
+
+  // new vertex
+  double edge_length = std::sqrt( CGAL::squared_distance(e1, e2) );
+  // if the point is at 10% of the edge target, use the target
+  if ( std::sqrt( CGAL::squared_distance(e1, closest_point) ) < edge_length/10)
+  {
+    if (h->is_border_edge())
+    {
+      messageInterface->information("Cannot extend the surface in a bounding plane.");
+      return false;
+    }
+    new_ctrl_vertex=h->vertex();
+    if (current_group->control_point_set.count(new_ctrl_vertex)!=0)
+    {
+      messageInterface->information("Cannot move constrained vertex. Use the edit mode (E+left click)");
+      return false;
+    }
+  }
+  else
+    // if the point is at 10% of the edge source, use the source
+    if ( std::sqrt( CGAL::squared_distance(e2, closest_point) ) < edge_length/10)
+    {
+      if (h->is_border_edge())
+      {
+        messageInterface->information("Cannot extend the surface in a bounding plane.");
+        return false;
+      }
+      new_ctrl_vertex=h->opposite()->vertex();
+      if (current_group->control_point_set.count(new_ctrl_vertex)!=0)
+      {
+        messageInterface->information("Cannot move constrained vertex. Use the edit mode (E+left click)");
+        return false;
+      }
+    }
+    else
+    {
+      const Kernel::Vector_3 v1 = closest_point - e1;
+      const Kernel::Vector_3 v2 = closest_point - e2;
+
+      if ( v1 * v2  < -0.866 * std::sqrt(v1*v1) * std::sqrt(v2*v2)) // angle larger than 150 degree
+      {
+        if (h->is_border_edge())
+        {
+          messageInterface->information("Cannot extend the surface in a bounding plane.");
+          return false;
+        }
+
+        Polyhedron::Halfedge_handle hcut = CGAL::Euler::split_edge(h, polyhedron);
+        new_ctrl_vertex = hcut->vertex();
+        // retriangulate incident faces
+        CGAL::Euler::split_face(hcut, hcut->next()->next(), polyhedron);
+        hcut=hcut->opposite()->prev();
+        CGAL::Euler::split_face(hcut, hcut->next()->next(), polyhedron);
+
+        current_group->surface->invalidateOpenGLBuffers();
+      }
+      else
+      {
+        if (h->opposite()->is_border()) h=h->opposite();
+
+        const Kernel::Point_3& o1 = h->next()->vertex()->point();
+        const Kernel::Point_3& o2 = h->opposite()->next()->vertex()->point();
+
+        Kernel::Point_3 p1 = project(Kernel::Triangle_3(e1,e2,o1), closest_point);
+        Kernel::Point_3 p2 = project(Kernel::Triangle_3(e1,e2,o2), closest_point);
+
+        if (!h->is_border() && CGAL::compare_distance_to_point(closest_point, p1,p2) ==CGAL::SMALLER )
+          new_ctrl_vertex=CGAL::Euler::add_center_vertex(h,polyhedron)->vertex();
+        else
+          new_ctrl_vertex=CGAL::Euler::add_center_vertex(h->opposite(), polyhedron)->vertex();
+      }
+      new_ctrl_vertex->point() = closest_point;
+    }
+
+  return true;
+}
+
 bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
 {
   if (mode == IDLE)
@@ -2163,9 +2288,6 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
       }
       case ADD_POINT_AND_DEFORM:
       {
-        typedef CGAL::AABB_halfedge_graph_segment_primitive<Polyhedron> HGSP;
-        typedef CGAL::AABB_traits<Kernel, HGSP>                         AABB_traits;
-        typedef CGAL::AABB_tree<AABB_traits>                            AABB_tree;
         if(!current_group->surface)
           return false;
         Kernel::Plane_3 plane;
@@ -2182,9 +2304,7 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
         {
           clear_redo();
           Kernel::Point_3 picked_point(point.x, point.y, point.z);
-          //Slice the Polyhedron along the picked plane
-          std::vector<std::vector<Point_3> > slices;
-          AABB_tree tree(edges(polyhedron).first, edges(polyhedron).second, polyhedron);
+
           int checked = checkExtend(picked_point);
 
           if(checked !=3)
@@ -2192,110 +2312,11 @@ bool SurfaceFromPickedPointsPlugin::eventFilter(QObject *object, QEvent *event)
             extendSurface(point, checked);
             return false;
           }
-          CGAL::Polygon_mesh_slicer<Polyhedron, Kernel> slicer_aabb(polyhedron, tree);
-          slicer_aabb(plane, std::back_inserter(slices));
 
-          //find the closest slicing edge
-          Kernel::Point_3 closest_point;
-          Kernel::Construct_projected_point_3 project;
-          double min_squared_dist = (std::numeric_limits<double>::max)();
+        Polyhedron::Vertex_handle new_ctrl_vertex;
+        if (!get_closest_handle(picked_point, plane, new_ctrl_vertex))
+          return false;
 
-          for(std::size_t i = 0; i<slices.size(); ++i)
-          {
-            for(std::size_t j = 0; j<slices[i].size()-1; ++j)
-            {
-              Kernel::Point_3 projected_point  = project(Kernel::Segment_3(slices[i][j], slices[i][j+1]), picked_point);
-              double sq_dist = CGAL::squared_distance(picked_point, projected_point);
-              if(sq_dist < min_squared_dist)
-              {
-                min_squared_dist = sq_dist;
-                closest_point = projected_point;
-              }
-            }
-          }
-
-          // check if closest_point is close to a vertex, an edge or to the interior of the triangle.
-          //add a new vertex in the mesh if closest to an edge or a triangle
-          Polyhedron::Vertex_handle new_ctrl_vertex;
-          std::pair<Kernel::Point_3, boost::graph_traits<Polyhedron>::edge_descriptor > point_and_primitive =
-            tree.closest_point_and_primitive(closest_point);
-
-          Polyhedron::Halfedge_handle h = point_and_primitive.second.halfedge();
-          const Kernel::Point_3& e1 = h->vertex()->point();
-          const Kernel::Point_3& e2 = h->opposite()->vertex()->point();
-
-          // new vertex
-          double edge_length = std::sqrt( CGAL::squared_distance(e1, e2) );
-          // if the point is at 10% of the edge target, use the target
-          if ( std::sqrt( CGAL::squared_distance(e1, closest_point) ) < edge_length/10)
-          {
-            if (h->is_border_edge())
-            {
-              messageInterface->information("Cannot extend the surface in a bounding plane.");
-              return false;
-            }
-            new_ctrl_vertex=h->vertex();
-            if (current_group->control_point_set.count(new_ctrl_vertex)!=0)
-            {
-              messageInterface->information("Cannot move constrained vertex. Use the edit mode (E+left click)");
-              return false;
-            }
-          }
-          else
-            // if the point is at 10% of the edge source, use the source
-            if ( std::sqrt( CGAL::squared_distance(e2, closest_point) ) < edge_length/10)
-            {
-              if (h->is_border_edge())
-              {
-                messageInterface->information("Cannot extend the surface in a bounding plane.");
-                return false;
-              }
-              new_ctrl_vertex=h->opposite()->vertex();
-              if (current_group->control_point_set.count(new_ctrl_vertex)!=0)
-              {
-                messageInterface->information("Cannot move constrained vertex. Use the edit mode (E+left click)");
-                return false;
-              }
-            }
-            else
-            {
-              const Kernel::Vector_3 v1 = closest_point - e1;
-              const Kernel::Vector_3 v2 = closest_point - e2;
-
-              if ( v1 * v2  < -0.866 * std::sqrt(v1*v1) * std::sqrt(v2*v2)) // angle larger than 150 degree
-              {
-                if (h->is_border_edge())
-                {
-                  messageInterface->information("Cannot extend the surface in a bounding plane.");
-                  return false;
-                }
-
-                Polyhedron::Halfedge_handle hcut = CGAL::Euler::split_edge(h, polyhedron);
-                new_ctrl_vertex = hcut->vertex();
-                // retriangulate incident faces
-                CGAL::Euler::split_face(hcut, hcut->next()->next(), polyhedron);
-                hcut=hcut->opposite()->prev();
-                CGAL::Euler::split_face(hcut, hcut->next()->next(), polyhedron);
-
-                current_group->surface->invalidateOpenGLBuffers();
-              }
-              else
-              {
-                if (h->opposite()->is_border()) h=h->opposite();
-
-                const Kernel::Point_3& o1 = h->next()->vertex()->point();
-                const Kernel::Point_3& o2 = h->opposite()->next()->vertex()->point();
-
-                Kernel::Point_3 p1 = project(Kernel::Triangle_3(e1,e2,o1), closest_point);
-                Kernel::Point_3 p2 = project(Kernel::Triangle_3(e1,e2,o2), closest_point);
-
-                if (!h->is_border() && CGAL::compare_distance_to_point(closest_point, p1,p2) ==CGAL::SMALLER )
-                  new_ctrl_vertex=CGAL::Euler::add_center_vertex(h,polyhedron)->vertex();
-                else
-                  new_ctrl_vertex=CGAL::Euler::add_center_vertex(h->opposite(), polyhedron)->vertex();
-              }
-              new_ctrl_vertex->point() = closest_point;
-            }
 
           // Init the indices of the halfedges and the vertices.
           set_halfedgeds_items_id(polyhedron);
