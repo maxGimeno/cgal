@@ -130,8 +130,10 @@ public:
     surface = NULL;
     last_remesh = -1;
     generator_is_created = false;
+    polylines_do_cross = true;
     surface_groups = list;
     surface_groups->push_back(this);
+
   }
   Scene_polylines_item* generator_poly;
   Scene_polylines_item* leader_poly;
@@ -151,6 +153,7 @@ public:
   std::vector<char> operations_done; // 0 =  insertion, 1 = removal, 2 = an edition , 3 = extension
   std::vector<char> operations_redone;// 0 =  insertion, 1 = removal, 2 = an edition, 3 = extension
   bool generator_is_created;
+  bool polylines_do_cross;
   double edgeSize;
   double min_dist;
   double last_remesh;
@@ -540,21 +543,55 @@ private Q_SLOTS:
     if(o!=boost::none)
       p = boost::get<Point_3>(*o);
 
+    const Kernel::Vector_3 l_vector = current_group->l_plane->orthogonal_vector();
+    const int L = l_vector[0]==1?0:l_vector[1]==1?1:2;
+    const Kernel::Vector_3 g_vector = current_group->g_plane->orthogonal_vector();
+    const int G = g_vector[0]==1?0:g_vector[1]==1?1:2;
+    // force the intersection point to belongs to both polyline plane
+    set_coordinate(p, L, l_polyline[0][L]);
+    set_coordinate(p, G, g_polyline[0][G]);
     g_polyline.insert(g_polyline.begin()+current_group->g_id, p);
+
+    // if the points is not in the l_polyline range, insert it
+    std::size_t l_size = (int)l_polyline.size() + 1;
+    if (l_polyline.front()[G] < l_polyline.back()[G])
+    {
+      if ( p[G] < l_polyline.front()[G])
+      {
+        l_polyline.insert(l_polyline.begin(), p);
+      }
+      if ( p[G] > l_polyline.back()[G])
+      {
+        l_polyline.push_back(p);
+        ++current_group->l_id;
+      }
+    }
+    else
+    {
+      if ( p[G] < l_polyline.back()[G])
+      {
+        l_polyline.push_back(p);
+        ++current_group->l_id;
+      }
+      if ( p[G] > l_polyline.front()[G])
+      {
+        l_polyline.insert(l_polyline.begin(), p);
+      }
+    }
+    if(l_size == l_polyline.size())//this case means we added a point to L, which happens when G and L do not cross
+    {
+      current_group->polylines_do_cross = false;
+    }
     current_group->generator_poly->invalidateOpenGLBuffers();
     current_group->generator_poly->itemChanged();
     current_group->leader_poly->invalidateOpenGLBuffers();
     current_group->leader_poly->itemChanged();
-
-    const Kernel::Vector_3 g_vector = current_group->g_plane->orthogonal_vector();
-    const int G = g_vector[0]==1?0:g_vector[1]==1?1:2;
 
     //compute the points
     for(std::size_t i=0; i< g_polyline.size(); ++i)
     {
       Kernel::Vector_3 offset = g_polyline[i]-p;
       set_coordinate(offset, G, 0); // make sure that points have an identical coordinate after the translation
-
       for(std::size_t j=0; j<l_polyline.size(); ++j)
       {
         if(j==static_cast<std::size_t>(current_group->l_id))
@@ -563,10 +600,13 @@ private Q_SLOTS:
             points.push_back(g_polyline[i]);
           control_pos.push_back(points.back());
         }
-
-        points.push_back(l_polyline[j]+offset);
+        //don't duplicate the line
+        if(l_polyline[j]+offset != g_polyline[i])
+        {
+          points.push_back(l_polyline[j]+offset);
         if(i == static_cast<std::size_t>(current_group->g_id))
           control_pos.push_back(points.back());
+        }
       }
       if(static_cast<std::size_t>(current_group->l_id) == l_polyline.size())
       {
@@ -574,7 +614,6 @@ private Q_SLOTS:
         control_pos.push_back(points.back());
       }
     }
-
     current_group->initial_mesh_item = new Scene_points_with_normal_item();
     BOOST_FOREACH(Point_3 p, points)
         current_group->initial_mesh_item->point_set()->insert(p);
@@ -585,11 +624,10 @@ private Q_SLOTS:
     current_group->lockChild(current_group->initial_mesh_item);
     //create Polyhedron item
     Polyhedron *polyhedron = new Polyhedron();
-    Build_polyhedron<Polyhedron::HalfedgeDS> builder(points, (int)g_polyline.size(), (int)l_polyline.size()+1);
+    Build_polyhedron<Polyhedron::HalfedgeDS> builder(points, (int)g_polyline.size(),l_size);
     polyhedron->delegate(builder);
     // Init the indices of the halfedges and the vertices.
     set_halfedgeds_items_id(*polyhedron);
-
 
     //save the points of the initial polylines as control points
     for(
@@ -602,8 +640,8 @@ private Q_SLOTS:
       {
         if(vit->point() == p)
         {
-          current_group->control_points.push_back(vit);
-          current_group->control_point_set.insert(vit);
+          if(current_group->control_point_set.insert(vit).second)
+            current_group->control_points.push_back(vit);
           control_pos.erase(control_pos.begin()+i);
           break;
         }
@@ -1258,12 +1296,14 @@ private Q_SLOTS:
   void minEnergy()
   {
     current_group->control_points.clear();
+    current_group->control_point_set.clear();
     //create points
     std::vector<Point_3> points;
     std::vector<Point_3>& g_polyline = current_group->generator_poly->polylines.back();
     std::vector<Point_3>& l_polyline = current_group->leader_poly->polylines.back();
     std::vector<Point_3> control_pos;
     //compute the points
+    int l_size = (current_group->polylines_do_cross) ? (int)l_polyline.size()+1 : (int)l_polyline.size();
     for(std::size_t i=0; i< g_polyline.size(); ++i)
     {
       Kernel::Vector_3 offset = g_polyline[i]-g_polyline[current_group->g_id];
@@ -1274,10 +1314,13 @@ private Q_SLOTS:
           points.push_back(g_polyline[i]);
           control_pos.push_back(points.back());
         }
-
-        points.push_back(l_polyline[j]+offset);
-        if(i == static_cast<std::size_t>(current_group->g_id))
-          control_pos.push_back(points.back());
+        //don't duplicate the line
+        if(l_polyline[j]+offset != g_polyline[i])
+        {
+          points.push_back(l_polyline[j]+offset);
+          if(i == static_cast<std::size_t>(current_group->g_id))
+            control_pos.push_back(points.back());
+        }
       }
       if(static_cast<std::size_t>(current_group->l_id) == l_polyline.size())
       {
@@ -1291,7 +1334,7 @@ private Q_SLOTS:
     //re-create initial polyhedron.
     Polyhedron *polyhedron = current_group->surface->polyhedron();
     polyhedron->clear();
-    Build_polyhedron<Polyhedron::HalfedgeDS> builder(points, (int)g_polyline.size(), (int)l_polyline.size()+1);
+    Build_polyhedron<Polyhedron::HalfedgeDS> builder(points, (int)g_polyline.size(), l_size);
     polyhedron->delegate(builder);
     // Init the indices of the halfedges and the vertices.
     set_halfedgeds_items_id(*polyhedron);
@@ -1307,8 +1350,10 @@ private Q_SLOTS:
       {
         if(vit->point() == p)
         {
-          current_group->control_points.push_back(vit);
-          current_group->control_point_set.insert(vit);
+          if(current_group->control_point_set.insert(vit).second)
+          {
+            current_group->control_points.push_back(vit);
+          }
           control_pos.erase(control_pos.begin()+i);
           break;
         }
@@ -1625,8 +1670,7 @@ private:
         l_polyline.insert(
               l_polyline.begin(),
               new_point);
-        if(current_group->l_id > 0)
-          current_group->l_id++;
+        current_group->l_id++;
       }
       else
       {
@@ -1788,8 +1832,7 @@ private:
         g_polyline.insert(
               g_polyline.begin(),
               new_point);
-        if(current_group->g_id > 0)
-          current_group->g_id++;
+        current_group->g_id++;
       }
       else
       {
