@@ -164,6 +164,7 @@ public:
   std::vector<Kernel::Plane_3> control_points_planes; //control_points_planes[i] is the plane associated to control_points[i+control_limit]
   std::vector<Point_3> ordered_control_points;
   void computeSurface(std::vector<Point_3> &points, std::vector<Point_3> &control_pos, Polyhedron *polyhedron);
+  Point_3 computeIntersection(Kernel::Plane_3 *plane, std::vector<Point_3> &polyline, int& id, bool &ok);
 public Q_SLOTS:
   void quitList()
   {
@@ -456,124 +457,53 @@ private Q_SLOTS:
     std::vector<Point_3>& l_polyline = current_group->leader_poly->polylines.back();
     std::vector<Point_3> control_pos;
 
-    //Only work if the polylines intersect the planes at most once.
-    boost::optional<boost::variant<Point_3, Kernel::Segment_3, Kernel::Line_3> > o;
     current_group->g_id = -1; current_group->l_id = -1;
-    CGAL::Oriented_side first_side= current_group->g_plane->oriented_side(l_polyline[0]);
-    //find the closest generator's end point to the l_plane
-    Point_3 g_closest_to_plane;
-    double sq_dist = CGAL::squared_distance(g_polyline.front(), *current_group->l_plane);
-    if(CGAL::squared_distance(g_polyline.back(), *current_group->l_plane) <sq_dist)
-      g_closest_to_plane = g_polyline.back();
-    else
-      g_closest_to_plane = g_polyline.front();
-
-    for(std::size_t i=1; i< l_polyline.size(); ++i)
+    bool ok;
+    Point_3 p1 = current_group->computeIntersection(current_group->g_plane, l_polyline, current_group->l_id, ok);
+    if(!ok)
     {
-      if(current_group->g_plane->oriented_side(l_polyline[i]) !=
-         first_side)
-      {
-        current_group->l_id = i;
-        break;
-      }
-    }
-    if(current_group->l_id == -1)
-    {
-      Kernel::Vector_3 f_diff = l_polyline.front()-g_closest_to_plane;
-      Kernel::Vector_3 b_diff = l_polyline.back()-g_closest_to_plane;
-      if(f_diff.squared_length()< b_diff.squared_length())
-      {
-        current_group->l_id =0;
-      }
-      else
-      {
-        current_group->l_id = (int)l_polyline.size();
-      }
-    }
-    first_side= current_group->l_plane->oriented_side(g_polyline[0]);
-    for(std::size_t i=1; i< g_polyline.size(); ++i)
-    {
-      if(current_group->l_plane->oriented_side(g_polyline[i]) !=
-         first_side)
-      {
-        current_group->g_id = i;
-        if(current_group->l_plane->oriented_side(g_polyline[i]) != CGAL::ON_ORIENTED_BOUNDARY)
-          o = *intersection(
-                Kernel::Segment_3(g_polyline[i-1], g_polyline[i]),*current_group->l_plane);
-        break;
-      }
-    }
-    if(current_group->g_id == -1)
-    {
-      o =*intersection(
-            Kernel::Line_3(g_polyline[0], g_polyline[1])
-          ,*current_group->l_plane);
-      Kernel::Vector_3 diff = boost::get<Point_3>(*o)-g_polyline[0];
-      double sq_dist = diff.squared_length();
-      o =*intersection(
-            Kernel::Line_3(g_polyline[g_polyline.size()-1], g_polyline[g_polyline.size()-2])
-          ,*current_group->l_plane);
-      diff = boost::get<Point_3>(*o)-g_polyline[g_polyline.size()-1];
-
-      if(sq_dist < diff.squared_length())
-      {
-        current_group->g_id =0;
-        o =*intersection(
-              Kernel::Line_3(g_polyline[0], g_polyline[1])
-            ,*current_group->l_plane);
-
-      }
-      else
-      {
-        current_group->g_id = (int)g_polyline.size();
-
-        o = *intersection(
-              Kernel::Line_3(g_polyline[current_group->g_id-1], g_polyline[current_group->g_id-2])
-            ,*current_group->l_plane);
-
-      }
+      messageInterface->warning("Intersection could not be computed.");
     }
     //get the intersection point between the generator and the leader's plane
-    Point_3 p;
-    if(o!=boost::none)
-      p = boost::get<Point_3>(*o);
-
+    Point_3 p2 = current_group->computeIntersection(current_group->l_plane,g_polyline,current_group->g_id,ok);
+    if(!ok)
+    {
+      messageInterface->warning("Intersection could not be computed.");
+    }
+    //compute the mid point of the two intersection points and replace
+    current_group->intersection_point = CGAL::midpoint(p1, p2);
     const Kernel::Vector_3 l_vector = current_group->l_plane->orthogonal_vector();
+
     const int L = l_vector[0]==1?0:l_vector[1]==1?1:2;
     const Kernel::Vector_3 g_vector = current_group->g_plane->orthogonal_vector();
     const int G = g_vector[0]==1?0:g_vector[1]==1?1:2;
     // force the intersection point to belong to both polyline plane
-    set_coordinate(p, L, l_polyline[0][L]);
-    set_coordinate(p, G, g_polyline[0][G]);
-    g_polyline.insert(g_polyline.begin()+current_group->g_id, p);
+    set_coordinate(current_group->intersection_point, L, l_polyline[0][L]);
+    set_coordinate(current_group->intersection_point, G, g_polyline[0][G]);
+    g_polyline.insert(g_polyline.begin()+current_group->g_id, current_group->intersection_point);
     // insert it in l_polyline
     if (l_polyline.front()[G] < l_polyline.back()[G])
     {
-      if ( p[G] > l_polyline.back()[G])
+      if ( current_group->intersection_point[G] > l_polyline.back()[G])
       {
-        l_polyline.push_back(p);
+        l_polyline.push_back(current_group->intersection_point);
       }
       else
       {
-       l_polyline.insert(l_polyline.begin() + current_group->l_id, p);
+       l_polyline.insert(l_polyline.begin() + current_group->l_id, current_group->intersection_point);
       }
     }
     else
     {
-      if ( p[G] < l_polyline.back()[G])
+      if ( current_group->intersection_point[G] < l_polyline.back()[G])
       {
-        l_polyline.push_back(p);
+        l_polyline.push_back(current_group->intersection_point);
       }
       else
       {
-        l_polyline.insert(l_polyline.begin() + current_group->l_id, p);
+        l_polyline.insert(l_polyline.begin() + current_group->l_id, current_group->intersection_point);
       }
     }
-    //compute the mean point of the two intersection points and replace
-    current_group->intersection_point =
-        CGAL::midpoint(l_polyline.at(current_group->l_id),  g_polyline.at(current_group->g_id));
-    l_polyline[current_group->l_id] = current_group->intersection_point;
-    g_polyline[current_group->g_id] = current_group->intersection_point;
 
     current_group->generator_poly->invalidateOpenGLBuffers();
     current_group->generator_poly->itemChanged();
@@ -2509,4 +2439,61 @@ void SurfaceGroup::computeSurface(std::vector<Point_3> &points, std::vector<Poin
   }
 }
 
+
+Point_3 SurfaceGroup::computeIntersection(Kernel::Plane_3 *plane, std::vector<Point_3> &polyline, int& id, bool &ok)
+{
+  boost::optional<boost::variant<Point_3, Kernel::Segment_3, Kernel::Line_3> > o;
+  CGAL::Oriented_side first_side= plane->oriented_side(polyline[0]);
+  for(std::size_t i=1; i< polyline.size(); ++i)
+  {
+    if(plane->oriented_side(polyline[i]) !=
+       first_side)
+    {
+      id = i;
+      if(plane->oriented_side(polyline[i]) != CGAL::ON_ORIENTED_BOUNDARY)
+        o = *intersection(
+              Kernel::Segment_3(polyline[i-1], polyline[i]),*plane);
+      break;
+    }
+  }
+  if(id == -1)
+  {
+    o =*intersection(
+          Kernel::Line_3(polyline[0], polyline[1])
+        ,*plane);
+    Kernel::Vector_3 diff = boost::get<Point_3>(*o)-polyline[0];
+    double sq_dist = diff.squared_length();
+    o =*intersection(
+          Kernel::Line_3(polyline[polyline.size()-1], polyline[polyline.size()-2])
+        ,*plane);
+    diff = boost::get<Point_3>(*o)-polyline[polyline.size()-1];
+
+    if(sq_dist < diff.squared_length())
+    {
+      id =0;
+      o =*intersection(
+            Kernel::Line_3(polyline[0], polyline[1])
+          ,*plane);
+
+    }
+    else
+    {
+      id = (int)polyline.size();
+
+      o = *intersection(
+            Kernel::Line_3(polyline[id-1], polyline[id-2])
+          ,*plane);
+
+    }
+  }
+  //get the intersection point between the generator and the leader's plane
+  ok = false;
+  Point_3 p;
+  if(o!=boost::none)
+  {
+    p = boost::get<Point_3>(*o);
+    ok = true;
+  }
+  return p;
+}
 #include "Surface_from_picked_points_plugin.moc"
