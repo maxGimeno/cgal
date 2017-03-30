@@ -79,7 +79,7 @@ public:
 
   /*!
    * \brief textRenderer is used to display text on the screen.
-   * The textRenderer uses the painter tu display 2D text over the 3D Scene. It has a list containing the TextItems to display.
+   * The textRenderer uses the painter to display 2D text over the 3D Scene. It has a list containing the TextItems to display.
    */
   TextRenderer *textRenderer;
   /*!
@@ -87,7 +87,7 @@ public:
   * \param x the X coordinate of the id's position.
   * \param y the Y coordinate of the id's position.
   * \param z the Z coordinate of the id's position.
-  * \return true if the ID is visible. */
+  * \returns true if the ID is visible. */
   virtual bool testDisplayId(double x, double y, double z) = 0;
   //!Recomputes the ids of the selected item.
   virtual void updateIds(CGAL::Three::Scene_item *) = 0;
@@ -119,8 +119,8 @@ public:
    */
   virtual void attribBuffers(int program_name) const = 0;
 
-  /*! Returns a program according to name.
-   * If the program does not exist yet, it is created and stored in shader_programs.
+  /*! Returns a program according to `name`.
+   * If the program does not exist yet, it is created and stored in `shader_programs`.
    * @see OpenGL_program_IDs
    * @returns a pointer to the corresponding program.*/
   virtual QOpenGLShaderProgram* getShaderProgram(int name) const = 0;
@@ -166,7 +166,7 @@ public:
 Q_SIGNALS:
   //!Is emitted after an item is picked.
   void selected(int);
-  //!Is emitted to require a contextual menu to appear at global_pos.
+  //!Is emitted to require a contextual menu to appear at `global_pos`.
   void requestContextMenu(QPoint global_pos);
   //!Is emitted after a point is selected.
   void selectedPoint(double, double, double);
