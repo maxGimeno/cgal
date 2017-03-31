@@ -27,6 +27,26 @@ class QKeyEvent;
 class QContextMenuEvent;
 
 class Viewer_impl;
+class TouchFrame : public qglviewer::ManipulatedCameraFrame{
+public:
+  //!Default Constructor
+  TouchFrame()
+    :qglviewer::ManipulatedCameraFrame()
+  {}
+  /*! Initiates the ManipulatedFrame touch manipulation.
+
+  Overloading of QWidget::mousePressEvent(). See also mouseMoveEvent() and mouseReleaseEvent().
+
+  The mouse behavior depends on which button is pressed. See the <a href="../mouse.html">QGLViewer
+  mouse page</a> for details.
+    */
+   bool event(QEvent *e,  qglviewr::Camera* const camera) Q_DECL_OVERRIDE;
+   /*! Gives the position of the first TouchEvent as the pressPos_ and prevPos_ like a regular MousePressEvent.*/
+
+   bool touchBeginEvent(QEvent *e, qglviewer::Camera* const);
+
+
+};
 //!The viewer class. Deals with all the openGL rendering and the mouse/keyboard events.
 class VIEWER_EXPORT Viewer : public CGAL::Three::Viewer_interface {
 
@@ -108,6 +128,7 @@ protected:
   void postDraw();
   void paintEvent(QPaintEvent *);
   void paintGL();
+  bool event(QEvent *)Q_DECL_OVERRIDE;
 
   //!Defines the behaviour for the mouse press events
   void mousePressEvent(QMouseEvent*);

@@ -162,6 +162,8 @@ Viewer::Viewer(QWidget* parent, bool antialiasing)
   d->distance_is_displayed = false;
   d->is_d_pressed = false;
   d->viewer = this;
+  delete camera()->frame();
+  camera()->setFrame(new TouchFrame());
 }
 
 Viewer::~Viewer()
@@ -1587,4 +1589,100 @@ void Viewer::updateIds(CGAL::Three::Scene_item * item)
   d->scene->updatePrimitiveIds(this, item);
   d->scene->updatePrimitiveIds(this, item);
 }
+
+bool Viewer::event(QEvent *e)
+{
+  switch(e->type())
+  {
+  case QEvent::TouchBegin:
+  {
+    QMouseEvent* me = (static_cast<QMouseEvent*>(e));
+    mousePressEvent(me);
+    camera_->frame()->touchBeginEvent(e, camera());
+    return true;
+  }
+  case QEvent::TouchUpdate:
+  {
+    QTouchEvent* te = (static_cast<QTouchEvent*>(e));
+    if(te->touchPoints().count()==2 )
+    {
+      camera_->frame()->event(e, camera());
+    }
+    return true;
+  }
+  case QEvent::TouchEnd:
+  {
+    QMouseEvent* me = (static_cast<QMouseEvent*>(e));
+    mouseReleaseEvent(me);
+    return true;
+  }
+  default:
+  {
+    QGLViewer::event(e);
+  }
+  }
+  return true;
+}
+
+bool TouchFrame::event(QEvent *e,  qglviewer::Camera* const camera) Q_DECL_OVERRIDE
+{
+  if(e->type() != QEvent::TouchBegin
+     && e->type() != QEvent::TouchUpdate
+     && e->type() != QEvent::TouchEnd)
+    return qglviewer::ManipulatedCameraFrame::event(e);
+
+  QTouchEvent* te = (static_cast<QTouchEvent*>(e));
+  QTouchEvent::TouchPoint p0 = te->touchPoints().first();
+  prevPos_ = pressPos_ = QPoint(p0.pos().x(), p0.pos().y());
+  QTouchEvent::TouchPoint p1 = te->touchPoints().last();
+  QLineF line1(p0.lastPos(), p1.lastPos());
+  QLineF line2(p0.pos(), p1.pos());
+  qreal scaling =line1.length()-line2.length();
+  QPointF c1(line1.x1()/2.0+line1.x2()/2.0, line1.y1()/2.0+line1.y2()/2.0);
+  QPointF c2(line2.x1()/2.0+line2.x2()/2.0, line2.y1()/2.0+line2.y2()/2.0);
+  QVector2D translation(c2-c1);
+
+  //Performs  a translation along the X and Y axis
+  Vec trans(-translation.x(), translation.y(), 0);
+
+  // Scale to fit the screen mouse displacement
+  trans *= 2.0 * tan(camera->fieldOfView()/2.0) *
+      fabs((camera->frame()->coordinatesOf(pivotPoint())).z) / camera->screenHeight();
+
+  translate(inverseTransformOf(translationSensitivity()*trans));
+
+
+
+  //Performs a translation along the Z axis as a zoom action
+  translate(inverseTransformOf(Vec(0.0, 0.0, 0.2*camera->flySpeed()*2*scaling)));
+
+  //the pivot point position in the screen coordinate system
+  Vec pivot = Vec(line1.x1()/2.0+line1.x2()/2.0,line1.y1()/2.0+line1.y2()/2.0,camera->zNear());
+  //the pivot point position in the World coordinate system
+  pivot = camera->unprojectedCoordinatesOf(pivot);
+
+
+  Vec U= transformOf(inverseTransformOf(Vec(0.0, 0.0, -1.0)));
+
+  qreal angle = line2.angleTo(line1)*M_PI/180;
+  qglviewer::Quaternion quaternion;
+  quaternion = Quaternion(U, -2*angle);
+
+  //#CONNECTION# These two methods should go together (spinning detection and activation)
+  setSpinningQuaternion(quaternion);
+  spin();
+  updateSceneUpVector();
+  Q_EMIT manipulated();
+  return true;
+}
+
+bool TouchFrame::touchBeginEvent(QEvent *e, qglviewer::Camera* const)
+{
+    QTouchEvent* te = (static_cast<QTouchEvent*>(e));
+    prevPos_=pressPos_=QPoint(te->touchPoints().first().pos().x(),te->touchPoints().first().pos().y()) ;
+    action_ = QGLViewer::ROTATE;
+    return true;
+}
+
  #include "Viewer.moc"
+
