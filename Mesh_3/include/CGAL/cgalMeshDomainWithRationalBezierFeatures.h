@@ -27,12 +27,9 @@
 
 #include <CGAL/license/Mesh_3.h>
 
-
 #include <CGAL/iterator.h>
 #include <CGAL/enum.h>
 #include <CGAL/number_utils.h>
-#include <CGAL/AABB_tree.h>
-#include <CGAL/AABB_traits.h>
 #include <CGAL/is_streamable.h>
 #include <CGAL/Real_timer.h>
 
@@ -135,8 +132,7 @@ public:
 
   /// Construct a point on curve \c curve_index at parameter p
   /// of \c starting_point
-  Point_3
-  construct_point_on_curve_segment(double p, const Curve_segment_index& curve_index) const;
+  Point_3 construct_point_on_curve_segment(double p, const Curve_segment_index& curve_index) const;
 
   /// Returns the sign of the orientation of p,q,r along curve segment
   /// of index \c index
@@ -294,13 +290,6 @@ get_curve_segments(OutputIterator out) const
        eit = edges_.begin(), end = edges_.end() ; eit != end ; ++eit )
   {
     CGAL_assertion( eit->second.is_valid() );
-
-    // ///////////////////////////////////////////////////////////////////
-    // Recovers the knots of the undelying nurbs curve
-    // ///////////////////////////////////////////////////////////////////
-    double p = eit->second.first_knot();
-    double q = eit->second.last_knot();
-
     // ///////////////////////////////////////////////////////////////////
     // Checks that the last control points is not equal to the first one
     // ///////////////////////////////////////////////////////////////////
@@ -312,9 +301,9 @@ get_curve_segments(OutputIterator out) const
     if ( ! first_point == last_point )
     {
       //Evaluate and compare to stored corners
-      eit->second.evaluatePoint(p, eval_point.data());
+      eit->second.evaluatePoint(0., eval_point.data());
       p_index = point_corner_index(Point_3(eval_point[0], eval_point[1], eval_point[2]));
-      eit->second.evaluatePoint(q, eval_point.data());
+      eit->second.evaluatePoint(1., eval_point.data());
       q_index = point_corner_index(Point_3(eval_point[0], eval_point[1], eval_point[2]));
     }
     else
@@ -399,26 +388,29 @@ cgalMeshDomainWithRationalBezierFeatures<MD_>::
 add_features_with_context(InputIterator first, InputIterator last,
                           IndicesOutputIterator indices_out)
 {
-  // Insert one edge for each element
-  for( ; first != last ; ++first )
-  {
-    const typename Gt::Point_3& p1 = first->polyline_content.front();
-    const typename Gt::Point_3& p2 = first->polyline_content.back();
-    Set_of_patch_ids& ids_p1 = corners_incidence_map_[p1];
-    std::copy(first->context.adjacent_patches_ids.begin(),
-              first->context.adjacent_patches_ids.end(),
-              std::inserter(ids_p1, ids_p1.begin()));
-    Set_of_patch_ids& ids_p2 = corners_incidence_map_[p2];
-    std::copy(first->context.adjacent_patches_ids.begin(),
-              first->context.adjacent_patches_ids.end(),
-              std::inserter(ids_p2, ids_p2.begin()));
-    Curve_segment_index curve_id =
-      insert_edge(first->polyline_content.begin(), first->polyline_content.end());
-    edges_incidences_[curve_id] = first->context.adjacent_patches_ids;
-    *indices_out++ = curve_id;
-  }
-  compute_corners_incidences();
-  return indices_out;
+    dtkContinuousGeometryPrimitives::Point_3 first_corner(0., 0., 0.);
+    dtkContinuousGeometryPrimitives::Point_3 last_corner(0., 0., 0.);
+    // Insert one edge for each element
+    for( ; first != last ; ++first ) {
+        first->rationalBezierCurve.controlPoint(0, first_point.data());
+        first->rationalBezierCurve.controlPoint(eit->second.degree(), last_point.data());
+        Point_3 p1(first_corner[0], first_corner[1], first_corner[2]);
+        Point_3 p2(last_corner[0], last_corner[1], last_corner[2]);
+        Set_of_patch_ids& ids_p1 = corners_incidence_map_[p1];
+        std::copy(first->context.adjacent_patches_ids.begin(),
+                  first->context.adjacent_patches_ids.end(),
+                  std::inserter(ids_p1, ids_p1.begin()));
+        Set_of_patch_ids& ids_p2 = corners_incidence_map_[p2];
+        std::copy(first->context.adjacent_patches_ids.begin(),
+                  first->context.adjacent_patches_ids.end(),
+                  std::inserter(ids_p2, ids_p2.begin()));
+        Curve_segment_index curve_id =
+            insert_edge(first->polyline_content.begin(), first->polyline_content.end());
+        edges_incidences_[curve_id] = first->context.adjacent_patches_ids;
+        *indices_out++ = curve_id;
+    }
+    compute_corners_incidences();
+    return indices_out;
 }
 
 template <class MD_>
@@ -525,6 +517,7 @@ distance_sign_along_cycle(double p, double q, double r, const Curve_segment_inde
 
   // If eit is not a cycle, then the orientation corresponds to the sign
   // of the distance
+  //SHOULDNT THERE BE A PROBLEM IF THERE IS NO CYCLE SINCE WE ASK FOR THE DISTANCE SIGN ALONG CYCLE ?
   if ( !this->is_cycle(index) )
   {
     return distance_sign(p, r, index);
@@ -535,6 +528,7 @@ distance_sign_along_cycle(double p, double q, double r, const Curve_segment_inde
 
   // We are on a cycle without any clue (p==q). Return the shortest path as
   // orientation.
+  //THIS CANT HAPPEN
   //HOW TO DO THAT ? ...
   if ( p == q )
   {
@@ -567,12 +561,11 @@ is_cycle(const Curve_segment_index& index) const
   CGAL_assertion(eit != edges_.end());
   dtkContinuousGeometryPrimitives::Point_3 first_point(0., 0., 0.);
   dtkContinuousGeometryPrimitives::Point_3 last_point(0., 0., 0.);
-
   // ///////////////////////////////////////////////////////////////////
   // Checks that the last control point is not equal to the first one
   // ///////////////////////////////////////////////////////////////////
-  eit->second.controlPoint(0, first_point);
-  eit->second.controlPoint(eit->second.degree(), last_point);
+  eit->second.controlPoint(0, first_point.data());
+  eit->second.controlPoint(eit->second.degree(), last_point.data());
   return (first_point == last_point);
 }
 
