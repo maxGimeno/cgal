@@ -1302,7 +1302,7 @@ is_sampling_dense_enough(const Vertex_handle& v1, const Vertex_handle& v2) const
       // Sufficient condition so that the curve portion between v1 and v2 is
       // inside the union of the two balls.
       //If they intersect, check that the union volume of the 2 spheres covers the curve, if not add a point inbetween with a size beeing half the sum of the 2 initial points and insert it in the graph
-      FT error_bound = error_bound_cord_to_curve(p, q, curve_index);
+      FT error_bound = domain_.error_bound_cord_to_curve(p, q, curve_index);
       FT squared_volume_covered = CGAL::square(size_v1) - CGAL::square(CGAL::square(distance_v1v2) + CGAL::square(size_v1) - CGAL::square(size_v2)) / (4 * CGAL::square(distance_v1v2));
       if(CGAL::square(error_bound) > squared_volume_covered) {
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
