@@ -25,8 +25,6 @@
 
 #pragma once
 
-#include <CGAL/license/Mesh_3.h>
-
 #include <CGAL/iterator.h>
 #include <CGAL/enum.h>
 #include <CGAL/number_utils.h>
@@ -223,7 +221,7 @@ private:
 private:
   typedef std::map<Point_3, Corner_index> Corners;
 
-  typedef std::map<Curve_segment_index, dtRationalBezierCurve> Edges;
+  typedef std::map<Curve_segment_index, dtkRationalBezierCurve> Edges;
   typedef std::map<Curve_segment_index, Surface_patch_index_set > Edges_incidences;
   typedef std::map<Corner_index, std::set<Curve_segment_index> > Corners_tmp_incidences;
   typedef std::map<Corner_index, Surface_patch_index_set > Corners_incidences;
@@ -294,11 +292,11 @@ get_curve_segments(OutputIterator out) const
     // Checks that the last control points is not equal to the first one
     // ///////////////////////////////////////////////////////////////////
     eit->second.controlPoint(0, first_point.data());
-    eit->second.controlPoint(eit->second.nbCps() - 1, last_point.data());
+    eit->second.controlPoint(eit->second.degree(), last_point.data());
 
     Index p_index, q_index;
     //TODO Check distance instead...
-    if ( ! first_point == last_point )
+    if ( ! (first_point == last_point) )
     {
       //Evaluate and compare to stored corners
       eit->second.evaluatePoint(0., eval_point.data());
@@ -313,8 +311,8 @@ get_curve_segments(OutputIterator out) const
     }
 
     *out++ = CGAL::cpp11::make_tuple(eit->first,
-                                     std::make_pair(p, p_index),
-                                     std::make_pair(q, q_index));
+                                     std::make_pair(0., p_index),
+                                     std::make_pair(1., q_index));
   }
 
   return out;
@@ -350,8 +348,9 @@ construct_point_on_curve_segment(double p, const Curve_segment_index& curve_inde
     eit->second.evaluatePoint(p, eval_point.data());
     return Point_3(eval_point[0], eval_point[1], eval_point[2]);
 }
-
-cgalMeshDomainWithRationalBezierFeatures<MD_>::FT cgalMeshDomainWithRationalBezierFeatures<MD_>::error_bound_cord_to_curve(double p, double q, const Curve_segment_index& curve_index) const
+template <class MD_>
+typename cgalMeshDomainWithRationalBezierFeatures<MD_>::FT
+cgalMeshDomainWithRationalBezierFeatures<MD_>::error_bound_cord_to_curve(double p, double q, const Curve_segment_index& curve_index) const
 {
     // ///////////////////////////////////////////////////////////////////
     // Recovers the edge
@@ -392,8 +391,8 @@ add_features_with_context(InputIterator first, InputIterator last,
     dtkContinuousGeometryPrimitives::Point_3 last_corner(0., 0., 0.);
     // Insert one edge for each element
     for( ; first != last ; ++first ) {
-        first->rationalBezierCurve.controlPoint(0, first_point.data());
-        first->rationalBezierCurve.controlPoint(eit->second.degree(), last_point.data());
+        first->rationalBezierCurve.controlPoint(0, first_corner.data());
+        first->rationalBezierCurve.controlPoint(first->rationalBezierCurve.degree(), last_corner.data());
         Point_3 p1(first_corner[0], first_corner[1], first_corner[2]);
         Point_3 p2(last_corner[0], last_corner[1], last_corner[2]);
         Set_of_patch_ids& ids_p1 = corners_incidence_map_[p1];
@@ -454,15 +453,13 @@ get_corner_incident_curves(Corner_index id,
   return std::copy(incidences.begin(), incidences.end(), indices_out);
 }
 
-namespace internal { namespace Mesh_3 {
-
 template <class MD_>
 const typename cgalMeshDomainWithRationalBezierFeatures<MD_>::Surface_patch_index_set&
 cgalMeshDomainWithRationalBezierFeatures<MD_>::
 get_incidences(Curve_segment_index id) const
 {
-  typename Edges_incidences::const_iterator it = edges_incidences_.find(id);
-  return it->second;
+    typename Edges_incidences::const_iterator it = edges_incidences_.find(id);
+    return it->second;
 }
 
 template <class MD_>
@@ -471,21 +468,21 @@ cgalMeshDomainWithRationalBezierFeatures<MD_>::
 register_corner(const Point_3& p, const Curve_segment_index& curve_index)
 {
 
-  typename Corners::iterator cit = corners_.lower_bound(p);
+    typename Corners::iterator cit = corners_.lower_bound(p);
 
-  // If the corner already exists, returns...
-  if(cit != corners_.end() && !(corners_.key_comp()(p, cit->first))) {
-    corners_tmp_incidences_[cit->second].insert(curve_index);
-    return;
-  }
+    // If the corner already exists, returns...
+    if(cit != corners_.end() && !(corners_.key_comp()(p, cit->first))) {
+        corners_tmp_incidences_[cit->second].insert(curve_index);
+        return;
+    }
 
-  // ...else insert it!
+    // ...else insert it!
 
-  const Corner_index index = current_corner_index_;
-  ++current_corner_index_;
+    const Corner_index index = current_corner_index_;
+    ++current_corner_index_;
 
-  corners_.insert(cit, std::make_pair(p, index));
-  corners_tmp_incidences_[index].insert(curve_index);
+    corners_.insert(cit, std::make_pair(p, index));
+    corners_tmp_incidences_[index].insert(curve_index);
 }
 
 template <class MD_>
@@ -493,17 +490,17 @@ CGAL::Sign
 cgalMeshDomainWithRationalBezierFeatures<MD_>::
 distance_sign(double p, double q, const Curve_segment_index& index) const
 {
-  typename Edges::const_iterator eit = edges_.find(index);
-  CGAL_assertion(eit != edges_.end());
+    typename Edges::const_iterator eit = edges_.find(index);
+    CGAL_assertion(eit != edges_.end());
 
-  CGAL_precondition( ! this->is_cycle(index));
+    CGAL_precondition( ! this->is_cycle(index));
 
-  if ( p == q )
-    return CGAL::ZERO;
-  else if ( p < q )
-    return CGAL::POSITIVE;
-  else
-    return CGAL::NEGATIVE;
+    if ( p == q )
+        return CGAL::ZERO;
+    else if ( p < q )
+        return CGAL::POSITIVE;
+    else
+        return CGAL::NEGATIVE;
 }
 
 template <class MD_>
@@ -511,44 +508,44 @@ CGAL::Sign
 cgalMeshDomainWithRationalBezierFeatures<MD_>::
 distance_sign_along_cycle(double p, double q, double r, const Curve_segment_index& index) const
 {
-  // Find edge
-  typename Edges::const_iterator eit = edges_.find(index);
-  CGAL_assertion(eit != edges_.end());
+    // Find edge
+    typename Edges::const_iterator eit = edges_.find(index);
+    CGAL_assertion(eit != edges_.end());
 
-  // If eit is not a cycle, then the orientation corresponds to the sign
-  // of the distance
-  //SHOULDNT THERE BE A PROBLEM IF THERE IS NO CYCLE SINCE WE ASK FOR THE DISTANCE SIGN ALONG CYCLE ?
-  if ( !this->is_cycle(index) )
-  {
-    return distance_sign(p, r, index);
-  }
+    // If eit is not a cycle, then the orientation corresponds to the sign
+    // of the distance
+    //SHOULDNT THERE BE A PROBLEM IF THERE IS NO CYCLE SINCE WE ASK FOR THE DISTANCE SIGN ALONG CYCLE ?
+    if ( !this->is_cycle(index) )
+        {
+            return distance_sign(p, r, index);
+        }
 
-  // If p and r are the same point, it correspond to a complete loop on a cycle
-  if ( p == r ) { return CGAL::POSITIVE; }
+    // If p and r are the same point, it correspond to a complete loop on a cycle
+    if ( p == r ) { return CGAL::POSITIVE; }
 
-  // We are on a cycle without any clue (p==q). Return the shortest path as
-  // orientation.
-  //THIS CANT HAPPEN
-  //HOW TO DO THAT ? ...
-  if ( p == q )
-  {
-    // FT pr = eit->second.geodesic_distance(p,r);
-    // FT rp = eit->second.geodesic_distance(r,p);
-    // if ( pr < rp ) { return CGAL::POSITIVE; }
-    // else {
-        return CGAL::NEGATIVE; // }
-  }
+    // We are on a cycle without any clue (p==q). Return the shortest path as
+    // orientation.
+    //THIS CANT HAPPEN
+    //HOW TO DO THAT ? ...
+    if ( p == q )
+        {
+            // FT pr = eit->second.geodesic_distance(p,r);
+            // FT rp = eit->second.geodesic_distance(r,p);
+            // if ( pr < rp ) { return CGAL::POSITIVE; }
+            // else {
+            return CGAL::NEGATIVE; // }
+        }
 
-  // If pq or pr is negative, edge is not a cycle, thus geodesic_distance
-  // gives the answer.
-  FT pq = eit->second.geodesic_distance(p,q);
-  FT pr = eit->second.geodesic_distance(p,r);
-  CGAL_assertion(pq > FT(0));
-  CGAL_assertion(pr > FT(0));
+    // If pq or pr is negative, edge is not a cycle, thus geodesic_distance
+    // gives the answer.
 
-  // Compare pq and pr
-  if ( pq <= pr ) { return CGAL::POSITIVE; }
-  else { return CGAL::NEGATIVE; }
+    // ///////////////////////////////////////////////////////////////////
+    // TODO
+    // ///////////////////////////////////////////////////////////////////
+
+    // Compare pq and pr
+    // if ( pq <= pr ) { return CGAL::POSITIVE; }
+    // else { return CGAL::NEGATIVE; }
 }
 
 template <class MD_>
@@ -556,18 +553,16 @@ bool
 cgalMeshDomainWithRationalBezierFeatures<MD_>::
 is_cycle(const Curve_segment_index& index) const
 {
-  // Find edge
-  typename Edges::const_iterator eit = edges_.find(index);
-  CGAL_assertion(eit != edges_.end());
-  dtkContinuousGeometryPrimitives::Point_3 first_point(0., 0., 0.);
-  dtkContinuousGeometryPrimitives::Point_3 last_point(0., 0., 0.);
-  // ///////////////////////////////////////////////////////////////////
-  // Checks that the last control point is not equal to the first one
-  // ///////////////////////////////////////////////////////////////////
-  eit->second.controlPoint(0, first_point.data());
-  eit->second.controlPoint(eit->second.degree(), last_point.data());
-  return (first_point == last_point);
+    // Find edge
+    typename Edges::const_iterator eit = edges_.find(index);
+    CGAL_assertion(eit != edges_.end());
+    dtkContinuousGeometryPrimitives::Point_3 first_point(0., 0., 0.);
+    dtkContinuousGeometryPrimitives::Point_3 last_point(0., 0., 0.);
+    // ///////////////////////////////////////////////////////////////////
+    // Checks that the last control point is not equal to the first one
+    // ///////////////////////////////////////////////////////////////////
+    eit->second.controlPoint(0, first_point.data());
+    eit->second.controlPoint(eit->second.degree(), last_point.data());
+    return (first_point == last_point);
 }
-
-
 } //namespace CGAL
