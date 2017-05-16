@@ -802,6 +802,10 @@ insert_balls_on_edges()
       const Index& q_index = CGAL::cpp11::get<2>(*fit).second;
 
       dtkContinuousGeometryPrimitives::Point_3 eval_point(0., 0., 0.);
+
+      // ///////////////////////////////////////////////////////////////////
+      // Recovers the points so to check they are already defined as corners or not
+      // ///////////////////////////////////////////////////////////////////
       eit->second.evaluatePoint(p, eval_point.data());
       Point_3 p_point(eval_point[0], eval_point[1], eval_point[2]);
       eit->second.evaluatePoint(q, eval_point.data());
@@ -812,9 +816,7 @@ insert_balls_on_edges()
       {
         vp = get_vertex_corner_from_point(p_point, p_index);
         vq = get_vertex_corner_from_point(q_point, q_index);
-      }
-      else
-      {
+      } else {
         // Even if the curve is a cycle, it can intersect other curves at
         // its first point (here 'p'). In that case, 'p' is a corner, even
         // if the curve is a cycle.
@@ -838,19 +840,9 @@ insert_balls_on_edges()
         vq = vp;
       }
 
-      // Insert balls and set treated
-      // if(do_balls_intersect(vp, vq)) {
-      //   CGAL_assertion(is_special(vp) || is_special(vq));
-      // }
-      // else
-      {
-        insert_balls(vp, vq, curve_index, Emptyset_iterator());
-      }
+      insert_balls(vp, vq, curve_index, Emptyset_iterator());
       set_treated(curve_index);
     }
-    // std::stringstream s;
-    // s << "dump-mesh-curve-" << curve_index << ".binary.cgal";
-    // debug_dump_c3t3(s.str(), c3t3_);
   }
 } //end insert_balls_on_edges()
 
