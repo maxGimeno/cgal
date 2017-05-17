@@ -349,7 +349,13 @@ cgalMeshDomainWithRationalBezierFeatures<MD_>::error_bound_cord_to_curve(double 
     // ///////////////////////////////////////////////////////////////////
     // Clip the curve at p and q, recovers the middle bezier curve and compute
     // ///////////////////////////////////////////////////////////////////
+    std::vector< double > splitting_parameters(2);
+    splitting_parameters[0] = p;
+    splitting_parameters[1] = q;
+    std::list< dtkRationalBezierCurve * > split_curves;
+    eit->second->split(split_curves, splitting_parameters);
 
+    return dtkContinuousGeometryTools::convexHullApproximationError(*(*(std::next(split_curves.begin()))));
 }
 
 template <class MD_>
