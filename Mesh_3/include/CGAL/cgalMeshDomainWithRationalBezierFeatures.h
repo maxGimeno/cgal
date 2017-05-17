@@ -393,6 +393,46 @@ add_features(InputIterator first, InputIterator last,
 }
 
 template <class MD_>
+void
+cgalMeshDomainWithRationalBezierFeatures<MD_>::
+compute_corners_incidences()
+{
+  for(typename Corners::iterator
+        cit = corners_.begin(), end = corners_.end();
+      cit != end; /* the loop variable is incremented in the  body */)
+  {
+    const Corner_index id = cit->second;
+
+    const typename Corners_tmp_incidences::mapped_type&
+      corner_tmp_incidences = corners_tmp_incidences_[id];
+
+    // If the corner is incident to only one curve, and that curve is a
+    // cycle, then remove the corner from the set.
+    if(corner_tmp_incidences.size() == 1 &&
+       is_cycle(*corner_tmp_incidences.begin()))
+    {
+      typename Corners::iterator to_erase = cit;
+      ++cit;
+      corners_.erase(to_erase);
+      continue;
+    }
+
+    Surface_patch_index_set& incidences = corners_incidences_[id];
+    // That should be an empty set.
+
+    BOOST_FOREACH(Curve_segment_index curve_index, corner_tmp_incidences)
+    {
+      get_incidences(curve_index,
+                     std::inserter(incidences,
+                                   incidences.begin()));
+    }
+
+    // increment the loop variable
+    ++cit;
+  }
+}
+
+template <class MD_>
 template <typename IndicesOutputIterator>
 IndicesOutputIterator
 cgalMeshDomainWithRationalBezierFeatures<MD_>::
