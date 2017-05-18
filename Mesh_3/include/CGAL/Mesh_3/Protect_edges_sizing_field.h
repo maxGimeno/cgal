@@ -827,8 +827,8 @@ insert_balls_on_edges()
       // ///////////////////////////////////////////////////////////////////
       // Recovers the points so to check they are already defined as corners or not
       // ///////////////////////////////////////////////////////////////////
-      Bare_point p_point = construct_point_on_curve_segment(p, curve_index);
-      Bare_point q_point = construct_point_on_curve_segment(q, curve_index);
+      Bare_point p_point = domain_.construct_point_on_curve_segment(p, curve_index);
+      Bare_point q_point = domain_.construct_point_on_curve_segment(q, curve_index);
 
       Vertex_handle vp,vq;
       if ( ! domain_.is_cycle(curve_index) )
