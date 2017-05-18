@@ -894,8 +894,8 @@ insert_balls(const Vertex_handle& vp,
   // Get positions and sizes of p and q
   const Bare_point& p_point = vp->point().point();
   const Bare_point& q_point = vq->point().point();
-  const FT sp = get_size(vp);
-  const FT sq = get_size(vq);
+  const FT sp = get_radius(vp);
+  const FT sq = get_radius(vq);
 
   //Recover their position on the Curve_segment_index
   // double p = vp->point()->parameter();
@@ -923,7 +923,7 @@ insert_balls(const Vertex_handle& vp,
 
   const Vertex_handle new_vertex = pair.first;
   out = pair.second;
-  const FT sn = get_size(new_vertex);
+  const FT sn = get_radius(new_vertex);
   if(sp <= sn) {
       out=insert_balls(vp, new_vertex, curve_index, out);
   } else {
