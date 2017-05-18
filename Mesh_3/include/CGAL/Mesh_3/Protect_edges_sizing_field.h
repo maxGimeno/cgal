@@ -865,7 +865,6 @@ insert_balls_on_edges()
   }
 } //end insert_balls_on_edges()
 
-
 template <typename C3T3, typename MD, typename Sf>
 typename Protect_edges_sizing_field<C3T3, MD, Sf>::Vertex_handle
 Protect_edges_sizing_field<C3T3, MD, Sf>::
@@ -894,12 +893,8 @@ insert_balls(const Vertex_handle& vp,
   // Get positions and sizes of p and q
   const Bare_point& p_point = vp->point().point();
   const Bare_point& q_point = vq->point().point();
-  const FT sp = get_size(vp);
-  const FT sq = get_size(vq);
-
-  //Recover their position on the Curve_segment_index
-  // double p = vp->point()->parameter();
-  // double q = vq->point()->parameter();
+  const FT sp = get_radius(vp);
+  const FT sq = get_radius(vq);
 
   if(//something recursion condition stop
      true
@@ -923,7 +918,7 @@ insert_balls(const Vertex_handle& vp,
 
   const Vertex_handle new_vertex = pair.first;
   out = pair.second;
-  const FT sn = get_size(new_vertex);
+  const FT sn = get_radius(new_vertex);
   if(sp <= sn) {
       out=insert_balls(vp, new_vertex, curve_index, out);
   } else {
@@ -987,7 +982,7 @@ refine_balls()
 	/// @TOTO pb: get_radius(va) is called several times
         FT sa_new = (std::min)(ab/distance_divisor, get_radius(va));
         FT sb_new = (std::min)(ab/distance_divisor, get_radius(vb));
-        
+
         // In case of va or vb have already been in conflict, keep minimal size
         if ( new_sizes.find(va) != new_sizes.end() )
         { sa_new = (std::min)(sa_new, new_sizes[va]); }
@@ -998,7 +993,7 @@ refine_balls()
         // Store new_sizes for va and vb
         if ( sa_new != get_radius(va) )
         { new_sizes[va] = sa_new; }
-        
+
         if ( sb_new != get_radius(vb) )
         { new_sizes[vb] = sb_new; }
       }
@@ -1229,7 +1224,7 @@ Protect_edges_sizing_field<C3T3, MD, Sf>::
 check_and_fix_vertex_along_edge(const Vertex_handle& v, ErasedVeOutIt out)
 {
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
-  std::cerr << "check_and_fix_vertex_along_edge(" 
+  std::cerr << "check_and_fix_vertex_along_edge("
             << disp_vert(v)
             << " dim=" << get_dimension(v)
             << " index=" << CGAL::oformat(c3t3_.index(v))
@@ -1318,9 +1313,20 @@ is_sampling_dense_enough(const Vertex_handle& v1, const Vertex_handle& v2) const
 
  const FT distance_v1v2 = compute_distance(v1,v2);
  //Get parameters on curve segment
+  //Check if the vertex handles points to a corner, if yes one must lookup in the corners parameters table
+  double p = 0.;
+  double q = 0.;
 
- double p = 0.;
- double q = 0.;
+  if (get_dimension(v1) == 0){
+      p = domain_.get_corner_parameter_on_curve(getIndex(v1), curve_index);
+  } else {
+      q = v1->parameter();
+  }
+  if (get_dimension(v2) == 0){
+      p = domain_.get_corner_parameter_on_curve(getIndex(v2), curve_index);
+  } else {
+      q = v2->parameter();
+  }
 
   Curve_segment_index curve_index = Curve_segment_index();
   if(get_dimension(v1) == 1) {
@@ -1431,7 +1437,7 @@ repopulate(InputIterator begin, InputIterator last,
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
   std::cerr << "repopulate(begin=" << disp_vert(*begin) << "\n"
             << "            last=" << disp_vert(*last)  << "\n"
-            << "                  distance(begin, last)=" 
+            << "                  distance(begin, last)="
             << std::distance(begin, last) << ",\n"
             << "           index=" << CGAL::oformat(index) << ")\n";
 #endif
@@ -1505,7 +1511,7 @@ analyze_and_repopulate(InputIterator begin, InputIterator last,
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
   std::cerr << "analyze_and_repopulate(begin=" << disp_vert(*begin) << "\n"
             << "                       last=" << disp_vert(*last) << "\n"
-            << "                              distance(begin, last)=" 
+            << "                              distance(begin, last)="
             << std::distance(begin, last) << ",\n"
             << "                       index=" << CGAL::oformat(index) << ")\n";
 #endif
@@ -1537,7 +1543,7 @@ analyze_and_repopulate(InputIterator begin, InputIterator last,
 
     // If (prevprev, prev, current) is ok, then go one step forward, i.e. check
     // (prevprevprev, prevprev, current)
-    while (   !ch_stack.empty() 
+    while (   !ch_stack.empty()
            && is_sizing_field_correct(*ch_stack.top(),*previous,*current, index) )
     {
       previous = ch_stack.top();

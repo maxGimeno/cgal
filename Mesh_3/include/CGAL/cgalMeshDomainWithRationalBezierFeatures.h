@@ -16,7 +16,7 @@
 // $Id$
 //
 //
-// Author(s)     : Come Le Breton, Laurent Rineau
+// Author(s)     : Come Le Breton, Laurent Rineau, Jane Tournois
 //
 //******************************************************************************
 // File Description :
@@ -122,6 +122,9 @@ public:
   template <typename OutputIterator>
   OutputIterator get_curve_segments(OutputIterator out) const;
 
+  ///Returns the parameters of the corner given by /c corner_index on the curve given by /c curve_index
+  double get_corner_parameter_on_curve(const Corner_index& corner_index, const Curve_segment_index& curve_index);
+
   /// Returns a maximal error bound on the distance bewteen the cord linking C(p) to C(q), to the curve from C(p) to C(q)
   /// \c p : parameter of C(p) in C parameter space
   /// \c q : parameter of C(q) in C parameter space
@@ -215,6 +218,8 @@ private:
   typedef std::map<Corner_index, std::set<Curve_segment_index> > Corners_tmp_incidences;
   typedef std::map<Corner_index, Surface_patch_index_set > Corners_incidences;
 
+  typedef std::map< std::pair<Corner_index, Curve_segment_index>, std::set< double > > Corners_parameters;
+
   Corners corners_;
   Corners_tmp_incidences corners_tmp_incidences_;
   Corner_index current_corner_index_;
@@ -306,6 +311,11 @@ get_curve_segments(OutputIterator out) const
   return out;
 }
 
+double
+cgalMeshDomainWithRationalBezierFeatures<MD_>::get_corner_parameter_on_curve(const Corner_index& corner_index, const Curve_segment_index& curve_index);
+{
+    return Corners_parameters(std::make_pair(corner_index, curve_index));
+}
 
 template <class MD_>
 typename cgalMeshDomainWithRationalBezierFeatures<MD_>::Index
