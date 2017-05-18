@@ -209,7 +209,8 @@ private:
 
   /// Returns true if balls of v1 and v2 intersect "enough"
   bool is_sampling_dense_enough(const Vertex_handle& v1,
-                                const Vertex_handle& v2) const;
+                                const Vertex_handle& v2,
+                                const Curve_segment_index& index) const;
 
   /// Takes an iterator on Vertex_handle as input and check if the sampling
   /// of those vertices is ok. If not, fix it.
@@ -230,7 +231,8 @@ private:
   walk_along_edge(const Vertex_handle& start,
                   const Vertex_handle& next,
                   const bool test_sampling,
-                  ErasedVeOutIt out) const;
+                  ErasedVeOutIt out,
+                  const Curve_segment_index& index) const;
 
   /// Returns next vertex along edge, i.e vertex after \c start, following
   /// the direction from \c previous to \c start
@@ -896,6 +898,10 @@ insert_balls(const Vertex_handle& vp,
   const FT sp = get_radius(vp);
   const FT sq = get_radius(vq);
 
+  //Recover their position on the Curve_segment_index
+  // double p = vp->point()->parameter();
+  // double q = vq->point()->parameter();
+
   if(//something recursion condition stop
      true
      ) return out;
@@ -1259,8 +1265,11 @@ check_and_fix_vertex_along_edge(const Vertex_handle& v, ErasedVeOutIt out)
   const Vertex_handle& previous = incident_vertices.front().first;
   const Vertex_handle& next = incident_vertices.back().first;
 
+  const Curve_segment_index& curve_index = incident_vertices.front().second;
+
   // Walk following direction (v,previous)
-  walk_along_edge(v, previous, true, std::front_inserter(to_repopulate));
+  walk_along_edge(v, previous, true, std::front_inserter(to_repopulate),
+                  curve_index);
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
   std::cerr <<  "to_repopulate.size()=" << to_repopulate.size() << "\n";
 #endif // CGAL_MESH_3_PROTECTION_DEBUG
@@ -1270,7 +1279,8 @@ check_and_fix_vertex_along_edge(const Vertex_handle& v, ErasedVeOutIt out)
       || to_repopulate.front() != to_repopulate.back() )
   {
     // Walk in other direction (v,next)
-    walk_along_edge(v, next, true, std::back_inserter(to_repopulate));
+    walk_along_edge(v, next, true, std::back_inserter(to_repopulate),
+                    curve_index);
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
     std::cerr <<  "to_repopulate.size()=" << to_repopulate.size() << "\n";
 #endif // CGAL_MESH_3_PROTECTION_DEBUG
@@ -1287,8 +1297,6 @@ check_and_fix_vertex_along_edge(const Vertex_handle& v, ErasedVeOutIt out)
   // out = std::copy(to_repopulate.begin(), to_repopulate.end(), out);
 
   // Repopulate edge
-  const Curve_segment_index& curve_index = incident_vertices.front().second;
-
   out = analyze_and_repopulate(to_repopulate.begin(),
 			       --to_repopulate.end(),
 			       curve_index,
@@ -1301,7 +1309,8 @@ check_and_fix_vertex_along_edge(const Vertex_handle& v, ErasedVeOutIt out)
 template <typename C3T3, typename MD, typename Sf>
 bool
 Protect_edges_sizing_field<C3T3, MD, Sf>::
-is_sampling_dense_enough(const Vertex_handle& v1, const Vertex_handle& v2) const
+is_sampling_dense_enough(const Vertex_handle& v1, const Vertex_handle& v2,
+                         const Curve_segment_index& curve_index) const
 {
   using CGAL::Mesh_3::internal::min_intersection_factor;
   CGAL_precondition(c3t3_.is_in_complex(v1,v2));
@@ -1310,7 +1319,6 @@ is_sampling_dense_enough(const Vertex_handle& v1, const Vertex_handle& v2) const
   FT size_v1 = get_radius(v1);
   FT size_v2 = get_radius(v2);
 
-
  const FT distance_v1v2 = compute_distance(v1,v2);
  //Get parameters on curve segment
   //Check if the vertex handles points to a corner, if yes one must lookup in the corners parameters table
@@ -1318,29 +1326,22 @@ is_sampling_dense_enough(const Vertex_handle& v1, const Vertex_handle& v2) const
   double q = 0.;
 
   if (get_dimension(v1) == 0){
-      p = domain_.get_corner_parameter_on_curve(getIndex(v1), curve_index);
+      p = domain_.get_corner_parameter_on_curve(v1->index(), curve_index);
   } else {
-      q = v1->parameter();
+      p = v1->parameter();
   }
   if (get_dimension(v2) == 0){
-      p = domain_.get_corner_parameter_on_curve(getIndex(v2), curve_index);
+      q = domain_.get_corner_parameter_on_curve(v2->index(), curve_index);
   } else {
       q = v2->parameter();
   }
 
-  Curve_segment_index curve_index = Curve_segment_index();
-  if(get_dimension(v1) == 1) {
-    curve_index = domain_.curve_segment_index(v1->index());
-  } else if(get_dimension(v2) == 1) {
-    curve_index = domain_.curve_segment_index(v2->index());
-  }
-  if(curve_index != Curve_segment_index()) {
-      // Sufficient condition so that the curve portion between v1 and v2 is
-      // inside the union of the two balls.
-      //If they intersect, check that the union volume of the 2 spheres covers the curve, if not add a point inbetween with a size beeing half the sum of the 2 initial points and insert it in the graph
-      FT error_bound = domain_.error_bound_cord_to_curve(p, q, curve_index);
-      FT squared_volume_covered = CGAL::square(size_v1) - CGAL::square(CGAL::square(distance_v1v2) + CGAL::square(size_v1) - CGAL::square(size_v2)) / (4 * CGAL::square(distance_v1v2));
-      if(CGAL::square(error_bound) > squared_volume_covered) {
+  // Sufficient condition so that the curve portion between v1 and v2 is
+  // inside the union of the two balls.
+  //If they intersect, check that the union volume of the 2 spheres covers the curve, if not add a point inbetween with a size beeing half the sum of the 2 initial points and insert it in the graph
+  FT error_bound = domain_.error_bound_cord_to_curve(p, q, curve_index);
+  FT squared_volume_covered = CGAL::square(size_v1) - CGAL::square(CGAL::square(distance_v1v2) + CGAL::square(size_v1) - CGAL::square(size_v2)) / (4 * CGAL::square(distance_v1v2));
+  if(CGAL::square(error_bound) > squared_volume_covered) {
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
       std::cerr << "Note: on curve #" << curve_index << ", between ("
                 << disp_vert(v1) << ") and (" << disp_vert(v2) << "), the "
@@ -1348,7 +1349,6 @@ is_sampling_dense_enough(const Vertex_handle& v1, const Vertex_handle& v2) const
                 << " bound error is " << bound_error << std::endl;
 #endif
       return false;
-    }
   }
 
   // Ensure size_v1 > size_v2
@@ -1365,7 +1365,8 @@ ErasedVeOutIt
 Protect_edges_sizing_field<C3T3, MD, Sf>::
 walk_along_edge(const Vertex_handle& start, const Vertex_handle& next,
                 bool /*test_sampling*/,
-                ErasedVeOutIt out) const
+                ErasedVeOutIt out,
+                const Curve_segment_index& curve_index) const
 {
 #if CGAL_MESH_3_PROTECTION_DEBUG & 4
   if(!c3t3_.is_in_complex(start, next)) {
@@ -1382,7 +1383,7 @@ walk_along_edge(const Vertex_handle& start, const Vertex_handle& next,
 
   // Walk along edge since a corner is encountered or the balls of previous
   // and current intersects enough
-  while ( ! is_sampling_dense_enough(previous, current) )
+  while ( ! is_sampling_dense_enough(previous, current, curve_index) )
   {
     *out++ = current;
 
@@ -1617,7 +1618,8 @@ repopulate_edges_around_corner(const Vertex_handle& v, ErasedVeOutIt out)
     // Walk along each incident edge of the corner
     Vertex_vector to_repopulate;
     to_repopulate.push_back(v);
-    walk_along_edge(v, next, true, std::back_inserter(to_repopulate));
+    walk_along_edge(v, next, true, std::back_inserter(to_repopulate),
+                    curve_index);
 
     // Return erased vertices
     std::copy(to_repopulate.begin(), to_repopulate.end(), out);

@@ -123,7 +123,7 @@ public:
   OutputIterator get_curve_segments(OutputIterator out) const;
 
   ///Returns the parameters of the corner given by /c corner_index on the curve given by /c curve_index
-  double get_corner_parameter_on_curve(const Corner_index& corner_index, const Curve_segment_index& curve_index);
+  FT get_corner_parameter_on_curve(const Corner_index& corner_index, const Curve_segment_index& curve_index);
 
   /// Returns a maximal error bound on the distance bewteen the cord linking C(p) to C(q), to the curve from C(p) to C(q)
   /// \c p : parameter of C(p) in C parameter space
@@ -142,7 +142,8 @@ public:
   /// \c r : parameter of C(r) in C parameter space
   CGAL::Sign distance_sign_along_cycle(double p, double q, double r, const Curve_segment_index& index) const;
 
-  /// Returns true if curve \c curve_index is a cycle
+  /// Returns true if curve \c curve_index is a cycle. The point is ignored.
+  bool is_cycle(const Point_3&, const Curve_segment_index& index) const;
   bool is_cycle(const Curve_segment_index& index) const;
 
   /// Returns an Index from a Curve_segment_index
@@ -311,8 +312,9 @@ get_curve_segments(OutputIterator out) const
   return out;
 }
 
-double
-cgalMeshDomainWithRationalBezierFeatures<MD_>::get_corner_parameter_on_curve(const Corner_index& corner_index, const Curve_segment_index& curve_index);
+template <class MD_>
+typename cgalMeshDomainWithRationalBezierFeatures<MD_>::FT
+cgalMeshDomainWithRationalBezierFeatures<MD_>::get_corner_parameter_on_curve(const Corner_index& corner_index, const Curve_segment_index& curve_index)
 {
     return Corners_parameters(std::make_pair(corner_index, curve_index));
 }
@@ -576,6 +578,14 @@ distance_sign_along_cycle(double p, double q, double r, const Curve_segment_inde
     // Compare pq and pr
     // if ( pq <= pr ) { return CGAL::POSITIVE; }
     // else { return CGAL::NEGATIVE; }
+}
+
+template <class MD_>
+bool
+cgalMeshDomainWithRationalBezierFeatures<MD_>::
+is_cycle(const Point_3&, const Curve_segment_index& index) const
+{
+  return is_cycle(index);
 }
 
 template <class MD_>
