@@ -29,9 +29,9 @@
 
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Mesh_3/io_signature.h>
-#ifndef CGAL_NO_ASSERTIONS
+#ifdef CGAL_NO_ASSERTIONS
 #  include <boost/math/special_functions/next.hpp> // for float_prior
-#endifo
+#endif
 #include <boost/function_output_iterator.hpp>
 #if ! defined(CGAL_NO_PRECONDITIONS)
 #  include <sstream>
