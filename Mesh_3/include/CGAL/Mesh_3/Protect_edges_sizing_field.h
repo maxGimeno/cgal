@@ -39,6 +39,7 @@
 #ifdef CGAL_MESH_3_DUMP_FEATURES_PROTECTION_ITERATIONS
 #include <CGAL/IO/File_binary_mesh_3.h>
 #endif
+#include <CGAL/Has_timestamp.h>
 
 namespace CGAL {
 namespace Mesh_3 {
@@ -81,6 +82,7 @@ namespace internal {
 #include <CGAL/squared_distance_3.h>
 
 #include <fstream>
+#include <sstream>
 
 namespace CGAL {
 
@@ -256,7 +258,8 @@ private:
   /// interpolation of sizes of \c v1 and \c v3
   bool is_sizing_field_correct(const Vertex_handle& v1,
                                const Vertex_handle& v2,
-                               const Vertex_handle& v3) const;
+                               const Vertex_handle& v3,
+                               const Curve_segment_index& index) const;
 
   /// Repopulate all incident curve around corner \c v
   /// \pre \c v is a corner of c3t3
@@ -289,7 +292,7 @@ private:
   }
 
   /// Returns the radius of the ball of vertex \c v
-  FT get_size(const Vertex_handle& v) const
+  FT get_radius(const Vertex_handle& v) const
   {
     return CGAL::sqrt(v->point().weight());
   }
@@ -336,6 +339,28 @@ private:
       CGAL_error_msg(msg.str().c_str());
     }
     return s;
+  }
+
+  template <typename Vertex_handle>
+  static std::string disp_vert(Vertex_handle v, Tag_true) {
+    std::stringstream ss;
+    ss << (void*)(&*v) << "[ts=" << v->time_stamp() << "]"
+       << "(" << v->point() <<")";
+    return ss.str();
+  }
+
+  template <typename Vertex_handle>
+  static std::string disp_vert(Vertex_handle v, Tag_false) {
+    std::stringstream ss;
+    ss << (void*)(&*v) << "(" << v->point() <<")";
+    return ss.str();
+  }
+
+  template <typename Vertex_handle>
+  static std::string disp_vert(Vertex_handle v)
+  {
+    typedef typename std::iterator_traits<Vertex_handle>::value_type Vertex;
+    return disp_vert(v, CGAL::internal::Has_timestamp<Vertex>());
   }
 
 private:
@@ -959,10 +984,10 @@ refine_balls()
 
         // Compute correct size of balls
         const FT ab = compute_distance(va,vb);
-	/// @TOTO pb: get_size(va) is called several times
-        FT sa_new = (std::min)(ab/distance_divisor, get_size(va));
-        FT sb_new = (std::min)(ab/distance_divisor, get_size(vb));
-
+	/// @TOTO pb: get_radius(va) is called several times
+        FT sa_new = (std::min)(ab/distance_divisor, get_radius(va));
+        FT sb_new = (std::min)(ab/distance_divisor, get_radius(vb));
+        
         // In case of va or vb have already been in conflict, keep minimal size
         if ( new_sizes.find(va) != new_sizes.end() )
         { sa_new = (std::min)(sa_new, new_sizes[va]); }
@@ -971,10 +996,10 @@ refine_balls()
         { sb_new = (std::min)(sb_new, new_sizes[vb]); }
 
         // Store new_sizes for va and vb
-        if ( sa_new != get_size(va) )
+        if ( sa_new != get_radius(va) )
         { new_sizes[va] = sa_new; }
-
-        if ( sb_new != get_size(vb) )
+        
+        if ( sb_new != get_radius(vb) )
         { new_sizes[vb] = sb_new; }
       }
     }
@@ -1017,6 +1042,12 @@ refine_balls()
     // Check edges
     check_and_repopulate_edges();
   }
+
+  if(this->refine_balls_iteration_nb == refine_balls_max_nb_of_loops)
+    std::cerr << "Warning : features protection has reached maximal "
+              << " number of loops." << std::endl
+              << "          It might result in a crash." << std::endl;
+
 } // end refine_balls()
 
 
@@ -1065,9 +1096,8 @@ change_ball_size(const Vertex_handle& v, const FT size, const bool special_ball)
   // { return v; }
 
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
-  std::cerr << "change_ball_size(v=" << (void*)(&*v)
-            << " (" << v->point()
-            << ") dim=" << c3t3_.in_dimension(v)
+  std::cerr << "change_ball_size(v=" << disp_vert(v)
+            << " dim=" << c3t3_.in_dimension(v)
             << " index=" << CGAL::oformat(c3t3_.index(v))
             << " ,\n"
             << "                 size=" << size
@@ -1199,9 +1229,9 @@ Protect_edges_sizing_field<C3T3, MD, Sf>::
 check_and_fix_vertex_along_edge(const Vertex_handle& v, ErasedVeOutIt out)
 {
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
-  std::cerr << "check_and_fix_vertex_along_edge("
-            << (void*)(&*v) << "= (" << v->point()
-            << ") dim=" << get_dimension(v)
+  std::cerr << "check_and_fix_vertex_along_edge(" 
+            << disp_vert(v)
+            << " dim=" << get_dimension(v)
             << " index=" << CGAL::oformat(c3t3_.index(v))
             << " special=" << std::boolalpha << is_special(v)
             << ")\n";
@@ -1282,8 +1312,8 @@ is_sampling_dense_enough(const Vertex_handle& v1, const Vertex_handle& v2) const
   CGAL_precondition(c3t3_.is_in_complex(v1,v2));
 
   // Get sizes
-  FT size_v1 = get_size(v1);
-  FT size_v2 = get_size(v2);
+  FT size_v1 = get_radius(v1);
+  FT size_v2 = get_radius(v2);
 
 
  const FT distance_v1v2 = compute_distance(v1,v2);
@@ -1307,7 +1337,7 @@ is_sampling_dense_enough(const Vertex_handle& v1, const Vertex_handle& v2) const
       if(CGAL::square(error_bound) > squared_volume_covered) {
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
       std::cerr << "Note: on curve #" << curve_index << ", between ("
-                << v1->point() << ") and (" << v2->point() << "), the "
+                << disp_vert(v1) << ") and (" << disp_vert(v2) << "), the "
                 << "volume covered is " << volume_covered << " and the"
                 << " bound error is " << bound_error << std::endl;
 #endif
@@ -1399,11 +1429,9 @@ repopulate(InputIterator begin, InputIterator last,
 	   const Curve_segment_index& index, ErasedVeOutIt out)
 {
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
-  std::cerr << "repopulate(begin=" << (void*)(&**begin)
-            << " (" << (*begin)->point() << "),\n"
-            << "            last=" << (void*)(&**last)
-            << " (" << (*last)->point() << ")\n"
-            << "                  distance(begin, last)="
+  std::cerr << "repopulate(begin=" << disp_vert(*begin) << "\n"
+            << "            last=" << disp_vert(*last)  << "\n"
+            << "                  distance(begin, last)=" 
             << std::distance(begin, last) << ",\n"
             << "           index=" << CGAL::oformat(index) << ")\n";
 #endif
@@ -1475,11 +1503,9 @@ analyze_and_repopulate(InputIterator begin, InputIterator last,
 		       const Curve_segment_index& index, ErasedVeOutIt out)
 {
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
-  std::cerr << "analyze_and_repopulate(begin=" << (void*)(&**begin)
-            << " (" << (*begin)->point() << "),\n"
-            << "                       last=" << (void*)(&**last)
-            << " (" << (*last)->point() << ")\n"
-            << "                              distance(begin, last)="
+  std::cerr << "analyze_and_repopulate(begin=" << disp_vert(*begin) << "\n"
+            << "                       last=" << disp_vert(*last) << "\n"
+            << "                              distance(begin, last)=" 
             << std::distance(begin, last) << ",\n"
             << "                       index=" << CGAL::oformat(index) << ")\n";
 #endif
@@ -1511,8 +1537,8 @@ analyze_and_repopulate(InputIterator begin, InputIterator last,
 
     // If (prevprev, prev, current) is ok, then go one step forward, i.e. check
     // (prevprevprev, prevprev, current)
-    while (   !ch_stack.empty()
-           && is_sizing_field_correct(*ch_stack.top(),*previous,*current) )
+    while (   !ch_stack.empty() 
+           && is_sizing_field_correct(*ch_stack.top(),*previous,*current, index) )
     {
       previous = ch_stack.top();
       ch_stack.pop();
@@ -1546,11 +1572,12 @@ bool
 Protect_edges_sizing_field<C3T3, MD, Sf>::
 is_sizing_field_correct(const Vertex_handle& v1,
                         const Vertex_handle& v2,
-                        const Vertex_handle& v3) const
+                        const Vertex_handle& v3,
+                        const Curve_segment_index& curve_index) const
 {
-  FT s1 = get_size(v1);
-  FT s2 = get_size(v2);
-  FT s3 = get_size(v3);
+  FT s1 = get_radius(v1);
+  FT s2 = get_radius(v2);
+  FT s3 = get_radius(v3);
   FT D = compute_distance(v1,v3);
   FT d = compute_distance(v1,v2);
 
