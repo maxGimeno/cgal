@@ -139,7 +139,8 @@ public:
   /// \c r : parameter of C(r) in C parameter space
   CGAL::Sign distance_sign_along_cycle(double p, double q, double r, const Curve_segment_index& index) const;
 
-  /// Returns true if curve \c curve_index is a cycle
+  /// Returns true if curve \c curve_index is a cycle. The point is ignored.
+  bool is_cycle(const Point_3&, const Curve_segment_index& index) const;
   bool is_cycle(const Curve_segment_index& index) const;
 
   /// Returns an Index from a Curve_segment_index
@@ -566,6 +567,14 @@ distance_sign_along_cycle(double p, double q, double r, const Curve_segment_inde
     // Compare pq and pr
     // if ( pq <= pr ) { return CGAL::POSITIVE; }
     // else { return CGAL::NEGATIVE; }
+}
+
+template <class MD_>
+bool
+cgalMeshDomainWithRationalBezierFeatures<MD_>::
+is_cycle(const Point_3&, const Curve_segment_index& index) const
+{
+  return is_cycle(index);
 }
 
 template <class MD_>
