@@ -1285,7 +1285,12 @@ is_sampling_dense_enough(const Vertex_handle& v1, const Vertex_handle& v2) const
   FT size_v1 = get_size(v1);
   FT size_v2 = get_size(v2);
 
+
  const FT distance_v1v2 = compute_distance(v1,v2);
+ //Get parameters on curve segment
+
+ double p = 0.;
+ double q = 0.;
 
   Curve_segment_index curve_index = Curve_segment_index();
   if(get_dimension(v1) == 1) {
