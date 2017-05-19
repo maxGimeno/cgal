@@ -801,8 +801,8 @@ insert_balls_on_edges()
 {
   // Get features
   typedef CGAL::cpp11::tuple< Curve_segment_index,
-                             std::pair<double, Index>,
-                             std::pair<double, Index> >    Feature_tuple;
+                              Corner_index,
+                              Corner_index >    Feature_tuple;
   typedef std::vector<Feature_tuple>                          Input_features;
 
   Input_features input_features;
@@ -818,13 +818,11 @@ insert_balls_on_edges()
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
       std::cerr << "** treat curve #" << curve_index << std::endl;
 #endif
-      double p = CGAL::cpp11::get<1>(*fit).first;
-      double q = CGAL::cpp11::get<2>(*fit).first;
+      Corner_index p_index = CGAL::cpp11::get<1>(*fit);
+      Corner_index q_index = CGAL::cpp11::get<2>(*fit);
 
-      const Index& p_index = CGAL::cpp11::get<1>(*fit).second;
-      const Index& q_index = CGAL::cpp11::get<2>(*fit).second;
-
-      dtkContinuousGeometryPrimitives::Point_3 eval_point(0., 0., 0.);
+      double p = domain_.get_corner_parameter_on_curve(p_index, curve_index);
+      double q = domain_.get_corner_parameter_on_curve(q_index, curve_index);
 
       // ///////////////////////////////////////////////////////////////////
       // Recovers the points so to check they are already defined as corners or not
@@ -832,37 +830,48 @@ insert_balls_on_edges()
       Bare_point p_point = domain_.construct_point_on_curve_segment(p, curve_index);
       Bare_point q_point = domain_.construct_point_on_curve_segment(q, curve_index);
 
-      Vertex_handle vp,vq;
       if ( ! domain_.is_cycle(curve_index) )
       {
+        Vertex_handle vp,vq;
         vp = get_vertex_corner_from_point(p_point, p_index);
         vq = get_vertex_corner_from_point(q_point, q_index);
+        insert_balls(vp, vq, curve_index, Emptyset_iterator());
+        set_treated(curve_index);
       } else {
+        Vertex_handle vp,vq;
+        vp = get_vertex_corner_from_point(p_point, p_index);
+        vq = get_vertex_corner_from_point(q_point, q_index);
         // Even if the curve is a cycle, it can intersect other curves at
         // its first point (here 'p'). In that case, 'p' is a corner, even
         // if the curve is a cycle.
-        if(!c3t3_.triangulation().is_vertex(Weighted_point(p_point), vp))
-        {
+        if(!c3t3_.triangulation().is_vertex(Weighted_point(p_point), vp)) {
+          Vertex_handle va, vb;
           // if 'p' is not a corner, find out a second point 'q' on the
           // curve, "far" from 'p', and limit the radius of the ball of 'p'
           // with the third of the distance from 'p' to 'q'.
           FT p_size = query_size(p_point, 1, p_index);
 
-          Bare_point other_point = domain_.construct_point_on_curve_segment(0.5, curve_index);
-          p_size = (std::min)(p_size, compute_distance(p_point, other_point) / 3);
-          vp = smart_insert_point(p_point,
+          Bare_point other_point_a = domain_.construct_point_on_curve_segment(1./3., curve_index);
+          Bare_point other_point_b = domain_.construct_point_on_curve_segment(2./3., curve_index);
+          p_size = (std::min)(p_size, compute_distance(p_point, other_point_a) / 3);
+          p_size = (std::min)(p_size, compute_distance(p_point, other_point_b) / 3);
+          va = smart_insert_point(other_point_a,
                                   CGAL::square(p_size),
                                   1,
                                   p_index,
 				                  CGAL::Emptyset_iterator()).first;
+          va->set_meshing_info(1./3.);
+          vb = smart_insert_point(other_point_b,
+                                  CGAL::square(p_size),
+                                  1,
+                                  p_index,
+				                  CGAL::Emptyset_iterator()).first;
+          vb->set_meshing_info(2./3);
+          insert_balls(vp, va, curve_index, Emptyset_iterator());
+          insert_balls(va, vb, curve_index, Emptyset_iterator());
+          insert_balls(vb, vq, curve_index, Emptyset_iterator());
         }
-        // No 'else' because in that case 'is_vertex(..)' already filled
-        // the variable 'vp'.
-        vq = vp;
       }
-
-      insert_balls(vp, vq, curve_index, Emptyset_iterator());
-      set_treated(curve_index);
     }
   }
 } //end insert_balls_on_edges()
@@ -1326,14 +1335,14 @@ is_sampling_dense_enough(const Vertex_handle& v1, const Vertex_handle& v2,
   double q = 0.;
 
   if (get_dimension(v1) == 0){
-      p = domain_.get_corner_parameter_on_curve(v1->index(), curve_index);
+      p = domain_.get_corner_parameter_on_curve(boost::get<Corner_index>(v1->index()), curve_index);
   } else {
-      p = v1->parameter();
+      p = v1->meshing_info();
   }
   if (get_dimension(v2) == 0){
-      q = domain_.get_corner_parameter_on_curve(v2->index(), curve_index);
+      q = domain_.get_corner_parameter_on_curve(boost::get<Corner_index>(v2->index()), curve_index);
   } else {
-      q = v2->parameter();
+      q = v2->meshing_info();
   }
 
   // Sufficient condition so that the curve portion between v1 and v2 is
@@ -1488,14 +1497,14 @@ repopulate(InputIterator begin, InputIterator last,
 
   // If edge is a cycle, order the iterators according to the orientation of
   // the cycle
-  if (  domain_.is_cycle((*begin)->point().point(), index)
-      && domain_.distance_sign_along_cycle((*begin)->point().point(),
-                                           point_through,
-                                           (*last)->point().point(),
-                                           index ) != CGAL::POSITIVE )
-  {
-    std::swap(begin,last);
-  }
+  // if (  domain_.is_cycle((*begin)->point().point(), index)
+  //     && domain_.distance_sign_along_cycle((*begin)->point().point(),
+  //                                          point_through,
+  //                                          (*last)->point().point(),
+  //                                          index ) != CGAL::POSITIVE )
+  // {
+  //   std::swap(begin,last);
+  // }
 
   // Repopulate edge
   return insert_balls(*begin, *last, index, out);
