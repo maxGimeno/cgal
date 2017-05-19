@@ -380,11 +380,14 @@ add_features(InputIterator first, InputIterator last,
       dtkContinuousGeometryPrimitives::Point_3 last_point(0., 0., 0.);
       (*first)->controlPoint(0, first_point.data());
       (*first)->controlPoint((*first)->degree(), last_point.data());
+      Point_3 first_cgal(first_point[0], first_point[1], first_point[2]);
 
-      Corner_index corner_index = register_corner(Point_3(first_point[0], first_point[1], first_point[2]), curve_index);
+      Corner_index corner_index = register_corner(first_cgal, curve_index);
       corners_parameters.insert(std::make_pair(std::make_pair(corner_index, curve_index), 0.));
-      if (! (first_point == last_point) ) {
-          corner_index = register_corner(Point_3(last_point[0], last_point[1], last_point[2]), curve_index);
+      std::cerr << corner_index << " " << curve_index << std::endl;
+      Point_3 last_cgal(last_point[0], last_point[1], last_point[2]);
+      if (CGAL::squared_distance(first_cgal, last_cgal) > 1e-10) {
+          corner_index = register_corner(last_cgal, curve_index);
           corners_parameters.insert(std::make_pair(std::make_pair(corner_index, curve_index), 1.));
       }
 
