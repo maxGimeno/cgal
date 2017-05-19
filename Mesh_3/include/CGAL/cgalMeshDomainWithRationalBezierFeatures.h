@@ -500,7 +500,7 @@ register_corner(const Point_3& p, const Curve_segment_index& curve_index)
     // If the corner already exists, returns...
     if(cit != corners_.end() && !(corners_.key_comp()(p, cit->first))) {
         corners_tmp_incidences_[cit->second].insert(curve_index);
-        return current_corner_index_;
+        return cit->second;
     }
 
     // ...else insert it!
