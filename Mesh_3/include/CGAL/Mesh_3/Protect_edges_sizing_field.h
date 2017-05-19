@@ -868,6 +868,7 @@ insert_balls_on_edges()
                                   p_index,
 				                  CGAL::Emptyset_iterator()).first;
           vb->set_meshing_info(2./3);
+
           insert_balls(vp, va, curve_index, Emptyset_iterator());
           insert_balls(va, vb, curve_index, Emptyset_iterator());
           insert_balls(vb, vq, curve_index, Emptyset_iterator());
@@ -909,18 +910,29 @@ insert_balls(const Vertex_handle& vp,
   const FT sq = get_radius(vq);
 
   //Recover their position on the Curve_segment_index
-  // double p = vp->point()->parameter();
-  // double q = vq->point()->parameter();
+  double p = 0.;
+  double q = 0.;
+  if (get_dimension(vp) == 0){
+      p = domain_.get_corner_parameter_on_curve(boost::get<Corner_index>(vp->index()), curve_index);
+  } else {
+      p = vp->meshing_info();
+  }
+  if (get_dimension(vq) == 0){
+      q = domain_.get_corner_parameter_on_curve(boost::get<Corner_index>(vq->index()), curve_index);
+  } else {
+      q = vq->meshing_info();
+  }
 
-  if(//something recursion condition stop
-     true
-     ) return out;
+  if(do_balls_intersect(vp, vq)) {
+      c3t3_.add_to_complex(vp, vq, curve_index);
+      return out;
+  }
 
-  const Bare_point new_point = domain_.construct_point_on_curve_segment(0.5, curve_index);
+  const Bare_point new_point = domain_.construct_point_on_curve_segment((p + q) / 2., curve_index);
 
   const int dim = 1; // new_point is on edge
   const Index index = domain_.index_from_curve_segment_index(curve_index);
-  const FT point_weight = CGAL::square(size_(new_point, dim, index));
+  const FT point_weight = CGAL::square((std::min)((std::min)(sp, sq), size_(new_point, dim, index)));
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
   std::cerr << "  middle point: " << new_point << std::endl;
   std::cerr << "  new weight: " << point_weight << std::endl;
