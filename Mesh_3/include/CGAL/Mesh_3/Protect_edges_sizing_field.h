@@ -40,6 +40,7 @@
 #include <CGAL/IO/File_binary_mesh_3.h>
 #endif
 #include <CGAL/Has_timestamp.h>
+#include <CGAL/internal/Mesh_3/Handle_IO_for_pair_of_int.h>
 
 namespace CGAL {
 namespace Mesh_3 {
@@ -1354,8 +1355,8 @@ is_sampling_dense_enough(const Vertex_handle& v1, const Vertex_handle& v2,
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
       std::cerr << "Note: on curve #" << curve_index << ", between ("
                 << disp_vert(v1) << ") and (" << disp_vert(v2) << "), the "
-                << "volume covered is " << volume_covered << " and the"
-                << " bound error is " << bound_error << std::endl;
+                << "volume covered is " << CGAL::sqrt(squared_volume_covered)
+                << " and the bound error is " << error_bound << std::endl;
 #endif
       return false;
   }
