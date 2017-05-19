@@ -283,7 +283,6 @@ get_curve_segments(OutputIterator out) const
     for ( typename Edges::const_iterator
               eit = edges_.begin(), end = edges_.end() ; eit != end ; ++eit )
         {
-            CGAL_assertion( eit->second->is_valid() );
             // ///////////////////////////////////////////////////////////////////
             // Checks that the last control points is not equal to the first one
             // ///////////////////////////////////////////////////////////////////
