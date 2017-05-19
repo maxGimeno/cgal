@@ -118,12 +118,12 @@ public:
   OutputIterator get_corners(OutputIterator out) const;
 
   /// OutputIterator value type is CGAL::cpp11::tuple<Curve_segment_index,
-  /// std::pair<Point_3,Index>, std::pair<Point_3,Index> >
+  /// Corner_index, Corner_index >
   template <typename OutputIterator>
   OutputIterator get_curve_segments(OutputIterator out) const;
 
   ///Returns the parameters of the corner given by /c corner_index on the curve given by /c curve_index
-  FT get_corner_parameter_on_curve(const Corner_index& corner_index, const Curve_segment_index& curve_index);
+  FT get_corner_parameter_on_curve(const Corner_index& corner_index, const Curve_segment_index& curve_index) const;
 
   /// Returns a maximal error bound on the distance bewteen the cord linking C(p) to C(q), to the curve from C(p) to C(q)
   /// \c p : parameter of C(p) in C parameter space
@@ -199,7 +199,7 @@ public:
   get_incidences(Curve_segment_index id) const;
 
 private:
-  void register_corner(const Point_3& p, const Curve_segment_index& index);
+  Corner_index register_corner(const Point_3& p, const Curve_segment_index& index);
   void compute_corners_incidences();
 
   /// Returns the sign of the geodesic distance between \c p and \c q
@@ -219,12 +219,13 @@ private:
   typedef std::map<Corner_index, std::set<Curve_segment_index> > Corners_tmp_incidences;
   typedef std::map<Corner_index, Surface_patch_index_set > Corners_incidences;
 
-  typedef std::map< std::pair<Corner_index, Curve_segment_index>, std::set< double > > Corners_parameters;
+  typedef std::map< std::pair<Corner_index, Curve_segment_index>, double > Corners_parameters;
 
   Corners corners_;
   Corners_tmp_incidences corners_tmp_incidences_;
   Corner_index current_corner_index_;
   Corners_incidences corners_incidences_;
+  Corners_parameters corners_parameters;
 
   Edges edges_;
   Curve_segment_index current_curve_index_;
@@ -289,34 +290,26 @@ get_curve_segments(OutputIterator out) const
             eit->second->controlPoint(0, first_point.data());
             eit->second->controlPoint(eit->second->degree(), last_point.data());
 
-            Index p_index, q_index;
+            Corner_index p_index, q_index;
             //TODO Check distance instead...
-            if ( ! (first_point == last_point) )
-                {
-                    //Evaluate and compare to stored corners
-                    eit->second->evaluatePoint(0., eval_point.data());
-                    p_index = point_corner_index(Point_3(eval_point[0], eval_point[1], eval_point[2]));
-                    eit->second->evaluatePoint(1., eval_point.data());
-                    q_index = point_corner_index(Point_3(eval_point[0], eval_point[1], eval_point[2]));
-                }
-            else
-                {
-                    p_index = index_from_curve_segment_index(eit->first);
-                    q_index = p_index;
-                }
+            //Evaluate and compare to stored corners
+            eit->second->evaluatePoint(0., eval_point.data());
+            p_index = boost::get<Corner_index>(point_corner_index(Point_3(eval_point[0], eval_point[1], eval_point[2])));
+            eit->second->evaluatePoint(1., eval_point.data());
+            q_index = boost::get<Corner_index>(point_corner_index(Point_3(eval_point[0], eval_point[1], eval_point[2])));
 
             *out++ = CGAL::cpp11::make_tuple(eit->first,
-                                             std::make_pair(0., p_index),
-                                             std::make_pair(1., q_index));
+                                             p_index,
+                                             q_index);
         }
   return out;
 }
 
 template <class MD_>
 typename cgalMeshDomainWithRationalBezierFeatures<MD_>::FT
-cgalMeshDomainWithRationalBezierFeatures<MD_>::get_corner_parameter_on_curve(const Corner_index& corner_index, const Curve_segment_index& curve_index)
+cgalMeshDomainWithRationalBezierFeatures<MD_>::get_corner_parameter_on_curve(const Corner_index& corner_index, const Curve_segment_index& curve_index) const
 {
-    return Corners_parameters(std::make_pair(corner_index, curve_index));
+    return corners_parameters.at(std::make_pair(corner_index, curve_index));
 }
 
 template <class MD_>
@@ -382,17 +375,20 @@ add_features(InputIterator first, InputIterator last,
   {
       const Curve_segment_index curve_index = current_curve_index_++;
       // ///////////////////////////////////////////////////////////////////
-      // Computes the first and last tips of the edge
+      // Computes the first and last tips of the edge (the corners)
       // ///////////////////////////////////////////////////////////////////
       dtkContinuousGeometryPrimitives::Point_3 first_point(0., 0., 0.);
       dtkContinuousGeometryPrimitives::Point_3 last_point(0., 0., 0.);
       (*first)->controlPoint(0, first_point.data());
       (*first)->controlPoint((*first)->degree(), last_point.data());
 
-      register_corner(Point_3(first_point[0], first_point[1], first_point[2]), curve_index);
+      Corner_index corner_index = register_corner(Point_3(first_point[0], first_point[1], first_point[2]), curve_index);
+      corners_parameters.insert(std::make_pair(std::make_pair(corner_index, curve_index), 0.));
       if (! (first_point == last_point) ) {
-              register_corner(Point_3(last_point[0], last_point[1], last_point[2]), curve_index);
+          corner_index = register_corner(Point_3(last_point[0], last_point[1], last_point[2]), curve_index);
+          corners_parameters.insert(std::make_pair(std::make_pair(corner_index, curve_index), 1.));
       }
+
       *indices_out++ = curve_index;
 
       // Create a new rational bezier curve
@@ -495,7 +491,7 @@ get_incidences(Curve_segment_index id) const
 }
 
 template <class MD_>
-void
+typename cgalMeshDomainWithRationalBezierFeatures<MD_>::Corner_index
 cgalMeshDomainWithRationalBezierFeatures<MD_>::
 register_corner(const Point_3& p, const Curve_segment_index& curve_index)
 {
@@ -505,7 +501,7 @@ register_corner(const Point_3& p, const Curve_segment_index& curve_index)
     // If the corner already exists, returns...
     if(cit != corners_.end() && !(corners_.key_comp()(p, cit->first))) {
         corners_tmp_incidences_[cit->second].insert(curve_index);
-        return;
+        return current_corner_index_;
     }
 
     // ...else insert it!
@@ -515,6 +511,7 @@ register_corner(const Point_3& p, const Curve_segment_index& curve_index)
 
     corners_.insert(cit, std::make_pair(p, index));
     corners_tmp_incidences_[index].insert(curve_index);
+    return index;
 }
 
 template <class MD_>
