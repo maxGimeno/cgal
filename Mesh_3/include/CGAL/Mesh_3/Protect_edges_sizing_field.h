@@ -334,8 +334,9 @@ private:
   template <typename Vertex_handle>
   static std::string disp_vert(Vertex_handle v, Tag_true) {
     std::stringstream ss;
-    ss << (void*)(&*v) << "[ts=" << v->time_stamp() << "]"
-       << "(" << v->point() <<")";
+    ss << (void*)(&*v) << "[ts=" << v->time_stamp() << "]["
+       << "param=" << v->meshing_info()
+       << "](" << v->point() <<")";
     return ss.str();
   }
 
