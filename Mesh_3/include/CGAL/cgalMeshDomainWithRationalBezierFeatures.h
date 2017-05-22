@@ -372,6 +372,7 @@ add_features(InputIterator first, InputIterator last,
   // Insert one edge for each element
   while ( first != last )
   {
+      //Starts at 1 for the first curve
       const Curve_segment_index curve_index = current_curve_index_++;
       // ///////////////////////////////////////////////////////////////////
       // Computes the first and last tips of the edge (the corners)
@@ -383,8 +384,8 @@ add_features(InputIterator first, InputIterator last,
       Point_3 first_cgal(first_point[0], first_point[1], first_point[2]);
 
       Corner_index corner_index = register_corner(first_cgal, curve_index);
+      //Stores the parameters of the corner on the curve identifid by curve index
       corners_parameters.insert(std::make_pair(std::make_pair(corner_index, curve_index), 0.));
-      std::cerr << corner_index << " " << curve_index << std::endl;
       Point_3 last_cgal(last_point[0], last_point[1], last_point[2]);
       if (CGAL::squared_distance(first_cgal, last_cgal) > 1e-10) {
           corner_index = register_corner(last_cgal, curve_index);
