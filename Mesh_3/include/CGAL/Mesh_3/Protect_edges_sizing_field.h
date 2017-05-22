@@ -1151,6 +1151,7 @@ change_ball_size(const Vertex_handle& v, const FT size, const bool special_ball)
 
   unchecked_vertices_.erase(v);
   // Change v size
+  double meshing_info = v->meshing_info();
   c3t3_.triangulation().remove(v);
 
   CGAL_assertion_code(Tr& tr = c3t3_.triangulation());
@@ -1162,6 +1163,7 @@ change_ball_size(const Vertex_handle& v, const FT size, const bool special_ball)
                                                        std::back_inserter(hidden_vertices)));
 
   Vertex_handle new_v = insert_point(p, w , dim, index, special_ball);
+  new_v->set_meshing_info(meshing_info);
   CGAL_assertion(hidden_vertices.empty());
 
   CGAL_assertion( (! special_ball) || is_special(new_v) );
