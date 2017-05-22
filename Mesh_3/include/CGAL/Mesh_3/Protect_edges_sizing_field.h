@@ -943,25 +943,13 @@ insert_balls(const Vertex_handle& vp,
   out = pair.second;
   const FT sn = get_radius(new_vertex);
   if(sp <= sn) {
-#if CGAL_MESH_3_PROTECTION_DEBUG & 1
-      std::cerr << __LINE__ << std::endl;
-#endif
       out=insert_balls(vp, new_vertex, curve_index, out);
   } else {
-#if CGAL_MESH_3_PROTECTION_DEBUG & 1
-      std::cerr << __LINE__ << std::endl;
-#endif
       out=insert_balls(new_vertex, vp, curve_index, out);
   }
   if(sn <= sq) {
-#if CGAL_MESH_3_PROTECTION_DEBUG & 1
-      std::cerr << __LINE__ << std::endl;
-#endif
       out=insert_balls(new_vertex, vq, curve_index, out);
   } else {
-#if CGAL_MESH_3_PROTECTION_DEBUG & 1
-      std::cerr << __LINE__ << std::endl;
-#endif
       out=insert_balls(vq, new_vertex, curve_index, out);
   }
   return out;
