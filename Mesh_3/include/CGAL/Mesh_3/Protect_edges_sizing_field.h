@@ -42,6 +42,9 @@
 #include <CGAL/Has_timestamp.h>
 #include <CGAL/internal/Mesh_3/Handle_IO_for_pair_of_int.h>
 
+
+#define CGAL_MESH_3_PROTECTION_DEBUG 1
+
 namespace CGAL {
 namespace Mesh_3 {
 namespace internal {
@@ -175,22 +178,6 @@ private:
   template <typename ErasedVeOutIt>
   ErasedVeOutIt insert_balls(const Vertex_handle& vp,
 			     const Vertex_handle& vq,
-			     const Curve_segment_index& curve_index,
-			     ErasedVeOutIt out);
-
-  /**
-   * Insert balls
-   * Preconditions:
-   *  - size_p < size_q
-   *  - pq_geodesic > 0
-   */
-  template <typename ErasedVeOutIt>
-  ErasedVeOutIt insert_balls(const Vertex_handle& vp,
-			     const Vertex_handle& vq,
-			     const FT size_p,
-			     const FT size_q,
-			     const FT pq_geodesic,
-			     const CGAL::Sign distance_sign,
 			     const Curve_segment_index& curve_index,
 			     ErasedVeOutIt out);
 
@@ -872,6 +859,7 @@ insert_balls_on_edges()
           insert_balls(vp, va, curve_index, Emptyset_iterator());
           insert_balls(va, vb, curve_index, Emptyset_iterator());
           insert_balls(vb, vq, curve_index, Emptyset_iterator());
+          set_treated(curve_index);
         }
       }
     }
@@ -934,6 +922,11 @@ insert_balls(const Vertex_handle& vp,
   const Index index = domain_.index_from_curve_segment_index(curve_index);
   const FT point_weight = CGAL::square((std::min)((std::min)(sp, sq), size_(new_point, dim, index)));
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
+  std::cerr << "vp index : " << boost::get<Corner_index>(vp->index()) << std::endl;
+  std::cerr << "vq index : " << boost::get<Corner_index>(vq->index()) << std::endl;
+  std::cerr << "p : " << p << std::endl;
+  std::cerr << "q : " << q<< std::endl;
+  std::cerr << " ( p + q ) / 2)  :" << (p + q) / 2. << std::endl;
   std::cerr << "  middle point: " << new_point << std::endl;
   std::cerr << "  new weight: " << point_weight << std::endl;
 #endif
@@ -945,16 +938,29 @@ insert_balls(const Vertex_handle& vp,
                          out);
 
   const Vertex_handle new_vertex = pair.first;
+  new_vertex->set_meshing_info((p + q) / 2.);
   out = pair.second;
   const FT sn = get_radius(new_vertex);
   if(sp <= sn) {
+#if CGAL_MESH_3_PROTECTION_DEBUG & 1
+      std::cerr << Q_FUNC_INFO << " " << __LINE__ << std::endl;
+#endif
       out=insert_balls(vp, new_vertex, curve_index, out);
   } else {
+#if CGAL_MESH_3_PROTECTION_DEBUG & 1
+      std::cerr << Q_FUNC_INFO << " " << __LINE__ << std::endl;
+#endif
       out=insert_balls(new_vertex, vp, curve_index, out);
   }
   if(sn <= sq) {
+#if CGAL_MESH_3_PROTECTION_DEBUG & 1
+      std::cerr << Q_FUNC_INFO << " " << __LINE__ << std::endl;
+#endif
       out=insert_balls(new_vertex, vq, curve_index, out);
   } else {
+#if CGAL_MESH_3_PROTECTION_DEBUG & 1
+      std::cerr << Q_FUNC_INFO << " " << __LINE__ << std::endl;
+#endif
       out=insert_balls(vq, new_vertex, curve_index, out);
   }
   return out;
