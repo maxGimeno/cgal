@@ -928,6 +928,8 @@ insert_balls(const Vertex_handle& vp,
   std::cerr << "p : " << p << std::endl;
   std::cerr << "q : " << q<< std::endl;
   std::cerr << " ( p + q ) / 2)  :" << (p + q) / 2. << std::endl;
+  std::cerr << "  p_point: " << p_point << "\n"
+            << "  q_point: " << q_point << std::endl;
   std::cerr << "  middle point: " << new_point << std::endl;
   std::cerr << "  new weight: " << point_weight << std::endl;
 #endif
