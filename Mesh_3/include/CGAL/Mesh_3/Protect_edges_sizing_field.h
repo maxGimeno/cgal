@@ -43,30 +43,30 @@
 #include <CGAL/internal/Mesh_3/Handle_IO_for_pair_of_int.h>
 
 
-#define CGAL_MESH_3_PROTECTION_DEBUG 1
+#define CGAL_MESH_3_PROTECTION_DEBUG 255
 
 namespace CGAL {
-namespace Mesh_3 {
-namespace internal {
-  const double min_intersection_factor = .4; // (1-alpha)
-  const double weight_modifier = .81; //0.9025;//0.81;
-  const double distance_divisor = 2.1;
-  const int max_nb_vertices_to_reevaluate_size = 10;
+    namespace Mesh_3 {
+        namespace internal {
+            const double min_intersection_factor = 0.5; // (1-alpha)
+            const double weight_modifier = .81; //0.9025;//0.81;
+            const double distance_divisor = 2.1;
+            const int max_nb_vertices_to_reevaluate_size = 10;
 
-  const int refine_balls_max_nb_of_loops = 29;
-// for the origins of `refine_balls_max_nb_of_loops`, that dates from the
-// very beginning of this file:
-//
-//     commit e9b3ff3e5730dab319a8cd581e3eb191559c98db
-//     Author: Stéphane Tayeb <Stephane.Tayeb@sophia.inria.fr>
-//     Date:   Tue Apr 20 14:53:11 2010 +0000
-//
-//         Add draft of _with_features classes.
-//
-// That constant has had different values in the Git history: 9, 99, and now 29.
+            const int refine_balls_max_nb_of_loops = 29;
+            // for the origins of `refine_balls_max_nb_of_loops`, that dates from the
+            // very beginning of this file:
+            //
+            //     commit e9b3ff3e5730dab319a8cd581e3eb191559c98db
+            //     Author: Stéphane Tayeb <Stephane.Tayeb@sophia.inria.fr>
+            //     Date:   Tue Apr 20 14:53:11 2010 +0000
+            //
+            //         Add draft of _with_features classes.
+            //
+            // That constant has had different values in the Git history: 9, 99, and now 29.
 
-} // end namespace internal
-} // end namespace Mesh_3
+        } // end namespace internal
+    } // end namespace Mesh_3
 } // end namespace CGAL
 
 #include <cmath>
@@ -90,189 +90,204 @@ namespace internal {
 
 namespace CGAL {
 
-namespace Mesh_3 {
+    namespace Mesh_3 {
 
-template <typename C3T3, typename MeshDomain, typename SizingFunction>
-class Protect_edges_sizing_field
-{
-  typedef Protect_edges_sizing_field          Self;
+        template <typename C3T3, typename MeshDomain, typename SizingFunction>
+        class Protect_edges_sizing_field
+        {
+            typedef Protect_edges_sizing_field          Self;
 
-public:
-  typedef typename C3T3::Triangulation        Tr;
-  typedef typename Tr::Geom_traits            Gt;
-  typedef typename Gt::FT                     FT;
-  typedef typename Gt::Point_3                Weighted_point;
-  typedef typename Weighted_point::Point      Bare_point;
-  typedef typename Weighted_point::Weight     Weight;
+        public:
+            typedef typename C3T3::Triangulation        Tr;
+            typedef typename Tr::Geom_traits            Gt;
+            typedef typename Gt::FT                     FT;
+            typedef typename Gt::Point_3                Weighted_point;
+            typedef typename Weighted_point::Point      Bare_point;
+            typedef typename Weighted_point::Weight     Weight;
 
-  typedef typename C3T3::Cell_handle          Cell_handle;
-  typedef typename C3T3::Vertex_handle        Vertex_handle;
-  typedef typename C3T3::Triangulation        Triangulation;
-  typedef typename C3T3::Edge                 Edge;
+            typedef typename C3T3::Cell_handle          Cell_handle;
+            typedef typename C3T3::Vertex_handle        Vertex_handle;
+            typedef typename C3T3::Triangulation        Triangulation;
+            typedef typename C3T3::Edge                 Edge;
 
-  typedef typename MeshDomain::Curve_segment_index  Curve_segment_index;
-  typedef typename MeshDomain::Corner_index         Corner_index;
-  typedef typename MeshDomain::Index                Index;
+            typedef typename MeshDomain::Curve_segment_index  Curve_segment_index;
+            typedef typename MeshDomain::Corner_index         Corner_index;
+            typedef typename MeshDomain::Index                Index;
 
-public:
-  Protect_edges_sizing_field(C3T3& c3t3,
-                             const MeshDomain& domain,
-                             SizingFunction size=SizingFunction(),
-                             const FT minimal_size = FT());
+        public:
+            Protect_edges_sizing_field(C3T3& c3t3,
+                                       const MeshDomain& domain,
+                                       SizingFunction size=SizingFunction(),
+                                       const FT minimal_size = FT());
 
-  void operator()(const bool refine=true);
+            void operator()(const bool refine=true);
 
-  void set_nonlinear_growth_of_balls(bool b = true) {
-    nonlinear_growth_of_balls = b;
-  }
+            void set_nonlinear_growth_of_balls(bool b = true) {
+                nonlinear_growth_of_balls = b;
+            }
 
-private:
-  typedef std::vector<std::pair<Curve_segment_index,Bare_point> >    Incident_edges;
-  typedef std::vector<Vertex_handle>                                 Vertex_vector;
-  typedef std::vector<std::pair<Vertex_handle,Curve_segment_index> > Incident_vertices;
+        private:
+            typedef std::vector<std::pair<Curve_segment_index,Bare_point> >    Incident_edges;
+            typedef std::vector<Vertex_handle>                                 Vertex_vector;
+            typedef std::vector<std::pair<Vertex_handle,Curve_segment_index> > Incident_vertices;
 
-private:
-  /// Insert corners of the mesh
-  void insert_corners();
+        private:
+            /// Insert corners of the mesh
+            void insert_corners();
 
-  /// Insert balls on every edge
-  void insert_balls_on_edges();
+            /// Insert balls on every edge
+            void insert_balls_on_edges();
 
-  /// Refine balls
-  void refine_balls();
+            /// Refine balls
+            void refine_balls();
 
-  /// Returns vertex which corresponds to corner located at point p
-  Vertex_handle get_vertex_corner_from_point(const Bare_point& p,
-                                             const Index& p_index) const;
+            /// Returns vertex which corresponds to corner located at point p
+            Vertex_handle get_vertex_corner_from_point(const Bare_point& p,
+                                                       const Index& p_index) const;
 
-  /// Insert point(p,w) into triangulation and set its dimension to \c dim and
-  /// it's index to \c index.
-  /// The handle of the newly created vertex is returned.
-  Vertex_handle insert_point(const Bare_point& p,
-                             const Weight& w,
-                             int dim,
-                             const Index& index,
-                             const bool special_ball = false);
+            /// Insert point(p,w) into triangulation and set its dimension to \c dim and
+            /// it's index to \c index.
+            /// The handle of the newly created vertex is returned.
+            Vertex_handle insert_point(const Bare_point& p,
+                                       const Weight& w,
+                                       int dim,
+                                       const Index& index,
+                                       const bool special_ball = false);
 
-  /**
-   * Insert point(p,w) into triangulation and set its dimension to \c dim and
-   * it's index to \c index.
-   * The handle of the newly created vertex is returned.
-   *
-   * This function also ensures that point(p,w) will not be inside a
-   * sphere, by decreasing the radius of any sphere that contains it.
-   * It also ensures that no point of the triangulation will be inside its
-   * sphere, by decreasing w.
-   */
-  template <typename ErasedVeOutIt>
-  std::pair<Vertex_handle, ErasedVeOutIt>
-  smart_insert_point(const Bare_point& p,
-		     Weight w,
-		     int dim,
-		     const Index& index,
-		     ErasedVeOutIt out);
+            /**
+             * Insert point(p,w) into triangulation and set its dimension to \c dim and
+             * it's index to \c index.
+             * The handle of the newly created vertex is returned.
+             *
+             * This function also ensures that point(p,w) will not be inside a
+             * sphere, by decreasing the radius of any sphere that contains it.
+             * It also ensures that no point of the triangulation will be inside its
+             * sphere, by decreasing w.
+             */
+            template <typename ErasedVeOutIt>
+            std::pair<Vertex_handle, ErasedVeOutIt>
+            smart_insert_point(const Bare_point& p,
+                               Weight w,
+                               int dim,
+                               const Index& index,
+                               ErasedVeOutIt out);
 
+            bool is_included(const Bare_point& cx,
+                             const Bare_point& cp, double rp,
+                             const Bare_point& cq, double rq) const;
 
-  /// Insert balls between points which are pointed by handles \c vp and \c vq
-  /// on curve identified by \c curve_index
-  template <typename ErasedVeOutIt>
-  ErasedVeOutIt insert_balls(const Vertex_handle& vp,
-			     const Vertex_handle& vq,
-			     const Curve_segment_index& curve_index,
-			     ErasedVeOutIt out);
+            bool try_insert(double a, double b,
+                            const Bare_point& cp, const Bare_point& cq,
+                            double rp, double rq,
+                            const Curve_segment_index& curve_index,
+                            double* r_x) const;
 
-  /// Returns true if balls of \c va and \c vb intersect, and (va,vb) is not
-  /// an edge of the complex
-  bool non_adjacent_but_intersect(const Vertex_handle& va,
-                                  const Vertex_handle& vb) const;
+            /// Insert balls between points which are pointed by handles \c vp and \c vq
+            /// on curve identified by \c curve_index
+            template <typename ErasedVeOutIt>
+            ErasedVeOutIt insert_balls(const Vertex_handle& vp,
+                                       const Vertex_handle& vq,
+                                       const Curve_segment_index& curve_index,
+                                       ErasedVeOutIt out);
 
-  /// Returns true if balls of \c va and \c vb intersect
-  bool do_balls_intersect(const Vertex_handle& va,
-                          const Vertex_handle& vb) const;
+            /// Returns true if balls of \c va and \c vb intersect, and (va,vb) is not
+            /// an edge of the complex
+            bool non_adjacent_but_intersect(const Vertex_handle& va,
+                                            const Vertex_handle& vb) const;
 
-  /// Change size of the ball of vertex \c v.
-  Vertex_handle change_ball_size(const Vertex_handle& v, const FT size,
-                                 const bool special_ball = false);
+            /// Returns true if balls of \c va and \c vb intersect
+            bool do_balls_intersect(const Vertex_handle& va,
+                                    const Vertex_handle& vb) const;
 
+            /// Change size of the ball of vertex \c v.
+            Vertex_handle change_ball_size(const Vertex_handle& v, const FT size,
+                                           const bool special_ball = false);
 
-  /// Returns true if balls of v1 and v2 intersect "enough"
-  bool is_sampling_dense_enough(const Vertex_handle& v1,
-                                const Vertex_handle& v2,
-                                const Curve_segment_index& index) const;
+            bool is_deep_covering(const Bare_point cp, double rp,
+                                  const Bare_point cq, double rq) const;
 
-  /// Takes an iterator on Vertex_handle as input and check if the sampling
-  /// of those vertices is ok. If not, fix it.
-  void check_and_repopulate_edges();
+            bool is_curve_segment_inside_spheres(double p, const Bare_point cp, double rp,
+                                                 double q, const Bare_point cq, double rq,
+                                                 const Curve_segment_index& curve_index) const;
 
-  /// Checks if vertex \c v is well sampled, and if its not the case, fix it.
-  /// Fills out with deleted vertices during this process. out value type
-  /// is Vertex_handle.
-  template <typename ErasedVeOutIt>
-  ErasedVeOutIt
-  check_and_fix_vertex_along_edge(const Vertex_handle& v, ErasedVeOutIt out);
+            /// Returns true if balls of v1 and v2 intersect "enough"
+            bool is_sampling_dense_enough(const Vertex_handle& v1,
+                                          const Vertex_handle& v2,
+                                          const Curve_segment_index& index) const;
 
-  /// Walk along edge from \c start, following the direction \c start to
-  /// \c next, and fills \c out with the vertices which do not fullfill
-  /// the sampling conditions
-  template <typename ErasedVeOutIt>
-  ErasedVeOutIt
-  walk_along_edge(const Vertex_handle& start,
-                  const Vertex_handle& next,
-                  const bool test_sampling,
-                  ErasedVeOutIt out,
-                  const Curve_segment_index& index) const;
+            /// Takes an iterator on Vertex_handle as input and check if the sampling
+            /// of those vertices is ok. If not, fix it.
+            void check_and_repopulate_edges();
 
-  /// Returns next vertex along edge, i.e vertex after \c start, following
-  /// the direction from \c previous to \c start
-  /// \pre (previous,start) is in c3t3
-  Vertex_handle next_vertex_along_edge(const Vertex_handle& start,
-                                       const Vertex_handle& previous) const;
+            /// Checks if vertex \c v is well sampled, and if its not the case, fix it.
+            /// Fills out with deleted vertices during this process. out value type
+            /// is Vertex_handle.
+            template <typename ErasedVeOutIt>
+            ErasedVeOutIt
+            check_and_fix_vertex_along_edge(const Vertex_handle& v, ErasedVeOutIt out);
 
-  /// Replace vertices between ]begin,last[ by new vertices, along curve
-  /// identified by \c curve_index
-  /// The value type of InputIterator is Vertex_handle.
-  template <typename InputIterator, typename ErasedVeOutIt>
-  ErasedVeOutIt repopulate(InputIterator begin,
-			   InputIterator last,
-			   const Curve_segment_index& index,
-			   ErasedVeOutIt out);
+            /// Walk along edge from \c start, following the direction \c start to
+            /// \c next, and fills \c out with the vertices which do not fullfill
+            /// the sampling conditions
+            template <typename ErasedVeOutIt>
+            ErasedVeOutIt
+            walk_along_edge(const Vertex_handle& start,
+                            const Vertex_handle& next,
+                            const bool test_sampling,
+                            ErasedVeOutIt out,
+                            const Curve_segment_index& index) const;
 
-  template <typename InputIterator, typename ErasedVeOutIt>
-  ErasedVeOutIt
-  analyze_and_repopulate(InputIterator begin,
-                         InputIterator last,
-                         const Curve_segment_index& index,
-			 ErasedVeOutIt out);
+            /// Returns next vertex along edge, i.e vertex after \c start, following
+            /// the direction from \c previous to \c start
+            /// \pre (previous,start) is in c3t3
+            Vertex_handle next_vertex_along_edge(const Vertex_handle& start,
+                                                 const Vertex_handle& previous) const;
 
-  /// Checks if \c v2 size is compatible (i.e. greater) with the linear
-  /// interpolation of sizes of \c v1 and \c v3
-  bool is_sizing_field_correct(const Vertex_handle& v1,
-                               const Vertex_handle& v2,
-                               const Vertex_handle& v3,
-                               const Curve_segment_index& index) const;
+            /// Replace vertices between ]begin,last[ by new vertices, along curve
+            /// identified by \c curve_index
+            /// The value type of InputIterator is Vertex_handle.
+            template <typename InputIterator, typename ErasedVeOutIt>
+            ErasedVeOutIt repopulate(InputIterator begin,
+                                     InputIterator last,
+                                     const Curve_segment_index& index,
+                                     ErasedVeOutIt out);
 
-  /// Repopulate all incident curve around corner \c v
-  /// \pre \c v is a corner of c3t3
-  template <typename ErasedVeOutIt>
-  ErasedVeOutIt
-  repopulate_edges_around_corner(const Vertex_handle& v, ErasedVeOutIt out);
+            template <typename InputIterator, typename ErasedVeOutIt>
+            ErasedVeOutIt
+            analyze_and_repopulate(InputIterator begin,
+                                   InputIterator last,
+                                   const Curve_segment_index& index,
+                                   ErasedVeOutIt out);
 
-  /// Returns true if edge with index \c curve_index is already treated
-  bool is_treated(const Curve_segment_index& curve_index) const
-  {
-    return ( treated_edges_.find(curve_index) != treated_edges_.end() );
-  }
+            /// Checks if \c v2 size is compatible (i.e. greater) with the linear
+            /// interpolation of sizes of \c v1 and \c v3
+            bool is_sizing_field_correct(const Vertex_handle& v1,
+                                         const Vertex_handle& v2,
+                                         const Vertex_handle& v3,
+                                         const Curve_segment_index& index) const;
 
-  /// Set edge with index \c curve_index as treated
-  void set_treated(const Curve_segment_index& curve_index)
-  {
-    treated_edges_.insert(curve_index);
-  }
+            /// Repopulate all incident curve around corner \c v
+            /// \pre \c v is a corner of c3t3
+            template <typename ErasedVeOutIt>
+            ErasedVeOutIt
+            repopulate_edges_around_corner(const Vertex_handle& v, ErasedVeOutIt out);
 
-  /// Compute euclidean distance between bare points of \c va and \c vb
-  FT compute_distance(const Vertex_handle& va, const Vertex_handle& vb) const
-  {
-    return compute_distance(va->point().point(), vb->point().point());
+            /// Returns true if edge with index \c curve_index is already treated
+            bool is_treated(const Curve_segment_index& curve_index) const
+            {
+                return ( treated_edges_.find(curve_index) != treated_edges_.end() );
+            }
+
+            /// Set edge with index \c curve_index as treated
+            void set_treated(const Curve_segment_index& curve_index)
+            {
+                treated_edges_.insert(curve_index);
+            }
+
+            /// Compute euclidean distance between bare points of \c va and \c vb
+            FT compute_distance(const Vertex_handle& va, const Vertex_handle& vb) const
+            {
+                return compute_distance(va->point().point(), vb->point().point());
   }
 
   /// Compute euclidean distance between bare points \c and \c q
@@ -835,32 +850,58 @@ insert_balls_on_edges()
         // if the curve is a cycle.
         if(!c3t3_.triangulation().is_vertex(Weighted_point(p_point), vp)) {
           Vertex_handle va, vb;
-          // if 'p' is not a corner, find out a second point 'q' on the
-          // curve, "far" from 'p', and limit the radius of the ball of 'p'
-          // with the third of the distance from 'p' to 'q'.
+          // ///////////////////////////////////////////////////////////////////
+          // Recovers the parameters and checks which vh has parameter = 0. and each has parameter 1.
+          // ///////////////////////////////////////////////////////////////////
+          double p = vp->meshing_info();
+          double q = vq->meshing_info();
           FT p_size = query_size(p_point, 1, p_index);
+          //pa = 1 > pb = 0 or 0 > 1
+          if (p > q) {
+              Bare_point other_point_a = domain_.construct_point_on_curve_segment(2./3., curve_index);
+              Bare_point other_point_b = domain_.construct_point_on_curve_segment(1./3., curve_index);
+              p_size = (std::min)(p_size, compute_distance(p_point, other_point_a) / 3);
+              p_size = (std::min)(p_size, compute_distance(p_point, other_point_b) / 3);
+              va = smart_insert_point(other_point_a,
+                                      CGAL::square(p_size),
+                                      1,
+                                      p_index,
+                                      CGAL::Emptyset_iterator()).first;
+              va->set_meshing_info(2./3.);
+              vb = smart_insert_point(other_point_b,
+                                      CGAL::square(p_size),
+                                      1,
+                                      p_index,
+                                      CGAL::Emptyset_iterator()).first;
+              vb->set_meshing_info(1./3);
 
-          Bare_point other_point_a = domain_.construct_point_on_curve_segment(1./3., curve_index);
-          Bare_point other_point_b = domain_.construct_point_on_curve_segment(2./3., curve_index);
-          p_size = (std::min)(p_size, compute_distance(p_point, other_point_a) / 3);
-          p_size = (std::min)(p_size, compute_distance(p_point, other_point_b) / 3);
-          va = smart_insert_point(other_point_a,
-                                  CGAL::square(p_size),
-                                  1,
-                                  p_index,
-				                  CGAL::Emptyset_iterator()).first;
-          va->set_meshing_info(1./3.);
-          vb = smart_insert_point(other_point_b,
-                                  CGAL::square(p_size),
-                                  1,
-                                  p_index,
-				                  CGAL::Emptyset_iterator()).first;
-          vb->set_meshing_info(2./3);
+              insert_balls(vp, va, curve_index, Emptyset_iterator());
+              insert_balls(va, vb, curve_index, Emptyset_iterator());
+              insert_balls(vb, vq, curve_index, Emptyset_iterator());
+              set_treated(curve_index);
+          } else {
+              Bare_point other_point_a = domain_.construct_point_on_curve_segment(1./3., curve_index);
+              Bare_point other_point_b = domain_.construct_point_on_curve_segment(2./3., curve_index);
+              p_size = (std::min)(p_size, compute_distance(p_point, other_point_a) / 3);
+              p_size = (std::min)(p_size, compute_distance(p_point, other_point_b) / 3);
+              va = smart_insert_point(other_point_a,
+                                      CGAL::square(p_size),
+                                      1,
+                                      p_index,
+                                      CGAL::Emptyset_iterator()).first;
+              va->set_meshing_info(1./3.);
+              vb = smart_insert_point(other_point_b,
+                                      CGAL::square(p_size),
+                                      1,
+                                      p_index,
+                                      CGAL::Emptyset_iterator()).first;
+              vb->set_meshing_info(2./3);
 
-          insert_balls(vp, va, curve_index, Emptyset_iterator());
-          insert_balls(va, vb, curve_index, Emptyset_iterator());
-          insert_balls(vb, vq, curve_index, Emptyset_iterator());
-          set_treated(curve_index);
+              insert_balls(vp, va, curve_index, Emptyset_iterator());
+              insert_balls(va, vb, curve_index, Emptyset_iterator());
+              insert_balls(vb, vq, curve_index, Emptyset_iterator());
+              set_treated(curve_index);
+          }
         }
       }
     }
@@ -872,16 +913,72 @@ typename Protect_edges_sizing_field<C3T3, MD, Sf>::Vertex_handle
 Protect_edges_sizing_field<C3T3, MD, Sf>::
 get_vertex_corner_from_point(const Bare_point& p, const Index&) const
 {
+    // ///////////////////////////////////////////////////////////////////
+  // Recovers the registered corner point
+    // ///////////////////////////////////////////////////////////////////
+  Corner_index index;
+  index = boost::get<Corner_index>(domain_.point_corner_index(p));
+  Bare_point corner_point = domain_.corner_point_from_index(index);
+
   // Get vertex_handle associated to corner (dim=0) point
   Vertex_handle v;
   CGAL_assertion_code( bool q_finded = )
-  c3t3_.triangulation().is_vertex(Weighted_point(p), v);
+  c3t3_.triangulation().is_vertex(Weighted_point(corner_point), v);
+  std::cerr << p << std::endl;
+  std::cerr << corner_point << std::endl;
   // Let the weight be 0, because is_vertex only locates the point, and
   // check that the location type is VERTEX.
   CGAL_assertion( q_finded );
   return v;
 }
 
+template <typename C3T3, typename MD, typename Sf>
+bool
+Protect_edges_sizing_field<C3T3, MD, Sf>::is_included(const Bare_point& cx, const Bare_point& cp, double rp, const Bare_point& cq, double rq) const
+{
+    if(CGAL::squared_distance(cx, cp) < rp * rp) {
+        return true;
+    } else if(CGAL::squared_distance(cx, cq) < rq * rq) {
+        return true;
+    } else {
+        return false;
+    }
+}
+template <typename C3T3, typename MD, typename Sf>
+bool
+Protect_edges_sizing_field<C3T3, MD, Sf>::try_insert(double a, double b, const Bare_point& cp, const Bare_point& cq, double rp, double rq, const Curve_segment_index& curve_index, double* r_x) const
+{
+    double lambda = 1e-10;
+    double x = (a + b) / 2.;
+
+    Bare_point cx = domain_.construct_point_on_curve_segment(x, curve_index);
+
+    Bare_point ca = domain_.construct_point_on_curve_segment(a, curve_index);
+    Bare_point cb = domain_.construct_point_on_curve_segment(b, curve_index);
+
+    if(is_included(cx, cp, rp, cq, rq)) { //Checks if the point is included in either bp or pq
+        //In order for the algorithm to end even if the curve is completely included in the spheres union, we return false when the distance between two close point is smaller than lambda
+        bool inserted = false;
+        if(CGAL::squared_distance(ca, cx) > lambda) {
+            inserted = try_insert(a, x, cp, cq, rp, rq, curve_index, r_x);
+        }
+        if(inserted) {
+            return true;
+        } else {
+            if(CGAL::squared_distance(cx, cb) > lambda) {
+                inserted = try_insert(x, b, cp, cq, rp, rq, curve_index, r_x);
+            }
+        }
+        if(inserted) {
+            return true;
+        } else {
+            return false;
+        }
+    } else {//If not a ball can be inserted
+        *r_x = x;
+        return true;
+    }
+}
 
 template <typename C3T3, typename MD, typename Sf>
 template <typename ErasedVeOutIt>
@@ -892,66 +989,70 @@ insert_balls(const Vertex_handle& vp,
              const Curve_segment_index& curve_index,
              ErasedVeOutIt out)
 {
-  // Get positions and sizes of p and q
-  const Bare_point& p_point = vp->point().point();
-  const Bare_point& q_point = vq->point().point();
-  const FT sp = get_radius(vp);
-  const FT sq = get_radius(vq);
+    //Get positions and sizes of p and q
+    const Bare_point& cp = vp->point().point();
+    const Bare_point& cq = vq->point().point();
+    const FT rp = get_radius(vp);
+    const FT rq = get_radius(vq);
 
-  //Recover their position on the Curve_segment_index
-  double p = 0.;
-  double q = 0.;
-  if (get_dimension(vp) == 0){
-      p = domain_.get_corner_parameter_on_curve(boost::get<Corner_index>(vp->index()), curve_index);
-  } else {
-      p = vp->meshing_info();
-  }
-  if (get_dimension(vq) == 0){
-      q = domain_.get_corner_parameter_on_curve(boost::get<Corner_index>(vq->index()), curve_index);
-  } else {
-      q = vq->meshing_info();
-  }
+    //Recover their position on the Curve_segment_index
+    double p = 0.;
+    double q = 0.;
+    if (get_dimension(vp) == 0){
+        p = domain_.get_corner_parameter_on_curve(boost::get<Corner_index>(vp->index()), curve_index);
+    } else {
+        p = vp->meshing_info();
+    }
+    if (get_dimension(vq) == 0){
+        q = domain_.get_corner_parameter_on_curve(boost::get<Corner_index>(vq->index()), curve_index);
+    } else {
+        q = vq->meshing_info();
+    }
+    //Checks if the curve is included inside bp and bq
+    bool included = is_curve_segment_inside_spheres(p, cp, rp, q, cq, rq, curve_index) // && is_deep_covering(cp, rp, cq, rq)
+        ;
+    if(included) {
+        c3t3_.add_to_complex(vp, vq, curve_index);
+        return out;
+    }
 
-  if(do_balls_intersect(vp, vq)) {
-      c3t3_.add_to_complex(vp, vq, curve_index);
-      return out;
-  }
+    double x = 0.;
+    bool inserted = try_insert(p, q, cp, cq, rp, rq, curve_index, &x);
+    //If there is no room for adding a sphere between p and q, does nothing
+    //It is because the curve is included in the spheres but it hasnt been detected by the previous detection on the bound
+    if (!inserted) {
+        c3t3_.add_to_complex(vp, vq, curve_index);
+        return out;
+    }
+    std::cerr << "After inserted" << std::endl;
+    //Else add the point and iterates on p->x and x->q
+    Bare_point cx = domain_.construct_point_on_curve_segment(x, curve_index);
+    const int dim = 1; // cx is on edge
+    const Index index = domain_.index_from_curve_segment_index(curve_index);
+    FT wx = (std::min)((std::min)(rp, rq), size_(cx, dim, index));
+    std::pair<Vertex_handle, ErasedVeOutIt> pair =
+        smart_insert_point(cx,
+                           wx,
+                           dim,
+                           index,
+                           out);
 
-  const Bare_point new_point = domain_.construct_point_on_curve_segment((p + q) / 2., curve_index);
+    const Vertex_handle vx = pair.first;
+    vx->set_meshing_info(x);
+    out = pair.second;
+    const FT rx = get_radius(vx);
+    std::cerr << "rx : " << rx << std::endl;
+    if(rp <=rx) {
+        out = insert_balls(vp, vx, curve_index, out);
+    } else {
+        out = insert_balls(vx, vp, curve_index, out);
+    }
+    if(rx <= rq) {
+        out = insert_balls(vx, vq, curve_index, out);
+    } else {
+        out = insert_balls(vq, vx, curve_index, out);
+    }
 
-  const int dim = 1; // new_point is on edge
-  const Index index = domain_.index_from_curve_segment_index(curve_index);
-  const FT point_weight = CGAL::square((std::min)((std::min)(sp, sq), size_(new_point, dim, index)));
-#if CGAL_MESH_3_PROTECTION_DEBUG & 1
-  std::cerr << "vp index : " << boost::get<Corner_index>(vp->index()) << std::endl;
-  std::cerr << "vq index : " << boost::get<Corner_index>(vq->index()) << std::endl;
-  std::cerr << "p : " << p << std::endl;
-  std::cerr << "q : " << q<< std::endl;
-  std::cerr << " ( p + q ) / 2)  :" << (p + q) / 2. << std::endl;
-  std::cerr << "  middle point: " << new_point << std::endl;
-  std::cerr << "  new weight: " << point_weight << std::endl;
-#endif
-  std::pair<Vertex_handle, ErasedVeOutIt> pair =
-      smart_insert_point(new_point,
-                         point_weight,
-                         dim,
-                         index,
-                         out);
-
-  const Vertex_handle new_vertex = pair.first;
-  new_vertex->set_meshing_info((p + q) / 2.);
-  out = pair.second;
-  const FT sn = get_radius(new_vertex);
-  if(sp <= sn) {
-      out=insert_balls(vp, new_vertex, curve_index, out);
-  } else {
-      out=insert_balls(new_vertex, vp, curve_index, out);
-  }
-  if(sn <= sq) {
-      out=insert_balls(new_vertex, vq, curve_index, out);
-  } else {
-      out=insert_balls(vq, new_vertex, curve_index, out);
-  }
   return out;
 }
 
@@ -1324,57 +1425,87 @@ check_and_fix_vertex_along_edge(const Vertex_handle& v, ErasedVeOutIt out)
   return out;
 }
 
+template <typename C3T3, typename MD, typename Sf>
+bool
+Protect_edges_sizing_field<C3T3, MD, Sf>::
+is_curve_segment_inside_spheres(double p, const Bare_point cp, double rp, double q,  const Bare_point cq, double rq, const Curve_segment_index& curve_index) const
+{
+    FT squared_dist_cpcq = CGAL::squared_distance(cp, cq);
+    //If the spheres do not intersect, the curve can't lie only inside the spheres
+    if (squared_dist_cpcq > (rp + rq) * (rp + rq)) {
+        return false; //This one is a guarantee
+    }
+    // Sufficient condition so that the curve portion between p and q is
+    // inside the union of the two balls.
+    FT error_bound = domain_.error_bound_cord_to_curve(p, q, curve_index);
+    FT squared_volume_covered = CGAL::square(rp) - CGAL::square(squared_dist_cpcq + CGAL::square(rp) - CGAL::square(rq)) / (4 * squared_dist_cpcq);
+    if(CGAL::square(error_bound) > squared_volume_covered) {
+#if CGAL_MESH_3_PROTECTION_DEBUG & 1
+        std::cerr << "Note: on curve #" << curve_index << ", between ("
+                  << cp << ") and (" << cq << "), the "
+                  << "volume covered is " << CGAL::sqrt(squared_volume_covered)
+                  << " and the bound error is " << error_bound << std::endl;
+#endif
+        return false;//This one is not a garantee
+    } else {
+        return true;//This one is a garantee
+    }
+}
 
 template <typename C3T3, typename MD, typename Sf>
 bool
 Protect_edges_sizing_field<C3T3, MD, Sf>::
-is_sampling_dense_enough(const Vertex_handle& v1, const Vertex_handle& v2,
+is_deep_covering(const Bare_point cp, double rp,
+                 const Bare_point cq, double rq) const
+{
+    using CGAL::Mesh_3::internal::min_intersection_factor;
+    if(rp > rq) {
+        std::swap(rp, rq);
+    }
+    if(CGAL::squared_distance(cp, cq) < min_intersection_factor * rp + rq) {
+        return true;
+    }
+    return false;
+}
+
+template <typename C3T3, typename MD, typename Sf>
+bool
+Protect_edges_sizing_field<C3T3, MD, Sf>::
+is_sampling_dense_enough(const Vertex_handle& vp, const Vertex_handle& vq,
                          const Curve_segment_index& curve_index) const
 {
   using CGAL::Mesh_3::internal::min_intersection_factor;
-  CGAL_precondition(c3t3_.is_in_complex(v1,v2));
+  CGAL_precondition(c3t3_.is_in_complex(vp,vq));
 
   // Get sizes
-  FT size_v1 = get_radius(v1);
-  FT size_v2 = get_radius(v2);
+  FT rp = get_radius(vp);
+  FT rq = get_radius(vq);
 
- const FT distance_v1v2 = compute_distance(v1,v2);
  //Get parameters on curve segment
-  //Check if the vertex handles points to a corner, if yes one must lookup in the corners parameters table
+ //Check if the vertex handles points to a corner, if yes one must lookup in the corners parameters table
   double p = 0.;
   double q = 0.;
 
-  if (get_dimension(v1) == 0){
-      p = domain_.get_corner_parameter_on_curve(boost::get<Corner_index>(v1->index()), curve_index);
+  if (get_dimension(vp) == 0){
+      p = domain_.get_corner_parameter_on_curve(boost::get<Corner_index>(vp->index()), curve_index);
   } else {
-      p = v1->meshing_info();
+      p = vp->meshing_info();
   }
-  if (get_dimension(v2) == 0){
-      q = domain_.get_corner_parameter_on_curve(boost::get<Corner_index>(v2->index()), curve_index);
+  if (get_dimension(vq) == 0){
+      q = domain_.get_corner_parameter_on_curve(boost::get<Corner_index>(vq->index()), curve_index);
   } else {
-      q = v2->meshing_info();
+      q = vq->meshing_info();
   }
+  Bare_point cp = vp->point().point();
+  Bare_point cq = vq->point().point();
 
-  // Sufficient condition so that the curve portion between v1 and v2 is
-  // inside the union of the two balls.
-  //If they intersect, check that the union volume of the 2 spheres covers the curve, if not add a point inbetween with a size beeing half the sum of the 2 initial points and insert it in the graph
-  FT error_bound = domain_.error_bound_cord_to_curve(p, q, curve_index);
-  FT squared_volume_covered = CGAL::square(size_v1) - CGAL::square(CGAL::square(distance_v1v2) + CGAL::square(size_v1) - CGAL::square(size_v2)) / (4 * CGAL::square(distance_v1v2));
-  if(CGAL::square(error_bound) > squared_volume_covered) {
-#if CGAL_MESH_3_PROTECTION_DEBUG & 1
-      std::cerr << "Note: on curve #" << curve_index << ", between ("
-                << disp_vert(v1) << ") and (" << disp_vert(v2) << "), the "
-                << "volume covered is " << CGAL::sqrt(squared_volume_covered)
-                << " and the bound error is " << error_bound << std::endl;
-#endif
+  if(// is_deep_covering(cp, rp, cq, rq) &&
+     is_curve_segment_inside_spheres(p, cp, rp, q, cq, rq, curve_index)) {
+      return true;
+  } else {
       return false;
   }
 
-  // Ensure size_v1 > size_v2
-  if ( size_v1 < size_v2 ) { std::swap(size_v1, size_v2); }
-
-  // Check if balls intersect
-  return distance_v1v2 < (FT(min_intersection_factor) * size_v2 + size_v1);
 }
 
 
