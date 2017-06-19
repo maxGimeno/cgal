@@ -326,7 +326,7 @@ point_corner_index(const Point_3& p) const
 {
     bool found = false;
     for(auto it = corners_.begin(); it != corners_.end(); ++it) {
-        if(CGAL::squared_distance(p, it->first) < 1e-8) {
+        if(CGAL::squared_distance(p, it->first) < 1e-7) {
             return it->second;
         }
     }
@@ -370,6 +370,8 @@ cgalMeshDomainWithRationalBezierFeatures<MD_>::error_bound_cord_to_curve(double 
     return dtkContinuousGeometryTools::convexHullApproximationError(*(*(std::next(split_curves.begin()))));
 }
 
+#include <iostream>
+
 template <class MD_>
 template <typename InputIterator, typename IndicesOutputIterator>
 IndicesOutputIterator
@@ -379,6 +381,11 @@ add_features(InputIterator first, InputIterator last,
 {
     std::list< std::pair< Corner_index, Point_3 > > registered_corners;
   // Insert one edge for each element
+// ///////////////////////////////////////////////////////////////
+    std::ofstream all("all.xyz");
+    std::ofstream bibi("bibi.xyz");
+    dtkContinuousGeometryPrimitives::Point_3 point(0., 0., 0.);
+// ///////////////////////////////////////////////////////////////
   while ( first != last )
   {
       //Starts at 1 for the first curve
@@ -392,6 +399,20 @@ add_features(InputIterator first, InputIterator last,
       (*first)->controlPoint((*first)->degree(), last_point.data());
       Point_3 first_cgal(first_point[0], first_point[1], first_point[2]);
       Point_3 last_cgal(last_point[0], last_point[1], last_point[2]);
+// ///////////////////////////////////////////////////////////////////
+      if(curve_index == 45) {
+          for(double i = 0; i <= 1; i +=0.001) {
+              (*first)->evaluatePoint(i, point.data());
+              bibi << point[0] << " " << point[1] << " " << point[2] << std::endl;
+          }
+      } else {
+          for(double i = 0; i <= 1; i +=0.001) {
+              (*first)->evaluatePoint(i, point.data());
+              all << point[0] << " " << point[1] << " " << point[2] << std::endl;
+          }
+      }
+// /////////////////////////////////////////////////////////////
+
       // ///////////////////////////////////////////////////////////////////
       // Checks that the corner was not already inserted
       // If not, insert it and register it
@@ -399,7 +420,7 @@ add_features(InputIterator first, InputIterator last,
       bool already_inserted = false;
       Corner_index already_inserted_corner;
       for(auto it = registered_corners.begin(); it != registered_corners.end(); ++it) {
-          if(CGAL::squared_distance(first_cgal, it->second) < 1e-8) {
+          if(CGAL::squared_distance(first_cgal, it->second) < 1e-7) {
               already_inserted = true;
               already_inserted_corner = it->first;
               // /!\ Change the curve here :
@@ -429,7 +450,7 @@ add_features(InputIterator first, InputIterator last,
       // ///////////////////////////////////////////////////////////////////
       already_inserted = false;
       for(auto it = registered_corners.begin(); it != registered_corners.end(); ++it) {
-          if(CGAL::squared_distance(last_cgal, it->second) < 1e-8) {
+          if(CGAL::squared_distance(last_cgal, it->second) < 1e-7) {
               already_inserted = true;
               already_inserted_corner = it->first;
               // /!\ Change the curve here :
