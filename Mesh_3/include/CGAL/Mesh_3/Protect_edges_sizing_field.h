@@ -48,7 +48,7 @@
 namespace CGAL {
     namespace Mesh_3 {
         namespace internal {
-            const double min_intersection_factor = 0.5; // (1-alpha)
+            const double min_intersection_factor = 0.99; // (1-alpha)
             const double weight_modifier = .81; //0.9025;//0.81;
             const double distance_divisor = 2.1;
             const int max_nb_vertices_to_reevaluate_size = 10;
@@ -1009,6 +1009,13 @@ insert_balls(const Vertex_handle& vp,
         q = vq->meshing_info();
     }
     //Checks if the curve is included inside bp and bq
+    // if(is_curve_segment_inside_spheres(p, cp, rp, q, cq, rq, curve_index) && !is_deep_covering(cp, rp, cq, rq)) {
+    //     change_ball_size(vp, rp  * 1.);
+    //     change_ball_size(vq, rq  * 1.);
+    //     insert_balls(vp, vq, curve_index, out);
+    //     std::cerr << "OOUILLE OUILLE OUILLE" << std::endl;
+    //     // getchar();
+    // }
     bool included = is_curve_segment_inside_spheres(p, cp, rp, q, cq, rq, curve_index) // && is_deep_covering(cp, rp, cq, rq)
         ;
     if(included) {
@@ -1018,9 +1025,24 @@ insert_balls(const Vertex_handle& vp,
 
     double x = 0.;
     bool inserted = try_insert(p, q, cp, cq, rp, rq, curve_index, &x);
+      //Checks if the curve is included inside bp and bq
+    // if(!inserted && !is_deep_covering(cp, rp, cq, rq)) {
+    //     // ///////////////////////////////////////////////////////////////////
+    //     // Need to reduce the balls size
+    //     // ///////////////////////////////////////////////////////////////////
+    //     // change_ball_size(vp, vp->point().weight() * 1.);
+    //     // change_ball_size(vq, vq->point().weight() * 1.);
+     // ///////////////////////////////////////////////////////////////////
+     // Or removes the balls and try insert more than 2
+     // ///////////////////////////////////////////////////////////////////
+    //     insert_balls(vp, vq, curve_index, out);
+    //     std::cerr << "OOUILLE OUILLE OUILLE 2" << std::endl;
+    //     // getchar();
+    // }
     //If there is no room for adding a sphere between p and q, does nothing
     //It is because the curve is included in the spheres but it hasnt been detected by the previous detection on the bound
-    if (!inserted) {
+    if (!inserted // && is_deep_covering(cp, rp, cq, rq)
+        ) {
         c3t3_.add_to_complex(vp, vq, curve_index);
         return out;
     }
@@ -1446,7 +1468,13 @@ is_curve_segment_inside_spheres(double p, const Bare_point cp, double rp, double
                   << "volume covered is " << CGAL::sqrt(squared_volume_covered)
                   << " and the bound error is " << error_bound << std::endl;
 #endif
-        return false;//This one is not a garantee
+        double x = 0.;
+        bool inserted = try_insert(p, q, cp, cq, rp, rq, curve_index, &x);
+        if(inserted == true) {
+            return false;//This one is almost a garantee
+        } else {
+            return true;//This one is almost a garantee
+        }
     } else {
         return true;//This one is a garantee
     }
@@ -1462,7 +1490,7 @@ is_deep_covering(const Bare_point cp, double rp,
     if(rp > rq) {
         std::swap(rp, rq);
     }
-    if(CGAL::squared_distance(cp, cq) < min_intersection_factor * rp + rq) {
+    if(CGAL::squared_distance(cp, cq) < (min_intersection_factor * rp + rq) * (min_intersection_factor * rp + rq)) {
         return true;
     }
     return false;
