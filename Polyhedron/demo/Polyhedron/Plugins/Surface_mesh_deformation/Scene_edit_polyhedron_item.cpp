@@ -130,6 +130,7 @@ struct Scene_edit_polyhedron_item_priv
   mutable std::vector<GLdouble> normals;
   mutable std::vector<GLdouble> pos_bbox;
   mutable std::vector<GLdouble> pos_axis;
+  mutable std::vector<unsigned int> plane_idx;
   mutable std::vector<GLdouble> pos_frame_plane;
   mutable QOpenGLShaderProgram *program;
   mutable QOpenGLShaderProgram bbox_program;
@@ -1350,16 +1351,6 @@ void Scene_edit_polyhedron_item::drawEdges(CGAL::Three::Viewer_interface* viewer
     vaos[Scene_edit_polyhedron_item_priv::Edges]->release();
 
 
-    vaos[Scene_edit_polyhedron_item_priv::Frame_plane]->bind();
-    d->program = getShaderProgram(PROGRAM_NO_SELECTION);
-    attribBuffers(viewer,PROGRAM_NO_SELECTION);
-    d->program->bind();
-    d->program->setAttributeValue("colors", QColor(0,0,0));
-    viewer->glDrawArrays(GL_LINE_LOOP, 0, (GLsizei)d->pos_frame_plane.size()/3);
-    d->program->release();
-    vaos[Scene_edit_polyhedron_item_priv::Frame_plane]->release();
-
-
   if(rendering_mode == Wireframe) {
         draw_ROI_and_control_vertices(viewer);
   }
@@ -1385,12 +1376,24 @@ void Scene_edit_polyhedron_item::draw(CGAL::Three::Viewer_interface* viewer) con
   drawEdges(viewer);
   draw_ROI_and_control_vertices(viewer);
 
+  if(d->ui_widget->ActivateFixedPlaneCheckBox->isChecked())
+  {
+    vaos[Scene_edit_polyhedron_item_priv::Frame_plane]->bind();
+    d->program = getShaderProgram(PROGRAM_NO_SELECTION);
+    attribBuffers(viewer,PROGRAM_NO_SELECTION);
+    d->program->bind();
+    d->program->setAttributeValue("colors", QColor(0.0,0.0,0.0,0.5));
+    viewer->glDrawElements(GL_TRIANGLES, (GLsizei) d->plane_idx.size(), GL_UNSIGNED_INT, d->plane_idx.data());
+    d->program->release();
+    vaos[Scene_edit_polyhedron_item_priv::Frame_plane]->release();
+  }
+
 }
 
 template<typename Mesh>
 void Scene_edit_polyhedron_item::draw_frame_plane(QGLViewer* , Mesh* mesh) const
 {
-  d->pos_frame_plane.resize(15);
+  d->pos_frame_plane.resize(12);
   Facegraph_selector fs;
   for(typename std::list<Control_vertices_data<Mesh> >::const_iterator hgb_data = fs.get_ctrl_vertex_frame_map(mesh, d).begin();
       hgb_data != fs.get_ctrl_vertex_frame_map(mesh, d).end(); ++hgb_data)
@@ -1413,7 +1416,13 @@ void Scene_edit_polyhedron_item::draw_frame_plane(QGLViewer* , Mesh* mesh) const
     d->pos_frame_plane[3] = p2.x ; d->pos_frame_plane[4] = p2.y; d->pos_frame_plane[5] =p2.z ;
     d->pos_frame_plane[6] = p3.x ; d->pos_frame_plane[7] = p3.y; d->pos_frame_plane[8] =p3.z ;
     d->pos_frame_plane[9] = p4.x ; d->pos_frame_plane[10]= p4.y; d->pos_frame_plane[11] =p4.z ;
-    d->pos_frame_plane[12] = p1.x ; d->pos_frame_plane[13]= p1.y; d->pos_frame_plane[14] =p1.z ;
+    d->plane_idx.push_back(0);
+    d->plane_idx.push_back(1);
+    d->plane_idx.push_back(2);
+    d->plane_idx.push_back(0);
+    d->plane_idx.push_back(2);
+    d->plane_idx.push_back(3);
+
   }
 }
 void Scene_edit_polyhedron_item_priv::draw_ROI_and_control_vertices(CGAL::Three::Viewer_interface* viewer, qglviewer::ManipulatedFrame* frame, const qglviewer::Vec &center) const
