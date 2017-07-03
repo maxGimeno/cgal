@@ -63,9 +63,9 @@ namespace CGAL {
 
         typedef typename Base::Surface_patch_index Surface_patch_index;
 
-        typedef int                                                  Curve_segment_index;
-        typedef int                                                  Corner_index;
-        typedef std::pair< int, std::vector< Curve_segment_index > > Curve_index;
+        typedef int Curve_segment_index;
+        typedef int Corner_index;
+        typedef int Curve_index;
 
         typedef typename Base::R         Gt;
         typedef Gt                       R;
@@ -80,48 +80,57 @@ namespace CGAL {
         cgalMeshDomainWithRationalBezierFeatures(const T& ...t)
             : Base(t...)
             , current_corner_index_(1)
-            , current_curve_index_(1) {}
+            , current_curve_index_(1)
+            , current_nurbs_curve_index_(0)
+        {}
 #else
         /// Constructors
         /// Call the base class constructor
         cgalMeshDomainWithRationalBezierFeatures()
             : Base()
             , current_corner_index_(1)
-            , current_curve_index_(1) {}
+            , current_curve_index_(1)
+            , current_nurbs_curve_index_(0)
+        {}
 
         template <typename T1>
         cgalMeshDomainWithRationalBezierFeatures(const T1& o1)
             : Base(o1)
             , current_corner_index_(1)
-            , current_curve_index_(1) {}
-
+            , current_curve_index_(1)
+            , current_nurbs_curve_index_(0)
+        {}
         template <typename T1, typename T2>
         cgalMeshDomainWithRationalBezierFeatures(const T1& o1, const T2& o2)
             : Base(o1, o2)
             , current_corner_index_(1)
-            , current_curve_index_(1) {}
-
+            , current_curve_index_(1)
+            , current_nurbs_curve_index_(0)
+        {}
         template <typename T1, typename T2, typename T3>
         cgalMeshDomainWithRationalBezierFeatures(const T1& o1, const T2& o2,
                                                  const T3& o3)
             : Base(o1, o2, o3)
             , current_corner_index_(1)
-            , current_curve_index_(1) {}
-
+            , current_curve_index_(1)
+            , current_nurbs_curve_index_(0)
+        {}
         template <typename T1, typename T2, typename T3, typename T4>
         cgalMeshDomainWithRationalBezierFeatures(const T1& o1, const T2& o2,
                                                  const T3& o3, const T4& o4)
             : Base(o1, o2, o3, o4)
             , current_corner_index_(1)
-            , current_curve_index_(1) {}
-n#endif
+            , current_curve_index_(1)
+            , current_nurbs_curve_index_(0)
+            {}
+#endif
 
         /// Destructor
         ~cgalMeshDomainWithRationalBezierFeatures()
         {
-            for(auto edge = Edges.begin(); edge != Edges.end(); ++edge) {
-                delete (edge->second)->first;
-                delete (edge->second)->second;
+            for(auto edge = edges_.begin(); edge != edges_.end(); ++edge) {
+                delete (edge->second).first;
+                delete (edge->second).second;
             }
         }
 
@@ -188,11 +197,6 @@ n#endif
         add_features(InputIterator first, InputIterator last)
         { add_features(first, last, CGAL::Emptyset_iterator()); }
 
-  template <typename InputIterator>
-  void
-  add_features_with_context(InputIterator first, InputIterator last)
-  { add_features_with_context(first, last, CGAL::Emptyset_iterator()); }
-
   template <typename IndicesOutputIterator>
   IndicesOutputIterator
   get_incidences(Curve_segment_index id, IndicesOutputIterator out) const;
@@ -232,7 +236,7 @@ n#endif
 
 
         typedef std::map< Curve_segment_index, std::pair< dtkRationalBezierCurve *, double * > > Edges;
-        typedef std::map< Curve_segment_index,  Curve_index > > Curve_segment_index_to_curve_index;
+        typedef std::map< Curve_segment_index,  Curve_index > Curve_segment_index_to_curve_index;
         typedef std::map< Curve_index, std::tuple< dtkNurbsCurveIntersect *, dtkNurbsCurveIntersect *, dtkNurbsCurveIntersect* > > Nurbs_edge_intersects;
 
         typedef std::map< Curve_segment_index, Surface_patch_index_set > Edges_incidences;
@@ -249,8 +253,9 @@ n#endif
         Corners_parameters corners_parameters;
 
         Edges edges_;
+        Curve_segment_index current_curve_index_;
         Nurbs_edge_intersects nurbs_edge_intersects_;
-        Curve_index current_nurbs_curve_index;
+        Curve_index current_nurbs_curve_index_;
         Curve_segment_index_to_curve_index curve_segment_index_to_curve_index;
 
         Edges_incidences edges_incidences_;
@@ -310,15 +315,15 @@ n#endif
                 // ///////////////////////////////////////////////////////////////////
                 // Checks that the last control points is not equal to the first one
                 // ///////////////////////////////////////////////////////////////////
-                eit->second->first->controlPoint(0, first_point.data());
-                eit->second->first->controlPoint(eit->second->first->degree(), last_point.data());
+                eit->second.first->controlPoint(0, first_point.data());
+                eit->second.first->controlPoint(eit->second.first->degree(), last_point.data());
 
                 Corner_index p_index, q_index;
                 //TODO Check distance instead...
                 //Evaluate and compare to stored corners
-                eit->second->first->evaluatePoint(0., eval_point.data());
+                eit->second.first->evaluatePoint(0., eval_point.data());
                 p_index = boost::get<Corner_index>(point_corner_index(Point_3(eval_point[0], eval_point[1], eval_point[2])));
-                eit->second->first->evaluatePoint(1., eval_point.data());
+                eit->second.first->evaluatePoint(1., eval_point.data());
                 q_index = boost::get<Corner_index>(point_corner_index(Point_3(eval_point[0], eval_point[1], eval_point[2])));
 
                 *out++ = CGAL::cpp11::make_tuple(eit->first,
@@ -361,7 +366,7 @@ construct_point_on_curve_segment(double p, const Curve_segment_index& curve_inde
     typename Edges::const_iterator eit = edges_.find(curve_index);
     CGAL_assertion(eit != edges_.end());
     dtkContinuousGeometryPrimitives::Point_3 eval_point(0., 0., 0.);
-    eit->second->first->evaluatePoint(p, eval_point.data());
+    eit->second.first->evaluatePoint(p, eval_point.data());
     return Point_3(eval_point[0], eval_point[1], eval_point[2]);
 }
 
@@ -381,7 +386,7 @@ cgalMeshDomainWithRationalBezierFeatures<MD_>::error_bound_cord_to_curve(double 
     splitting_parameters[0] = p;
     splitting_parameters[1] = q;
     std::list< dtkRationalBezierCurve * > split_curves;
-    eit->second->first->split(split_curves, splitting_parameters);
+    eit->second.first->split(split_curves, splitting_parameters);
 
     return dtkContinuousGeometryTools::convexHullApproximationError(*(*(std::next(split_curves.begin()))));
 }
@@ -395,7 +400,6 @@ cgalMeshDomainWithRationalBezierFeatures<MD_>::
 add_features(InputIterator first, InputIterator last,
              IndicesOutputIterator indices_out)
 {
-
     // ///////////////////////////////////////////////////////////////////
     // Recovers three NURBS curves as feature,
     // Decompose the middle one into rational Bezier curves, and stores the rational bezier curves in edges_
@@ -403,28 +407,26 @@ add_features(InputIterator first, InputIterator last,
     std::list< std::pair< Corner_index, Point_3 > > registered_corners;
     // Insert one edge for each element
 
-    std::size_t nurbs_curve_current_index = 0; //starts at 1
     while ( first != last ) {
-        ++nurbs_curve_current_index;
-        dtkNurbsCurveIntersect * intersect_0 = new dtkNurbsCurveIntersect(std::get<0>(*first));
-        dtkNurbsCurveIntersect * intersect_1 = new dtkNurbsCurveIntersect(std::get<1>(*first));
-        dtkNurbsCurveIntersect * intersect_2 = new dtkNurbsCurveIntersect(std::get<2>(*first));
-        nurbs_edges_intersect.insert(std::make_pair(nurbs_curve_current_index, std::make_tuple(intersect_0, intersect_1, intersect_2)));
+        ++current_nurbs_curve_index_;
+        dtkNurbsCurveIntersect * intersect_0 = new dtkNurbsCurveIntersect(*std::get<0>(*first));
+        dtkNurbsCurveIntersect * intersect_1 = new dtkNurbsCurveIntersect(*std::get<1>(*first));
+        dtkNurbsCurveIntersect * intersect_2 = new dtkNurbsCurveIntersect(*std::get<2>(*first));
+        nurbs_edge_intersects_.insert(std::make_pair(current_nurbs_curve_index_, std::make_tuple(intersect_0, intersect_1, intersect_2)));
         // ///////////////////////////////////////////////////////////////////
         // Decompose the middle nurbs curve to rational bezier curves
         // ///////////////////////////////////////////////////////////////////
         std::vector< std::pair< dtkRationalBezierCurve *, double * > > rational_bezier_curves;
         std::get<1>(*first)->decomposeToRationalBezierCurves(rational_bezier_curves);
-
         for(auto rbc = rational_bezier_curves.begin(); rbc != rational_bezier_curves.end(); ++rbc) {
             //Starts at 1 for the first curve
             ++current_curve_index_;
-            const Curve_segment_index curve_index = current_curve_index;
+            const Curve_segment_index curve_index = current_curve_index_;
 
             // ///////////////////////////////////////////////////////////////////
             // Creates a mapping from rational bezier curve to initial nurbs curve
             // ///////////////////////////////////////////////////////////////////
-            curve_segment_index_to_curve_index.insert(std::make_pair(current_curve_index, current_nurbs_curve_index));
+            curve_segment_index_to_curve_index.insert(std::make_pair(current_curve_index_, current_nurbs_curve_index_));
 
             // ///////////////////////////////////////////////////////////////////
             // Computes the first and last tips of the edge (the corners)
@@ -436,10 +438,10 @@ add_features(InputIterator first, InputIterator last,
             Point_3 first_cgal(first_point[0], first_point[1], first_point[2]);
             Point_3 last_cgal(last_point[0], last_point[1], last_point[2]);
 
-            // ///////////////////////////////////////////////////////////////////
+            ///////////////////////////////////////////////////////////////////
             // Checks that the corner was not already inserted
             // If not, insert it and register it
-            // ///////////////////////////////////////////////////////////////////
+            ///////////////////////////////////////////////////////////////////
             bool already_inserted = false;
             Corner_index already_inserted_corner;
             for(auto it = registered_corners.begin(); it != registered_corners.end(); ++it) {
@@ -463,16 +465,16 @@ add_features(InputIterator first, InputIterator last,
                 corners_parameters.insert(std::make_pair(std::make_pair(corner_index, curve_index), 0.));
             }
 
-            // ///////////////////////////////////////////////////////////////////
-            // Same for the end control point
-            // ///////////////////////////////////////////////////////////////////
+            ///////////////////////////////////////////////////////////////////
+            //Same for the end control point
+            ///////////////////////////////////////////////////////////////////
             already_inserted = false;
             for(auto it = registered_corners.begin(); it != registered_corners.end(); ++it) {
                 if(CGAL::squared_distance(last_cgal, it->second) < 1e-7) {
                     already_inserted = true;
                     already_inserted_corner = it->first;
                     double w = 0.;
-                    rbc->first->weight((*rbc)->degree(), &w);
+                    rbc->first->weight(rbc->first->degree(), &w);
                     dtkContinuousGeometryPrimitives::Point_3 new_point(it->second[0] * w, it->second[1] * w, it->second[2] * w);
                     rbc->first->setControlPoint(rbc->first->degree(), new_point.data());
                     break;
@@ -489,10 +491,10 @@ add_features(InputIterator first, InputIterator last,
 
             *indices_out++ = curve_index;
 
-            // Create a new rational bezier curve
+            //Create a new rational bezier curve
             std::pair<typename Edges::iterator,bool> insertion = edges_.insert(std::make_pair(curve_index, *rbc));
-            ++first;
         }
+        ++first;
     }
     compute_corners_incidences();
     return indices_out;
@@ -505,15 +507,15 @@ compute_corners_incidences()
 {
   for(typename Corners::iterator
         cit = corners_.begin(), end = corners_.end();
-      cit != end; /* the loop variable is incremented in the  body */)
+      cit != end;)//the loop variable is incremented in the  body
   {
     const Corner_index id = cit->second;
 
     const typename Corners_tmp_incidences::mapped_type&
       corner_tmp_incidences = corners_tmp_incidences_[id];
 
-    // If the corner is incident to only one curve, and that curve is a
-    // cycle, then remove the corner from the set.
+    //If the corner is incident to only one curve, and that curve is a
+    //cycle, then remove the corner from the set.
     if(corner_tmp_incidences.size() == 1 &&
        is_cycle(*corner_tmp_incidences.begin()))
     {
@@ -524,7 +526,7 @@ compute_corners_incidences()
     }
 
     Surface_patch_index_set& incidences = corners_incidences_[id];
-    // That should be an empty set.
+    //That should be an empty set.
 
     BOOST_FOREACH(Curve_segment_index curve_index, corner_tmp_incidences)
     {
@@ -533,7 +535,7 @@ compute_corners_incidences()
                                    incidences.begin()));
     }
 
-    // increment the loop variable
+    //increment the loop variable
     ++cit;
   }
 }
@@ -602,13 +604,13 @@ register_corner(const Point_3& p, const Curve_segment_index& curve_index)
 {
     typename Corners::iterator cit = corners_.lower_bound(p);
 
-    // If the corner already exists, returns...
+    //If the corner already exists, returns...
     if(cit != corners_.end() && !(corners_.key_comp()(p, cit->first))) {
         corners_tmp_incidences_[cit->second].insert(curve_index);
         return cit->second;
     }
 
-    // ...else insert it!
+    //...else insert it!
 
     const Corner_index index = current_corner_index_;
     ++current_corner_index_;
@@ -642,23 +644,24 @@ CGAL::Sign
 cgalMeshDomainWithRationalBezierFeatures<MD_>::
 distance_sign_along_cycle(double p, double q, double r, const Curve_segment_index& index) const
 {
-    // Find edge
+    //Find edge
     typename Edges::const_iterator eit = edges_.find(index);
     CGAL_assertion(eit != edges_.end());
 
-    // If eit is not a cycle, then the orientation corresponds to the sign
-    // of the distance
+    //If eit is not a cycle, then the orientation corresponds to the sign
+    //of the distance
     //SHOULDNT THERE BE A PROBLEM IF THERE IS NO CYCLE SINCE WE ASK FOR THE DISTANCE SIGN ALONG CYCLE ?
     if ( !this->is_cycle(index) )
         {
             return distance_sign(p, r, index);
         }
 
-    // If p and r are the same point, it correspond to a complete loop on a cycle
+    //If p and r are the same point, it correspond to a complete loop on a cycle
     if ( p == r ) { return CGAL::POSITIVE; }
 
     // We are on a cycle without any clue (p==q). Return the shortest path as
-    // orientation.
+    //
+    //orientation.
     //THIS CANT HAPPEN
     //HOW TO DO THAT ? ...
     if ( p == q )
@@ -670,16 +673,17 @@ distance_sign_along_cycle(double p, double q, double r, const Curve_segment_inde
             return CGAL::NEGATIVE; // }
         }
 
-    // If pq or pr is negative, edge is not a cycle, thus geodesic_distance
-    // gives the answer.
+    //If pq or pr is negative, edge is not a cycle, thus geodesic_distance
+    //gives the answer.
 
-    // ///////////////////////////////////////////////////////////////////
-    // TODO
-    // ///////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////
+    //TODO
+    ///////////////////////////////////////////////////////////////////
 
-    // Compare pq and pr
+    //Compare pq and pr
     // if ( pq <= pr ) { return CGAL::POSITIVE; }
-    // else { return CGAL::NEGATIVE; }
+    // else {
+        return CGAL::NEGATIVE; // }
 }
 
 template <class MD_>
@@ -695,16 +699,16 @@ bool
 cgalMeshDomainWithRationalBezierFeatures<MD_>::
 is_cycle(const Curve_segment_index& index) const
 {
-    // Find edge
+    //Find edge
     typename Edges::const_iterator eit = edges_.find(index);
     CGAL_assertion(eit != edges_.end());
     dtkContinuousGeometryPrimitives::Point_3 first_point(0., 0., 0.);
     dtkContinuousGeometryPrimitives::Point_3 last_point(0., 0., 0.);
-    // ///////////////////////////////////////////////////////////////////
-    // Checks that the last control point is not equal to the first one
-    // ///////////////////////////////////////////////////////////////////
-    eit->second->first->controlPoint(0, first_point.data());
-    eit->second->first->controlPoint(eit->second->first->degree(), last_point.data());
+    ///////////////////////////////////////////////////////////////////
+    //Checks that the last control point is not equal to the first one
+    ///////////////////////////////////////////////////////////////////
+    eit->second.first->controlPoint(0, first_point.data());
+    eit->second.first->controlPoint(eit->second.first->degree(), last_point.data());
     return (first_point == last_point);
 }
 } //namespace CGAL

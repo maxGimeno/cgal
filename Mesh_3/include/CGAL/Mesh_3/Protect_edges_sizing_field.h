@@ -1581,67 +1581,67 @@ walk_along_edge(const Vertex_handle& start, const Vertex_handle& next,
   return out;
 }
 
-template <typename C3T3, typename MD, typename Sf>
-template <typename ErasedVeOutIt>
-ErasedVeOutIt
-Protect_edges_sizing_field<C3T3, MD, Sf>::
-check_cover_along_edge( const Curve_segment_index& curve_index,
-                        ErasedVeOutIt out) const
-{
-    //Recover the first two vertex handles on the curve_index
-#if CGAL_MESH_3_PROTECTION_DEBUG & 4
-  if(!c3t3_.is_in_complex(start, next)) {
-    std::cerr << "ERROR: the edge ( " << start->point() << " , "
-              << next->point() << " ) is not in complex!\n";
-    dump_c3t3(c3t3_, "dump-bug");
-    dump_c3t3_edges(c3t3_, "dump-bug-c3t3");
-  }
-#endif
-  CGAL_precondition( c3t3_.is_in_complex(start, next) );
+// template <typename C3T3, typename MD, typename Sf>
+// template <typename ErasedVeOutIt>
+// ErasedVeOutIt
+// Protect_edges_sizing_field<C3T3, MD, Sf>::
+// check_cover_along_edge( const Curve_segment_index& curve_index,
+//                         ErasedVeOutIt out) const
+// {
+//     //Recover the first two vertex handles on the curve_index
+// #if CGAL_MESH_3_PROTECTION_DEBUG & 4
+//   if(!c3t3_.is_in_complex(start, next)) {
+//     std::cerr << "ERROR: the edge ( " << start->point() << " , "
+//               << next->point() << " ) is not in complex!\n";
+//     dump_c3t3(c3t3_, "dump-bug");
+//     dump_c3t3_edges(c3t3_, "dump-bug-c3t3");
+//   }
+// #endif
+//   CGAL_precondition( c3t3_.is_in_complex(start, next) );
 
-  Vertex_handle previous = start;
-  Vertex_handle current = next;
+//   Vertex_handle previous = start;
+//   Vertex_handle current = next;
 
-  // Walk along edge until next corner (break)
-  // Makes sure that the set of protecting spheres satify a cover criterion
-  // Return the sphere if not
-  while (true)
-  {
-    // Walk until it reaches the last corner of the last curve segment on the curve
-    if ( c3t3_.is_in_complex(current) || current == start )
-    {
-        if(c3t3_.index(current) == /*last index*/){
-            break;
-        } else {
-            //Need to skip the corner by recovering the first two vertex handles on the next Curve_segment
+//   // Walk along edge until next corner (break)
+//   // Makes sure that the set of protecting spheres satify a cover criterion
+//   // Return the sphere if not
+//   while (true)
+//   {
+//     // Walk until it reaches the last corner of the last curve segment on the curve
+//     if ( c3t3_.is_in_complex(current) || current == start )
+//     {
+//         if(c3t3_.index(current) == /*last index*/){
+//             break;
+//         } else {
+//             //Need to skip the corner by recovering the first two vertex handles on the next Curve_segment
 
 
-        }
-      break;
-    }
+//         }
+//       break;
+//     }
 
-    *out++ = current;
+//     *out++ = current;
 
-    // Get next vertex along edge (Doesnt care what Curve_segment it is on)
-    Vertex_handle next = next_vertex_along_edge(current, previous);
-    previous = current;
-    current = next;
-  }
+//     // Get next vertex along edge (Doesnt care what Curve_segment it is on)
+//     Vertex_handle next = next_vertex_along_edge(current, previous);
+//     previous = current;
+//     current = next;
+//   }
 
-  return out;
-}
+//   return out;
+// }
 
-template <typename C3T3, typename MD, typename Sf>
-bool
-Protect_edges_sizing_field<C3T3, MD, Sf>::
-are_curve_segments_inside_spheres(const Bare_point cp, double rp, const Bare_point cq, double rq, const Curve_segment_index& curve_index) const
-{
-    if() {
-        return false;//This one is almost a garantee
-    } else {
-        return true;//This one is almost a garantee
-    }
-}
+// template <typename C3T3, typename MD, typename Sf>
+// bool
+// Protect_edges_sizing_field<C3T3, MD, Sf>::
+// are_curve_segments_inside_spheres(const Bare_point cp, double rp, const Bare_point cq, double rq, const Curve_segment_index& curve_index) const
+// {
+//     if() {
+//         return false;//This one is almost a garantee
+//     } else {
+//         return true;//This one is almost a garantee
+//     }
+// }
 
 template <typename C3T3, typename MD, typename Sf>
 typename Protect_edges_sizing_field<C3T3, MD, Sf>::Vertex_handle
