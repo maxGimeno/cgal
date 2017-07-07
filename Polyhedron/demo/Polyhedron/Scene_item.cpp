@@ -48,6 +48,7 @@ CGAL::Three::Scene_item::~Scene_item() {
   }
   for(int i=0; i<vaosSize; i++)
   {
+    vaos[i]->destroy();
     delete vaos[i];
   }
 }

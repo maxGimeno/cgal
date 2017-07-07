@@ -284,8 +284,8 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
     qt5_use_modules( scene_textured_polyhedron_item Svg )
     add_item(scene_edit_polyhedron_item Plugins/Surface_mesh_deformation/Scene_edit_polyhedron_item.cpp
            ${editionUI_FILES})
-           target_link_libraries(scene_edit_polyhedron_item scene_polyhedron_item scene_surface_mesh_item scene_polyhedron_and_sm_item_k_ring_selection
-               scene_basic_objects)
+    target_link_libraries(scene_edit_polyhedron_item scene_polyhedron_item scene_surface_mesh_item scene_polyhedron_and_sm_item_k_ring_selection
+        scene_basic_objects)
   endif()
 
   add_item(scene_implicit_function_item Scene_implicit_function_item.cpp )
@@ -298,6 +298,19 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
   target_link_libraries(scene_nef_polyhedron_item scene_polyhedron_item scene_surface_mesh_item)
   add_item(scene_points_with_normal_item Scene_points_with_normal_item.cpp)
   target_link_libraries( scene_points_with_normal_item gl_splat)
+
+  find_package(dtk 1.0.0 QUIET)
+  find_package(dtkContinuousGeometry 0.0.1 QUIET)
+  if (dtk_FOUND AND dtkContinuousGeometry_FOUND)
+    include_directories(${dtk_INCLUDE_DIRS})
+    include_directories(${dtkContinuousGeometry_INCLUDE_DIRS})
+    add_item(scene_nurbs_item Plugins/Cad/Scene_nurbs_item.cpp)
+    target_link_libraries(scene_nurbs_item dtkCore dtkContinuousGeometryCore)
+    add_item(scene_cad_item Plugins/Cad/Scene_cad_item.cpp)
+    target_link_libraries(scene_cad_item dtkCore dtkContinuousGeometryCore scene_nurbs_item)
+  endif()#dtk_FOUND etc.
+
+
 
   target_link_libraries( demo_framework gl_splat)
 

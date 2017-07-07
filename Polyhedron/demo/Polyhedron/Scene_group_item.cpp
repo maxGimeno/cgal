@@ -31,7 +31,7 @@ bool Scene_group_item::isEmpty() const {
 
 Scene_group_item::Bbox Scene_group_item::bbox() const
 {
-    return Bbox(0, 0, 0, 0, 0,0);
+    return Bbox(0, 0, 0, 0, 0, 0);
 }
 
 
