@@ -142,6 +142,8 @@ namespace CGAL {
             /// Refine balls
             void refine_balls();
 
+            void check();
+
             /// Returns vertex which corresponds to corner located at point p
             Vertex_handle get_vertex_corner_from_point(const Bare_point& p,
                                                        const Index& p_index) const;
@@ -226,6 +228,9 @@ namespace CGAL {
             template <typename ErasedVeOutIt>
             ErasedVeOutIt
             check_and_fix_vertex_along_edge(const Vertex_handle& v, ErasedVeOutIt out);
+
+            void
+            check_and_tag_vertex_along_edge(const Vertex_handle& v);
 
             /// Walk along edge from \c start, following the direction \c start to
             /// \c next, and fills \c out with the vertices which do not fullfill
@@ -378,6 +383,7 @@ private:
   Weight minimal_weight_;
   std::set<Curve_segment_index> treated_edges_;
   std::set<Vertex_handle> unchecked_vertices_;
+            std::set<Vertex_handle> unchecked_vertices_2_;
   int refine_balls_iteration_nb;
   bool nonlinear_growth_of_balls;
 };
@@ -578,6 +584,7 @@ insert_point(const Bare_point& p, const Weight& w, int dim, const Index& index,
   c3t3_.set_index(v,index);
 
   unchecked_vertices_.insert(v);
+  unchecked_vertices_2_.insert(v);
 
   return v;
 }
@@ -793,7 +800,7 @@ smart_insert_point(const Bare_point& p, Weight w, int dim, const Index& index,
   }
   Vertex_handle v = insert_point(p,w,dim,index, insert_a_special_ball);
   /// @TODO `insert_point` does insert in unchecked_vertices anyway!
-  if ( add_handle_to_unchecked ) { unchecked_vertices_.insert(v); }
+  if ( add_handle_to_unchecked ) { unchecked_vertices_.insert(v);   unchecked_vertices_2_.insert(v);}
 
   return std::pair<Vertex_handle, ErasedVeOutIt>(v, out);
 }
@@ -1274,6 +1281,7 @@ change_ball_size(const Vertex_handle& v, const FT size, const bool special_ball)
   }
 
   unchecked_vertices_.erase(v);
+  unchecked_vertices_2_.erase(v);
   // Change v size
   double meshing_info = v->meshing_info();
   c3t3_.triangulation().remove(v);
@@ -1318,6 +1326,7 @@ change_ball_size(const Vertex_handle& v, const FT size, const bool special_ball)
 
   // Update unchecked vertices
   unchecked_vertices_.insert(new_v);
+  unchecked_vertices_2_.insert(new_v);
   return new_v;
 }
 namespace details {
@@ -1581,13 +1590,115 @@ walk_along_edge(const Vertex_handle& start, const Vertex_handle& next,
   return out;
 }
 
-// template <typename C3T3, typename MD, typename Sf>
-// template <typename ErasedVeOutIt>
-// ErasedVeOutIt
-// Protect_edges_sizing_field<C3T3, MD, Sf>::
-// check_cover_along_edge( const Curve_segment_index& curve_index,
-//                         ErasedVeOutIt out) const
-// {
+// ///////////////////////////////////////////////////////////////////
+// This methods aims at tagging pairs of protection spheres which do not fulfill some criteria
+// ///////////////////////////////////////////////////////////////////
+template <typename C3T3, typename MD, typename Sf>
+void
+Protect_edges_sizing_field<C3T3, MD, Sf>::
+check(void)
+{
+#if CGAL_MESH_3_PROTECTION_DEBUG & 1
+    std::cerr << "check()\n";
+#endif
+    typedef std::set<Vertex_handle> Vertices;
+    Vertices vertices;
+    std::copy(unchecked_vertices_2_.begin(), unchecked_vertices_2_.end(), std::inserter(vertices, vertices.begin()) );
+
+    unchecked_vertices_.clear();
+
+    // Fix edges
+    while ( !vertices.empty() ) {
+        Vertex_handle v = *vertices.begin();
+        vertices.erase(vertices.begin());
+
+        details::Erase_element_from_set<Vertices> erase_from_vertices(vertices);
+
+        check_and_tag_vertex_along_edge(v);
+    }
+}
+
+template <typename C3T3, typename MD, typename Sf>
+void
+Protect_edges_sizing_field<C3T3, MD, Sf>::
+check_and_tag_vertex_along_edge(const Vertex_handle& v)
+{
+#if CGAL_MESH_3_PROTECTION_DEBUG & 1
+  std::cerr << "check_and_tag_vertex_along_edge("
+            << disp_vert(v)
+            << " dim=" << get_dimension(v)
+            << " index=" << CGAL::oformat(c3t3_.index(v))
+            << " special=" << std::boolalpha << is_special(v)
+            << ")\n";
+#endif
+  // If v is a corner, then all incident edges have to be checked
+  if ( c3t3_.is_in_complex(v) )
+  {
+    return repopulate_edges_around_corner(v, out);
+  }
+
+  // Get incident vertices along c3t3 edge
+  Incident_vertices incident_vertices;
+  c3t3_.adjacent_vertices_in_complex(v, std::back_inserter(incident_vertices));
+  CGAL_assertion(v->is_special()
+                 || incident_vertices.size() == 0
+                 || incident_vertices.size() == 1
+                 || incident_vertices.size() == 2);
+  if(incident_vertices.size() == 0) return out;
+  // The size of 'incident_vertices' can be 0 if v is a ball that covers
+  // entirely a closed curve.
+  // The size can also be 1 if the curve is a cycle, and the temporary
+  // mesh is only two balls on the cycle: then each ball has only one
+  // neighbor.
+
+  // Walk along edge to find the edge piece which is not correctly sampled
+  typedef std::list<Vertex_handle> Vertex_list;
+  Vertex_list to_repopulate;
+  to_repopulate.push_front(v);
+
+  const Vertex_handle& previous = incident_vertices.front().first;
+  const Vertex_handle& next = incident_vertices.back().first;
+
+  const Curve_segment_index& curve_index = incident_vertices.front().second;
+
+  // Walk following direction (v,previous)
+  walk_along_edge(v, previous, true, std::front_inserter(to_repopulate),
+                  curve_index);
+#if CGAL_MESH_3_PROTECTION_DEBUG & 1
+  std::cerr <<  "to_repopulate.size()=" << to_repopulate.size() << "\n";
+#endif // CGAL_MESH_3_PROTECTION_DEBUG
+
+  // Check whether a complete circle has been discovered or not
+  if (   to_repopulate.size() == 1
+      || to_repopulate.front() != to_repopulate.back() )
+  {
+    // Walk in other direction (v,next)
+    walk_along_edge(v, next, true, std::back_inserter(to_repopulate),
+                    curve_index);
+#if CGAL_MESH_3_PROTECTION_DEBUG & 1
+    std::cerr <<  "to_repopulate.size()=" << to_repopulate.size() << "\n";
+#endif // CGAL_MESH_3_PROTECTION_DEBUG
+  }
+
+  // If only v is in to_repopulate, there is nothing to do
+  if ( to_repopulate.size() == 1 )
+  {
+    *out++ = *to_repopulate.begin();
+    return out;
+  }
+
+  // Store erased vertices
+  // out = std::copy(to_repopulate.begin(), to_repopulate.end(), out);
+
+  // Repopulate edge
+  out = analyze_and_repopulate(to_repopulate.begin(),
+			       --to_repopulate.end(),
+			       curve_index,
+			       out);
+
+  return out;
+}
+
 //     //Recover the first two vertex handles on the curve_index
 // #if CGAL_MESH_3_PROTECTION_DEBUG & 4
 //   if(!c3t3_.is_in_complex(start, next)) {
