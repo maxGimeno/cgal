@@ -22,10 +22,14 @@ public:
   ~Scene_nurbs_item();
   bool isEmpty() const;
   void draw(CGAL::Three::Viewer_interface *) const;
+  void drawEdges(CGAL::Three::Viewer_interface *) const;
   Scene_item* clone() const {return 0;}
   QString toolTip() const {return QString();}
-  bool supportsRenderingMode(RenderingMode m) const { return (m == Flat); }
+  bool supportsRenderingMode(RenderingMode m) const { return (m == Flat || m == FlatPlusEdges || m == Wireframe); }
   void compute_bbox() const;
+  QMenu* contextMenu();
+public Q_SLOTS:
+  void show_trimmed(bool b);
 protected:
   friend struct Scene_nurbs_item_priv;
   Scene_nurbs_item_priv* d;
