@@ -404,7 +404,7 @@ add_features(InputIterator first, InputIterator last,
     // Recovers three NURBS curves as feature,
     // Decompose the middle one into rational Bezier curves, and stores the rational bezier curves in edges_
     // ///////////////////////////////////////////////////////////////////
-    std::list< std::pair< Corner_index, Point_3 > > registered_corners;
+    std::map< Corner_index, Point_3 > registered_corners;
     // Insert one edge for each element
 
     while ( first != last ) {
@@ -426,7 +426,7 @@ add_features(InputIterator first, InputIterator last,
             // ///////////////////////////////////////////////////////////////////
             // Creates a mapping from rational bezier curve to initial nurbs curve
             // ///////////////////////////////////////////////////////////////////
-            curve_segment_index_to_curve_index.insert(std::make_pair(current_curve_index_, current_nurbs_curve_index_));
+            curve_segment_index_to_curve_index_.insert(std::make_pair(current_curve_index_, current_nurbs_curve_index_));
 
             // ///////////////////////////////////////////////////////////////////
             // Computes the first and last tips of the edge (the corners)
@@ -457,10 +457,11 @@ add_features(InputIterator first, InputIterator last,
                 }
             }
             if (already_inserted) {
+                register_corner(registered_corners[already_inserted_corner], curve_index);// for incidences updating
                 corners_parameters.insert(std::make_pair(std::make_pair(already_inserted_corner, curve_index), 0.));
             } else {
                 Corner_index corner_index = register_corner(first_cgal, curve_index);
-                registered_corners.push_back(std::make_pair(corner_index, first_cgal));
+                registered_corners.insert(std::make_pair(corner_index, first_cgal));
                 //Stores the parameters of the corner on the curve identifid by curve index
                 corners_parameters.insert(std::make_pair(std::make_pair(corner_index, curve_index), 0.));
             }
@@ -481,10 +482,11 @@ add_features(InputIterator first, InputIterator last,
                 }
             }
             if (already_inserted) {
+                register_corner(registered_corners[already_inserted_corner], curve_index);// for incidences updating
                 corners_parameters.insert(std::make_pair(std::make_pair(already_inserted_corner, curve_index), 1.));
             } else {
                 Corner_index corner_index = register_corner(last_cgal, curve_index);
-                registered_corners.push_back(std::make_pair(corner_index, last_cgal));
+                registered_corners.insert(std::make_pair(corner_index, last_cgal));
                 //Stores the parameters of the corner on the curve identifid by curve index
                 corners_parameters.insert(std::make_pair(std::make_pair(corner_index, curve_index), 1.));
             }
