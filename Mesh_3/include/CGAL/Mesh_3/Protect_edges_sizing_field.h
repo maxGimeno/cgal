@@ -111,7 +111,7 @@ namespace CGAL {
             typedef typename C3T3::Edge                 Edge;
 
             typedef typename MeshDomain::Curve_segment_index  Curve_segment_index;
-            typedef typename MeshDomain::Curve_index  Curve_index;
+            typedef typename MeshDomain::Curve_index          Curve_index;
             typedef typename MeshDomain::Corner_index         Corner_index;
             typedef typename MeshDomain::Index                Index;
 
@@ -129,7 +129,7 @@ namespace CGAL {
 
         private:
             typedef std::vector< std::pair< Curve_segment_index, Bare_point > >    Incident_edges;
-            typedef std::vector< Vertex_handle >                                 Vertex_vector;
+            typedef std::vector< Vertex_handle >                                   Vertex_vector;
             typedef std::vector< std::pair< Vertex_handle, Curve_segment_index > > Incident_vertices;
 
         private:
