@@ -31,9 +31,11 @@ public :
 
   void computeElements() const;
   Scene_item* clone() const Q_DECL_OVERRIDE {return 0;}
-  QString toolTip() const Q_DECL_OVERRIDE {return QString();}
+  QString toolTip() const Q_DECL_OVERRIDE;
   Bbox bbox()const Q_DECL_OVERRIDE;
   QMenu* contextMenu();
+  dtkBRep* brep();
+  const dtkBRep* brep()const;
 public Q_SLOTS:
   void show_trimmed(bool b);
   void show_intersections(bool b);

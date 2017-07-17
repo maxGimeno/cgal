@@ -219,3 +219,21 @@ QMenu* Scene_cad_item::contextMenu()
   }
   return menu;
 }
+
+dtkBRep* Scene_cad_item::brep()
+{
+  return d->m_brep;
+}
+
+const dtkBRep* Scene_cad_item::brep() const
+{
+  return d->m_brep;
+}
+
+QString Scene_cad_item::toolTip() const
+{
+  QString str =
+         QObject::tr("<p>BRep <b>%1</b>")
+            .arg(this->name());
+  return str;
+}
