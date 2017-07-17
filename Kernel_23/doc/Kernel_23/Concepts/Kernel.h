@@ -1434,6 +1434,11 @@ public:
   typedef unspecified_type Compare_xyz_3; 
 
   /*!
+    a model of `Kernel::CompareSlope_3`
+  */
+  typedef unspecified_type Compare_slope_3;
+
+  /*!
     a model of `Kernel::CompareSquaredDistance_3`
   */
   typedef unspecified_type Compare_squared_distance_3;
@@ -1462,11 +1467,6 @@ public:
     a model of `Kernel::ComparePowerDistance_3` 
   */ 
   typedef unspecified_type Compare_power_distance_3; 
-
-  /*!
-    a model of `Kernel::ComparePowerDistanceToPowerSphere_3` 
-  */ 
-  typedef unspecified_type Compare_power_distance_to_power_sphere_3; 
 
   /*!
     a model of `Kernel::Collinear_3` 

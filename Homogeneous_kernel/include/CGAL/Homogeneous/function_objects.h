@@ -112,6 +112,13 @@ namespace HomogeneousKernelFunctors {
                const Point_3& r, const Point_3& s) const
     { return enum_cast<Angle>(CGAL_NTS sign(c(q,p) * c(s,r))); }
     // FIXME: scalar product
+
+    result_type
+    operator()(const Point_3& p, const Point_3& q,
+               const Point_3& r, const Vector_3& n) const
+    {
+      return enum_cast<Angle>(orientation(p,q,r,r+n));
+    }
   };
 
 
@@ -3193,6 +3200,7 @@ namespace HomogeneousKernelFunctors {
   template <typename K>
   class Construct_weighted_point_2
   {
+    typedef typename K::RT                 RT;
     typedef typename K::FT                 FT;
     typedef typename K::Point_2            Point_2;
     typedef typename K::Weighted_point_2   Weighted_point_2;

@@ -48,6 +48,7 @@ CGAL::Three::Scene_item::~Scene_item() {
   }
   for(int i=0; i<vaosSize; i++)
   {
+    vaos[i]->destroy();
     delete vaos[i];
   }
 }
@@ -219,18 +220,6 @@ CGAL::Three::Scene_item::Header_data CGAL::Three::Scene_item::header() const
 QString CGAL::Three::Scene_item::computeStats(int )
 {
   return QString();
-}
-
-void CGAL::Three::Scene_item::printPrimitiveId(QPoint, CGAL::Three::Viewer_interface*)
-{
-}
-
-void CGAL::Three::Scene_item::printPrimitiveIds(CGAL::Three::Viewer_interface*)const
-{
-}
-bool CGAL::Three::Scene_item::testDisplayId(double, double, double, CGAL::Three::Viewer_interface*)
-{
-    return false;
 }
 
 #include <CGAL/double.h>
