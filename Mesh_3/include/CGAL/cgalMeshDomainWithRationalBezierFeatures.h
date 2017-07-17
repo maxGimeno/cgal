@@ -143,6 +143,10 @@ namespace CGAL {
         template <typename OutputIterator>
         OutputIterator get_curve_segments(OutputIterator out) const;
 
+        const Curve_index& get_curve_index(const Curve_segment_index& curve_segment_index) const {
+            return curve_segment_index_to_curve_index_.at(curve_segment_index);
+        };
+
         ///Returns the parameters of the corner given by /c corner_index on the curve given by /c curve_index
         FT get_corner_parameter_on_curve(const Corner_index& corner_index, const Curve_segment_index& curve_index) const;
 
@@ -151,6 +155,14 @@ namespace CGAL {
         /// \c q : parameter of C(q) in C parameter space
         /// \c curve_index
         FT error_bound_cord_to_curve(double p, double q, const Curve_segment_index& curve_index) const;
+
+        /// Returns true if the spheres located at p on curve_index_p and q on curve_index_q covers the three nurbs curves
+        /// Returns false if the spheres do not cover the curves, or if they do not belong to the same nurbs curve
+        /// \c p : parameter
+        /// \c q : parameter
+        /// \c curve_index_p
+        /// \c curve_index_q
+        bool curves_cover(const Curve_segment_index& curve_segment_index_p, FT p, Point_3 center_p, FT radius_p, const Curve_segment_index& curve_segment_index_q, FT q, Point_3 center_q, FT radius_q) const;
 
         /// Construct a point on curve \c curve_index at parameter p
         /// of \c starting_point
@@ -256,7 +268,7 @@ namespace CGAL {
         Curve_segment_index current_curve_index_;
         Nurbs_edge_intersects nurbs_edge_intersects_;
         Curve_index current_nurbs_curve_index_;
-        Curve_segment_index_to_curve_index curve_segment_index_to_curve_index;
+        Curve_segment_index_to_curve_index curve_segment_index_to_curve_index_;
 
         Edges_incidences edges_incidences_;
 
@@ -391,7 +403,79 @@ cgalMeshDomainWithRationalBezierFeatures<MD_>::error_bound_cord_to_curve(double 
     return dtkContinuousGeometryTools::convexHullApproximationError(*(*(std::next(split_curves.begin()))));
 }
 
-#include <iostream>
+template <class MD_>
+bool
+cgalMeshDomainWithRationalBezierFeatures<MD_>::
+curves_cover(const Curve_segment_index& curve_segment_index_p, FT p, Point_3 center_p, FT radius_p, const Curve_segment_index& curve_segment_index_q, FT q, Point_3 center_q, FT radius_q) const
+{
+    // ///////////////////////////////////////////////////////////////////
+    // Recovers the Curve_index for both Curve_segment_index
+    // ///////////////////////////////////////////////////////////////////
+    Curve_index curve_index_p = curve_segment_index_to_curve_index_.at(curve_segment_index_p);
+    Curve_index curve_index_q = curve_segment_index_to_curve_index_.at(curve_segment_index_q);
+    if(curve_index_p != curve_index_q) {
+        std::cerr << "The curve segment index do not belong to the same curve... weird." << std::endl;
+        return false;
+    }
+    // ///////////////////////////////////////////////////////////////////
+    // Recovers the parameters along the nurbs curve
+    // ///////////////////////////////////////////////////////////////////
+    std::pair< dtkRationalBezierCurve *, double * > edge_p = edges_.at(curve_index_p);
+    std::pair< dtkRationalBezierCurve *, double * > edge_q = edges_.at(curve_index_p);
+    FT p_edge = edge_p.second[0] + p * (edge_p.second[1] - edge_p.second[0]);
+    FT q_edge = edge_q.second[0] + q * (edge_q.second[1] - edge_q.second[0]);
+
+    // ///////////////////////////////////////////////////////////////////
+    // Creates the spheres for the intersections
+    // ///////////////////////////////////////////////////////////////////
+    dtkContinuousGeometryPrimitives::Sphere_3 p_sphere(dtkContinuousGeometryPrimitives::Point_3(center_p.x(), center_p.y(), center_p.z()), radius_p);
+    dtkContinuousGeometryPrimitives::Sphere_3 q_sphere(dtkContinuousGeometryPrimitives::Point_3(center_q.x(), center_q.y(), center_q.z()), radius_q);
+    std::tuple< dtkNurbsCurveIntersect *, dtkNurbsCurveIntersect *, dtkNurbsCurveIntersect * > intersects = nurbs_edge_intersects_.at(curve_index_p);
+
+    // ///////////////////////////////////////////////////////////////////
+    // Checks for the curve "0" first
+    // ///////////////////////////////////////////////////////////////////
+    std::list< std::pair< double, double > > intervals_p;
+    std::list< std::pair< double, double > > intervals_q;
+    std::get<0>(intersects)->intersect(intervals_p, p_sphere);
+    std::get<0>(intersects)->intersect(intervals_q, q_sphere);
+
+    // ///////////////////////////////////////////////////////////////////
+    // Check if some intervals overlap (it doesnt guarantee anything...)
+    // ///////////////////////////////////////////////////////////////////
+    bool overlap = false;
+    for(auto inter_p = intervals_p.begin(); inter_p != intervals_p.end(); ++inter_p) {
+        for(auto inter_q = intervals_q.begin(); inter_q != intervals_q.end(); ++inter_q) {
+            if ((*inter_p).second >= (*inter_q).first || (*inter_p).first <= (*inter_q).second) {
+                overlap = true;
+                break;
+            }
+        }
+    }
+    if (overlap == false) {
+        return false;
+    }
+    // ///////////////////////////////////////////////////////////////////
+    // Checks for the curve "2"
+    // ///////////////////////////////////////////////////////////////////
+    intervals_p.clear();
+    intervals_q.clear();
+    std::get<2>(intersects)->intersect(intervals_p, p_sphere);
+    std::get<2>(intersects)->intersect(intervals_q, q_sphere);
+    for(auto inter_p = intervals_p.begin(); inter_p != intervals_p.end(); ++inter_p) {
+        for(auto inter_q = intervals_q.begin(); inter_q != intervals_q.end(); ++inter_q) {
+            if ((*inter_p).second >= (*inter_q).first || (*inter_p).first <= (*inter_q).second) {
+                overlap = true;
+                break;
+            }
+        }
+    }
+    if (overlap == false) {
+        return false;
+    } else {
+        return true;
+    }
+}
 
 template <class MD_>
 template <typename InputIterator, typename IndicesOutputIterator>
@@ -417,7 +501,9 @@ add_features(InputIterator first, InputIterator last,
         // Decompose the middle nurbs curve to rational bezier curves
         // ///////////////////////////////////////////////////////////////////
         std::vector< std::pair< dtkRationalBezierCurve *, double * > > rational_bezier_curves;
+        std::cerr << "Before bezier decomposition" << std::endl;
         std::get<1>(*first)->decomposeToRationalBezierCurves(rational_bezier_curves);
+        std::cerr << "After bezier decomposition" << std::endl;
         for(auto rbc = rational_bezier_curves.begin(); rbc != rational_bezier_curves.end(); ++rbc) {
             //Starts at 1 for the first curve
             ++current_curve_index_;
