@@ -18,14 +18,13 @@
 
 #include <cgalBrepMeshDomainData.h>
 
-#define foreach Q_FOREACH
 #include <dtkCore>
 #include <dtkContinuousGeometry>
 #include <dtkContinuousGeometryUtils>
 #include <dtkBRep>
 #include <dtkBRepReader>
 #include <dtkNurbsSurface>
-#include
+
 #include <QObject>
 #include <QAction>
 #include <QMainWindow>
@@ -34,7 +33,6 @@
 #include <QtPlugin>
 #include <QInputDialog>
 #include <QStringList>
-#include "../../../../../../../DTK-stuff/cgal-cao-protection/src/cgalBrepMeshDomainData.h"
 
 // declare the CGAL function
 CGAL::Three::Scene_item* cgal_code_cad_remesh(QWidget* parent,
@@ -43,8 +41,25 @@ CGAL::Three::Scene_item* cgal_code_cad_remesh(QWidget* parent,
                                               const double sizing,
                                               const double approx,
                                               int tag);
+
+// /////////////////////////////////////////////////////////////////
+// Domains
+// /////////////////////////////////////////////////////////////////
 typedef CGAL::cgalMeshDomainWithRationalBezierFeatures< cgalBrepMeshDomainData< Kernel > > Mesh_domain_with_features;
+
+// /////////////////////////////////////////////////////////////////
+//  Triangulation
+// /////////////////////////////////////////////////////////////////
+typedef CGAL::Mesh_triangulation_3< Mesh_domain_with_features >::type Tr;
+typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr> C3t3;
+
+// // /////////////////////////////////////////////////////////////////
+// // Criteria
+// // /////////////////////////////////////////////////////////////////
 typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
+typedef Mesh_criteria::Facet_criteria Facet_criteria;
+typedef Mesh_criteria::Cell_criteria Cell_criteria;
+
 using namespace CGAL::Three;
 class Polyhedron_demo_remeshing_plugin :
     public QObject,
@@ -123,13 +138,15 @@ void Polyhedron_demo_remeshing_plugin::remesh()
                             facet_distance = distance,
                             facet_angle = angle);
 
-  cgalBrepMeshDomainData< Kernel > cgal_brep_mesh_domain(*brep);
-  C3t3 p_c3t3 = CGAL::make_mesh_3<C3t3>(cgal_brep_mesh_domain,
+  Mesh_domain_with_features cgal_brep_mesh_domain_with_features(*brep);
+  // 	Mesh generation (without optimization)
+  C3t3 p_c3t3 = CGAL::make_mesh_3<C3t3>(cgal_brep_mesh_domain_with_features,
                                         p_criteria, no_perturb(), no_exude());
-  if(!p_c3t3.is_valid()){std::cerr << "c3t3 not valid" << std::endl;}
+  if(!p_c3t3.is_valid()){std::cerr << "bip biip not valid" << std::endl;}
 
   std::cerr << "number of cells : "<< p_c3t3.number_of_cells() << std::endl;
   std::cerr << "number of cells in complex : "<< p_c3t3.number_of_cells_in_complex() << std::endl;
+
   // Output
   Scene_c3t3_item* c3t3_item = new Scene_c3t3_item(p_c3t3);
   if(!c3t3_item)
