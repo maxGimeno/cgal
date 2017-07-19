@@ -1,22 +1,11 @@
-#include "config.h"
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
+
 #include "Scene_cad_item.h"
-#include "Scene_c3t3_item.h"
+
+#include "Scene_c3t3_cad_item.h"
 #include "ui_Cad_mesher_dialog.h"
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Mesh_triangulation_3.h>
-#include <CGAL/Mesh_complex_3_in_triangulation_3.h>
-#include <CGAL/Mesh_criteria_3.h>
-#include <CGAL/cgalMeshDomainWithRationalBezierFeatures.h>
-
-#include <CGAL/make_mesh_3.h>
-#include <CGAL/perturb_mesh_3.h>
-#include <CGAL/exude_mesh_3.h>
-
-#include <CGAL/IO/File_binary_mesh_3.h>
-
-#include <cgalBrepMeshDomainData.h>
+#include "C3t3_cad_type.h"
 
 #include <dtkCore>
 #include <dtkContinuousGeometry>
@@ -24,6 +13,11 @@
 #include <dtkBRep>
 #include <dtkBRepReader>
 #include <dtkNurbsSurface>
+#include <dtkClippedNurbsSurface>
+#include <dtkClippedTrim>
+#include <dtkRationalBezierCurve>
+#include <dtkTrim>
+#include <dtkTopoTrim>
 
 #include <QObject>
 #include <QAction>
@@ -42,23 +36,8 @@ CGAL::Three::Scene_item* cgal_code_cad_remesh(QWidget* parent,
                                               const double approx,
                                               int tag);
 
-// /////////////////////////////////////////////////////////////////
-// Domains
-// /////////////////////////////////////////////////////////////////
-typedef CGAL::cgalMeshDomainWithRationalBezierFeatures< cgalBrepMeshDomainData< Kernel > > Mesh_domain_with_features;
-
-// /////////////////////////////////////////////////////////////////
-//  Triangulation
-// /////////////////////////////////////////////////////////////////
-typedef CGAL::Mesh_triangulation_3< Mesh_domain_with_features >::type Tr;
-typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr> C3t3;
-
-// // /////////////////////////////////////////////////////////////////
-// // Criteria
-// // /////////////////////////////////////////////////////////////////
-typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
-typedef Mesh_criteria::Facet_criteria Facet_criteria;
-typedef Mesh_criteria::Cell_criteria Cell_criteria;
+// To avoid verbose function and named parameters call
+using namespace CGAL::parameters;
 
 using namespace CGAL::Three;
 class Polyhedron_demo_remeshing_plugin :
@@ -136,26 +115,58 @@ void Polyhedron_demo_remeshing_plugin::remesh()
 
   Mesh_criteria p_criteria( cell_size = cell_sizing,
                             facet_distance = distance,
-                            facet_angle = angle);
+                            facet_angle = angle
+                            );
 
   Mesh_domain_with_features cgal_brep_mesh_domain_with_features(*brep);
+          ///////////////////////////////////////////////////////////////////
+        //    Recovers the features
+        ///////////////////////////////////////////////////////////////////
+        const std::vector< dtkNurbsSurface *>& nurbs_surfaces = brep->nurbsSurfaces();
+        std::vector< dtkClippedNurbsSurface* > clipped_surfaces;
+        for (auto surf = nurbs_surfaces.begin(); surf != nurbs_surfaces.end(); ++surf) {
+            clipped_surfaces.push_back(new dtkClippedNurbsSurface(*(*surf)));
+        }
+
+        std::list< std::tuple< dtkNurbsCurve *, dtkNurbsCurve *, dtkNurbsCurve * > > features;
+        std::map< const dtkTopoTrim *, dtkNurbsCurve * > topo_trims;
+
+        // ///////////////////////////////////////////////////////////////////
+        // Iterates on all the trims, check if the topo_trim has been found, if it has, add the three curves as a tuple
+        // Else add the topo trim and the first trim found attached to it
+        // As the BRep model is a closed polysurface, for each topo trim there should be two trims associated to it
+        // ///////////////////////////////////////////////////////////////////
+        for (auto it = clipped_surfaces.begin(); it != clipped_surfaces.end(); ++it) {
+            for (auto clip_trim = (*it)->m_clipped_trims.begin(); clip_trim != (*it)->m_clipped_trims.end(); ++clip_trim) {
+                if((*clip_trim)->m_trim.topoTrim()->m_nurbs_curve_3d != nullptr) {
+                    auto topo_trim = topo_trims.find((*clip_trim)->m_trim.topoTrim());
+                    if (topo_trim == topo_trims.end()) {
+                        topo_trims.insert(std::make_pair((*clip_trim)->m_trim.topoTrim(), (*clip_trim)->m_nurbs_curve));
+                    } else {
+                        features.push_back(std::make_tuple(topo_trim->second, topo_trim->first->m_nurbs_curve_3d, (*clip_trim)->m_nurbs_curve));
+                    }
+                }
+            }
+        }
+        cgal_brep_mesh_domain_with_features.add_features(features.begin(), features.end());
+
   // 	Mesh generation (without optimization)
   C3t3 p_c3t3 = CGAL::make_mesh_3<C3t3>(cgal_brep_mesh_domain_with_features,
-                                        p_criteria, no_perturb(), no_exude());
+                                        p_criteria);
   if(!p_c3t3.is_valid()){std::cerr << "bip biip not valid" << std::endl;}
 
   std::cerr << "number of cells : "<< p_c3t3.number_of_cells() << std::endl;
   std::cerr << "number of cells in complex : "<< p_c3t3.number_of_cells_in_complex() << std::endl;
 
-  // Output
-  Scene_c3t3_item* c3t3_item = new Scene_c3t3_item(p_c3t3);
-  if(!c3t3_item)
+  //Output
+  Scene_c3t3_cad_item* c3t3_cad_item = new Scene_c3t3_cad_item(p_c3t3);
+  if(!c3t3_cad_item)
   {
-    qDebug()<<"c3t3 item not created";
+    qDebug()<<"c3t3 CAD item not created";
     return;
   }
-  c3t3_item->setName(QString("%1 (c3t3)").arg(cad_item->name()));
-  scene->addItem(c3t3_item);
+  c3t3_cad_item->setName(QString("%1 (c3t3)").arg(cad_item->name()));
+  scene->addItem(c3t3_cad_item);
 }
 
 #include "Cad_mesher_plugin.moc"
