@@ -83,7 +83,7 @@ int vtkIsotropicRemeshingWithEdgesFilter::RequestData(
   // get the input and output
   vtkDataSet *input = vtkDataSet::SafeDownCast(
     inInfo->Get(vtkDataObject::DATA_OBJECT()));
-  vtkPolyData *inputEdges = vtkPolyData::SafeDownCast(
+  vtkDataSet *inputEdges = vtkDataSet::SafeDownCast(
         inInfoEdges->Get(vtkDataObject::DATA_OBJECT()));
   vtkSmartPointer<vtkPolyData> outputEdges = vtkPolyData::SafeDownCast(
         outEdgeInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -158,7 +158,20 @@ int vtkIsotropicRemeshingWithEdgesFilter::RequestData(
     K::Point_3 source;
     K::Point_3 target;
   };
-
+  std::cerr<<"0"<<std::endl;
+  vtkSmartPointer<vtkPolyData> polydataEdges =
+    vtkSmartPointer<vtkPolyData>::New();
+  std::cerr<<"1"<<std::endl;
+  if(inputEdges->GetDataObjectType() == VTK_UNSTRUCTURED_GRID)
+  {
+    this->UnstructuredGridExecute(inputEdges, polydataEdges);
+      std::cerr<<"2"<<std::endl;
+  }
+  else
+  {
+      std::cerr<<"3"<<std::endl;
+    polydataEdges = vtkPolyData::SafeDownCast(inputEdges);
+  }
   boost::unordered_set<edge_descriptor> protect_edges;
   std::vector<edge_descriptor> sm_edges;
   BOOST_FOREACH(edge_descriptor ed, sm.edges())
@@ -166,20 +179,20 @@ int vtkIsotropicRemeshingWithEdgesFilter::RequestData(
 
   double edge_max_length = 0;
   // get nb of points and cells
-  nb_points = inputEdges->GetNumberOfPoints();
-  nb_cells = inputEdges->GetNumberOfCells();
+  nb_points = polydataEdges->GetNumberOfPoints();
+  nb_cells = polydataEdges->GetNumberOfCells();
   //extract points
   std::vector<K::Point_3> points_map(nb_points);
   for (vtkIdType i = 0; i<nb_points; ++i)
   {
     double coords[3];
-    inputEdges->GetPoint(i, coords);
+    polydataEdges->GetPoint(i, coords);
     points_map[i]=K::Point_3(coords[0],coords[1],coords[2]);
   }
   //extract cells
   for (vtkIdType i = 0; i<nb_cells; ++i)
   {
-    vtkCell* cell_ptr = inputEdges->GetCell(i);
+    vtkCell* cell_ptr = polydataEdges->GetCell(i);
 
     vtkIdType nb_vertices = cell_ptr->GetNumberOfPoints();
     if(nb_vertices != 2)
@@ -354,7 +367,7 @@ int vtkIsotropicRemeshingWithEdgesFilter::FillInputPortInformation(int port, vtk
   }
   else if(port == 1)
   {
-    info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPolyData");
+    info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   }
   return 1;
 }
