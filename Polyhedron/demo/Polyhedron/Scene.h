@@ -235,7 +235,14 @@ Q_SIGNALS:
 private Q_SLOTS:
   // Casts a selection ray and calls the item function select.
   void setSelectionRay(double, double, double, double, double, double);
-  void callDraw(){  QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin(); viewer->update();}
+  void callDraw(){
+    Q_FOREACH(QGLViewer* viewer, QGLViewer::QGLViewerPool())
+    {
+      if(viewer == NULL)
+        continue;
+      viewer->update();
+    }
+  }
   void s_itemAboutToBeDestroyed(CGAL::Three::Scene_item *);
 private:
   /*! Calls the drawing functions of each visible item according
@@ -265,6 +272,8 @@ private:
 
 public:
   static GlSplat::SplatRenderer* splatting();
+  void newViewer(CGAL::Three::Viewer_interface*);
+  void removeViewer(CGAL::Three::Viewer_interface*);
 
 }; // end class Scene
 

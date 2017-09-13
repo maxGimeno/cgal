@@ -383,6 +383,7 @@ protected:
   //! Returns a list of the selected items in the Geometric Objects view.
   QList<int> getSelectedSceneItemIndices() const;
 private:
+  void setupViewer(Viewer* viewer);
   void updateMenus();
   void load_plugin(QString names, bool blacklisted);
   void recurseExpand(QModelIndex index);
@@ -428,6 +429,7 @@ public:
 
 private Q_SLOTS:
   void set_facegraph_mode_adapter(bool is_polyhedron);
+  void on_actionAdd_Viewer_triggered();
 };
 
 #endif // ifndef MAINWINDOW_H

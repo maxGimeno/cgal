@@ -85,6 +85,8 @@ public:
   //! \param viewer the active viewer
   virtual void zoomToPosition(QPoint point,
                         CGAL::Three::Viewer_interface* viewer) = 0;
+  //!Cleans up Vaos in all items for `viewer`
+  virtual void removeViewer(CGAL::Three::Viewer_interface* viewer) = 0;
 };
 }
 }

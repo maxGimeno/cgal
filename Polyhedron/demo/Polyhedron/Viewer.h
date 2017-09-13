@@ -35,6 +35,7 @@ class VIEWER_EXPORT Viewer : public CGAL::Three::Viewer_interface {
 
 public:
   Viewer(QWidget * parent, bool antialiasing = false);
+  Viewer(QWidget * parent, Viewer *sharedWidget, bool antialiasing = false);
   ~Viewer();
   bool testDisplayId(double, double, double)Q_DECL_OVERRIDE;
   void updateIds(CGAL::Three::Scene_item *)Q_DECL_OVERRIDE;
@@ -87,6 +88,7 @@ public:
 
 Q_SIGNALS:
   void sendMessage(QString);
+  void GLinit();
 public Q_SLOTS:
   //! Sets the antialiasing to true or false.
   void setAntiAliasing(bool b) Q_DECL_OVERRIDE;
@@ -102,7 +104,7 @@ public Q_SLOTS:
   //! @returns a QString containing the position and orientation of the camera.
   QString dumpCameraCoordinates() Q_DECL_OVERRIDE;
   //!Moves the camera to the new coordinates (position and orientation) through an animation.
-  bool moveCameraToCoordinates(QString, 
+  bool moveCameraToCoordinates(QString,
                                float animation_duration = 0.5f) Q_DECL_OVERRIDE;
   //!Makes the Viewer display a message
   void printMessage(QString message, int ms_delay );

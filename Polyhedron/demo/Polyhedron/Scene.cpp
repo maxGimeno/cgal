@@ -377,33 +377,19 @@ void
 Scene::draw_aux(bool with_names, CGAL::Three::Viewer_interface* viewer)
 {
     QMap<float, int> picked_item_IDs;
-    if(with_names)
-      glEnable(GL_DEPTH_TEST);
-    if(!ms_splatting->viewer_is_set)
-        ms_splatting->setViewer(viewer);
-    if(!gl_init)
-        initializeGL();
+
     // Flat/Gouraud OpenGL drawing
     for(int index = 0; index < m_entries.size(); ++index)
     {
         CGAL::Three::Scene_item& item = *m_entries[index];
-        if(index == selected_item || selected_items_list.contains(index))
-        {
-            item.selection_changed(true);
-        }
-        else
-
-        {
-            item.selection_changed(false);
-        }
-        if(!with_names && item_should_be_skipped_in_draw(&item)) continue;
+        //if(!with_names && item_should_be_skipped_in_draw(&item)) continue;
         if(item.visible())
         {
             if(item.renderingMode() == Flat || item.renderingMode() == FlatPlusEdges || item.renderingMode() == Gouraud)
             {
                 if(with_names) {
-                    glClearDepth(1.0);
-                    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                    viewer->glClearDepth(1.0);
+                    viewer->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 }
                 viewer->glEnable(GL_LIGHTING);
                 viewer->glPointSize(2.f);
@@ -412,25 +398,12 @@ Scene::draw_aux(bool with_names, CGAL::Three::Viewer_interface* viewer)
                     viewer->glShadeModel(GL_SMOOTH);
                 else
                     viewer->glShadeModel(GL_FLAT);
-                if(viewer)
-                    item.draw(viewer);
-                else
-                    item.draw();
-
-                if(with_names) {
-
-                    //    read depth buffer at pick location;
-                    float depth = 1.0;
-                    glReadPixels(picked_pixel.x(),viewer->camera()->screenHeight()-1-picked_pixel.y(),1,1,GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-                    if (depth != 1.0)
-                    {
-                        //add object to list of picked objects;
-                        picked_item_IDs[depth] = index;
-                    }
-                }
+                item.draw(viewer);
             }
         }
     }
+    Q_EMIT drawFinished();
+    return;
     glDepthFunc(GL_LEQUAL);
     // Wireframe OpenGL drawing
     for(int index = 0; index < m_entries.size(); ++index)
@@ -1429,5 +1402,21 @@ void Scene::zoomToPosition(QPoint point, Viewer_interface *viewer)
     {
       zoom_item->zoomToPosition(point, viewer);
     }
+  }
+}
+
+void Scene::newViewer(Viewer_interface *viewer)
+{
+  Q_FOREACH(Scene_item* item, m_entries)
+  {
+    item->newViewer(viewer);
+  }
+}
+
+void Scene::removeViewer(Viewer_interface *viewer)
+{
+  Q_FOREACH(Scene_item* item, m_entries)
+  {
+    item->removeViewer(viewer);
   }
 }

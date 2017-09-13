@@ -546,7 +546,7 @@ Scene_polyhedron_item_priv::initialize_buffers(CGAL::Three::Viewer_interface* vi
       {
         program = item->getShaderProgram(Scene_polyhedron_item::PROGRAM_WITH_LIGHT, viewer);
       }
-      item->vaos[Facets]->bind();
+      (item->vaos[viewer])[Facets]->bind();
       item->buffers[Facets_vertices].bind();
       item->buffers[Facets_vertices].allocate(positions_facets.data(),
                                               static_cast<int>(positions_facets.size()*sizeof(float)));
@@ -581,12 +581,12 @@ Scene_polyhedron_item_priv::initialize_buffers(CGAL::Three::Viewer_interface* vi
       {
         program->disableAttributeArray("colors");
       }
-      item->vaos[Facets]->release();
+      (item->vaos[viewer])[Facets]->release();
     }
   program = item->getShaderProgram(Scene_polyhedron_item::PROGRAM_WITH_LIGHT, viewer);
   program->bind();
   //gouraud
-  item->vaos[Gouraud_Facets]->bind();
+  (item->vaos[viewer])[Gouraud_Facets]->bind();
   item->buffers[Edges_vertices].bind();
   program->enableAttributeArray("vertex");
   program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
@@ -609,14 +609,14 @@ Scene_polyhedron_item_priv::initialize_buffers(CGAL::Three::Viewer_interface* vi
   {
     program->disableAttributeArray("colors");
   }
-  item->vaos[Gouraud_Facets]->release();
+  (item->vaos[viewer])[Gouraud_Facets]->release();
   program->release();
   if(viewer->isOpenGL_4_3())
   {
     //modern flat
     program = item->getShaderProgram(Scene_polyhedron_item::PROGRAM_FLAT, viewer);
     program->bind();
-    item->vaos[Gouraud_Facets]->bind();
+    (item->vaos[viewer])[Gouraud_Facets]->bind();
     item->buffers[Edges_vertices].bind();
     program->enableAttributeArray("vertex");
     program->setAttributeBuffer("vertex",GL_FLOAT,0,3);
@@ -637,14 +637,14 @@ Scene_polyhedron_item_priv::initialize_buffers(CGAL::Three::Viewer_interface* vi
     {
       program->disableAttributeArray("colors");
     }
-    item->vaos[Gouraud_Facets]->release();
+    (item->vaos[viewer])[Gouraud_Facets]->release();
     program->release();
   }
   //vao containing the data for the lines
   {
     program = item->getShaderProgram(Scene_polyhedron_item::PROGRAM_WITHOUT_LIGHT, viewer);
     program->bind();
-    item->vaos[Edges]->bind();
+    (item->vaos[viewer])[Edges]->bind();
 
     item->buffers[Edges_vertices].bind();
     item->buffers[Edges_vertices].allocate(positions_lines.data(),
@@ -656,14 +656,14 @@ Scene_polyhedron_item_priv::initialize_buffers(CGAL::Three::Viewer_interface* vi
     program->disableAttributeArray("colors");
     program->release();
 
-    item->vaos[Edges]->release();
+    (item->vaos[viewer])[Edges]->release();
 
   }
   //vao containing the data for the feature_edges
   {
     program = item->getShaderProgram(Scene_polyhedron_item::PROGRAM_NO_SELECTION, viewer);
     program->bind();
-    item->vaos[Feature_edges]->bind();
+    (item->vaos[viewer])[Feature_edges]->bind();
 
     item->buffers[Edges_vertices].bind();
     program->enableAttributeArray("vertex");
@@ -672,7 +672,7 @@ Scene_polyhedron_item_priv::initialize_buffers(CGAL::Three::Viewer_interface* vi
     program->disableAttributeArray("colors");
     program->release();
 
-    item->vaos[Feature_edges]->release();
+    (item->vaos[viewer])[Feature_edges]->release();
 
   }
   nb_lines = positions_lines.size();
@@ -1257,7 +1257,7 @@ void Scene_polyhedron_item::draw(CGAL::Three::Viewer_interface* viewer) const {
     if(viewer->isOpenGL_4_3() &&
        (renderingMode() == Flat || renderingMode() == FlatPlusEdges))
     {
-        vaos[Scene_polyhedron_item_priv::Gouraud_Facets]->bind();
+        vaos[viewer][Scene_polyhedron_item_priv::Gouraud_Facets]->bind();
         attribBuffers(viewer, PROGRAM_FLAT);
         d->program = getShaderProgram(PROGRAM_FLAT);
         d->program->bind();
@@ -1272,12 +1272,12 @@ void Scene_polyhedron_item::draw(CGAL::Three::Viewer_interface* viewer) const {
         glDrawElements(GL_TRIANGLES, static_cast<GLuint>(d->idx_faces.size()),
                        GL_UNSIGNED_INT, d->idx_faces.data());
         d->program->release();
-        vaos[Scene_polyhedron_item_priv::Gouraud_Facets]->release();
+        vaos[viewer][Scene_polyhedron_item_priv::Gouraud_Facets]->release();
     }
     else if(!viewer->isOpenGL_4_3()&&
             (renderingMode() == Flat || renderingMode() == FlatPlusEdges))
     {
-      vaos[Scene_polyhedron_item_priv::Facets]->bind();
+      vaos[viewer][Scene_polyhedron_item_priv::Facets]->bind();
       if(viewer->property("draw_two_sides").toBool())
       {
         attribBuffers(viewer, PROGRAM_OLD_FLAT);
@@ -1299,11 +1299,11 @@ void Scene_polyhedron_item::draw(CGAL::Three::Viewer_interface* viewer) const {
         d->program->setUniformValue("is_selected", false);
       viewer->glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(d->nb_facets/3));
       d->program->release();
-      vaos[Scene_polyhedron_item_priv::Facets]->release();
+      vaos[viewer][Scene_polyhedron_item_priv::Facets]->release();
     }
     else
     {
-        vaos[Scene_polyhedron_item_priv::Gouraud_Facets]->bind();
+        vaos[viewer][Scene_polyhedron_item_priv::Gouraud_Facets]->bind();
         attribBuffers(viewer, PROGRAM_WITH_LIGHT);
         d->program = getShaderProgram(PROGRAM_WITH_LIGHT);
         d->program->bind();
@@ -1319,7 +1319,7 @@ void Scene_polyhedron_item::draw(CGAL::Three::Viewer_interface* viewer) const {
         glDrawElements(GL_TRIANGLES, static_cast<GLuint>(d->idx_faces.size()),
                        GL_UNSIGNED_INT, d->idx_faces.data());
         d->program->release();
-        vaos[Scene_polyhedron_item_priv::Gouraud_Facets]->release();
+        vaos[viewer][Scene_polyhedron_item_priv::Gouraud_Facets]->release();
     }
 }
 
@@ -1336,7 +1336,7 @@ void Scene_polyhedron_item::drawEdges(CGAL::Three::Viewer_interface* viewer) con
 
     if(!d->show_only_feature_edges_m)
     {
-        vaos[Scene_polyhedron_item_priv::Edges]->bind();
+        vaos[viewer][Scene_polyhedron_item_priv::Edges]->bind();
 
         attribBuffers(viewer, PROGRAM_WITHOUT_LIGHT);
         d->program = getShaderProgram(PROGRAM_WITHOUT_LIGHT);
@@ -1350,11 +1350,11 @@ void Scene_polyhedron_item::drawEdges(CGAL::Three::Viewer_interface* viewer) con
         glDrawElements(GL_LINES, static_cast<GLuint>(d->idx_lines.size()),
                        GL_UNSIGNED_INT, d->idx_lines.data());
         d->program->release();
-        vaos[Scene_polyhedron_item_priv::Edges]->release();
+        vaos[viewer][Scene_polyhedron_item_priv::Edges]->release();
     }
 
     //draw the feature edges
-    vaos[Scene_polyhedron_item_priv::Feature_edges]->bind();
+    vaos[viewer][Scene_polyhedron_item_priv::Feature_edges]->bind();
     attribBuffers(viewer, PROGRAM_NO_SELECTION);
     d->program = getShaderProgram(PROGRAM_NO_SELECTION);
     d->program->bind();
@@ -1370,7 +1370,7 @@ void Scene_polyhedron_item::drawEdges(CGAL::Three::Viewer_interface* viewer) con
     glDrawElements(GL_LINES, static_cast<GLuint>(d->idx_feature_lines.size()),
                    GL_UNSIGNED_INT, d->idx_feature_lines.data());
     d->program->release();
-    vaos[Scene_polyhedron_item_priv::Feature_edges]->release();
+    vaos[viewer][Scene_polyhedron_item_priv::Feature_edges]->release();
     }
 
 void
@@ -1382,7 +1382,7 @@ Scene_polyhedron_item::drawPoints(CGAL::Three::Viewer_interface* viewer) const {
         compute_bbox();
     }
 
-    vaos[Scene_polyhedron_item_priv::Edges]->bind();
+    vaos[viewer][Scene_polyhedron_item_priv::Edges]->bind();
     attribBuffers(viewer, PROGRAM_WITHOUT_LIGHT);
     d->program = getShaderProgram(PROGRAM_WITHOUT_LIGHT);
     d->program->bind();
@@ -1391,7 +1391,7 @@ Scene_polyhedron_item::drawPoints(CGAL::Three::Viewer_interface* viewer) const {
     viewer->glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(d->nb_lines/3));
     // Clean-up
     d->program->release();
-    vaos[Scene_polyhedron_item_priv::Edges]->release();
+    vaos[viewer][Scene_polyhedron_item_priv::Edges]->release();
 }
 
 Polyhedron*

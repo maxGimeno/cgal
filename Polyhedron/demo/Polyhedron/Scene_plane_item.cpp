@@ -22,7 +22,7 @@ Scene_plane_item::~Scene_plane_item() {
 
 void Scene_plane_item::initializeBuffers(Viewer_interface *viewer) const
 {
-    program = getShaderProgram(PROGRAM_WITHOUT_LIGHT, viewer);
+   /* program = getShaderProgram(PROGRAM_WITHOUT_LIGHT, viewer);
     program->bind();
     vaos[Facets]->bind();
 
@@ -46,7 +46,7 @@ void Scene_plane_item::initializeBuffers(Viewer_interface *viewer) const
 
     program->release();
     are_buffers_filled = true;
-
+*/
 }
 
 void Scene_plane_item::compute_normals_and_vertices(void) const

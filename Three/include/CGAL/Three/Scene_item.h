@@ -295,6 +295,16 @@ public:
   //!Contains the number of group and subgroups containing this item.
   int has_group;
 
+  //!
+  //! \brief newViewer adds Vaos for `viewer`.
+  //!
+  void newViewer(CGAL::Three::Viewer_interface* viewer);
+
+  //!
+  //! \brief removeViewer removes the Vaos fo `viewer`.
+  //!
+  void removeViewer(CGAL::Three::Viewer_interface* viewer);
+
 public Q_SLOTS:
 
   //! Notifies the program that the internal data or the properties of
@@ -438,13 +448,9 @@ protected:
   mutable std::vector<QOpenGLBuffer> buffers;
   /*! Contains the VAOs.
    */
-  std::vector<QOpenGLVertexArrayObject*> vaos;
+  QMap<CGAL::Three::Viewer_interface*, std::vector<QOpenGLVertexArrayObject*> > vaos;
   //!Adds a VAO to the Map.
-  void addVaos(int i)
-  {
-      QOpenGLVertexArrayObject* n_vao = new QOpenGLVertexArrayObject();
-      vaos[i] = n_vao;
-  }
+  void addVaos(CGAL::Three::Viewer_interface* viewer, int i);
 
   /*! Fills the VBOs with data. Must be called after each call to #computeElements().
    * @see compute_elements()

@@ -15,17 +15,21 @@ CGAL::Three::Scene_item::Scene_item(int buffers_size, int vaos_size)
     rendering_mode(FlatPlusEdges),
     defaultContextMenu(0),
     buffersSize(buffers_size),
-    vaosSize(vaos_size),
-    vaos(vaos_size)
+    vaosSize(vaos_size)
 {
   is_bbox_computed = false;
   is_diag_bbox_computed = false;
-  for(int i=0; i<vaosSize; i++)
+  Q_FOREACH(QGLViewer* v, QGLViewer::QGLViewerPool())
   {
-    addVaos(i);
-    vaos[i]->create();
+    if(v == NULL)
+      continue;
+    CGAL::Three::Viewer_interface* viewer = qobject_cast<CGAL::Three::Viewer_interface*>(v);
+    vaos[viewer].resize(vaos_size);
+    for(int i=0; i<vaosSize; ++i)
+    {
+      addVaos(viewer, i);
+    }
   }
-
   buffers.reserve(buffersSize);
   for(int i=0; i<buffersSize; i++)
   {
@@ -46,9 +50,14 @@ CGAL::Three::Scene_item::~Scene_item() {
   {
     buffers[i].destroy();
   }
-  for(int i=0; i<vaosSize; i++)
+  Q_FOREACH(QGLViewer* v, QGLViewer::QGLViewerPool())
   {
-    delete vaos[i];
+    if(v == NULL)
+      continue;
+    for(int i=0; i<vaosSize; i++)
+    {
+      delete (vaos[qobject_cast<CGAL::Three::Viewer_interface*>(v)])[i];
+    }
   }
 }
 
@@ -207,8 +216,6 @@ void CGAL::Three::Scene_item::attribBuffers(CGAL::Three::Viewer_interface* viewe
 
 QOpenGLShaderProgram* CGAL::Three::Scene_item::getShaderProgram(int name, CGAL::Three::Viewer_interface * viewer) const
 {
-    if(viewer == 0)
-        viewer = dynamic_cast<CGAL::Three::Viewer_interface*>(*QGLViewer::QGLViewerPool().begin());
     return viewer->getShaderProgram(name);
 }
 
@@ -234,4 +241,30 @@ void CGAL::Three::Scene_item::compute_diag_bbox()const
         + CGAL::square(b_box.zmax() - b_box.zmin())
         );
 
+}
+void Scene_item::addVaos(CGAL::Three::Viewer_interface* viewer, int i)
+{
+    viewer->makeCurrent();
+    QOpenGLVertexArrayObject* n_vao = new QOpenGLVertexArrayObject();
+    (vaos[viewer])[i] = n_vao;
+    n_vao->create();
+}
+
+void Scene_item::newViewer(Viewer_interface *viewer)
+{
+  vaos[viewer].resize(vaosSize);
+  for(int i=0; i<vaosSize; ++i)
+  {
+    addVaos(viewer, i);
+  }
+}
+
+void Scene_item::removeViewer(Viewer_interface *viewer)
+{
+  vaos[viewer].resize(vaosSize);
+  for(int i=0; i<vaosSize; ++i)
+  {
+    delete vaos[viewer][i];
+  }
+  vaos.remove(viewer);
 }
