@@ -44,11 +44,12 @@ CGAL::Three::Scene_item::~Scene_item() {
     defaultContextMenu->deleteLater();
   for(int i=0; i<buffersSize; i++)
   {
-    buffers[i].destroy();
+    delete VBOs[i];
   }
   for(int i=0; i<vaosSize; i++)
   {
     delete vaos[i];
+    delete VAOs[i];
   }
 }
 

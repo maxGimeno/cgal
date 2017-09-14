@@ -33,7 +33,7 @@
 #include <QOpenGLVertexArrayObject>
 #include <vector>
 #include <CGAL/Bbox_3.h>
-
+#include <CGAL/Three/Buffer_objects.h>
 namespace CGAL {
 namespace Three {
   class Viewer_interface;
@@ -439,6 +439,8 @@ protected:
   /*! Contains the VAOs.
    */
   std::vector<QOpenGLVertexArrayObject*> vaos;
+  std::vector<Vao*> VAOs;
+  std::vector<Vbo*> VBOs;
   //!Adds a VAO to the Map.
   void addVaos(int i)
   {

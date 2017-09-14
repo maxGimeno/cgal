@@ -18,7 +18,7 @@
 #include <QColor>
 
 #include "properties.h"
-
+#include <CGAL/Three/Buffer_objects.h>
 
 struct Scene_surface_mesh_item_priv;
 
