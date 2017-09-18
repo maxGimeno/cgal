@@ -56,7 +56,8 @@ struct Vbo
   const char* attribute;
   void* data;
   int dataSize;
-  GLenum type;
+  QOpenGLBuffer::Type vbo_type;
+  GLenum data_type;
   int offset;
   int tupleSize;
   int stride;
@@ -64,17 +65,22 @@ struct Vbo
 
   Vbo(
       const char* attribute,
-      GLenum type=GL_FLOAT,
+      QOpenGLBuffer::Type vbo_type = QOpenGLBuffer::VertexBuffer,
+      GLenum data_type=GL_FLOAT,
       int offset = 0,
       int tupleSize = 3,
       int stride = 0):
     attribute(attribute),
-    type(type),
+    data(0),
+    dataSize(0),
+    vbo_type(vbo_type),
+    data_type(data_type),
     offset(offset),
     tupleSize(tupleSize),
     stride(stride),
     allocated(false)
   {
+    vbo = QOpenGLBuffer(vbo_type);
     vbo.create();
   }
   ~Vbo()

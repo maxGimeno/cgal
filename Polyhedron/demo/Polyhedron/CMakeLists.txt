@@ -172,6 +172,8 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
       "${CMAKE_CURRENT_BINARY_DIR}/Scene_group_item_moc.cpp" )
     qt5_generate_moc( "${CGAL_THREE_HEADERS_PATH}/CGAL/Three/TextRenderer.h"
       "${CMAKE_CURRENT_BINARY_DIR}/TextRenderer_moc.cpp" )
+    qt5_generate_moc( "${CGAL_THREE_HEADERS_PATH}/CGAL/Three/Triangle_container.h"
+      "${CMAKE_CURRENT_BINARY_DIR}/Triangle_container_moc.cpp" )
   else()
     message(FATAL_ERROR "Cannot find <CGAL/Three/Viewer_interface.h>")
   endif()
@@ -195,6 +197,8 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
     Scene_item.cpp
     Scene_group_item.cpp
     Scene_group_item_moc.cpp
+    Triangle_container.cpp
+    Triangle_container_moc.cpp
     TextRenderer.cpp
     TextRenderer_moc.cpp
     Polyhedron_demo_plugin_helper.cpp)

@@ -361,7 +361,14 @@ public Q_SLOTS:
   //!This might be needed as items are not always deleted right away by Qt and this behaviour may cause a simily
   //!memory leak, for example when multiple items are created at the same time.
   virtual void itemAboutToBeDestroyed(Scene_item*);
-
+  /*! Passes all the uniform data to the shaders.
+   * According to program_name, this data may change.
+   */
+  void attribBuffers(CGAL::Three::Viewer_interface*, int program_name) const;
+  //! Returns the selection status of this item.
+  bool isSelected() const { return is_selected; }
+  /*! Compatibility function. Calls `viewer->getShaderProgram()`. */
+  virtual QOpenGLShaderProgram* getShaderProgram(int name , CGAL::Three::Viewer_interface *viewer = 0) const;
   //!Selects a point through raycasting.
   virtual void select(double orig_x,
                       double orig_y,
@@ -439,8 +446,8 @@ protected:
   /*! Contains the VAOs.
    */
   std::vector<QOpenGLVertexArrayObject*> vaos;
-  std::vector<Vao*> VAOs;
-  std::vector<Vbo*> VBOs;
+  mutable std::vector<Vao*> VAOs;
+  mutable std::vector<Vbo*> VBOs;
   //!Adds a VAO to the Map.
   void addVaos(int i)
   {
@@ -451,19 +458,13 @@ protected:
   /*! Fills the VBOs with data. Must be called after each call to #computeElements().
    * @see compute_elements()
    */
-  void initializeBuffers(){}
+  virtual void initializeBuffers(Viewer_interface*)const{}
 
   /*! Collects all the data for the shaders. Must be called in #invalidateOpenGLBuffers().
    * @see invalidateOpenGLBuffers().
    */
-  void computeElements(){}
-  /*! Passes all the uniform data to the shaders.
-   * According to program_name, this data may change.
-   */
-  void attribBuffers(CGAL::Three::Viewer_interface*, int program_name) const;
+  virtual void computeElements(Viewer_interface*)const{}
 
-  /*! Compatibility function. Calls `viewer->getShaderProgram()`. */
-  virtual QOpenGLShaderProgram* getShaderProgram(int name , CGAL::Three::Viewer_interface *viewer = 0) const;
 }; // end class Scene_item
 }
 }
