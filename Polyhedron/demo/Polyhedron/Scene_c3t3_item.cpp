@@ -17,6 +17,7 @@
 #include <vector>
 #include <CGAL/gl.h>
 #include <CGAL/Three/Scene_interface.h>
+#include <CGAL/Three/Triangle_container.h>
 #include <CGAL/Real_timer.h>
 
 #include <QGLViewer/manipulatedFrame.h>
@@ -36,6 +37,7 @@ typedef CGAL::AABB_triangulation_3_triangle_primitive<Kernel,C3t3> Primitive;
 typedef CGAL::AABB_traits<Kernel, Primitive> Traits;
 typedef CGAL::AABB_tree<Traits> Tree;
 typedef Tree::Point_and_primitive_id Point_and_primitive_id;
+typedef CGAL::Three::Triangle_container Tri;
 
 // The special Scene_item only for triangles
 class Scene_intersection_item : public CGAL::Three::Scene_item
@@ -60,7 +62,10 @@ public :
     edges = p_edges;
     colors = p_colors;
     barycenters = p_bary;
-
+    triangles = new Triangle_container(this,
+                                       static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first()),
+                                       PROGRAM_C3T3_TETS,
+                                       false);
   }
   void setColor(QColor c)
   {
@@ -73,43 +78,10 @@ public :
   }
   void initialize_buffers(CGAL::Three::Viewer_interface *viewer)
   {
-   //vao containing the data for the facets
+   //facets
     {
-      program = getShaderProgram(PROGRAM_C3T3_TETS, viewer);
-      program->bind();
-
-      vaos[Facets]->bind();
-      buffers[Vertices].bind();
-      buffers[Vertices].allocate(vertices->data(),
-        static_cast<int>(vertices->size()*sizeof(float)));
-      program->enableAttributeArray("vertex");
-      program->setAttributeBuffer("vertex", GL_FLOAT, 0, 3);
-      buffers[Vertices].release();
-
-      buffers[Normals].bind();
-      buffers[Normals].allocate(normals->data(),
-        static_cast<int>(normals->size()*sizeof(float)));
-      program->enableAttributeArray("normals");
-      program->setAttributeBuffer("normals", GL_FLOAT, 0, 3);
-      buffers[Normals].release();
-
-      buffers[Colors].bind();
-      buffers[Colors].allocate(colors->data(),
-        static_cast<int>(colors->size()*sizeof(float)));
-      program->enableAttributeArray("colors");
-      program->setAttributeBuffer("colors", GL_FLOAT, 0, 3);
-      buffers[Colors].release();
-
-      buffers[Barycenters].bind();
-      buffers[Barycenters].allocate(barycenters->data(),
-        static_cast<int>(barycenters->size()*sizeof(float)));
-      program->enableAttributeArray("barycenter");
-      program->setAttributeBuffer("barycenter", GL_FLOAT, 0, 3);
-      buffers[Barycenters].release();
-
-      vaos[Facets]->release();
-      program->release();
-
+      triangles->reset_vbos();
+      triangles->initializeBuffers();
     }
       //vao containing the data for the lines
       {
@@ -133,17 +105,8 @@ public :
   {
     if(is_fast)
       return;
-    vaos[Facets]->bind();
-    program = getShaderProgram(PROGRAM_C3T3_TETS);
-    attribBuffers(viewer, PROGRAM_C3T3_TETS);
-    program->bind();
-    float shrink_factor = qobject_cast<Scene_c3t3_item*>(this->parent())->getShrinkFactor();
-    program->setUniformValue("shrink_factor", shrink_factor);
-    // positions_poly is also used for the faces in the cut plane
-    // and changes when the cut plane is moved
-    viewer->glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices->size() / 3));
-    program->release();
-    vaos[Facets]->release();
+    triangles->shrink_factor = qobject_cast<Scene_c3t3_item*>(this->parent())->getShrinkFactor();
+    triangles->draw(*this, viewer);
   }
   void drawEdges(CGAL::Three::Viewer_interface* viewer) const
   {
@@ -228,6 +191,20 @@ public :
 
   Scene_item* clone() const {return 0;}
   QString toolTip() const {return QString();}
+  void allocate()
+  {
+    triangles->VBOs[Tri::Flat_vertices]->allocate(vertices->data(),
+                                                  static_cast<int>(vertices->size()*sizeof(float)));
+    triangles->VBOs[Tri::Flat_normals]->allocate(normals->data(),
+                                                 static_cast<int>(normals->size()*sizeof(float)));
+    triangles->VBOs[Tri::FColors]->allocate(colors->data(),
+                                                  static_cast<int>(colors->size()*sizeof(float)));
+    triangles->VBOs[Tri::Facet_barycenters]->allocate(barycenters->data(),
+                                                      static_cast<int>(barycenters->size()*sizeof(float)));
+    triangles->nb_flat = vertices->size();
+  }
+
+  Triangle_container *triangles;
 private:
   enum Buffer
   {
@@ -1485,6 +1462,7 @@ void Scene_c3t3_item_priv::computeIntersections()
   const Geom_traits::Plane_3& plane = item->plane(offset);
   tree.all_intersected_primitives(plane,
         boost::make_function_output_iterator(ComputeIntersection(*this)));
+  intersection->allocate();
   intersected_cells.clear();
 }
 

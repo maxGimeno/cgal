@@ -38,34 +38,35 @@ namespace Three {
 
 struct DEMO_FRAMEWORK_EXPORT Triangle_container
 {
-  enum vaosName {
-   Flat_facets = 0,
-   Smooth_facets,
-   NbOfVaos
-  };
-
   enum vbosName {
     Flat_vertices = 0,
     Smooth_vertices,
     Vertex_indices,
     Flat_normals,
     Smooth_normals,
+    Facet_barycenters,
     VColors,
     FColors,
     NbOfVbos
   };
 
-    Triangle_container(Scene_item *item, CGAL::Three::Viewer_interface *viewer);
+    Triangle_container(Scene_item *item, CGAL::Three::Viewer_interface *viewer, int program, bool indexed);
 
-    void draw(const Scene_item &item, CGAL::Three::Viewer_interface* viewer, bool faces_have_color, bool vertices_have_color) const;
+    void draw(const Scene_item &item, CGAL::Three::Viewer_interface* viewer) const;
     void initializeBuffers() const;
-    mutable std::vector<Vao*> VAOs;
+    void reset_vbos();
+    mutable Vao* VAO;
     mutable std::vector<Vbo*> VBOs;
-    std::vector<unsigned int> idx_edge_data_;
     mutable std::size_t nb_flat;
     mutable std::size_t idx_size;
+    int program_id;
     mutable bool is_init;
+    bool indexed;
 
+    //drawing variables
+    QVector4D plane;
+    float shrink_factor;
+    QColor color;
 }; //end of class Triangle_container
 
 }

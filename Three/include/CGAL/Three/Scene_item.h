@@ -446,8 +446,6 @@ protected:
   /*! Contains the VAOs.
    */
   std::vector<QOpenGLVertexArrayObject*> vaos;
-  mutable std::vector<Vao*> VAOs;
-  mutable std::vector<Vbo*> VBOs;
   //!Adds a VAO to the Map.
   void addVaos(int i)
   {

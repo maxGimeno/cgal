@@ -42,15 +42,6 @@ CGAL::Three::Scene_item::Scene_item(int buffers_size, int vaos_size)
 CGAL::Three::Scene_item::~Scene_item() {
   if(defaultContextMenu)
     defaultContextMenu->deleteLater();
-  for(int i=0; i<buffersSize; i++)
-  {
-    delete VBOs[i];
-  }
-  for(int i=0; i<vaosSize; i++)
-  {
-    delete vaos[i];
-    delete VAOs[i];
-  }
 }
 
 void CGAL::Three::Scene_item::itemAboutToBeDestroyed(CGAL::Three::Scene_item* item) {
