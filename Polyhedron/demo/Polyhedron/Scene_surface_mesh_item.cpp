@@ -33,6 +33,9 @@
 #include <CGAL/Polygon_mesh_processing/measure.h>
 #include <CGAL/statistics_helpers.h>
 
+#include <CGAL/Three/Triangle_container.h>
+#include <CGAL/Three/Edge_container.h>
+
 #include <QMenu>
 #include "id_printing.h"
 
@@ -71,6 +74,7 @@ public:
 typedef CGAL::AABB_traits<EPICK, Primitive> AABB_traits;
 typedef CGAL::AABB_tree<AABB_traits> Input_facets_AABB_tree;
 typedef CGAL::Three::Triangle_container Tri;
+typedef CGAL::Three::Edge_container Ed;
 typedef CGAL::Three::Viewer_interface VI;
 
 struct Scene_surface_mesh_item_priv{
@@ -120,6 +124,16 @@ struct Scene_surface_mesh_item_priv{
                                          QGLViewer::QGLViewerPool().first()),
                                            VI::PROGRAM_WITH_LIGHT,
                                            true);
+    idx_edges = new Edge_container(item,
+                               static_cast<CGAL::Three::Viewer_interface*>(
+                                 QGLViewer::QGLViewerPool().first()),
+                               VI::PROGRAM_WITHOUT_LIGHT,
+                               true);
+    feature_edges = new Edge_container(item,
+                               static_cast<CGAL::Three::Viewer_interface*>(
+                                 QGLViewer::QGLViewerPool().first()),
+                               VI::PROGRAM_NO_SELECTION,
+                               true);
 
     has_feature_edges = false;
     invalidate_stats();
@@ -135,6 +149,7 @@ struct Scene_surface_mesh_item_priv{
   {
     delete dup_triangles;
     delete idx_triangles;
+    delete idx_edges;
 
     if(smesh_)
     {
@@ -169,7 +184,7 @@ struct Scene_surface_mesh_item_priv{
                     SMesh::Property_map<face_descriptor, CGAL::Color> *fcolors,
                     boost::property_map< SMesh, boost::vertex_index_t >::type* im,
                     bool index) const;
-  void compute_elements(Viewer_interface *viewer) const;
+  void compute_elements(Viewer_interface *) const;
   void checkFloat() const;
 
   enum VAOs {
@@ -230,6 +245,8 @@ struct Scene_surface_mesh_item_priv{
   bool self_intersect;
   Triangle_container* idx_triangles;
   Triangle_container* dup_triangles;
+  Edge_container* idx_edges;
+  Edge_container* feature_edges;
 };
 
 typedef Scene_surface_mesh_item_priv D;
@@ -335,7 +352,7 @@ void D::addFlatData(Point p, EPICK::Vector_3 n, CGAL::Color *c) const
   }
 }
 
-void D::compute_elements(Viewer_interface* viewer)const
+void D::compute_elements(Viewer_interface* )const
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
@@ -548,6 +565,19 @@ void D::compute_elements(Viewer_interface* viewer)const
     }
   }
 
+  idx_edges->VBOs[Ed::Indices]->allocate(idx_edge_data_.data(),
+                                     static_cast<int>(idx_edge_data_.size()*sizeof(unsigned int)));
+
+  idx_edges->VBOs[Ed::Vertices]->allocate(smooth_vertices.data(),
+                                        static_cast<int>(num_vertices(*smesh_)*3*sizeof(cgal_gl_data)));
+
+  feature_edges->VBOs[Ed::Indices]->allocate(idx_feature_edge_data_.data(),
+                                     static_cast<int>(idx_feature_edge_data_.size()*sizeof(unsigned int)));
+
+  feature_edges->VBOs[Ed::Vertices]->allocate(smooth_vertices.data(),
+                                        static_cast<int>(num_vertices(*smesh_)*3*sizeof(cgal_gl_data)));
+
+
   idx_triangles->VBOs[Tri::Vertex_indices]->allocate(idx_data_.data(),
                                                      static_cast<int>(idx_data_.size()*sizeof(unsigned int)));
 
@@ -597,24 +627,32 @@ void D::initializeBuffers(CGAL::Three::Viewer_interface*)const
 {
   dup_triangles->initializeBuffers();
   idx_triangles->initializeBuffers();
+  idx_edges->initializeBuffers();
+  feature_edges->initializeBuffers();
 
   //Clean-up
-  dup_triangles->nb_flat = flat_vertices.size();
+  dup_triangles->flat_size = flat_vertices.size();
   idx_triangles->idx_size = idx_data_.size();
-  smooth_vertices.resize(0);
-  smooth_normals .resize(0);
-  flat_vertices  .resize(0);
-  flat_normals   .resize(0);
-  f_colors       .resize(0);
-  v_colors       .resize(0);
-  idx_data_      .resize(0);
-  smooth_vertices.shrink_to_fit();
-  smooth_normals .shrink_to_fit();
-  flat_vertices  .shrink_to_fit();
-  flat_normals   .shrink_to_fit();
-  f_colors       .shrink_to_fit();
-  v_colors       .shrink_to_fit();
-  idx_data_      .shrink_to_fit();
+  idx_edges->idx_size = idx_edge_data_.size();
+  feature_edges->idx_size = idx_feature_edge_data_.size();
+  smooth_vertices       .resize(0);
+  smooth_normals        .resize(0);
+  flat_vertices         .resize(0);
+  flat_normals          .resize(0);
+  f_colors              .resize(0);
+  v_colors              .resize(0);
+  idx_data_             .resize(0);
+  idx_edge_data_        .resize(0);
+  idx_feature_edge_data_.resize(0);
+  smooth_vertices       .shrink_to_fit();
+  smooth_normals        .shrink_to_fit();
+  flat_vertices         .shrink_to_fit();
+  flat_normals          .shrink_to_fit();
+  f_colors              .shrink_to_fit();
+  v_colors              .shrink_to_fit();
+  idx_data_             .shrink_to_fit();
+  idx_edge_data_        .shrink_to_fit();
+  idx_feature_edge_data_.shrink_to_fit();
   item->are_buffers_filled = true;
 }
 
@@ -628,47 +666,32 @@ void Scene_surface_mesh_item::draw(CGAL::Three::Viewer_interface *viewer) const
 
   if(renderingMode() == Gouraud)
   {
-    d->idx_triangles->color =
-        (d->has_vcolors ? QColor(Qt::color0) : this->color());
-    d->idx_triangles->draw(*this, viewer);
+    d->idx_triangles->color = color();
+    d->idx_triangles->draw(*this, viewer, !d->has_vcolors);
   }
   else
   {
-    d->dup_triangles->color =
-        (d->has_fcolors ? QColor(Qt::color0) : this->color());
-    d->dup_triangles->draw(
-          *this,
-          viewer);
+    d->dup_triangles->color = color();
+    d->dup_triangles->draw(*this, viewer, !d->has_fcolors);
   }
 
 }
 
 void Scene_surface_mesh_item::drawEdges(CGAL::Three::Viewer_interface *viewer) const
 {
-  /*if(!are_buffers_filled)
+  if(!are_buffers_filled)
   {
-    d->compute_elements();
-    d->initializeBuffers(viewer);
+    computeElements(viewer);
+    initializeBuffers(viewer);
   }
- attribBuffers(viewer, PROGRAM_WITHOUT_LIGHT);
- CGAL::Three::Vao* vao = VAOs[D::Edges];
- vao->bind();
- vao->program->setAttributeValue("colors", QColor(0,0,0));
- if(is_selected)
-   vao->program->setUniformValue("is_selected", true);
- else
-   vao->program->setUniformValue("is_selected", false);
- glDrawElements(GL_LINES, static_cast<GLuint>(d->idx_edge_data_.size()),
-                GL_UNSIGNED_INT, d->idx_edge_data_.data());
+  d->idx_edges->color = color().lighter(50);
+  d->idx_edges->draw(*this, viewer, true);
 
  if(d->has_feature_edges)
  {
-   vao->program->setAttributeValue("colors", Qt::red);
-   vao->program->setUniformValue("is_selected", false);
-   glDrawElements(GL_LINES, static_cast<GLuint>(d->idx_feature_edge_data_.size()),
-                  GL_UNSIGNED_INT, d->idx_feature_edge_data_.data());
+   d->feature_edges->color = QColor(Qt::red);
+   d->feature_edges->draw(*this, viewer, true);
  }
- vao->release();*/
 }
 
 void Scene_surface_mesh_item::drawPoints(CGAL::Three::Viewer_interface *viewer) const
@@ -1025,6 +1048,8 @@ void Scene_surface_mesh_item::invalidateOpenGLBuffers()
   d->invalidate_stats();
   d->idx_triangles->reset_vbos();
   d->dup_triangles->reset_vbos();
+  d->idx_edges->reset_vbos();
+  d->feature_edges->reset_vbos();
 }
 
 

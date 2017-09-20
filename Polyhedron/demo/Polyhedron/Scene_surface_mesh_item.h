@@ -10,7 +10,6 @@
 #include <CGAL/Three/Scene_print_item_interface.h>
 #include "SMesh_type.h"
 #include <CGAL/Three/Scene_item.h>
-#include <CGAL/Three/Triangle_container.h>
 #include <CGAL/Three/Viewer_interface.h>
 #include <vector>
 
@@ -162,8 +161,8 @@ public Q_SLOTS:
   void showPrimitives(bool);
   void zoomToId();
 protected:
-  void computeElements(Viewer_interface*)const Q_DECL_OVERRIDE;
-  void initializeBuffers(Viewer_interface*)const Q_DECL_OVERRIDE;
+  void computeElements(CGAL::Three::Viewer_interface*)const Q_DECL_OVERRIDE;
+  void initializeBuffers(CGAL::Three::Viewer_interface*)const Q_DECL_OVERRIDE;
   friend struct Scene_surface_mesh_item_priv;
   Scene_surface_mesh_item_priv* d;
 };

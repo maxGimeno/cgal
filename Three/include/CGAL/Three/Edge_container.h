@@ -17,8 +17,8 @@
 //
 //
 // Author(s)     : Maxime Gimeno
-#ifndef TRIANGLE_CONTAINER_H
-#define TRIANGLE_CONTAINER_H
+#ifndef EDGE_CONTAINER_H
+#define EDGE_CONTAINER_H
 
 #include <CGAL/license/Three.h>
 
@@ -36,31 +36,22 @@ using namespace CGAL::Three;
 namespace CGAL {
 namespace Three {
 
-struct DEMO_FRAMEWORK_EXPORT Triangle_container :public Primitive_container
+struct DEMO_FRAMEWORK_EXPORT Edge_container :public Primitive_container
 {
+
   enum vbosName {
-    Flat_vertices = 0,
-    Smooth_vertices,
-    Vertex_indices,
-    Flat_normals,
-    Smooth_normals,
-    Facet_barycenters,
-    VColors,
-    FColors,
+    Vertices = 0,
+    Indices,
     NbOfVbos
   };
 
-    Triangle_container(Scene_item *item, CGAL::Three::Viewer_interface *viewer, int program, bool indexed);
-
+    Edge_container(Scene_item *item, CGAL::Three::Viewer_interface *viewer, int program, bool indexed);
     void draw(const Scene_item &item, CGAL::Three::Viewer_interface* viewer,
-              bool is_color_uniform) const Q_DECL_OVERRIDE;
-
+              bool is_color_uniform = true) const Q_DECL_OVERRIDE;
     //drawing variables
     QVector4D plane;
-    float shrink_factor;
 }; //end of class Triangle_container
-
 }
 }
 
-#endif // TRIANGLE_CONTAINER_H
+#endif // EDGE_CONTAINER_H

@@ -6,6 +6,7 @@ uniform highp mat4 mvp_matrix;
 uniform highp mat4 mv_matrix; 
 varying highp vec4 fP; 
 varying highp vec3 fN; 
+varying highp vec3 world_normal;
 varying highp vec4 color;
 varying highp float dist[6];
 uniform bool is_clipbox_on;
@@ -37,6 +38,6 @@ void main(void)
    if(is_clipbox_on)
     compute_distances();
    fP = mv_matrix * vertex;
-   fN = mat3(mv_matrix)* normals; 
+   fN = mat3(mv_matrix)* normals;
    gl_Position = mvp_matrix * vertex;
 }

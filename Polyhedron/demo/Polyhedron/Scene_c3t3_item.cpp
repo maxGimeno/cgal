@@ -106,7 +106,7 @@ public :
     if(is_fast)
       return;
     triangles->shrink_factor = qobject_cast<Scene_c3t3_item*>(this->parent())->getShrinkFactor();
-    triangles->draw(*this, viewer);
+    triangles->draw(*this, viewer, false);
   }
   void drawEdges(CGAL::Three::Viewer_interface* viewer) const
   {
@@ -271,6 +271,7 @@ struct Scene_c3t3_item_priv {
   {
     c3t3.clear();
     tree.clear();
+    delete triangles;
     if(frame)
     {
       static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first())->setManipulatedFrame(0);
@@ -296,6 +297,10 @@ struct Scene_c3t3_item_priv {
     is_aabb_tree_built = false;
     are_intersection_buffers_filled = false;
     is_grid_shown = true;
+    triangles = new Triangle_container(item,
+                                       static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first()),
+                                       CGAL::Three::Scene_item::PROGRAM_C3T3,
+                                       false);
   }
   void computeIntersection(const Primitive& facet);
   void fill_aabb_tree() {
@@ -467,7 +472,7 @@ struct Scene_c3t3_item_priv {
   mutable float smallest_radius_radius;
   mutable float smallest_edge_radius;
   mutable float biggest_v_sma_cube;
-
+  mutable Triangle_container* triangles;
 
   Tree tree;
   QVector<QColor> colors;
@@ -871,23 +876,14 @@ void Scene_c3t3_item::draw(CGAL::Three::Viewer_interface* viewer) const {
 
   if (!are_buffers_filled)
   {
+    d->triangles->reset_vbos();
     ncthis->d->computeElements();
     ncthis->d->initializeBuffers(viewer);
   }
-
-  vaos[Scene_c3t3_item_priv::Facets]->bind();
-  d->program = getShaderProgram(PROGRAM_C3T3);
-  attribBuffers(viewer, PROGRAM_C3T3);
-  d->program->bind();
   QVector4D cp(this->plane().a(),this->plane().b(),this->plane().c(),this->plane().d());
-  d->program->setUniformValue("cutplane", cp);
-  float shrink_factor = getShrinkFactor();
-  d->program->setUniformValue("shrink_factor", shrink_factor);
-  // positions_poly_size is the number of total facets in the C3T3
-  // it is only computed once and positions_poly is emptied at the end
-  viewer->glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(d->positions_poly_size / 3));
-  d->program->release();
-  vaos[Scene_c3t3_item_priv::Facets]->release();
+  d->triangles->plane = cp;
+  d->triangles->shrink_factor = getShrinkFactor();
+  d->triangles->draw(*this, viewer, false);
 
   if(d->show_tetrahedra){
     if(!d->frame->isManipulated())
@@ -1279,49 +1275,16 @@ void Scene_c3t3_item_priv::initializeBuffers(CGAL::Three::Viewer_interface *view
 {
   //vao containing the data for the facets
   {
-    program = item->getShaderProgram(Scene_c3t3_item::PROGRAM_C3T3, viewer);
-    program->bind();
-
-    item->vaos[Facets]->bind();
-    item->buffers[Facet_vertices].bind();
-    item->buffers[Facet_vertices].allocate(positions_poly.data(),
-      static_cast<int>(positions_poly.size()*sizeof(float)));
-    program->enableAttributeArray("vertex");
-    program->setAttributeBuffer("vertex", GL_FLOAT, 0, 3);
-    item->buffers[Facet_vertices].release();
-
-    item->buffers[Facet_normals].bind();
-    item->buffers[Facet_normals].allocate(normals.data(),
-      static_cast<int>(normals.size()*sizeof(float)));
-    program->enableAttributeArray("normals");
-    program->setAttributeBuffer("normals", GL_FLOAT, 0, 3);
-    item->buffers[Facet_normals].release();
-
-    item->buffers[Facet_colors].bind();
-    item->buffers[Facet_colors].allocate(f_colors.data(),
-      static_cast<int>(f_colors.size()*sizeof(float)));
-    program->enableAttributeArray("colors");
-    program->setAttributeBuffer("colors", GL_FLOAT, 0, 3);
-    item->buffers[Facet_colors].release();
-
-    item->buffers[Facet_barycenters].bind();
-    item->buffers[Facet_barycenters].allocate(positions_barycenter.data(),
-      static_cast<int>(positions_barycenter.size()*sizeof(float)));
-    program->enableAttributeArray("barycenter");
-    program->setAttributeBuffer("barycenter", GL_FLOAT, 0, 3);
-    item->buffers[Facet_barycenters].release();
-
-    item->vaos[Facets]->release();
-    program->release();
-    positions_poly_size = positions_poly.size();
+    triangles->initializeBuffers();
+    triangles->nb_flat = positions_poly.size();
     positions_poly.clear();
-    positions_poly.swap(positions_poly);
+    positions_poly.shrink_to_fit();
     normals.clear();
-    normals.swap(normals);
+    normals.shrink_to_fit();
     f_colors.clear();
-    f_colors.swap(f_colors);
+    f_colors.shrink_to_fit();
     positions_barycenter.clear();
-    positions_barycenter.swap(positions_barycenter);
+    positions_barycenter.shrink_to_fit();
   }
 
   //vao containing the data for the lines
@@ -1619,6 +1582,15 @@ void Scene_c3t3_item_priv::computeElements()
       }
     }
   }
+  triangles->VBOs[Tri::Flat_vertices]->allocate(positions_poly.data(),
+                                                static_cast<int>(positions_poly.size()*sizeof(float)));
+  triangles->VBOs[Tri::Flat_normals]->allocate(normals.data(),
+                                               static_cast<int>(normals.size()*sizeof(float)));
+  triangles->VBOs[Tri::FColors]->allocate(f_colors.data(),
+                                          static_cast<int>(f_colors.size()*sizeof(float)));
+  triangles->VBOs[Tri::Facet_barycenters]->allocate(positions_barycenter.data(),
+                                          static_cast<int>(positions_barycenter.size()*sizeof(float)));
+
   QApplication::restoreOverrideCursor();
 }
 
