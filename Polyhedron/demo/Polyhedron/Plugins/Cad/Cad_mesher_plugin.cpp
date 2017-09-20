@@ -159,7 +159,7 @@ void Polyhedron_demo_remeshing_plugin::remesh()
   std::cerr << "number of cells in complex : "<< p_c3t3.number_of_cells_in_complex() << std::endl;
 
   //Output
-  Scene_c3t3_cad_item* c3t3_cad_item = new Scene_c3t3_cad_item(p_c3t3);
+  Scene_c3t3_cad_item* c3t3_cad_item = new Scene_c3t3_cad_item(p_c3t3, cgal_brep_mesh_domain_with_features);
   if(!c3t3_cad_item)
   {
     qDebug()<<"c3t3 CAD item not created";

@@ -37,7 +37,7 @@ public:
   typedef qglviewer::ManipulatedFrame ManipulatedFrame;
 
   Scene_c3t3_cad_item();
-  Scene_c3t3_cad_item(const C3t3& c3t3);
+  Scene_c3t3_cad_item(const C3t3& c3t3, const Mesh_domain_with_features& md);
   ~Scene_c3t3_cad_item();
 
   bool has_stats()const  Q_DECL_OVERRIDE {return true;}
@@ -67,6 +67,8 @@ public:
 
   const C3t3& c3t3() const;
   C3t3& c3t3();
+
+  const Mesh_domain_with_features& meshDomain() const;
 
   bool manipulatable() const  Q_DECL_OVERRIDE{
     return true;

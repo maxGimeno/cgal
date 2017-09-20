@@ -247,7 +247,7 @@ private:
 struct Scene_c3t3_cad_item_priv {
   typedef qglviewer::ManipulatedFrame ManipulatedFrame;
   Scene_c3t3_cad_item_priv(Scene_c3t3_cad_item* item)
-    : item(item), c3t3()
+    : item(item), c3t3(item->c3t3()), mesh_domain(item->meshDomain())
     , frame(new ManipulatedFrame())
     , data_item_(NULL)
     , histogram_()
@@ -262,8 +262,8 @@ struct Scene_c3t3_cad_item_priv {
     tet_Slider->setMaximum(100);
     invalidate_stats();
   }
-  Scene_c3t3_cad_item_priv(const C3t3& c3t3_, Scene_c3t3_cad_item* item)
-    : item(item), c3t3(c3t3_)
+    Scene_c3t3_cad_item_priv(const C3t3& c3t3_, const Mesh_domain_with_features& mesh_domain_, Scene_c3t3_cad_item *item)
+    : item(item), c3t3(c3t3_), mesh_domain(mesh_domain_)
     , frame(new ManipulatedFrame())
     , data_item_(NULL)
     , histogram_()
@@ -421,6 +421,7 @@ struct Scene_c3t3_cad_item_priv {
   };
   Scene_c3t3_cad_item* item;
   C3t3 c3t3;
+  const Mesh_domain_with_features& mesh_domain;
   bool is_grid_shown;
   qglviewer::ManipulatedFrame* frame;
   bool need_changed;
@@ -511,9 +512,9 @@ Scene_c3t3_cad_item::Scene_c3t3_cad_item()
   create_flat_and_wire_sphere(1.0f,d->s_vertex,d->s_normals, d->ws_vertex);
 }
 
-Scene_c3t3_cad_item::Scene_c3t3_cad_item(const C3t3& c3t3)
+Scene_c3t3_cad_item::Scene_c3t3_cad_item(const C3t3& c3t3, const Mesh_domain_with_features& mesh_domain)
   : Scene_group_item("unnamed", Scene_c3t3_cad_item_priv::NumberOfBuffers, Scene_c3t3_cad_item_priv::NumberOfVaos)
-  , d(new Scene_c3t3_cad_item_priv(c3t3, this))
+  , d(new Scene_c3t3_cad_item_priv(c3t3, mesh_domain, this))
 {
 
   compute_bbox();
@@ -567,6 +568,12 @@ C3t3&
 Scene_c3t3_cad_item::c3t3()
 {
   return d->c3t3;
+}
+
+const Mesh_domain_with_features&
+Scene_c3t3_cad_item::meshDomain() const
+{
+    return d->mesh_domain;
 }
 
 void
