@@ -536,8 +536,13 @@ add_features(InputIterator first, InputIterator last,
                     already_inserted_corner = it->first;
                     double w = 0.;
                     (rbc->first)->weight(0, &w);
-                    dtkContinuousGeometryPrimitives::Point_3 new_point(it->second[0] * w, it->second[1] * w, it->second[2] * w);
-                    (rbc->first)->setControlPoint(0, new_point.data());
+                    double *new_point = new double[4];
+                    new_point[0] = it->second[0];
+                    new_point[1] = it->second[1];
+                    new_point[2] = it->second[2];
+                    new_point[3] = w;
+                    (rbc->first)->setWeightedControlPoint(0, &new_point[0]);
+                    delete[] new_point;
                     break;
 
                 }
@@ -562,8 +567,13 @@ add_features(InputIterator first, InputIterator last,
                     already_inserted_corner = it->first;
                     double w = 0.;
                     rbc->first->weight(rbc->first->degree(), &w);
-                    dtkContinuousGeometryPrimitives::Point_3 new_point(it->second[0] * w, it->second[1] * w, it->second[2] * w);
-                    rbc->first->setControlPoint(rbc->first->degree(), new_point.data());
+                    double *new_point = new double[4];
+                    new_point[0] = it->second[0];
+                    new_point[1] = it->second[1];
+                    new_point[2] = it->second[2];
+                    new_point[3] = w;
+                    rbc->first->setWeightedControlPoint(rbc->first->degree(), &new_point[0]);
+                    delete[] new_point;
                     break;
                 }
             }
