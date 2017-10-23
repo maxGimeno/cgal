@@ -80,7 +80,7 @@
 ## Compile CGAL demo
   ### Compile CGAL demo
   Configure CGAL : activate "WITH_demos", specify path to "dtk_DIR", "dtkContinuousGeometry_DIR", "dtkNurbsProbing_DIR", "cgalCaoProtection_DIR", "Blaze_DIR".
-  Compile the Polyhedron demo.
+  Compile the Polyhedron demo, cad_meshing_plugin and
 
 # Complements
 This is a cumbersome installation procedure. We aim at simplifying it as much as possible in the future, thanks to conda.
