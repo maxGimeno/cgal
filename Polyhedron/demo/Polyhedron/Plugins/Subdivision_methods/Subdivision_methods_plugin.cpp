@@ -2,13 +2,16 @@
 #include <QApplication>
 #include <QMainWindow>
 #include <QAction>
+#include <QInputDialog>
 
 #include <CGAL/Three/Polyhedron_demo_plugin_helper.h>
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 
 #include "Messages_interface.h"
 #include "Scene_polyhedron_item.h"
+#include "Scene_surface_mesh_item.h"
 #include "Polyhedron_type.h"
+#include "SMesh_type.h"
 #include <CGAL/subdivision_method_3.h>
 using namespace CGAL::Three;
 class Polyhedron_demo_subdivision_methods_plugin :
@@ -28,6 +31,7 @@ public:
             Scene_interface* scene_interface,
             Messages_interface* m)
   {
+      this->mw = mw;
       messages = m;
       scene = scene_interface;
       QAction *actionLoop = new QAction("Loop", mw);
@@ -49,8 +53,10 @@ public:
   }
 
   bool applicable(QAction*) const {
-    return qobject_cast<Scene_polyhedron_item*>(scene->item(scene->mainSelectionIndex()));
+    return qobject_cast<Scene_polyhedron_item*>(scene->item(scene->mainSelectionIndex()))
+        || qobject_cast<Scene_surface_mesh_item*>(scene->item(scene->mainSelectionIndex()));
   }
+
 public Q_SLOTS:
   void on_actionLoop_triggered();
   void on_actionCatmullClark_triggered();
@@ -59,43 +65,119 @@ public Q_SLOTS:
 private :
   Messages_interface* messages;
   QList<QAction*> _actions;
+  template<class FaceGraphItem>
+  void apply_loop(FaceGraphItem* item, int nb_steps);
+  template<class FaceGraphItem>
+  void apply_catmullclark(FaceGraphItem* item, int nb_steps);
+  template<class FaceGraphItem>
+  void apply_sqrt3(FaceGraphItem* item, int nb_steps);
+  template<class FaceGraphItem>
+  void apply_doosabin(FaceGraphItem* item, int nb_steps);
 }; // end Polyhedron_demo_subdivision_methods_plugin
 
-void Polyhedron_demo_subdivision_methods_plugin::on_actionLoop_triggered()
+
+template<class FaceGraphItem>
+void Polyhedron_demo_subdivision_methods_plugin::apply_loop(FaceGraphItem* item, int nb_steps)
 {
-  CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
-
-  Scene_polyhedron_item* item =
-    qobject_cast<Scene_polyhedron_item*>(scene->item(index));
-
-  if(!item) return;
-  Polyhedron* poly = item->polyhedron();
+  typename FaceGraphItem::Face_graph* graph = item->face_graph();
   QTime time;
   time.start();
   messages->information("Loop subdivision...");
   QApplication::setOverrideCursor(Qt::WaitCursor);
-  CGAL::Subdivision_method_3::Loop_subdivision(*poly, 1);
+  CGAL::Subdivision_method_3::Loop_subdivision(*graph, nb_steps);
   messages->information(QString("ok (%1 ms)").arg(time.elapsed()));
   QApplication::restoreOverrideCursor();
   item->invalidateOpenGLBuffers();
   scene->itemChanged(item);
 }
 
+void Polyhedron_demo_subdivision_methods_plugin::on_actionLoop_triggered()
+{
+  CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
+
+  Scene_polyhedron_item* item =
+      qobject_cast<Scene_polyhedron_item*>(scene->item(index));
+
+  if(!item)
+  {
+    Scene_surface_mesh_item* sm_item =
+        qobject_cast<Scene_surface_mesh_item*>(scene->item(index));
+    if(!sm_item)
+      return;
+    int nb_steps = QInputDialog::getInt(mw,
+                                        QString("Number of Iterations"),
+                                        QString("Choose number of iterations"),
+                                        1,
+                                        1);
+    apply_loop(sm_item, nb_steps);
+  }
+  else
+  {
+    int nb_steps = QInputDialog::getInt(mw,
+                                        QString("Number of Iterations"),
+                                        QString("Choose number of iterations"),
+                                        1,
+                                        1);
+    apply_loop(item, nb_steps);
+  }
+}
+
+template<class FaceGraphItem>
+void Polyhedron_demo_subdivision_methods_plugin::apply_catmullclark(FaceGraphItem* item, int nb_steps)
+{
+  typename FaceGraphItem::Face_graph* graph = item->face_graph();
+  if(!graph) return;
+  QTime time;
+  time.start();
+  messages->information("Catmull-Clark subdivision...");
+  QApplication::setOverrideCursor(Qt::WaitCursor);
+  CGAL::Subdivision_method_3::CatmullClark_subdivision(*graph, nb_steps);
+  messages->information(QString("ok (%1 ms)").arg(time.elapsed()));
+  QApplication::restoreOverrideCursor();
+  item->invalidateOpenGLBuffers();
+  scene->itemChanged(item);
+}
 void Polyhedron_demo_subdivision_methods_plugin::on_actionCatmullClark_triggered()
 {
   CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
 
   Scene_polyhedron_item* item =
-    qobject_cast<Scene_polyhedron_item*>(scene->item(index));
+      qobject_cast<Scene_polyhedron_item*>(scene->item(index));
 
-  if(!item) return;
-  Polyhedron* poly = item->polyhedron();
-  if(!poly) return;
+  if(!item)
+  {
+    Scene_surface_mesh_item* sm_item =
+        qobject_cast<Scene_surface_mesh_item*>(scene->item(index));
+    if(!sm_item)
+      return;
+    int nb_steps = QInputDialog::getInt(mw,
+                                        QString("Number of Iterations"),
+                                        QString("Choose number of iterations"),
+                                        1,
+                                        1);
+    apply_catmullclark(sm_item, nb_steps);
+  }
+  else{
+    int nb_steps = QInputDialog::getInt(mw,
+                                        QString("Number of Iterations"),
+                                        QString("Choose number of iterations"),
+                                        1,
+                                        1);
+    apply_catmullclark(item, nb_steps);
+  }
+
+}
+
+template<class FaceGraphItem>
+void Polyhedron_demo_subdivision_methods_plugin::apply_sqrt3(FaceGraphItem* item, int nb_steps)
+{
+  typename FaceGraphItem::Face_graph* graph = item->face_graph();
+  if(!graph) return;
   QTime time;
   time.start();
-  messages->information("Catmull-Clark subdivision...");
+  messages->information("Sqrt-3 subdivision...");
   QApplication::setOverrideCursor(Qt::WaitCursor);
-  CGAL::Subdivision_method_3::CatmullClark_subdivision(*poly, 1);
+  CGAL::Subdivision_method_3::Sqrt3_subdivision(*graph, nb_steps);
   messages->information(QString("ok (%1 ms)").arg(time.elapsed()));
   QApplication::restoreOverrideCursor();
   item->invalidateOpenGLBuffers();
@@ -107,16 +189,42 @@ void Polyhedron_demo_subdivision_methods_plugin::on_actionSqrt3_triggered()
   CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
 
   Scene_polyhedron_item* item =
-    qobject_cast<Scene_polyhedron_item*>(scene->item(index));
+      qobject_cast<Scene_polyhedron_item*>(scene->item(index));
 
-  if(!item) return;
-  Polyhedron* poly = item->polyhedron();
-  if(!poly) return;
+  if(!item)
+  {
+    Scene_surface_mesh_item* sm_item =
+        qobject_cast<Scene_surface_mesh_item*>(scene->item(index));
+    if(!sm_item)
+      return;
+    int nb_steps = QInputDialog::getInt(mw,
+                                        QString("Number of Iterations"),
+                                        QString("Choose number of iterations"),
+                                        1,
+                                        1);
+    apply_sqrt3(sm_item, nb_steps);
+  }
+  else{
+    int nb_steps = QInputDialog::getInt(mw,
+                                        QString("Number of Iterations"),
+                                        QString("Choose number of iterations"),
+                                        1,
+                                        1);
+    apply_sqrt3(item, nb_steps);
+  }
+
+}
+
+template<class FaceGraphItem>
+void Polyhedron_demo_subdivision_methods_plugin::apply_doosabin(FaceGraphItem* item, int nb_steps)
+{
+  typename FaceGraphItem::Face_graph* graph = item->face_graph();
+  if(!graph) return;
   QTime time;
   time.start();
-  messages->information("Sqrt3 subdivision...");
+  messages->information("Doo-Sabin subdivision...");
   QApplication::setOverrideCursor(Qt::WaitCursor);
-  CGAL::Subdivision_method_3::Sqrt3_subdivision(*poly, 1);
+  CGAL::Subdivision_method_3::DooSabin_subdivision(*graph, nb_steps);
   messages->information(QString("ok (%1 ms)").arg(time.elapsed()));
   QApplication::restoreOverrideCursor();
   item->invalidateOpenGLBuffers();
@@ -128,20 +236,29 @@ void Polyhedron_demo_subdivision_methods_plugin::on_actionDooSabin_triggered()
   CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
 
   Scene_polyhedron_item* item =
-    qobject_cast<Scene_polyhedron_item*>(scene->item(index));
+      qobject_cast<Scene_polyhedron_item*>(scene->item(index));
 
-  if(!item) return;
-  Polyhedron* poly = item->polyhedron();
-  if(!poly) return;
-  QTime time;
-  time.start();
-  messages->information("Doo Sabin subdivision...");
-  QApplication::setOverrideCursor(Qt::WaitCursor);
-  CGAL::Subdivision_method_3::DooSabin_subdivision(*poly, 1);
-  messages->information(QString("ok (%1 ms)").arg(time.elapsed()));
-  QApplication::restoreOverrideCursor();
-  item->invalidateOpenGLBuffers();
-  scene->itemChanged(item);
+  if(!item)
+  {
+    Scene_surface_mesh_item* sm_item =
+        qobject_cast<Scene_surface_mesh_item*>(scene->item(index));
+    if(!sm_item)
+      return;
+    int nb_steps = QInputDialog::getInt(mw,
+                                        QString("Number of Iterations"),
+                                        QString("Choose number of iterations"),
+                                        1,
+                                        1);
+    apply_doosabin(sm_item, nb_steps);
+  }
+  else{
+    int nb_steps = QInputDialog::getInt(mw,
+                                        QString("Number of Iterations"),
+                                        QString("Choose number of iterations"),
+                                        1,
+                                        1);
+    apply_doosabin(item, nb_steps);
+  }
 }
 
 #include "Subdivision_methods_plugin.moc"
