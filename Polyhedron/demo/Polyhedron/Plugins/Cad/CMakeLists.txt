@@ -52,6 +52,14 @@ target_link_libraries(cad_meshing_plugin
   dtkCore
   dtkContinuousGeometryCore)
 
+polyhedron_demo_plugin(rational_bezier_surface_plugin
+  Rational_bezier_surface_plugin)
+target_link_libraries(rational_bezier_surface_plugin
+  polyhedron_demo
+  scene_rational_bezier_surface_item
+  dtkCore
+  dtkContinuousGeometryCore)
+
 add_item(scene_c3t3_cad_item Scene_c3t3_cad_item.cpp)
 target_link_libraries(scene_c3t3_cad_item
   scene_polyhedron_item

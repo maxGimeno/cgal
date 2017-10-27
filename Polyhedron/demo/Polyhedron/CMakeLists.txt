@@ -52,7 +52,7 @@ add_subdirectory( implicit_functions )
 
 # Find CGAL
 
-option( POLYHEDRON_QTSCRIPT_DEBUGGER 
+option( POLYHEDRON_QTSCRIPT_DEBUGGER
   "Activate the use of Qt Script Debugger in Polyhedron_3 demo" OFF)
 
 # Find Qt5 itself
@@ -160,7 +160,7 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
     HINTS ${CGAL_INCLUDE_DIRS}
     NO_DEFAULT_PATH
     DOC "Path to CGAL/Three/Scene_item.h")
-  
+
   if(CGAL_THREE_HEADERS_PATH)
     qt5_generate_moc( "${CGAL_THREE_HEADERS_PATH}/CGAL/Three/Viewer_interface.h"
       "${CMAKE_CURRENT_BINARY_DIR}/Viewer_interface_moc.cpp" )
@@ -211,7 +211,7 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
     Scene_plane_item.cpp
     Scene_spheres_item.cpp
 )
-  target_link_libraries(scene_basic_objects 
+  target_link_libraries(scene_basic_objects
     demo_framework
     ${CGAL_LIBRARIES}
     ${QGLVIEWER_LIBRARIES}
@@ -250,14 +250,14 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
 
   add_item(scene_polyhedron_item_decorator Scene_polyhedron_item_decorator.cpp )
   target_link_libraries(scene_polyhedron_item_decorator scene_polyhedron_item)
-  
+
   add_item(scene_surface_mesh_item_decorator Scene_polyhedron_item_decorator.cpp )
   target_link_libraries(scene_surface_mesh_item_decorator scene_surface_mesh_item)
   target_compile_definitions(scene_surface_mesh_item_decorator PUBLIC "-DUSE_SURFACE_MESH" )
-    
+
   add_item(scene_polyhedron_and_sm_item_k_ring_selection Scene_polyhedron_item_k_ring_selection.cpp)
   target_link_libraries(scene_polyhedron_and_sm_item_k_ring_selection scene_polyhedron_item scene_surface_mesh_item)
-   
+
   add_item(scene_poly_item_k_ring_selection Plugins/PMP/Scene_facegraph_item_k_ring_selection.cpp)
   target_link_libraries(scene_poly_item_k_ring_selection scene_polyhedron_item)
 
@@ -272,7 +272,7 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
   target_link_libraries(scene_surface_mesh_selection_item scene_surface_mesh_item_decorator  scene_sm_item_k_ring_selection)
   target_compile_definitions(scene_surface_mesh_selection_item PUBLIC "-DUSE_SURFACE_MESH" )
 
-  add_item(scene_polyhedron_shortest_path_item Plugins/Surface_mesh/Scene_polyhedron_shortest_path_item.cpp)  
+  add_item(scene_polyhedron_shortest_path_item Plugins/Surface_mesh/Scene_polyhedron_shortest_path_item.cpp)
   target_link_libraries(scene_polyhedron_shortest_path_item scene_polyhedron_item_decorator scene_polyhedron_item scene_polylines_item)
 
   add_item(scene_sm_shortest_path_item Plugins/Surface_mesh/Scene_polyhedron_shortest_path_item.cpp)
@@ -294,7 +294,7 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
   add_item(scene_polygon_soup_item Scene_polygon_soup_item.cpp)
   target_link_libraries(scene_polygon_soup_item scene_polyhedron_item)
   add_item(scene_nef_polyhedron_item Scene_nef_polyhedron_item.cpp)
-  
+
   target_link_libraries(scene_nef_polyhedron_item scene_polyhedron_item scene_surface_mesh_item)
   add_item(scene_points_with_normal_item Scene_points_with_normal_item.cpp)
   target_link_libraries( scene_points_with_normal_item gl_splat)
@@ -304,8 +304,13 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
   if (dtk_FOUND AND dtkContinuousGeometry_FOUND)
     include_directories(${dtk_INCLUDE_DIRS})
     include_directories(${dtkContinuousGeometry_INCLUDE_DIRS})
+
     add_item(scene_nurbs_item Plugins/Cad/Scene_nurbs_item.cpp)
     target_link_libraries(scene_nurbs_item dtkCore dtkContinuousGeometryCore)
+
+    add_item(scene_rational_bezier_surface_item Plugins/Cad/Scene_rational_bezier_surface_item.cpp)
+    target_link_libraries(scene_rational_bezier_surface_item dtkCore dtkContinuousGeometryCore)
+
     add_item(scene_cad_item Plugins/Cad/Scene_cad_item.cpp)
     target_link_libraries(scene_cad_item dtkCore dtkContinuousGeometryCore scene_nurbs_item)
   endif()#dtk_FOUND etc.
@@ -314,10 +319,10 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
 
   target_link_libraries( demo_framework gl_splat)
 
-  
 
 
-  foreach( lib 
+
+  foreach( lib
       demo_framework
       scene_basic_objects
       scene_color_ramp
