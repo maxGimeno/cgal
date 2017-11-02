@@ -15,13 +15,20 @@
 #include <QList>
 #include <vector>
 struct Scene_spheres_item_priv;
+
+/* This item contains spheres and associated colors. They are kept in a Spheres_container,
+ * sorted by the value of their "index". This item also has an internal picking mechanism that
+ * colorize all the spheres that has the same index as the one that has been picked.
+*/
 class SCENE_BASIC_OBJECTS_EXPORT Scene_spheres_item
     : public CGAL::Three::Scene_item
 {
   Q_OBJECT
 public:
   typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
-  typedef std::pair<CGAL::Sphere_3<Kernel>*, CGAL::Color> Sphere_pair ;
+  typedef CGAL::Sphere_3<Kernel> Sphere;
+  typedef std::pair<Sphere, CGAL::Color> Sphere_pair;
+  typedef std::vector<std::vector<Sphere_pair> > Spheres_container;
 
   Scene_spheres_item(Scene_group_item* parent, bool planed = false);
 
@@ -35,7 +42,7 @@ public:
     return (m == Gouraud || m == Wireframe);
   }
   void compute_bbox() const Q_DECL_OVERRIDE{ _bbox = Bbox(); }
-  void add_sphere(const CGAL::Sphere_3<Kernel> &sphere, CGAL::Color = CGAL::Color(120,120,120));
+  void add_sphere(const Sphere &sphere, std::size_t index = 0, CGAL::Color = CGAL::Color(120,120,120));
   void clear_spheres();
   void setPrecision(int prec);
 
@@ -46,6 +53,7 @@ public:
   void setPlane(Kernel::Plane_3 p_plane);
   void setToolTip(QString s);
   void setColor(QColor c) Q_DECL_OVERRIDE;
+
 Q_SIGNALS:
   void on_color_changed();
 protected:
