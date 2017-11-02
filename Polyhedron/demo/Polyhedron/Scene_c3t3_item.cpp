@@ -1528,6 +1528,7 @@ void Scene_c3t3_item_priv::computeSpheres()
                           wp2p(vit->point()).z() + offset.z);
     float radius = vit->point().weight() ;
     spheres->add_sphere(Geom_traits::Sphere_3(center, radius),
+                        0,
                         CGAL::Color(c.red(), c.green(), c.blue()));
   }
   spheres->invalidateOpenGLBuffers();
@@ -1682,7 +1683,7 @@ void Scene_c3t3_item::show_spheres(bool b)
     contextMenu()->findChild<QAction*>("actionShowSpheres")->setChecked(b);
     if(b && !d->spheres)
     {
-      d->spheres = new Scene_spheres_item(this, true);
+      d->spheres = new Scene_spheres_item(this, 0, true);
       d->spheres->setName("Protecting spheres");
       d->spheres->setRenderingMode(Gouraud);
       connect(d->spheres, SIGNAL(destroyed()), this, SLOT(reset_spheres()));

@@ -1,6 +1,9 @@
 #include "Scene_spheres_item.h"
-#include <QApplication>
 
+#include <QApplication>
+#include <QOpenGLFramebufferObject>
+#include <fstream>
+#include "Messages_interface.h"
 
 
 struct Scene_spheres_item_priv
@@ -10,7 +13,7 @@ struct Scene_spheres_item_priv
   typedef std::pair<Sphere, CGAL::Color> Sphere_pair;
   typedef std::vector<std::vector<Sphere_pair> > Spheres_container;
 
-  Scene_spheres_item_priv(bool planed, Scene_spheres_item* parent)
+  Scene_spheres_item_priv(bool planed, std::size_t max_index, Scene_spheres_item* parent)
     :precision(36)
     ,has_plane(planed)
 
@@ -21,6 +24,7 @@ struct Scene_spheres_item_priv
     edges_colors.clear();
     centers.clear();
     radius.clear();
+    spheres.resize(max_index + 1);
   }
 
   ~Scene_spheres_item_priv()
@@ -68,12 +72,12 @@ struct Scene_spheres_item_priv
   QString tooltip;
   mutable Spheres_container spheres;
 };
-Scene_spheres_item::Scene_spheres_item(Scene_group_item* parent, bool planed)
+Scene_spheres_item::Scene_spheres_item(Scene_group_item* parent, std::size_t max_index, bool planed)
   :CGAL::Three::Scene_item(Scene_spheres_item_priv::NbOfVbos,Scene_spheres_item_priv::NbOfVaos)
 
 {
   setParent(parent);
-  d = new Scene_spheres_item_priv(planed, this);
+  d = new Scene_spheres_item_priv(planed, max_index, this);
 }
 
 Scene_spheres_item::~Scene_spheres_item()
@@ -95,6 +99,7 @@ void Scene_spheres_item_priv::pick(int id) const
   }
   item->invalidateOpenGLBuffers();
 }
+
 void Scene_spheres_item_priv::initializeBuffers(CGAL::Three::Viewer_interface *viewer) const
 {
   if(has_plane)
@@ -132,8 +137,8 @@ void Scene_spheres_item_priv::initializeBuffers(CGAL::Three::Viewer_interface *v
   if(spheres.size() > 1)
   {
     item->buffers[Picking_color].bind();
-    item->buffers[Picking_color].allocate(colors.data(),
-                                          static_cast<int>(colors.size()*sizeof(float)));
+    item->buffers[Picking_color].allocate(picking_colors.data(),
+                                          static_cast<int>(picking_colors.size()*sizeof(float)));
     item->buffers[Picking_color].release();
   }
 
@@ -207,6 +212,8 @@ void Scene_spheres_item_priv::initializeBuffers(CGAL::Three::Viewer_interface *v
 
 void Scene_spheres_item_priv::compute_elements() const
 {
+  picking_colors.clear();
+  colors.clear();
   for(std::size_t id=0; id<spheres.size(); ++id)
   {
     Q_FOREACH(Sphere_pair pair, spheres[id])
@@ -248,18 +255,27 @@ void Scene_spheres_item::draw(Viewer_interface *viewer) const
     d->compute_elements();
     d->initializeBuffers(viewer);
   }
-  vaos[Scene_spheres_item_priv::Facets]->bind();
+  int deviceWidth = viewer->camera()->screenWidth();
+  int deviceHeight = viewer->camera()->screenHeight();
+
+//  QOpenGLFramebufferObject* fbo = 0;
+
   if(d->spheres.size() > 1 && viewer->inDrawWithNames())
   {
+    vaos[Scene_spheres_item_priv::Facets]->bind();
     buffers[Scene_spheres_item_priv::Picking_color].bind();
     d->program->setAttributeBuffer("colors", GL_FLOAT, 0, 3);
     buffers[Scene_spheres_item_priv::Picking_color].release();
+    d->program->disableAttributeArray("normals");
+    d->program->setAttributeValue("normals", QVector3D(0,0,0));
   }
   else
   {
+    vaos[Scene_spheres_item_priv::Facets]->bind();
     buffers[Scene_spheres_item_priv::Color].bind();
     d->program->setAttributeBuffer("colors", GL_FLOAT, 0, 3);
     buffers[Scene_spheres_item_priv::Color].release();
+    d->program->enableAttributeArray("normals");
   }
 
   if(d->has_plane)
@@ -282,18 +298,23 @@ void Scene_spheres_item::draw(Viewer_interface *viewer) const
                                 static_cast<GLsizei>(d->nb_centers));
   d->program->release();
   vaos[Scene_spheres_item_priv::Facets]->release();
-
-  int deviceWidth = viewer->camera()->screenWidth();
-  int deviceHeight = viewer->camera()->screenHeight();
-  int rowLength = deviceWidth * 4; // data asked in RGBA,so 4 bytes.
-  const static int dataLength = rowLength * deviceHeight;
-  GLubyte* buffer = new GLubyte[dataLength];
-  // Qt uses upper corner for its origin while GL uses the lower corner.
-  QPoint picking_target = QCursor::pos();
-  viewer->glReadPixels(picking_target.x(), deviceHeight-1-picking_target.y(), 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-  int ID = (buffer[0] + buffer[1] * 256 +buffer[2] * 256*256);
-  if(buffer[0]*buffer[1]*buffer[2] < 255*255*255)
-    d->pick(ID);
+  if(d->spheres.size() > 1 && viewer->inDrawWithNames())
+  {
+    int rowLength = deviceWidth * 4; // data asked in RGBA,so 4 bytes.
+    const static int dataLength = rowLength * deviceHeight;
+    GLubyte* buffer = new GLubyte[dataLength];
+    // Qt uses upper corner for its origin while GL uses the lower corner.
+    QPoint picking_target = viewer->mapFromGlobal(QCursor::pos());
+    viewer->glReadPixels(picking_target.x(), deviceHeight-1-picking_target.y(), 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+    int ID = (buffer[0] + buffer[1] * 256 +buffer[2] * 256*256);
+    if(buffer[0]*buffer[1]*buffer[2] < 255*255*255)
+    {
+      d->pick(ID);
+      viewer->displayMessage(QString("Picked spheres index : %1 .").arg(ID), 2000);
+    }
+    else
+      d->pick(-1);
+  }
 }
 
 void Scene_spheres_item::drawEdges(Viewer_interface *viewer) const
@@ -359,5 +380,57 @@ void Scene_spheres_item::setToolTip(QString s)
 void Scene_spheres_item::setColor(QColor c)
 {
   CGAL::Three::Scene_item::setColor(c);
+  CGAL::Color color = CGAL::Color(c.red(),
+                                  c.green(),
+                                  c.blue());
+
+  for(std::size_t i=0; i<d->spheres.size(); ++i)
+  {
+    for(std::size_t j = 0; j<d->spheres[i].size(); ++j)
+    {
+      if(d->spheres.size()>1)
+      {
+        d->spheres[i][j].second = color;
+      }
+    }
+  }
+  invalidateOpenGLBuffers();
   this->on_color_changed();
+
+}
+
+void Scene_spheres_item::compute_bbox() const
+{
+  Bbox box = Bbox();
+  for(std::size_t id=0; id<d->spheres.size(); ++id)
+  {
+    Q_FOREACH(Sphere_pair pair, d->spheres[id])
+    {
+      box += pair.first.bbox();
+    }
+  }
+  _bbox = box;
+}
+
+bool Scene_spheres_item::save(const std::string& file_name)const
+{
+
+  std::ofstream out(file_name.c_str());
+  if(!out) { return false; }
+
+  std::size_t nb_spheres=0;
+  for(std::size_t i = 0; i<d->spheres.size(); ++i)
+    nb_spheres += d->spheres[i].size();
+
+  out<<nb_spheres << " " << d->spheres.size() -1<<"\n";
+
+  for(std::size_t i = 0; i<d->spheres.size(); ++i)
+  {
+    Q_FOREACH(const Sphere_pair& pair, d->spheres[i])
+    {
+      out << i << " " << pair.first.center() << " " << CGAL::sqrt(pair.first.squared_radius())<<"\n";
+    }
+  }
+  out << "\n";
+  return true;
 }

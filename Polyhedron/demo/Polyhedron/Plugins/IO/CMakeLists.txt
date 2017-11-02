@@ -34,7 +34,8 @@ target_link_libraries(surface_mesh_io_plugin scene_surface_mesh_item scene_polyg
 polyhedron_demo_plugin(surf_io_plugin Surf_io_plugin)
 target_link_libraries(surf_io_plugin scene_polyhedron_item scene_surface_mesh_item)
 
-
+polyhedron_demo_plugin(spheres_io_plugin Spheres_io_plugin)
+target_link_libraries(spheres_io_plugin scene_basic_objects)
 
 find_package(VTK QUIET COMPONENTS
   vtkCommonCore vtkIOCore vtkIOLegacy vtkIOXML vtkFiltersCore vtkFiltersSources)

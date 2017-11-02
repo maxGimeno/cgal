@@ -652,7 +652,7 @@ void Scene_edit_polyhedron_item_priv::compute_normals_and_vertices(Mesh* mesh)
             {
               CGAL::Color c(0,255,0);
               Kernel::Point_3 point(p.x()+offset.x, p.y()+offset.y, p.z()+offset.z);
-              spheres->add_sphere(Kernel::Sphere_3(point, length_of_axis/15.0*length_of_axis/15.0), c);
+              spheres->add_sphere(Kernel::Sphere_3(point, length_of_axis/15.0*length_of_axis/15.0), 0, c);
             }
         }
 
@@ -694,7 +694,7 @@ void Scene_edit_polyhedron_item_priv::compute_normals_and_vertices(Mesh* mesh)
               Kernel::Point_3 center(p.x()+offset.x,
                                      p.y()+offset.y,
                                      p.z()+offset.z);
-              spheres_ctrl->add_sphere(Kernel::Sphere_3(center, length_of_axis/15.0*length_of_axis/15.0), c);
+              spheres_ctrl->add_sphere(Kernel::Sphere_3(center, length_of_axis/15.0*length_of_axis/15.0), 0, c);
             }
         }
     }
@@ -1779,7 +1779,7 @@ void Scene_edit_polyhedron_item::ShowAsSphere(bool b)
   {
     if(!d->spheres)
     {
-      d->spheres = new Scene_spheres_item(this, false);
+      d->spheres = new Scene_spheres_item(this);
       d->spheres->setName("ROI spheres");
       d->spheres->setRenderingMode(Gouraud);
       connect(d->spheres, SIGNAL(destroyed()), this, SLOT(reset_spheres()));
@@ -1791,7 +1791,7 @@ void Scene_edit_polyhedron_item::ShowAsSphere(bool b)
     }
     if(!d->spheres_ctrl)
     {
-      d->spheres_ctrl = new Scene_spheres_item(this, false);
+      d->spheres_ctrl = new Scene_spheres_item(this);
       d->spheres_ctrl->setName("Control spheres");
       d->spheres_ctrl->setRenderingMode(Gouraud);
       connect(d->spheres_ctrl, &QObject::destroyed, this, Reset_spheres_ctrl(d) );

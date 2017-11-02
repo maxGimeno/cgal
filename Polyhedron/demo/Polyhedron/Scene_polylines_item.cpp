@@ -241,7 +241,7 @@ Scene_polylines_item_private::computeSpheres()
           }
 
           CGAL::Color c(colors[0], colors[1], colors[2]);
-          spheres->add_sphere(K::Sphere_3(center+offset, spheres_drawn_square_radius), c);
+          spheres->add_sphere(K::Sphere_3(center+offset, spheres_drawn_square_radius), 0, c);
       }
       spheres->setToolTip(
             QString("<p>Legend of endpoints colors: <ul>"
@@ -497,7 +497,7 @@ void Scene_polylines_item::change_corner_radii(double r) {
         d->draw_extremities = (r > 0);
         if(r>0 && !d->spheres)
         {
-          d->spheres = new Scene_spheres_item(this, false);
+          d->spheres = new Scene_spheres_item(this);
           d->spheres->setName("Corner spheres");
           d->spheres->setRenderingMode(Gouraud);
           connect(d->spheres, SIGNAL(destroyed()), this, SLOT(reset_spheres()));

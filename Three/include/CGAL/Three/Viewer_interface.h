@@ -221,6 +221,7 @@ public Q_SLOTS:
 //! \param animation_duration is the duration of the animation of the movement.
   virtual bool moveCameraToCoordinates(QString target,
                                        float animation_duration = 0.5f) = 0;
+  virtual void displayMessage(const QString &_message, int delay) = 0;
 
 }; // end class Viewer_interface
 }
