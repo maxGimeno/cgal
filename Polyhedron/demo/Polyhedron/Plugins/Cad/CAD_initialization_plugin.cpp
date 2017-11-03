@@ -7,6 +7,7 @@
 
 #include "C3t3_cad_type.h"
 
+//dtk
 #include <dtkCore>
 #include <dtkContinuousGeometry>
 #include <dtkContinuousGeometryUtils>
@@ -19,6 +20,9 @@
 #include <dtkRationalBezierCurve>
 #include <dtkTrim>
 #include <dtkTopoTrim>
+
+//dtk-nurbs-probing
+#include <dtkSeamProtectionGraph>
 
 #include <QObject>
 #include <QAction>
@@ -92,10 +96,8 @@ private:
 
 void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
 {
-    std::cerr << "Passes : " << Q_FUNC_INFO << std::endl;
   Scene_cad_item* cad_item = qobject_cast<Scene_cad_item*>(scene->item(scene->selectionIndices().first()));
-  if(!cad_item)
-    return;
+  if(!cad_item) {return;}
 
   dtkBRep* brep = cad_item->brep();
   if(!brep) return;
@@ -123,44 +125,52 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
   ///////////////////////////////////////////////////////////////////
   //    Recovers the features
   ///////////////////////////////////////////////////////////////////
-  const std::vector< dtkNurbsSurface *>& surfs = brep->nurbsSurfaces();
-  std::vector< dtkClippedNurbsSurface* > c_surfs;
-  for (auto surf : surfs) {
-      c_surfs.push_back(new dtkClippedNurbsSurface(*(surf)));
+  dtkSeamProtectionGraph protection_graph(*brep, true);
+
+  C3t3 p_c3t3;
+  Tr& tr = p_c3t3.triangulation();
+  const CGAL::Bbox_3& cgal_bbox = cgal_brep_mesh_domain_with_features->bbox();
+  std::list< Weighted_point > w_points;
+  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
+  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
+  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
+  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
+  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
+  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
+  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
+  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
+  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
+  for(auto& w_point : w_points) {
+      Vertex_handle vi = tr.insert(w_point);
+      CGAL_assertion(vi != Vertex_handle());
+      p_c3t3.set_dimension(vi, 0);
+      p_c3t3.set_index(vi, 0);
   }
 
-  std::list< std::tuple< dtkNurbsCurve *, dtkNurbsCurve *, dtkNurbsCurve * > > features;
-  std::map< const dtkTopoTrim *, dtkNurbsCurve * > topo_trims;
-
-  // ///////////////////////////////////////////////////////////////////
-  // Iterates on all the trims, check if the topo_trim has been found, if it has, add the three curves as a tuple
-  // Else add the topo trim and the first trim found attached to it
-  // As the BRep model is a closed polysurface, for each topo trim there should be two trims associated to it
-  // ///////////////////////////////////////////////////////////////////
-  for (auto c_surf : c_surfs) {
-      for (auto c_trim_loop : c_surf->m_clipped_trim_loops) {
-          for (auto c_trim : c_trim_loop->m_clipped_trims) {
-              if(c_trim->m_trim.topoTrim()->m_nurbs_curve_3d != nullptr) {
-                  auto topo_trim = topo_trims.find(c_trim->m_trim.topoTrim());
-                  if (topo_trim == topo_trims.end()) {
-                      topo_trims.insert(std::make_pair(c_trim->m_trim.topoTrim(), c_trim->m_nurbs_curve));
-                  } else {
-                      features.push_back(std::make_tuple(topo_trim->second, topo_trim->first->m_nurbs_curve_3d, c_trim->m_nurbs_curve));
-                  }
-              }
-          }
+  std::unordered_map< const dtkRationalBezierCurve *, std::size_t > rbcs;
+  std::size_t index = 1;
+  std::size_t curr_index = 0;
+  for(auto& p_sphere : protection_graph.m_protection_spheres) {
+      std::cerr << p_sphere->m_bezier_curve << std::endl;
+      auto find = rbcs.find(p_sphere->m_bezier_curve);
+      if( find == rbcs.end()) {
+          curr_index = index;
+          rbcs.insert(std::make_pair(p_sphere->m_bezier_curve, index));
+          ++index;
+      } else {
+          curr_index = find->second;
       }
+      Weighted_point pi(Point_3(p_sphere->center()[0], p_sphere->center()[1], p_sphere->center()[2]),
+                        p_sphere->radius() * p_sphere->radius());
+      Vertex_handle v = tr.insert(pi);
+      // `v` could be null if `pi` is hidden by other vertices of `tr`.
+      CGAL_assertion(v != Vertex_handle());
+      p_c3t3.set_dimension(v, 1); // by construction, points are on surface
+      p_c3t3.set_index(v, curr_index);//TODO replace by curve index
   }
-
-  cgal_brep_mesh_domain_with_features->add_features(features.begin(), features.end());
-  std::cerr << "mesh domain adress in intialize : " << cgal_brep_mesh_domain_with_features << std::endl;
-  Mesh_criteria p_criteria( edge_size = edge_sizing);
-
-  C3t3 c3t3;
-  CGAL::internal::Mesh_3::init_c3t3_with_features(c3t3, *cgal_brep_mesh_domain_with_features, p_criteria, false);
 
   // //Output
-  Scene_c3t3_cad_item *c3t3_cad_item = new Scene_c3t3_cad_item(c3t3, *cgal_brep_mesh_domain_with_features);
+  Scene_c3t3_cad_item *c3t3_cad_item = new Scene_c3t3_cad_item(p_c3t3, *cgal_brep_mesh_domain_with_features);
   if(!c3t3_cad_item)
   {
     qDebug()<<"c3t3 CAD item not created";

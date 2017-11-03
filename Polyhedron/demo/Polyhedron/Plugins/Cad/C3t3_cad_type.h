@@ -58,5 +58,7 @@ typedef Mesh_criteria::Cell_criteria Cell_criteria;
 
 typedef Tr::Geom_traits Geom_traits;
 
+typedef Tr::Weighted_point                 Weighted_point;
+typedef Tr::Vertex_handle                  Vertex_handle;
 
 #endif // CGAL_DEMO_MESH_3_C3T3_TYPE_H
