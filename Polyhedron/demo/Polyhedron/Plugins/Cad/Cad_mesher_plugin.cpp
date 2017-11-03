@@ -119,44 +119,41 @@ void Polyhedron_demo_remeshing_plugin::remesh()
                             );
 
   Mesh_domain_with_features cgal_brep_mesh_domain_with_features(*brep);
-          ///////////////////////////////////////////////////////////////////
-        //    Recovers the features
-        ///////////////////////////////////////////////////////////////////
-        const std::vector< dtkNurbsSurface *>& nurbs_surfaces = brep->nurbsSurfaces();
-        std::vector< dtkClippedNurbsSurface* > clipped_surfaces;
-        for (auto surf = nurbs_surfaces.begin(); surf != nurbs_surfaces.end(); ++surf) {
-            clipped_surfaces.push_back(new dtkClippedNurbsSurface(*(*surf)));
-        }
+  ///////////////////////////////////////////////////////////////////
+  //    Recovers the features
+  ///////////////////////////////////////////////////////////////////
+  const std::vector< dtkNurbsSurface *>& nurbs_surfaces = brep->nurbsSurfaces();
+  std::vector< dtkClippedNurbsSurface* > clipped_surfaces;
+  for (auto surf = nurbs_surfaces.begin(); surf != nurbs_surfaces.end(); ++surf) {
+      clipped_surfaces.push_back(new dtkClippedNurbsSurface(*(*surf)));
+  }
 
-        std::list< std::tuple< dtkNurbsCurve *, dtkNurbsCurve *, dtkNurbsCurve * > > features;
-        std::map< const dtkTopoTrim *, dtkNurbsCurve * > topo_trims;
+  std::list< std::tuple< dtkNurbsCurve *, dtkNurbsCurve *, dtkNurbsCurve * > > features;
+  std::map< const dtkTopoTrim *, dtkNurbsCurve * > topo_trims;
 
-        // ///////////////////////////////////////////////////////////////////
-        // Iterates on all the trims, check if the topo_trim has been found, if it has, add the three curves as a tuple
-        // Else add the topo trim and the first trim found attached to it
-        // As the BRep model is a closed polysurface, for each topo trim there should be two trims associated to it
-        // ///////////////////////////////////////////////////////////////////
-        for (auto it = clipped_surfaces.begin(); it != clipped_surfaces.end(); ++it) {
-            for (auto clip_trim = (*it)->m_clipped_trims.begin(); clip_trim != (*it)->m_clipped_trims.end(); ++clip_trim) {
-                if((*clip_trim)->m_trim.topoTrim()->m_nurbs_curve_3d != nullptr) {
-                    auto topo_trim = topo_trims.find((*clip_trim)->m_trim.topoTrim());
-                    if (topo_trim == topo_trims.end()) {
-                        topo_trims.insert(std::make_pair((*clip_trim)->m_trim.topoTrim(), (*clip_trim)->m_nurbs_curve));
-                    } else {
-                        features.push_back(std::make_tuple(topo_trim->second, topo_trim->first->m_nurbs_curve_3d, (*clip_trim)->m_nurbs_curve));
-                    }
-                }
-            }
-        }
-        cgal_brep_mesh_domain_with_features.add_features(features.begin(), features.end());
+  // ///////////////////////////////////////////////////////////////////
+  // Iterates on all the trims, check if the topo_trim has been found, if it has, add the three curves as a tuple
+  // Else add the topo trim and the first trim found attached to it
+  // As the BRep model is a closed polysurface, for each topo trim there should be two trims associated to it
+  // ///////////////////////////////////////////////////////////////////
+  for (auto it = clipped_surfaces.begin(); it != clipped_surfaces.end(); ++it) {
+      for (auto clip_trim = (*it)->m_clipped_trims.begin(); clip_trim != (*it)->m_clipped_trims.end(); ++clip_trim) {
+          if((*clip_trim)->m_trim.topoTrim()->m_nurbs_curve_3d != nullptr) {
+              auto topo_trim = topo_trims.find((*clip_trim)->m_trim.topoTrim());
+              if (topo_trim == topo_trims.end()) {
+                  topo_trims.insert(std::make_pair((*clip_trim)->m_trim.topoTrim(), (*clip_trim)->m_nurbs_curve));
+              } else {
+                  features.push_back(std::make_tuple(topo_trim->second, topo_trim->first->m_nurbs_curve_3d, (*clip_trim)->m_nurbs_curve));
+              }
+          }
+      }
+  }
+  cgal_brep_mesh_domain_with_features.add_features(features.begin(), features.end());
 
   // 	Mesh generation (without optimization)
   C3t3 p_c3t3 = CGAL::make_mesh_3<C3t3>(cgal_brep_mesh_domain_with_features,
                                         p_criteria);
   if(!p_c3t3.is_valid()){std::cerr << "bip biip not valid" << std::endl;}
-
-  std::cerr << "number of cells : "<< p_c3t3.number_of_cells() << std::endl;
-  std::cerr << "number of cells in complex : "<< p_c3t3.number_of_cells_in_complex() << std::endl;
 
   //Output
   Scene_c3t3_cad_item* c3t3_cad_item = new Scene_c3t3_cad_item(p_c3t3, cgal_brep_mesh_domain_with_features);
