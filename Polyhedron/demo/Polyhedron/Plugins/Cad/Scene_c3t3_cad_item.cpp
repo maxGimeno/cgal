@@ -504,8 +504,6 @@ Scene_c3t3_cad_item::Scene_c3t3_cad_item()
   , d(new Scene_c3t3_cad_item_priv(this))
 
 {
-
-  compute_bbox();
   connect(d->frame, SIGNAL(modified()), this, SLOT(changed()));
   c3t3_changed();
   setRenderingMode(FlatPlusEdges);
@@ -517,12 +515,11 @@ Scene_c3t3_cad_item::Scene_c3t3_cad_item(const C3t3& c3t3, const Mesh_domain_wit
   , d(new Scene_c3t3_cad_item_priv(c3t3, mesh_domain, this))
 {
 
-  compute_bbox();
   connect(d->frame, SIGNAL(modified()), this, SLOT(changed()));
-  d->reset_cut_plane();
   c3t3_changed();
   setRenderingMode(FlatPlusEdges);
   create_flat_and_wire_sphere(1.0f,d->s_vertex,d->s_normals, d->ws_vertex);
+  d->reset_cut_plane();
 }
 
 Scene_c3t3_cad_item::~Scene_c3t3_cad_item()
@@ -631,6 +628,8 @@ Scene_c3t3_cad_item::c3t3_changed()
 
   d->tree.clear();
   d->is_aabb_tree_built = false;
+  compute_bbox();
+  invalidateOpenGLBuffers();
 }
 
 QPixmap

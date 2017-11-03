@@ -117,8 +117,8 @@ void Polyhedron_demo_CAD_refine_plugin::refine()
                             );
 
   refine_mesh_3_impl(c3t3, mesh_domain, p_criteria, no_exude(), no_perturb(), no_odt(), no_lloyd(), false);
-
   c3t3_cad_item->c3t3_changed();
+  c3t3_cad_item->resetCutPlane();
 }
 
 #include "CAD_refine_plugin.moc"
