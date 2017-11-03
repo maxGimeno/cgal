@@ -147,15 +147,16 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
       p_c3t3.set_index(vi, 0);
   }
 
-  std::unordered_map< const dtkRationalBezierCurve *, std::size_t > rbcs;
+  std::unordered_map< const dtkTopoTrim *, std::size_t > tts_map;
   std::size_t index = 1;
   std::size_t curr_index = 0;
   for(auto& p_sphere : protection_graph.m_protection_spheres) {
-      std::cerr << p_sphere->m_bezier_curve << std::endl;
-      auto find = rbcs.find(p_sphere->m_bezier_curve);
-      if( find == rbcs.end()) {
+      auto find_tt = protection_graph.m_map.find(p_sphere->m_bezier_curve);
+      if(find_tt == protection_graph.m_map.end()) { dtkFatal() << "Mistmatching between bezier curve pointers on spheres and in map";}
+      auto find = tts_map.find(find_tt->second);
+      if( find == tts_map.end()) {
           curr_index = index;
-          rbcs.insert(std::make_pair(p_sphere->m_bezier_curve, index));
+          tts_map.insert(std::make_pair(find_tt->second, index));
           ++index;
       } else {
           curr_index = find->second;
