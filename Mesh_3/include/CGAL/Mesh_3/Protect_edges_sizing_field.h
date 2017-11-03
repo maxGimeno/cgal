@@ -743,7 +743,7 @@ tr.geom_traits().construct_weighted_point_3_object();
     if(lt != Tr::VERTEX) {
       using CGAL::Mesh_3::internal::weight_modifier;
       CGAL_assertion_code(std::vector<Vertex_handle> hidden_vertices;);
-      CGAL_assertion_code(ch = tr.locate(p, lt, li, lj, ch););
+      //CGAL_assertion_code(ch = tr.locate(p, lt, li, lj, ch););
       CGAL_assertion_code(tr.vertices_inside_conflict_zone(Weighted_point(p, w*weight_modifier),
                                                            ch,
                                                            std::back_inserter(hidden_vertices)));
@@ -1309,22 +1309,22 @@ change_ball_size(const Vertex_handle& v, const FT size, const bool special_ball)
   double meshing_info = v->meshing_info();
   c3t3_.triangulation().remove(v);
 
-  CGAL_assertion_code(Tr& tr = c3t3_.triangulation());
-  CGAL_assertion_code(Cell_handle ch = tr.locate(p));
-  CGAL_assertion_code(std::vector<Vertex_handle> hidden_vertices);
-  CGAL_assertion_code(if(tr.dimension() > 2)
-                      tr.vertices_inside_conflict_zone(Weighted_point(p, w),
-                                                       ch,
-                                                       std::back_inserter(hidden_vertices)));
+//  CGAL_assertion_code(Tr& tr = c3t3_.triangulation());
+  //CGAL_assertion_code(Cell_handle ch = tr.locate(p));
+//  CGAL_assertion_code(std::vector<Vertex_handle> hidden_vertices);
+//  CGAL_assertion_code(if(tr.dimension() > 2)
+//                      tr.vertices_inside_conflict_zone(Weighted_point(p, w),
+//                                                       ch,
+//                                                       std::back_inserter(hidden_vertices)));
 
   Vertex_handle new_v = insert_point(p, w , dim, index, special_ball);
   new_v->set_meshing_info(meshing_info);
-  CGAL_assertion(hidden_vertices.empty());
+//  CGAL_assertion(hidden_vertices.empty());
 
-  CGAL_assertion( (! special_ball) || is_special(new_v) );
+//  CGAL_assertion( (! special_ball) || is_special(new_v) );
 
   // TODO: ensure that this condition is always satisfied (Pedro's code ?)
-  CGAL_assertion(v==new_v);
+//  CGAL_assertion(v==new_v);
   //new_v->set_meshing_info(size*size);
 
   // Restore v in corners

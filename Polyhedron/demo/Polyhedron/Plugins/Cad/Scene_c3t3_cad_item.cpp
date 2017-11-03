@@ -1486,6 +1486,7 @@ void Scene_c3t3_cad_item_priv::computeIntersections()
   intersected_cells.clear();
 }
 
+#include <CGAL/internal/Mesh_3/get_index.h>
 void Scene_c3t3_cad_item_priv::computeSpheres()
 {
   Geom_traits::Construct_point_3 wp2p
@@ -1536,7 +1537,7 @@ void Scene_c3t3_cad_item_priv::computeSpheres()
                           wp2p(vit->point()).y() + offset.y,
                           wp2p(vit->point()).z() + offset.z);
     float radius = vit->point().weight() ;
-    spheres->add_sphere(Geom_traits::Sphere_3(center, radius),
+    spheres->add_sphere(Geom_traits::Sphere_3(center, radius), static_cast<std::size_t>(CGAL::internal::Mesh_3::get_index<int>(vit->index())) ,
                         CGAL::Color(c.red(), c.green(), c.blue()));
   }
   spheres->invalidateOpenGLBuffers();

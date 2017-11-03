@@ -87,17 +87,33 @@ Scene_spheres_item::~Scene_spheres_item()
 
 void Scene_spheres_item_priv::pick(int id) const
 {
-  CGAL::Color vanilla = CGAL::Color(item->color().red(),item->color().green(), item->color().blue(), 255);
+  int offset = 0;
+  float color[4];
   for(std::size_t i=0; i<spheres.size(); ++i)
   {
    for( std::size_t j = 0; j< spheres[i].size(); ++j)
    {
-     spheres[i][j].second = (id == -1) ? vanilla
-                              : ( i == static_cast<std::size_t>(id)) ? CGAL::Color(255, 0, 0, 255)
-                                           : vanilla;
+     if(id == -1 || i != static_cast<std::size_t>(id))
+     {
+       color[0]=spheres[i][j].second.red()/255.0;
+       color[1]=spheres[i][j].second.green()/255.0;
+       color[2]=spheres[i][j].second.blue()/255.0;
+       //color[3] = 1.0;
+     }
+     else
+     {
+       color[0]=1.0f;
+       color[1]=1.0f;
+       color[2]=0.0f;
+       //color[3] = 1.0;
+     }
+     item->buffers[Color].bind();
+     item->buffers[Color].write(offset*3*sizeof(float), color, 3*sizeof(float));
+     item->buffers[Color].release();
+     ++offset;
    }
   }
-  item->invalidateOpenGLBuffers();
+  //item->invalidateOpenGLBuffers();
 }
 
 void Scene_spheres_item_priv::initializeBuffers(CGAL::Three::Viewer_interface *viewer) const
@@ -350,7 +366,9 @@ void Scene_spheres_item::drawEdges(Viewer_interface *viewer) const
 
 void Scene_spheres_item::add_sphere(const Sphere &sphere, std::size_t index,  CGAL::Color color)
 {
-    d->spheres[index].push_back(std::make_pair(sphere, color));
+  if(index > d->spheres.size()-1)
+    d->spheres.resize(index+1);
+  d->spheres[index].push_back(std::make_pair(sphere, color));
 }
 
 void Scene_spheres_item::clear_spheres()
@@ -380,21 +398,6 @@ void Scene_spheres_item::setToolTip(QString s)
 void Scene_spheres_item::setColor(QColor c)
 {
   CGAL::Three::Scene_item::setColor(c);
-  CGAL::Color color = CGAL::Color(c.red(),
-                                  c.green(),
-                                  c.blue());
-
-  for(std::size_t i=0; i<d->spheres.size(); ++i)
-  {
-    for(std::size_t j = 0; j<d->spheres[i].size(); ++j)
-    {
-      if(d->spheres.size()>1)
-      {
-        d->spheres[i][j].second = color;
-      }
-    }
-  }
-  invalidateOpenGLBuffers();
   this->on_color_changed();
 
 }
