@@ -8,6 +8,7 @@
 #include <dtkTrimLoop>
 #include <algorithm>
 #include <QMenu>
+
 typedef Scene_nurbs_item_priv D;
 //Vertex source code
 struct Scene_nurbs_item_priv{
@@ -17,6 +18,9 @@ struct Scene_nurbs_item_priv{
     : m_nurbs_surface(dtk_nurbs_surface), item(parent)
 
   {
+    dtkLogger::instance().attachConsole();
+    dtkLogger::instance().setLevel(dtkLog::Trace);
+
     trimmed_shown = false;
     float min_box[3];
     float max_box[3];
@@ -33,7 +37,7 @@ struct Scene_nurbs_item_priv{
     // ///////////////////////////////////////////////////////////////////
     // Builds up the array of vertices by sampling the surface
     // ///////////////////////////////////////////////////////////////////
-    untrimmed_vertices.resize(m_nb_untrimmed_vertices*3*3);
+    untrimmed_vertices.resize(m_nb_untrimmed_vertices * 3 * 3);
 
     double u_knots[dtk_nurbs_surface.uNbCps() + dtk_nurbs_surface.uDegree() - 1];
     dtk_nurbs_surface.uKnots(u_knots);
@@ -56,9 +60,9 @@ struct Scene_nurbs_item_priv{
             max_box[foo]=point[foo];
         }
         m_nurbs_surface.evaluateNormal(
-              u_knots[0] + double(i) / u_sampling * (u_knots[dtk_nurbs_surface.uNbCps() + dtk_nurbs_surface.uDegree() - 2] - u_knots[0]),
-            v_knots[0] + double(j) / v_sampling * (v_knots[dtk_nurbs_surface.vNbCps() + dtk_nurbs_surface.vDegree() - 2] - v_knots[0]),
-            normal.data());
+          u_knots[0] + double(i) / u_sampling * (u_knots[dtk_nurbs_surface.uNbCps() + dtk_nurbs_surface.uDegree() - 2] - u_knots[0]),
+          v_knots[0] + double(j) / v_sampling * (v_knots[dtk_nurbs_surface.vNbCps() + dtk_nurbs_surface.vDegree() - 2] - v_knots[0]),
+          normal.data());
         int index = i * (v_sampling + 1) + j;
         untrimmed_vertices[6 * index]     = point[0];
         untrimmed_vertices[6 * index + 1] = point[1];
@@ -88,53 +92,63 @@ struct Scene_nurbs_item_priv{
 
 
     std::vector< dtkContinuousGeometryPrimitives::Point_3 > points;
-    std::vector< std::size_t > triangles;
 
     dtkNurbsPolyhedralSurface *polyhedral_surface = dtkContinuousGeometry::nurbsPolyhedralSurface::pluginFactory().create("dtkNurbsPolyhedralSurfaceCgal");
     if (polyhedral_surface == nullptr) {
         dtkFatal() << "The dtkAbstractNurbsPolyhedralSurfaceData could not be loaded by the factory under the cgal implementation";
     }
-
+    dtkDebug() << "Initialization of polyhedral NURBS surface...";
     polyhedral_surface->initialize(const_cast<dtkNurbsSurface*>(&m_nurbs_surface));
+    dtkDebug() << "Polyhedral NURBS surface initialized...";
 
+    dtkDebug() << "Recovering points and triangles...";
+
+    std::vector< std::size_t > triangles;
     polyhedral_surface->pointsAndTriangles(points, triangles);
+    for(auto t : triangles) { m_trimmed_elements.push_back(GLuint(t));}
 
+    dtkDebug() << "Points and triangles recovered";
+
+    dtkDebug() << "Filling up trimmed_vertices...";
+    dtkDebug() << "Nb of triangles (*3) : " << m_trimmed_elements.size();
     trimmed_vertices.resize(points.size() * 6);
-    for (std::size_t i = 0.; i < points.size(); ++i) {
+    for (std::size_t i = 0; i < points.size(); ++i) {
       trimmed_vertices[6 * i + 0] = points[i][0];
       trimmed_vertices[6 * i + 1] = points[i][1];
       trimmed_vertices[6 * i + 2] = points[i][2];
     }
+
     m_nb_trimmed_vertices = points.size();
-    m_trimmed_elements.resize(triangles.size());
-    m_nb_trimmed_elements = triangles.size() / 3;
-    for (GLushort i = 0; i < triangles.size(); ++i) {
-        m_trimmed_elements[i] = triangles[i];
-    }
+    m_nb_trimmed_elements = m_trimmed_elements.size() / 3.;
+    dtkDebug() << "trimmed_vertices filled up";
+
+    dtkDebug() << "Computing normals...";
     //compute normals
-    for(std::size_t id = 0; id < m_nb_trimmed_elements; ++id)
+    for(std::size_t id = 0; id < m_nb_trimmed_elements; id += 3)
     {
-      dtkContinuousGeometryPrimitives::Point_3 A(points[(triangles[3*id])]),
-          B(points[(triangles[3*id+1])]),
-          C(points[(triangles[3*id+2])]);
-      dtkContinuousGeometryPrimitives::Vector_3 normal(0,0,0);
-      dtkContinuousGeometryTools::crossProduct(normal, B-A, C-A);
-      double norm = dtkContinuousGeometryTools::norm(normal);
+        dtkContinuousGeometryPrimitives::Point_3 A(points[m_trimmed_elements[id    ]]);
+        dtkContinuousGeometryPrimitives::Point_3 B(points[m_trimmed_elements[id + 1]]);
+        dtkContinuousGeometryPrimitives::Point_3 C(points[m_trimmed_elements[id + 2]]);
 
-      trimmed_vertices[6 * triangles[3*id] + 3] = normal[0]/norm;
-      trimmed_vertices[6 * triangles[3*id] + 4] = normal[1]/norm;
-      trimmed_vertices[6 * triangles[3*id] + 5] = normal[2]/norm;
+        dtkContinuousGeometryPrimitives::Vector_3 normal(0,0,0);
+        dtkContinuousGeometryTools::crossProduct(normal, B - A, C - A);
+        double norm = dtkContinuousGeometryTools::norm(normal);
 
-      trimmed_vertices[6 * triangles[3*id+1] + 3] = normal[0]/norm;
-      trimmed_vertices[6 * triangles[3*id+1] + 4] = normal[1]/norm;
-      trimmed_vertices[6 * triangles[3*id+1] + 5] = normal[2]/norm;
+        trimmed_vertices[6 * m_trimmed_elements[id] + 3] = normal[0] / norm;
+        trimmed_vertices[6 * m_trimmed_elements[id] + 4] = normal[1] / norm;
+        trimmed_vertices[6 * m_trimmed_elements[id] + 5] = normal[2] / norm;
 
-      trimmed_vertices[6 * triangles[3*id+2] + 3] = normal[0]/norm;
-      trimmed_vertices[6 * triangles[3*id+2] + 4] = normal[1]/norm;
-      trimmed_vertices[6 * triangles[3*id+2] + 5] = normal[2]/norm;
+        trimmed_vertices[6 * m_trimmed_elements[id + 1] + 3] = normal[0] / norm;
+        trimmed_vertices[6 * m_trimmed_elements[id + 1] + 4] = normal[1] / norm;
+        trimmed_vertices[6 * m_trimmed_elements[id + 1] + 5] = normal[2] / norm;
+
+        trimmed_vertices[6 * m_trimmed_elements[id + 2] + 3] = normal[0] / norm;
+        trimmed_vertices[6 * m_trimmed_elements[id + 2] + 4] = normal[1] / norm;
+        trimmed_vertices[6 * m_trimmed_elements[id + 2] + 5] = normal[2] / norm;
     }
+    dtkDebug() << "Normals computed...";
 
-
+    dtkDebug() << "Generating intersection lines...";
     for (auto trim_loop = m_nurbs_surface.trimLoops().begin(); trim_loop != m_nurbs_surface.trimLoops().end(); ++trim_loop) {
       for (auto trim = (*trim_loop)->trims().begin(); trim != (*trim_loop)->trims().end(); ++trim)
       {
@@ -165,13 +179,14 @@ struct Scene_nurbs_item_priv{
           intersection.push_back(p3D[j]);
       }
     }
+    dtkDebug() << "Intersection lines generated...";
   }
   void computeElements() const
   {
   }
   void initializeBuffers(CGAL::Three::Viewer_interface *viewer)const
   {
-
+    dtkDebug() << "Initializing buffer...";
     // ///////////////////////////////////////////////////////////////////
     // Creates VBO EBO and VAO
     // ///////////////////////////////////////////////////////////////////
@@ -220,6 +235,7 @@ struct Scene_nurbs_item_priv{
     m_program->release();
 
     initialized = true;
+    dtkDebug() << "Buffers initialized...";
   }
   const dtkNurbsSurface& m_nurbs_surface;
 
@@ -240,7 +256,7 @@ struct Scene_nurbs_item_priv{
   };
 
   mutable QOpenGLShaderProgram* m_program;
-  mutable std::vector<unsigned int> m_trimmed_elements;
+  mutable std::vector<GLuint> m_trimmed_elements;
   mutable std::vector<unsigned int> m_untrimmed_elements;
   mutable std::vector<float> untrimmed_vertices;
   mutable std::vector<float> trimmed_vertices;
@@ -351,4 +367,3 @@ QMenu* Scene_nurbs_item::contextMenu()
   }
   return menu;
 }
-

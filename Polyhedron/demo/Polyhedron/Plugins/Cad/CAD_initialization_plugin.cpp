@@ -15,6 +15,7 @@
 #include <dtkNurbsSurface>
 #include <dtkClippedNurbsSurface>
 #include <dtkClippedTrim>
+#include <dtkClippedTrimLoop>
 #include <dtkRationalBezierCurve>
 #include <dtkTrim>
 #include <dtkTopoTrim>
@@ -122,10 +123,10 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
   ///////////////////////////////////////////////////////////////////
   //    Recovers the features
   ///////////////////////////////////////////////////////////////////
-  const std::vector< dtkNurbsSurface *>& nurbs_surfaces = brep->nurbsSurfaces();
-  std::vector< dtkClippedNurbsSurface* > clipped_surfaces;
-  for (auto surf = nurbs_surfaces.begin(); surf != nurbs_surfaces.end(); ++surf) {
-      clipped_surfaces.push_back(new dtkClippedNurbsSurface(*(*surf)));
+  const std::vector< dtkNurbsSurface *>& surfs = brep->nurbsSurfaces();
+  std::vector< dtkClippedNurbsSurface* > c_surfs;
+  for (auto surf : surfs) {
+      c_surfs.push_back(new dtkClippedNurbsSurface(*(surf)));
   }
 
   std::list< std::tuple< dtkNurbsCurve *, dtkNurbsCurve *, dtkNurbsCurve * > > features;
@@ -136,14 +137,16 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
   // Else add the topo trim and the first trim found attached to it
   // As the BRep model is a closed polysurface, for each topo trim there should be two trims associated to it
   // ///////////////////////////////////////////////////////////////////
-  for (auto it = clipped_surfaces.begin(); it != clipped_surfaces.end(); ++it) {
-      for (auto clip_trim = (*it)->m_clipped_trims.begin(); clip_trim != (*it)->m_clipped_trims.end(); ++clip_trim) {
-          if((*clip_trim)->m_trim.topoTrim()->m_nurbs_curve_3d != nullptr) {
-              auto topo_trim = topo_trims.find((*clip_trim)->m_trim.topoTrim());
-              if (topo_trim == topo_trims.end()) {
-                  topo_trims.insert(std::make_pair((*clip_trim)->m_trim.topoTrim(), (*clip_trim)->m_nurbs_curve));
-              } else {
-                  features.push_back(std::make_tuple(topo_trim->second, topo_trim->first->m_nurbs_curve_3d, (*clip_trim)->m_nurbs_curve));
+  for (auto c_surf : c_surfs) {
+      for (auto c_trim_loop : c_surf->m_clipped_trim_loops) {
+          for (auto c_trim : c_trim_loop->m_clipped_trims) {
+              if(c_trim->m_trim.topoTrim()->m_nurbs_curve_3d != nullptr) {
+                  auto topo_trim = topo_trims.find(c_trim->m_trim.topoTrim());
+                  if (topo_trim == topo_trims.end()) {
+                      topo_trims.insert(std::make_pair(c_trim->m_trim.topoTrim(), c_trim->m_nurbs_curve));
+                  } else {
+                      features.push_back(std::make_tuple(topo_trim->second, topo_trim->first->m_nurbs_curve_3d, c_trim->m_nurbs_curve));
+                  }
               }
           }
       }

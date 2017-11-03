@@ -91,39 +91,34 @@ void Polyhedron_demo_CAD_refine_plugin::refine()
           &dialog, SLOT(reject()));
   double diag = scene->len_diagonal();
 
+
   ui.sizeSpinBox->setDecimals(4);
   ui.sizeSpinBox->setRange(diag * 10e-6, // min
                            diag); // max
   ui.sizeSpinBox->setValue(diag * 0.05); // default value
 
-  ui.angleSpinBox->setDecimals(4);
-  ui.angleSpinBox->setRange(diag * 10e-6, // min
-                           diag); // max
-  ui.angleSpinBox->setValue(diag * 0.05); // default value
+  ui.errorSpinBox->setDecimals(6);
+  ui.errorSpinBox->setRange(diag * 10e-7, // min
+                            diag); // max
+  ui.errorSpinBox->setValue(diag * 0.005);
+
 
   int i = dialog.exec();
   if(i == QDialog::Rejected)
     return;
 
-  const double cell_sizing = ui.sizeSpinBox->value();
   const double angle = ui.angleSpinBox->value();
+  const double distance = ui.errorSpinBox->value();
+  const double cell_sizing = ui.sizeSpinBox->value();
 
-  Mesh_criteria p_criteria( cell_size = 3.,
-                            facet_angle = 20);
+  Mesh_criteria p_criteria( cell_size = cell_sizing,
+                            facet_distance = distance,
+                            facet_angle = angle
+                            );
 
   refine_mesh_3_impl(c3t3, mesh_domain, p_criteria, no_exude(), no_perturb(), no_odt(), no_lloyd(), false);
 
   c3t3_cad_item->c3t3_changed();
-  std::cerr << c3t3.number_of_cells() << std::endl;
-  // // //Output
-  // Scene_c3t3_cad_item *c3t3_cad_item = new Scene_c3t3_cad_item(c3t3, cgal_brep_mesh_domain_with_features);
-  // if(!c3t3_cad_item)
-  // {
-  //   qDebug()<<"c3t3 CAD item not created";
-  //   return;
-  // }
-  // c3t3_cad_item->setName(QString("%1 (c3t3)").arg(cad_item->name()));
-  // scene->addItem(c3t3_cad_item);
 }
 
 #include "CAD_refine_plugin.moc"
