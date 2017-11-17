@@ -51,6 +51,9 @@ class Polyhedron_demo_CAD_initialization_plugin :
   Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
 
 public:
+  Polyhedron_demo_CAD_initialization_plugin() : ui_protection(nullptr) {};
+  virtual ~Polyhedron_demo_CAD_initialization_plugin();
+
   void init(QMainWindow* mainWindow, CGAL::Three::Scene_interface* scene_interface, Messages_interface*) {
     this->scene = scene_interface;
     this->mw = mainWindow;
@@ -81,10 +84,13 @@ public:
   QList<QAction*> actions() const {
       return QList<QAction*>() << actionProtectInitialization << actionRandomInitialization << actionSamplingInitialization;
   }
+
 public Q_SLOTS:
     void protectInitialization();
     void randomInitialization();
     void samplingInitialization();
+
+    void updateProtectTrim(int);
 
 private:
     QAction *actionProtectInitialization;
@@ -92,7 +98,30 @@ private:
     QAction *actionSamplingInitialization;
     Scene_interface *scene;
     QMainWindow *mw;
+
+    Ui::CADMesherProtectInitializationDialog *ui_protection;
 }; // end class Polyhedron_demo_remeshing_plugin
+
+Polyhedron_demo_CAD_initialization_plugin::~Polyhedron_demo_CAD_initialization_plugin()
+{
+    if(ui_protection != nullptr) {
+        delete ui_protection;
+        ui_protection = nullptr;
+    }
+}
+
+void Polyhedron_demo_CAD_initialization_plugin::updateProtectTrim(int cs)
+{
+    if(cs == 2) {
+        ui_protection->mergingToleranceSB->setDisabled(false);
+    } else if(cs == 1) {
+        ui_protection->mergingToleranceSB->setDisabled(false);
+    } else {
+        ui_protection->mergingToleranceSB->setDisabled(true);
+    }
+}
+
+
 
 void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
 {
@@ -103,29 +132,37 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
   if(!brep) return;
 
   QDialog dialog(mw);
-  Ui::CADMesherProtectInitializationDialog ui;
-  ui.setupUi(&dialog);
-  connect(ui.buttonBox, SIGNAL(accepted()),
+  ui_protection = new Ui::CADMesherProtectInitializationDialog();
+  ui_protection->setupUi(&dialog);
+  connect(ui_protection->buttonBox, SIGNAL(accepted()),
           &dialog, SLOT(accept()));
-  connect(ui.buttonBox, SIGNAL(rejected()),
+  connect(ui_protection->buttonBox, SIGNAL(rejected()),
           &dialog, SLOT(reject()));
   double diag = scene->len_diagonal();
 
-  ui.sizeSpinBox->setDecimals(4);
-  ui.sizeSpinBox->setRange(diag * 10e-6, // min
+  connect(ui_protection->protectTrimCB, SIGNAL(stateChanged(int)), this, SLOT(updateProtectTrim(int)));
+  ui_protection->mergingToleranceSB->setDisabled(true);
+
+  ui_protection->sizeSpinBox->setDecimals(4);
+  ui_protection->sizeSpinBox->setRange(diag * 10e-6, // min
                            diag); // max
-  ui.sizeSpinBox->setValue(diag * 0.05); // default value
+  ui_protection->sizeSpinBox->setValue(diag * 0.05); // default value
 
   int i = dialog.exec();
   if(i == QDialog::Rejected)
     return;
 
-  const double edge_sizing = ui.sizeSpinBox->value();
+  const double edge_sizing = ui_protection->sizeSpinBox->value();
   Mesh_domain_with_features* cgal_brep_mesh_domain_with_features = new Mesh_domain_with_features(*brep);
   ///////////////////////////////////////////////////////////////////
   //    Recovers the features
   ///////////////////////////////////////////////////////////////////
-  dtkSeamProtectionGraph protection_graph(*brep, true);
+  dtkSeamProtectionGraph *protection_graph = nullptr;
+  if(ui_protection->protectTrimCB->checkState() == Qt::Checked) {
+      protection_graph = new dtkSeamProtectionGraph(*brep, ui_protection->sizeSpinBox->value(), ui_protection->mergingToleranceSB->value(), false);
+  } else {
+      protection_graph = new dtkSeamProtectionGraph(*brep, ui_protection->sizeSpinBox->value(), 0., true);
+  }
 
   C3t3 p_c3t3;
   Tr& tr = p_c3t3.triangulation();
@@ -150,24 +187,28 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
   std::unordered_map< const dtkTopoTrim *, std::size_t > tts_map;
   std::size_t index = 1;
   std::size_t curr_index = 0;
-  for(auto& p_sphere : protection_graph.m_protection_spheres) {
-      auto find_tt = protection_graph.m_map.find(p_sphere->m_bezier_curve);
-      if(find_tt == protection_graph.m_map.end()) { dtkFatal() << "Mistmatching between bezier curve pointers on spheres and in map";}
-      auto find = tts_map.find(find_tt->second);
-      if( find == tts_map.end()) {
-          curr_index = index;
-          tts_map.insert(std::make_pair(find_tt->second, index));
-          ++index;
-      } else {
-          curr_index = find->second;
-      }
+  for(auto& p_sphere : protection_graph->m_protection_spheres) {
+      auto find_tt = protection_graph->m_map.find(p_sphere->m_bezier_curve);
+      // if(find_tt == protection_graph->m_map.end()) { dtkFatal() << "Mistmatching between bezier curve pointers on spheres and in map";}
+      // auto find = tts_map.find(find_tt->second);
+      // if( find == tts_map.end()) {
+      //     curr_index = index;
+      //     tts_map.insert(std::make_pair(find_tt->second, index));
+      //     ++index;
+      // } else {
+      //     curr_index = find->second;
+      // }
       Weighted_point pi(Point_3(p_sphere->center()[0], p_sphere->center()[1], p_sphere->center()[2]),
                         p_sphere->radius() * p_sphere->radius());
       Vertex_handle v = tr.insert(pi);
       // `v` could be null if `pi` is hidden by other vertices of `tr`.
       CGAL_assertion(v != Vertex_handle());
+      if(v == Vertex_handle()) {
+          dtkDebug() << "A vertex is hidden by its neighbors and will be removed";
+      }
       p_c3t3.set_dimension(v, 1); // by construction, points are on surface
-      p_c3t3.set_index(v, curr_index);//TODO replace by curve index
+      p_c3t3.set_index(v, 0// curr_index
+                       );//TODO replace by curve index
   }
 
   // //Output
@@ -180,6 +221,7 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
   c3t3_cad_item->setName(QString("%1 (c3t3)").arg(cad_item->name()));
   scene->addItem(c3t3_cad_item);
 }
+
 
 void Polyhedron_demo_CAD_initialization_plugin::randomInitialization(){
 

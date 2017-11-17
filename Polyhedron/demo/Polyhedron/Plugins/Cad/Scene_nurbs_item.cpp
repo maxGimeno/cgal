@@ -1,5 +1,6 @@
 #include "Scene_nurbs_item.h"
 #define foreach Q_FOREACH
+
 #include <dtkNurbsSurface>
 #include <dtkNurbsPolyhedralSurface>
 #include <dtkContinuousGeometryUtils>

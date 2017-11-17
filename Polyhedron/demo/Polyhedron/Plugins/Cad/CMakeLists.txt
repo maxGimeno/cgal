@@ -35,6 +35,7 @@ qt5_wrap_ui(CAD_refine_plugin_UI_FILES CAD_refine_dialog.ui)
 polyhedron_demo_plugin(cAD_refine_plugin
   CAD_refine_plugin
   ${CAD_refine_plugin_UI_FILES})
+
 target_link_libraries(cAD_refine_plugin
   polyhedron_demo
   scene_cad_item
