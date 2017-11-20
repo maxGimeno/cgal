@@ -23,7 +23,10 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 // /////////////////////////////////////////////////////////////////
 // Domains
 // /////////////////////////////////////////////////////////////////
-typedef CGAL::cgalMeshDomainWithRationalBezierFeatures< cgalBrepMeshDomainData< K > > Mesh_domain_with_features;
+typedef cgalBrepMeshDomainData< K > Mesh_domain;
+typedef CGAL::cgalMeshDomainWithRationalBezierFeatures< Mesh_domain > Mesh_domain_with_features;
+typedef Mesh_domain_with_features::Index Index;
+typedef Mesh_domain_with_features::Construct_initial_points Construct_initial_points;
 
 // Triangulation
 typedef CGAL::Compact_mesh_cell_base_3<K, Mesh_domain_with_features>    Cell_base;
