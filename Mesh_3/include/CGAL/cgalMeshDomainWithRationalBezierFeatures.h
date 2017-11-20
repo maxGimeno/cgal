@@ -62,7 +62,7 @@ namespace CGAL {
         typedef typename Base::Index    Index;
 
         typedef typename Base::Surface_patch_index Surface_patch_index;
-
+        typedef typename Base::Construct_initial_points Construct_initial_points;
         typedef int Curve_segment_index;
         typedef int Corner_index;
         typedef int Curve_index;
