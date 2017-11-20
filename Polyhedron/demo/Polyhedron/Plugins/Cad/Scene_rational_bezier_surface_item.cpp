@@ -18,7 +18,7 @@ struct Scene_rational_bezier_surface_item_priv{
 
   {
     dtkLogger::instance().attachConsole();
-    dtkLogger::instance().setLevel(dtkLog::Trace);
+    dtkLogger::instance().setLevel(dtkLog::Error);
 
     trimmed_shown = false;
     float min_box[3];

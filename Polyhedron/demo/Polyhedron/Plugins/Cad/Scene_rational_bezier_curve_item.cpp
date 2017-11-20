@@ -19,7 +19,7 @@ struct Scene_rational_bezier_curve_item_priv{
   {
       initialized = false;
       dtkLogger::instance().attachConsole();
-      dtkLogger::instance().setLevel(dtkLog::Trace);
+      dtkLogger::instance().setLevel(dtkLog::Error);
 
       dtkDebug() << "Generating intersection lines...";
       dtkContinuousGeometryPrimitives::Point_3 p3D(0,0,0);
