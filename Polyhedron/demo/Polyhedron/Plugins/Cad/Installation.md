@@ -73,14 +73,10 @@
   ### Compile dtk-plugins-continuous-geometry
     Use root CMakeLists.txt as CMake directive to configure : specify path to CGAL, Blaze, openNURBS, SISL, dtk-discrete-geometry, lapack and blas, then build.
 
-## Recover cgalCaoProtection
-  ### Recover cgalCaoProtection
-    Clone git@gitlab.inria.fr:clebreto/cgal-cao-protection.git.
-
 ## Compile CGAL demo
   ### Compile CGAL demo
-  Configure CGAL : activate "WITH_demos", specify path to "dtk_DIR", "dtkContinuousGeometry_DIR", "dtkNurbsProbing_DIR", "cgalCaoProtection_DIR", "Blaze_DIR".
-  Compile the Polyhedron demo, cad_meshing_plugin and
+  Configure CGAL : activate "WITH_demos", specify path to "dtk_DIR", "dtkContinuousGeometry_DIR", "dtkNurbsProbing_DIR", "Blaze_DIR".
+  Compile the Polyhedron demo, cAD_initialization_plugin and cAD_refine_plugin
 
 # Complements
 This is a cumbersome installation procedure. We aim at simplifying it as much as possible in the future, thanks to conda.
