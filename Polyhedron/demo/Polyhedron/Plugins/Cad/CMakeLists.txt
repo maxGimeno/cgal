@@ -2,7 +2,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(dtk 1.0.0 REQUIRED)
 find_package(dtkContinuousGeometry 0.0.1 REQUIRED)
-find_package(cgalCaoProtection 0.0.1 REQUIRED)
 find_package(dtkNurbsProbing 0.0.1 REQUIRED)
 find_package(Blaze REQUIRED)
 
@@ -11,7 +10,6 @@ set(CMAKE_CXX_STANDARD 14)
 include_directories(${dtk_INCLUDE_DIRS})
 include_directories(${dtkContinuousGeometry_INCLUDE_DIRS})
 
-include_directories(${cgalCaoProtection_INCLUDE_DIRS})
 include_directories(${dtkNurbsProbing_INCLUDE_DIRS})
 
 include_directories(${Blaze_INCLUDE_DIR})
