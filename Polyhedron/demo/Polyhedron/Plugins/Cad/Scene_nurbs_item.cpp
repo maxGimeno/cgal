@@ -99,7 +99,9 @@ struct Scene_nurbs_item_priv{
         dtkFatal() << "The dtkAbstractNurbsPolyhedralSurfaceData could not be loaded by the factory under the cgal implementation";
     }
     dtkDebug() << "Initialization of polyhedral NURBS surface...";
-    polyhedral_surface->initialize(const_cast<dtkNurbsSurface*>(&m_nurbs_surface));
+    double approximation = 1e-4 * std::sqrt((bbox.xmax() - bbox.xmin()) * (bbox.xmax() - bbox.xmin()) + (bbox.ymax() - bbox.ymin()) * (bbox.ymax() - bbox.ymin()) + (bbox.zmax() - bbox.zmin()) * (bbox.zmax() - bbox.zmin()));
+    std::cerr << "approximation :" << approximation << std::endl;
+    polyhedral_surface->initialize(const_cast<dtkNurbsSurface*>(&m_nurbs_surface), approximation);
     dtkDebug() << "Polyhedral NURBS surface initialized...";
 
     dtkDebug() << "Recovering points and triangles...";
@@ -185,6 +187,7 @@ struct Scene_nurbs_item_priv{
   void computeElements() const
   {
   }
+
   void initializeBuffers(CGAL::Three::Viewer_interface *viewer)const
   {
     dtkDebug() << "Initializing buffer...";
@@ -261,7 +264,9 @@ struct Scene_nurbs_item_priv{
   mutable std::vector<unsigned int> m_untrimmed_elements;
   mutable std::vector<float> untrimmed_vertices;
   mutable std::vector<float> trimmed_vertices;
+
   mutable std::vector<float> intersection;
+
   mutable std::size_t m_nb_trimmed_vertices;
   mutable std::size_t m_nb_trimmed_elements;
   mutable std::size_t m_nb_untrimmed_vertices;
@@ -367,4 +372,12 @@ QMenu* Scene_nurbs_item::contextMenu()
     menu->setProperty(prop_name, true);
   }
   return menu;
+}
+
+void Scene_nurbs_item::highlight(const dtkTopoTrim *)
+{
+    // ///////////////////////////////////////////////////////////////////
+    // Removes old colors
+    // ///////////////////////////////////////////////////////////////////
+
 }

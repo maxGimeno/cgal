@@ -92,6 +92,11 @@ public Q_SLOTS:
 
     void updateProtectTrim(int);
 
+    void onCurrentItemChanged();
+
+Q_SIGNALS:
+    void highlight(const dtkTopoTrim *);
+
 private:
     QAction *actionProtectInitialization;
     QAction *actionRandomShootingInitialization;
@@ -99,8 +104,10 @@ private:
     Scene_interface *scene;
     QMainWindow *mw;
 
+private:
+    QHash<QListWidgetItem *, dtkTopoTrim *> hash_topo_trims;
     Ui::CADMesherProtectInitializationDialog *ui_protection;
-}; // end class Polyhedron_demo_remeshing_plugin
+}; // end class Polyhedron_demo_CAD_initialization_plugin
 
 Polyhedron_demo_CAD_initialization_plugin::~Polyhedron_demo_CAD_initialization_plugin()
 {
@@ -114,14 +121,22 @@ void Polyhedron_demo_CAD_initialization_plugin::updateProtectTrim(int cs)
 {
     if(cs == 2) {
         ui_protection->mergingToleranceSB->setDisabled(false);
+        ui_protection->trimList->setDisabled(false);
     } else if(cs == 1) {
         ui_protection->mergingToleranceSB->setDisabled(false);
+        ui_protection->trimList->setDisabled(false);
     } else {
         ui_protection->mergingToleranceSB->setDisabled(true);
+        ui_protection->trimList->setDisabled(true);
     }
 }
 
-
+void Polyhedron_demo_CAD_initialization_plugin::onCurrentItemChanged(void) {
+    auto item = hash_topo_trims.find(ui_protection->trimList->currentItem());
+    if(item != hash_topo_trims.end()) {
+        emit highlight(item.value());
+    }
+}
 
 void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
 {
@@ -131,7 +146,7 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
     dtkBRep* brep = cad_item->brep();
     if(!brep) return;
 
-    QDialog dialog(mw);
+    QDialog dialog(new QWidget());
     ui_protection = new Ui::CADMesherProtectInitializationDialog();
     ui_protection->setupUi(&dialog);
     connect(ui_protection->buttonBox, SIGNAL(accepted()),
@@ -142,6 +157,28 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
 
     connect(ui_protection->protectTrimCB, SIGNAL(stateChanged(int)), this, SLOT(updateProtectTrim(int)));
     ui_protection->mergingToleranceSB->setDisabled(true);
+
+    // ///////////////////////////////////////////////////////////////////
+    // Recovers the topo trims and display them in the list
+    // ///////////////////////////////////////////////////////////////////
+    std::list < dtkTopoTrim *> topo_trims;
+    std::size_t id = 0;
+    for(auto topo_trim : brep->topoTrims()) {
+        QListWidgetItem *item = new QListWidgetItem();
+        item->setCheckState(Qt::Checked);
+        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+        item->setText(QString::number(id));
+        ui_protection->trimList->addItem(item);
+        hash_topo_trims.insert(item, topo_trim);
+        ++id;
+    }
+
+    connect(ui_protection->trimList, &QListWidget::itemSelectionChanged, [=] () {this->onCurrentItemChanged();} );
+    connect(this, SIGNAL(highlight(const dtkTopoTrim *)), cad_item, SLOT(highlight(const dtkTopoTrim *)));
+    // connect(cad_item, &Scene_cad_item::updated, [=] () {this->scene->redraw_model();} );
+
+    ui_protection->trimList->setDisabled(true);
+    // ///////////////////////////////////////////////////////////////
 
     ui_protection->sizeSpinBox->setDecimals(4);
     ui_protection->sizeSpinBox->setRange(diag * 10e-6, // min

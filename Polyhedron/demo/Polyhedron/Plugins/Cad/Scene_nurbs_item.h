@@ -8,11 +8,14 @@
 #  define SCENE_NURBS_ITEM_EXPORT Q_DECL_IMPORT
 #endif
 
-
 #include <CGAL/Three/Viewer_interface.h>
 #include <CGAL/Three/Scene_item.h>
+
+class dtkTopoTrim;
 class dtkNurbsSurface;
+
 struct Scene_nurbs_item_priv;
+
 class SCENE_NURBS_ITEM_EXPORT Scene_nurbs_item
     :public CGAL::Three::Scene_item
 {
@@ -21,15 +24,25 @@ public:
   Scene_nurbs_item(const dtkNurbsSurface& dtk_nurbs_surface);
   ~Scene_nurbs_item();
   bool isEmpty() const;
+
+ public:
   void draw(CGAL::Three::Viewer_interface *) const;
   void drawEdges(CGAL::Three::Viewer_interface *) const;
-  Scene_item* clone() const {return 0;}
+
+ public:
   QString toolTip() const {return QString();}
   bool supportsRenderingMode(RenderingMode m) const { return (m == Flat || m == FlatPlusEdges || m == Wireframe); }
+
+ public:
+  Scene_item* clone() const {return 0;}
+
   void compute_bbox() const;
   QMenu* contextMenu();
+
 public Q_SLOTS:
   void show_trimmed(bool b);
+  void highlight(const dtkTopoTrim *);
+
 protected:
   friend struct Scene_nurbs_item_priv;
   Scene_nurbs_item_priv* d;
