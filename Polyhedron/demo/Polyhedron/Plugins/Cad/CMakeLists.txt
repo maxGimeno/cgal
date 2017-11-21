@@ -78,3 +78,6 @@ target_link_libraries(cad_mesher_plugin
   dtkCore
   dtkContinuousGeometryCore
   dtkNurbsProbingCore)
+
+polyhedron_demo_plugin(cad_c3t3_io_plugin Cad_c3t3_io_plugin)
+target_link_libraries(cad_c3t3_io_plugin  scene_c3t3_cad_item)
