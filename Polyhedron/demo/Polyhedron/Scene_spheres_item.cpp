@@ -112,6 +112,7 @@ void Scene_spheres_item_priv::pick(int id) const
      item->buffers[Color].release();
      ++offset;
    }
+
   }
   //item->invalidateOpenGLBuffers();
 }
