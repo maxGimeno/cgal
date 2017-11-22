@@ -73,6 +73,7 @@ public:
       Scene_cad_item* item = new Scene_cad_item(brep, scene);
       item->setName(fileinfo.baseName());
       item->setFlatMode();
+      item->show_intersections(true);
       QList<int> children_ids;
       Q_FOREACH(CGAL::Three::Scene_item* child, item->getChildren())
       {
