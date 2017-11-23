@@ -107,49 +107,29 @@ struct Scene_nurbs_item_priv{
     dtkDebug() << "Recovering points and triangles...";
 
     std::vector< std::size_t > triangles;
-    polyhedral_surface->pointsAndTriangles(points, triangles);
+    std::vector< dtkContinuousGeometryPrimitives::Vector_3 > normals;
+    polyhedral_surface->pointsTrianglesAndNormals(points, triangles, normals);
     for(auto t : triangles) { m_trimmed_elements.push_back(GLuint(t));}
 
     dtkDebug() << "Points and triangles recovered";
 
     dtkDebug() << "Filling up trimmed_vertices...";
     dtkDebug() << "Nb of triangles (*3) : " << m_trimmed_elements.size();
+
     trimmed_vertices.resize(points.size() * 6);
     for (std::size_t i = 0; i < points.size(); ++i) {
       trimmed_vertices[6 * i + 0] = points[i][0];
       trimmed_vertices[6 * i + 1] = points[i][1];
       trimmed_vertices[6 * i + 2] = points[i][2];
+      trimmed_vertices[6 * i + 3] = normals[i][0];
+      trimmed_vertices[6 * i + 4] = normals[i][1];
+      trimmed_vertices[6 * i + 5] = normals[i][2];
     }
 
     m_nb_trimmed_vertices = points.size();
     m_nb_trimmed_elements = m_trimmed_elements.size() / 3.;
+
     dtkDebug() << "trimmed_vertices filled up";
-
-    dtkDebug() << "Computing normals...";
-    //compute normals
-    for(std::size_t id = 0; id < m_nb_trimmed_elements; id += 3)
-    {
-        dtkContinuousGeometryPrimitives::Point_3 A(points[m_trimmed_elements[id    ]]);
-        dtkContinuousGeometryPrimitives::Point_3 B(points[m_trimmed_elements[id + 1]]);
-        dtkContinuousGeometryPrimitives::Point_3 C(points[m_trimmed_elements[id + 2]]);
-
-        dtkContinuousGeometryPrimitives::Vector_3 normal(0,0,0);
-        dtkContinuousGeometryTools::crossProduct(normal, B - A, C - A);
-        double norm = dtkContinuousGeometryTools::norm(normal);
-
-        trimmed_vertices[6 * m_trimmed_elements[id] + 3] = normal[0] / norm;
-        trimmed_vertices[6 * m_trimmed_elements[id] + 4] = normal[1] / norm;
-        trimmed_vertices[6 * m_trimmed_elements[id] + 5] = normal[2] / norm;
-
-        trimmed_vertices[6 * m_trimmed_elements[id + 1] + 3] = normal[0] / norm;
-        trimmed_vertices[6 * m_trimmed_elements[id + 1] + 4] = normal[1] / norm;
-        trimmed_vertices[6 * m_trimmed_elements[id + 1] + 5] = normal[2] / norm;
-
-        trimmed_vertices[6 * m_trimmed_elements[id + 2] + 3] = normal[0] / norm;
-        trimmed_vertices[6 * m_trimmed_elements[id + 2] + 4] = normal[1] / norm;
-        trimmed_vertices[6 * m_trimmed_elements[id + 2] + 5] = normal[2] / norm;
-    }
-    dtkDebug() << "Normals computed...";
 
     dtkDebug() << "Generating intersection lines...";
     for (auto trim_loop = m_nurbs_surface.trimLoops().begin(); trim_loop != m_nurbs_surface.trimLoops().end(); ++trim_loop) {
