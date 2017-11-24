@@ -86,10 +86,8 @@ public:
       return QList<QAction*>() << actionProtectInitialization << actionRandomShootingInitialization << actionSamplingInitialization;
   }
 
-  void doProtectInitialization(const double& size,
-                               dtkBRep* brep ,
-                               const double& mergingToleranceSB,
-                               Scene_cad_item* cad_item);
+  void doProtectInitialization(const double& size, dtkBRep* brep, const double& mergingToleranceSB, Scene_cad_item* cad_item);
+
 public Q_SLOTS:
     void protectInitialization();
     void randomShootingInitialization();
@@ -103,7 +101,7 @@ private:
     QAction *actionSamplingInitialization;
     Scene_interface *scene;
     QMainWindow *mw;
-    std::vector<bool> is_protected;
+    std::vector<bool> is_unprotected;
     Ui::CADMesherProtectInitializationDialog *ui_protection;
 }; // end class Polyhedron_demo_remeshing_plugin
 
@@ -127,77 +125,79 @@ void Polyhedron_demo_CAD_initialization_plugin::updateProtectTrim(int cs)
 }
 
 
-void Polyhedron_demo_CAD_initialization_plugin::doProtectInitialization(const double& size,
-                                                                        dtkBRep* brep ,
-                                                                        const double& mergingToleranceSB,
-                                                                        Scene_cad_item* cad_item)
+void Polyhedron_demo_CAD_initialization_plugin::doProtectInitialization(const double& size, dtkBRep* brep, const double& mergingToleranceSB, Scene_cad_item* cad_item)
 {
-  Mesh_domain_with_features* cgal_brep_mesh_domain_with_features = new Mesh_domain_with_features(*brep);
-  ///////////////////////////////////////////////////////////////////
-  //    Recovers the features
-  ///////////////////////////////////////////////////////////////////
-  dtkSeamProtectionGraph *protection_graph = nullptr;
-  std::vector<dtkTopoTrim *> protected_trims;
-  for(int i=0; i<brep->topoTrims().size(); ++i)
-    if(is_protected[i])
-      protected_trims.push_back(brep->topoTrims()[i]);
+    Mesh_domain_with_features* cgal_brep_mesh_domain_with_features = new Mesh_domain_with_features(*brep);
 
-  if(ui_protection->protectTrimCB->checkState() == Qt::Checked) {
-      protection_graph = new dtkSeamProtectionGraph(*brep, size, mergingToleranceSB, false, protected_trims);
-  } else {
-      protection_graph = new dtkSeamProtectionGraph(*brep, size, 0., true);
-  }
+    ///////////////////////////////////////////////////////////////////
+    //    Recovers the features
+    ///////////////////////////////////////////////////////////////////
+    dtkSeamProtectionGraph *protection_graph = nullptr;
+    std::vector<dtkTopoTrim *> unprotected_trims;
 
-  C3t3 p_c3t3;
-  Tr& tr = p_c3t3.triangulation();
-  const CGAL::Bbox_3& cgal_bbox = cgal_brep_mesh_domain_with_features->bbox();
-  std::list< Weighted_point > w_points;
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
-  for(auto& w_point : w_points) {
-      Vertex_handle vi = tr.insert(w_point);
-      CGAL_assertion(vi != Vertex_handle());
-      p_c3t3.set_dimension(vi, 0);
-      p_c3t3.set_index(vi, 0);
-  }
+    for(std::size_t i = 0; i < brep->topoTrims().size(); ++i) {
+        if(is_unprotected[i]) {
+            unprotected_trims.push_back(brep->topoTrims()[i]);
+        }
+    }
 
-  std::size_t index = 1;
-  std::size_t curr_index = 0;
-  for(auto& p_sphere : protection_graph->m_protection_spheres) {
-      auto find_tt = protection_graph->m_map.find(p_sphere->m_bezier_curve);
+    std::cerr << unprotected_trims.size() << std::endl;
+    if(ui_protection->protectTrimCB->checkState() == Qt::Checked) {
+        protection_graph = new dtkSeamProtectionGraph(*brep, size, mergingToleranceSB, false, unprotected_trims);
+    } else {
+        protection_graph = new dtkSeamProtectionGraph(*brep, size, 0., true);
+    }
 
-      Weighted_point pi(Point_3(p_sphere->center()[0], p_sphere->center()[1], p_sphere->center()[2]),
-                        p_sphere->radius() * p_sphere->radius());
-      Vertex_handle v = tr.insert(pi);
-      // `v` could be null if `pi` is hidden by other vertices of `tr`.
-      CGAL_assertion(v != Vertex_handle());
-      if(v == Vertex_handle()) {
-          dtkInfo() << "A vertex is hidden by its neighbors and will be removed";
-      }
-      p_c3t3.set_dimension(v, 1); // by construction, points are on surface
-      p_c3t3.set_index(v, 0// curr_index
-                       );//TODO replace by curve index
-  }
+    C3t3 p_c3t3;
+    Tr& tr = p_c3t3.triangulation();
+    const CGAL::Bbox_3& cgal_bbox = cgal_brep_mesh_domain_with_features->bbox();
+    std::list< Weighted_point > w_points;
+    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
+    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
+    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
+    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
+    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
+    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
+    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
+    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
+    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
+    for(auto& w_point : w_points) {
+        Vertex_handle vi = tr.insert(w_point);
+        CGAL_assertion(vi != Vertex_handle());
+        p_c3t3.set_dimension(vi, 0);
+        p_c3t3.set_index(vi, 0);
+    }
 
-  // //Output
-  Scene_c3t3_cad_item *c3t3_cad_item = new Scene_c3t3_cad_item(p_c3t3, *cgal_brep_mesh_domain_with_features);
-  if(!c3t3_cad_item)
-      {
-          qDebug()<<"c3t3 CAD item not created";
-          return;
-      }
-  c3t3_cad_item->setName(QString("%1 (c3t3)").arg(cad_item->name()));
-  scene->addItem(c3t3_cad_item);
+    std::size_t index = 1;
+    std::size_t curr_index = 0;
+    for(auto p_sphere : protection_graph->m_protection_spheres) {
+        // auto find_tt = protection_graph->m_map.find(p_sphere->m_bezier_curve);
+
+        Weighted_point pi(Point_3(p_sphere->center()[0], p_sphere->center()[1], p_sphere->center()[2]),
+                          p_sphere->radius() * p_sphere->radius());
+        Vertex_handle v = tr.insert(pi);
+        // `v` could be null if `pi` is hidden by other vertices of `tr`.
+        CGAL_assertion(v != Vertex_handle());
+        if(v == Vertex_handle()) {
+            dtkInfo() << "A vertex is hidden by its neighbors and will be removed";
+        }
+        p_c3t3.set_dimension(v, 1); // by construction, points are on surface
+        p_c3t3.set_index(v, 0// curr_index
+                         );//TODO replace by curve index
+    }
+
+    // //Output
+    Scene_c3t3_cad_item *c3t3_cad_item = new Scene_c3t3_cad_item(p_c3t3, *cgal_brep_mesh_domain_with_features);
+    if(!c3t3_cad_item)
+        {
+            qDebug()<<"c3t3 CAD item not created";
+            return;
+        }
+    c3t3_cad_item->setName(QString("%1 (c3t3)").arg(cad_item->name()));
+    scene->addItem(c3t3_cad_item);
 }
 
-void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
+void Polyhedron_demo_CAD_initialization_plugin::protectInitialization(void)
 {
     Scene_cad_item* cad_item = qobject_cast<Scene_cad_item*>(scene->item(scene->selectionIndices().first()));
     if(!cad_item) {return;}
@@ -211,8 +211,8 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
     ui_protection->trimsGroupBox->hide();
     connect(ui_protection->protectTrimCB, &QCheckBox::stateChanged,
             [this, cad_item](){
-      ui_protection->trimsGroupBox->setVisible(ui_protection->protectTrimCB->isChecked());
-    });
+                ui_protection->trimsGroupBox->setVisible(ui_protection->protectTrimCB->isChecked());
+            });
     connect(ui_protection->buttonBox, SIGNAL(accepted()),
             dialog, SLOT(accept()));
     connect(ui_protection->buttonBox, SIGNAL(rejected()),
@@ -227,33 +227,34 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
                                          diag); // max
     ui_protection->sizeSpinBox->setValue(diag * 0.05); // default value
 
-    is_protected = brep->topoTrims().size();
-    for(std::size_t i=0; i<is_protected.size(); ++i)
-      is_protected[i] = false;
-    for(std::size_t i=0; i< brep->topoTrims().size(); ++i)
-    {
-      QCheckBox* checkbox = new QCheckBox(QString("trim %1").arg(i), dialog);
-      connect(checkbox, &QCheckBox::stateChanged,
-              [checkbox, cad_item, i, &is_protected](){
-        cad_item->checkTrimToProtect(static_cast<int>(i));
-        if(checkbox->checkState() == Qt::Checked)
-          is_protected[i] = true;
-      });
-      checkbox->setChecked(true);
-      ui_protection->trimsGroupBox->layout()->addWidget(checkbox);
+    is_unprotected.resize(brep->topoTrims().size());
+    for(std::size_t i = 0; i < is_unprotected.size(); ++i){
+        is_unprotected[i] = false;
+    }
+    for(std::size_t i = 0; i < brep->topoTrims().size(); ++i) {
+        QCheckBox* checkbox = new QCheckBox(QString("trim %1").arg(i), dialog);
+        connect(checkbox, &QCheckBox::stateChanged,
+                [checkbox, cad_item, i, this](){
+                    cad_item->checkTrimToProtect(static_cast<int>(i));
+                    if(checkbox->checkState() == Qt::Checked || checkbox->checkState() == Qt::PartiallyChecked) {
+                        this->is_unprotected[i] = false;
+                    } else {
+                        this->is_unprotected[i] = true;
+                    }
+                });
+        checkbox->setChecked(true);
+        ui_protection->trimsGroupBox->layout()->addWidget(checkbox);
     }
     connect(ui_protection->buttonBox->button(QDialogButtonBox::Ok), &QPushButton::clicked,
-            [this, brep, is_protected, cad_item, &dialog](){
-      doProtectInitialization(ui_protection->sizeSpinBox->value(),
-                              brep,
-                              ui_protection->mergingToleranceSB->value(),
-                              cad_item);
-      dialog->deleteLater();
-    }
-    );
+            [this, brep, cad_item, &dialog]() {
+                doProtectInitialization(this->ui_protection->sizeSpinBox->value(),
+                                        brep,
+                                        ui_protection->mergingToleranceSB->value(),
+                                        cad_item);
+                dialog->deleteLater();
+            }
+            );
     dialog->show();
-
-
 }
 
 
