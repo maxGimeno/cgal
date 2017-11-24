@@ -99,7 +99,7 @@ struct Scene_nurbs_item_priv{
         dtkFatal() << "The dtkAbstractNurbsPolyhedralSurfaceData could not be loaded by the factory under the cgal implementation";
     }
     dtkDebug() << "Initialization of polyhedral NURBS surface...";
-    polyhedral_surface->initialize(const_cast<dtkNurbsSurface*>(&m_nurbs_surface));
+    polyhedral_surface->initialize(const_cast<dtkNurbsSurface*>(&m_nurbs_surface),1.0);
     dtkDebug() << "Polyhedral NURBS surface initialized...";
 
     dtkDebug() << "Recovering points and triangles...";
