@@ -37,28 +37,16 @@
       <widget class="QCheckBox" name="protectTrimCB"/>
      </item>
      <item row="3" column="0">
-      <widget class="QLabel" name="mergingToleranceL">
-       <property name="text">
-        <string>Merging tolerance : </string>
-       </property>
-      </widget>
+       <widget class="QLabel" name="mergingToleranceL">
+         <property name="text">
+           <string>Merging tolerance : </string>
+         </property>
+       </widget>
      </item>
      <item row="3" column="1">
-      <widget class="QDoubleSpinBox" name="mergingToleranceSB"/>
+       <widget class="QDoubleSpinBox" name="mergingToleranceSB"/>
      </item>
     </layout>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="trimsGroupBox">
-     <property name="title">
-      <string>Trims to Protect</string>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout_3">
-      <item>
-       <layout class="QVBoxLayout" name="verticalLayout_2"/>
-      </item>
-     </layout>
-    </widget>
    </item>
    <item>
     <spacer name="verticalSpacer">

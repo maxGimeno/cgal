@@ -11,8 +11,6 @@
 #include "Scene_nurbs_item.h"
 #include <QDebug>
 #include <QMenu>
-#include <CGAL/Three/Viewer_interface.h>
-#include <QGLViewer/qglviewer.h>
 
 struct Scene_cad_item_priv{
   Scene_cad_item_priv(dtkBRep* brep, CGAL::Three::Scene_interface* scene, Scene_cad_item* parent)
@@ -55,9 +53,7 @@ struct Scene_cad_item_priv{
     }
 
     intersection.resize(0);
-    std::pair<int, int> pair;
-    pair.first = 0;
-    pair.second = 0;
+
     for(std::size_t id = 0; id< features.size(); ++id)
     {
       dtkNurbsCurve* nurb = features[id];
@@ -66,44 +62,30 @@ struct Scene_cad_item_priv{
       nurb->knots(knots);
       dtkContinuousGeometryPrimitives::Point_3 p(0,0,0);
       nurb->evaluatePoint(knots[0], p.data());
-      for(int j=0; j<3; ++j){
+      for(int j=0; j<3; ++j)
         intersection.push_back(p[j]);
-        ++pair.second;
-      }
 
       for(float f = knots[0]+1/100.0*(knots[length-1]-knots[0]);
           f<knots[length-1] - 1/100.0*(knots[length-1]-knots[0]);
           f+=1/100.0*(knots[length-1]-knots[0]))
       {
         nurb->evaluatePoint(f, p.data());
-        for(int j=0; j<3; ++j){
+        for(int j=0; j<3; ++j)
           intersection.push_back(p[j]);
-          ++pair.second;
-        }
-        for(int j=0; j<3; ++j){
+        for(int j=0; j<3; ++j)
           intersection.push_back(p[j]);
-          ++pair.second;
-        }
       }
 
       nurb->evaluatePoint(knots[length-1], p.data());
-      for(int j=0; j<3; ++j){
+      for(int j=0; j<3; ++j)
         intersection.push_back(p[j]);
-        ++pair.second;
-      }
-      trim_sizes.push_back(pair);
-      pair.first = pair.second;
     }
-    black_color.resize(intersection.size());
-    for(int i=0; i<black_color.size(); ++i)
-      black_color[i]=0.0f;
   }
   void initializeBuffers(CGAL::Three::Viewer_interface *viewer)const
   {
     // ///////////////////////////////////////////////////////////////////
     // Creates VBO EBO and VAO
     // ///////////////////////////////////////////////////////////////////
-    item->buffers[B_COLOR].setUsagePattern(QOpenGLBuffer::DynamicCopy);
     m_program = item->getShaderProgram(Scene_nurbs_item::PROGRAM_NO_SELECTION, viewer);
     m_program->bind();
     item->vaos[INTERSECTION]->bind();
@@ -112,26 +94,16 @@ struct Scene_cad_item_priv{
     item->buffers[B_INTERSECTION].allocate(intersection.data(), static_cast<int>(intersection.size() * sizeof(float)));
     m_program->enableAttributeArray("vertex");
     m_program->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
-    item->buffers[B_INTERSECTION].release();
-
-    item->buffers[B_COLOR].bind();
-    item->buffers[B_COLOR].allocate(black_color.data(), static_cast<int>(black_color.size() * sizeof(float)));
-    m_program->enableAttributeArray("colors");
-    m_program->setAttributeBuffer("colors", GL_FLOAT, 0, 3, 0);
+    m_program->disableAttributeArray("colors");
     item->buffers[B_INTERSECTION].release();
     item->vaos[INTERSECTION]->release();
     m_program->release();
-
-    item->are_buffers_filled = true;
   }
   dtkBRep* m_brep;
   Scene_cad_item* item;
   mutable QOpenGLShaderProgram* m_program;
   mutable bool intersections_shown;
   mutable std::vector<float> intersection;
-  mutable std::vector<float> black_color;
-  mutable std::vector<int> trims_to_protect;
-  mutable std::vector<std::pair<int, int> > trim_sizes;
   enum Vao
   {
     INTERSECTION=0,
@@ -141,7 +113,6 @@ struct Scene_cad_item_priv{
   enum Buffer
   {
     B_INTERSECTION=0,
-    B_COLOR,
     NumberOfBuffers
   };
 
@@ -172,6 +143,7 @@ void Scene_cad_item::draw(CGAL::Three::Viewer_interface* viewer) const
     d->m_program = getShaderProgram(PROGRAM_NO_SELECTION, viewer);
     d->m_program->bind();
     vaos[D::INTERSECTION]->bind();
+    d->m_program->setAttributeValue("colors", QColor(Qt::black));
     viewer->glDrawArrays(GL_LINES,0, d->intersection.size()/3);
     vaos[D::INTERSECTION]->release();
     d->m_program->release();
@@ -230,7 +202,7 @@ QMenu* Scene_cad_item::contextMenu()
     QAction* actionShowTrimmed=
         menu->addAction(tr("Show Trimmed"));
     actionShowTrimmed->setCheckable(true);
-    actionShowTrimmed->setChecked(true);
+    actionShowTrimmed->setChecked(false);
     actionShowTrimmed->setObjectName("actionShowTrimmed");
     connect(actionShowTrimmed, SIGNAL(toggled(bool)),
             this, SLOT(show_trimmed(bool)));
@@ -264,57 +236,4 @@ QString Scene_cad_item::toolTip() const
          QObject::tr("<p>BRep <b>%1</b>")
             .arg(this->name());
   return str;
-}
-
-void Scene_cad_item::checkTrimToProtect(int i)
-{
-  std::vector<int>::iterator it;
-  for(it = d->trims_to_protect.begin();
-      it != d->trims_to_protect.end();
-      ++it)
-  {
-    if( *it == i)
-    {
-      break;
-    }
-  }
-  if(it == d->trims_to_protect.end())
-  {
-    d->trims_to_protect.push_back(i);
-  }
-  else
-  {
-    d->trims_to_protect.erase(it);
-  }
-  CGAL::Three::Viewer_interface* viewer = static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first());
-  viewer->makeCurrent();
-  d->m_program = getShaderProgram(PROGRAM_NO_SELECTION, viewer);
-  d->m_program->bind();
-  vaos[D::INTERSECTION]->bind();
-  buffers[D::B_COLOR].bind();
-  buffers[D::B_COLOR].write(0, d->black_color.data(), d->black_color.size()* sizeof(float));
-  for(int i=0; i<d->trims_to_protect.size(); ++i)
-  {
-    int id = d->trims_to_protect[i];
-    int size = d->trim_sizes[id].second - d->trim_sizes[id].first;
-    std::vector<float> data(size);
-    for(int j=0; j<size; j+=3)
-    {
-      data[j] = 1.0;
-      data[j+1] = 0.85;
-      data[j+2] = 0.15;
-    }
-
-    buffers[D::B_COLOR].write(d->trim_sizes[id].first*sizeof(float), data.data(), size * sizeof(float));
-  }
-
-  buffers[D::B_COLOR].release();
-  vaos[D::INTERSECTION]->release();
-  d->m_program->release();
-  itemChanged();
-}
-
-const std::vector<int>& Scene_cad_item::trimsToProtect()const
-{
-  return d->trims_to_protect;
 }
