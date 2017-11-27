@@ -37,6 +37,7 @@ struct Scene_cad_item_priv{
 
     std::size_t index = 0;
     for(auto topo_trim : brep->topoTrims()) {
+        std::cerr << topo_trim << std::endl;
         intersection_colors_indices.insert(topo_trim, index);
         color_indices.insert(index);
         dtkNurbsCurve* nurb = topo_trim->m_nurbs_curve_3d;
@@ -271,18 +272,37 @@ QString Scene_cad_item::toolTip() const
   return str;
 }
 
-void Scene_cad_item::highlight(const dtkTopoTrim *topo_trim) {
+void Scene_cad_item::clearHighlight(void)
+{
+    if(d->current_next_index !=0) {
+        std::vector<float> old_intersection_colors((d->current_next_index - d->current_index) * 3, 0.);
 
+        d->m_program->bind();
+
+        vaos[D::INTERSECTION]->bind();
+
+        buffers[D::B_INTERSECTION_COLORS].bind();
+        buffers[D::B_INTERSECTION_COLORS].write(d->current_index * 3 * sizeof(float), old_intersection_colors.data(), 3 * (d->current_next_index - d->current_index) * sizeof(float));
+        buffers[D::B_INTERSECTION_COLORS].release();
+
+        vaos[D::INTERSECTION]->release();
+        d->m_program->release();
+    }
+
+    d->current_index = 0;
+    d->current_next_index = 0;
+
+    itemChanged();
+}
+
+void Scene_cad_item::highlight(const dtkTopoTrim *topo_trim)
+{
     // ///////////////////////////////////////////////////////////////////
     // Clear the buffers
     // ///////////////////////////////////////////////////////////////////
-    if(d->current_index != 0 && d->current_next_index !=0) {
-        std::vector<float> old_intersection_colors((d->current_next_index - d->current_index) * 3);
-        for(std::size_t i = 0; i < d->current_next_index - d->current_index; ++i) {
-            old_intersection_colors[3 * i] =     (float)0;
-            old_intersection_colors[3 * i + 1] = (float)0;
-            old_intersection_colors[3 * i + 2] = (float)0;
-        }
+    if(d->current_next_index !=0) {
+        std::vector<float> old_intersection_colors((d->current_next_index - d->current_index) * 3, 0.);
+
          d->m_program->bind();
 
          vaos[D::INTERSECTION]->bind();
@@ -295,13 +315,18 @@ void Scene_cad_item::highlight(const dtkTopoTrim *topo_trim) {
          d->m_program->release();
     }
 
-
-
     // ///////////////////////////////////////////////////////////////////
     // Recovers the index associated to the trim
     // ///////////////////////////////////////////////////////////////////
-    std::size_t index = d->intersection_colors_indices.find(topo_trim).value();
-    std::cerr << "index " << index << std::endl;
+    std::size_t index = 0;
+    auto it = d->intersection_colors_indices.find(topo_trim);
+    if(it != d->intersection_colors_indices.end()) {
+        index = it.value();
+    } else {
+        dtkWarn() << "The pointer to the dtkTopoTrim is not listed in the possible trims to display.";
+        return;
+    }
+
     // ///////////////////////////////////////////////////////////////////
     // Finds next index to count the number of spheres to change
     // ///////////////////////////////////////////////////////////////////
@@ -313,15 +338,12 @@ void Scene_cad_item::highlight(const dtkTopoTrim *topo_trim) {
         next_index = d->intersection_colors.size() / 3;
     }
 
-    std::cerr << "next_index " << next_index << std::endl;
-
     std::vector<float> new_intersection_colors((next_index - index) * 3);
     for(std::size_t i = 0; i < next_index - index; ++i) {
         new_intersection_colors[3 * i] =     (float)255;
         new_intersection_colors[3 * i + 1] = (float)255;
         new_intersection_colors[3 * i + 2] = (float)0;
     }
-    std::cerr << "size : " << new_intersection_colors.size() << std::endl;
 
     d->m_program->bind();
 
@@ -336,6 +358,7 @@ void Scene_cad_item::highlight(const dtkTopoTrim *topo_trim) {
 
     d->current_index = index;
     d->current_next_index = next_index;
+    itemChanged();
     emit highlighted(topo_trim);
     emit updated();
 }
