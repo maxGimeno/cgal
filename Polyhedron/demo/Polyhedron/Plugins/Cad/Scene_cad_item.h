@@ -50,6 +50,7 @@ public Q_SLOTS:
   void show_intersections(bool b);
 
   void highlight(const dtkTopoTrim *);
+  void clearHighlight(void);
 
  Q_SIGNALS:
   void highlighted(const dtkTopoTrim *);

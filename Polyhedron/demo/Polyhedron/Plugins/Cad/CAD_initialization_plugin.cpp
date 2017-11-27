@@ -146,13 +146,16 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
     dtkBRep* brep = cad_item->brep();
     if(!brep) return;
 
-    QDialog dialog(new QWidget());
+    QDialog *dialog = new QDialog(new QWidget());
     ui_protection = new Ui::CADMesherProtectInitializationDialog();
-    ui_protection->setupUi(&dialog);
+    ui_protection->setupUi(dialog);
+    dialog->setWindowFlags(dialog->windowFlags() | Qt::WindowStaysOnTopHint);
+    dialog->show();
+
     connect(ui_protection->buttonBox, SIGNAL(accepted()),
-            &dialog, SLOT(accept()));
+            dialog, SLOT(accept()));
     connect(ui_protection->buttonBox, SIGNAL(rejected()),
-            &dialog, SLOT(reject()));
+            dialog, SLOT(reject()));
     double diag = scene->len_diagonal();
 
     connect(ui_protection->protectTrimCB, SIGNAL(stateChanged(int)), this, SLOT(updateProtectTrim(int)));
@@ -175,7 +178,6 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
 
     connect(ui_protection->trimList, &QListWidget::itemSelectionChanged, [=] () {this->onCurrentItemChanged();} );
     connect(this, SIGNAL(highlight(const dtkTopoTrim *)), cad_item, SLOT(highlight(const dtkTopoTrim *)));
-    // connect(cad_item, &Scene_cad_item::updated, [=] () {this->scene->redraw_model();} );
 
     ui_protection->trimList->setDisabled(true);
     // ///////////////////////////////////////////////////////////////
@@ -185,18 +187,39 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
                                          diag); // max
     ui_protection->sizeSpinBox->setValue(diag * 0.05); // default value
 
-    int i = dialog.exec();
+    // ///////////////////////////////////////////////////////////////
+
+    ui_protection->mergingToleranceSB->setDecimals(4);
+    ui_protection->mergingToleranceSB->setRange(diag * 10e-6, // min
+                                         diag); // max
+    ui_protection->mergingToleranceSB->setValue(diag * 0.03); // default value
+
+    int i = dialog->exec();
+    cad_item->clearHighlight();
+
+    delete ui_protection;
     if(i == QDialog::Rejected)
         return;
 
     const double edge_sizing = ui_protection->sizeSpinBox->value();
+
     Mesh_domain_with_features* cgal_brep_mesh_domain_with_features = new Mesh_domain_with_features(*brep);
     ///////////////////////////////////////////////////////////////////
-    //    Recovers the features
+    // Recovers the trims not to protect
     ///////////////////////////////////////////////////////////////////
+    std::vector< dtkTopoTrim * > not_to_protect;
+    for(std::size_t i = 0; i < ui_protection->trimList->count(); ++i) {
+        QListWidgetItem *item = ui_protection->trimList->item(i);
+        if(item->checkState() == Qt::Checked || item->checkState() == Qt::PartiallyChecked) {
+        } else {
+            not_to_protect.push_back(hash_topo_trims[item]);
+        }
+    }
+
     dtkSeamProtectionGraph *protection_graph = nullptr;
+
     if(ui_protection->protectTrimCB->checkState() == Qt::Checked) {
-        protection_graph = new dtkSeamProtectionGraph(*brep, ui_protection->sizeSpinBox->value(), ui_protection->mergingToleranceSB->value(), false);
+        protection_graph = new dtkSeamProtectionGraph(*brep, ui_protection->sizeSpinBox->value(), ui_protection->mergingToleranceSB->value(), false, not_to_protect);
     } else {
         protection_graph = new dtkSeamProtectionGraph(*brep, ui_protection->sizeSpinBox->value(), 0., true);
     }
