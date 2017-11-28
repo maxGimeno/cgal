@@ -137,65 +137,82 @@ void Polyhedron_demo_CAD_initialization_plugin::doProtectInitialization(const do
   //    Recovers the features
   ///////////////////////////////////////////////////////////////////
   dtkSeamProtectionGraph *protection_graph = nullptr;
-  std::vector<dtkTopoTrim *> protected_trims;
+  std::vector<dtkTopoTrim *> not_to_protect;
   for(int i=0; i<brep->topoTrims().size(); ++i)
-    if(is_protected[i])
-      protected_trims.push_back(brep->topoTrims()[i]);
+    if(!is_protected[i])
+      not_to_protect.push_back(brep->topoTrims()[i]);
 
   if(ui_protection->protectTrimCB->checkState() == Qt::Checked) {
-      protection_graph = new dtkSeamProtectionGraph(*brep, size, mergingToleranceSB, false, protected_trims);
-  } else {
-      protection_graph = new dtkSeamProtectionGraph(*brep, size, 0., true);
-  }
+          protection_graph = new dtkSeamProtectionGraph(*brep, size, mergingToleranceSB, false, not_to_protect);
+      } else {
+          protection_graph = new dtkSeamProtectionGraph(*brep, size, 0., true);
+      }
 
   C3t3 p_c3t3;
-  Tr& tr = p_c3t3.triangulation();
-  const CGAL::Bbox_3& cgal_bbox = cgal_brep_mesh_domain_with_features->bbox();
-  std::list< Weighted_point > w_points;
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
-  w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
-  for(auto& w_point : w_points) {
-      Vertex_handle vi = tr.insert(w_point);
-      CGAL_assertion(vi != Vertex_handle());
-      p_c3t3.set_dimension(vi, 0);
-      p_c3t3.set_index(vi, 0);
-  }
-
-  std::size_t index = 1;
-  std::size_t curr_index = 0;
-  for(auto& p_sphere : protection_graph->m_protection_spheres) {
-      auto find_tt = protection_graph->m_map.find(p_sphere->m_bezier_curve);
-
-      Weighted_point pi(Point_3(p_sphere->center()[0], p_sphere->center()[1], p_sphere->center()[2]),
-                        p_sphere->radius() * p_sphere->radius());
-      Vertex_handle v = tr.insert(pi);
-      // `v` could be null if `pi` is hidden by other vertices of `tr`.
-      CGAL_assertion(v != Vertex_handle());
-      if(v == Vertex_handle()) {
-          dtkInfo() << "A vertex is hidden by its neighbors and will be removed";
+      Tr& tr = p_c3t3.triangulation();
+      const CGAL::Bbox_3& cgal_bbox = cgal_brep_mesh_domain_with_features->bbox();
+      std::list< Weighted_point > w_points;
+      w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
+      w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
+      w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
+      w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
+      w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
+      w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
+      w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
+      w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
+      w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
+      for(auto& w_point : w_points) {
+          Vertex_handle vi = tr.insert(w_point);
+          CGAL_assertion(vi != Vertex_handle());
+          p_c3t3.set_dimension(vi, 0);
+          p_c3t3.set_index(vi, 0);
       }
-      p_c3t3.set_dimension(v, 1); // by construction, points are on surface
-      p_c3t3.set_index(v, 0// curr_index
-                       );//TODO replace by curve index
-  }
 
-  // //Output
-  Scene_c3t3_cad_item *c3t3_cad_item = new Scene_c3t3_cad_item(p_c3t3, *cgal_brep_mesh_domain_with_features);
-  if(!c3t3_cad_item)
-      {
-          qDebug()<<"c3t3 CAD item not created";
-          return;
+      std::unordered_map< const dtkTopoTrim *, std::size_t > tts_map;
+      std::size_t index = 1;
+      std::size_t curr_index = 0;
+      for(auto& p_sphere : protection_graph->m_protection_spheres) {
+          auto find_tt = protection_graph->m_map.find(p_sphere->m_bezier_curve);
+
+          Weighted_point pi(Point_3(p_sphere->center()[0], p_sphere->center()[1], p_sphere->center()[2]),
+                            p_sphere->radius() * p_sphere->radius());
+          Vertex_handle v = tr.insert(pi);
+          // `v` could be null if `pi` is hidden by other vertices of `tr`.
+          CGAL_assertion(v != Vertex_handle());
+          if(v == Vertex_handle()) {
+              dtkInfo() << "A vertex is hidden by its neighbors and will be removed";
+          }
+          p_c3t3.set_dimension(v, 1); // by construction, points are on surface
+          p_c3t3.set_index(v, 0// curr_index
+                           );//TODO replace by curve index
       }
-  c3t3_cad_item->setName(QString("%1 (c3t3)").arg(cad_item->name()));
-  scene->addItem(c3t3_cad_item);
+
+      // //Output
+      Scene_c3t3_cad_item *c3t3_cad_item = new Scene_c3t3_cad_item(p_c3t3, *cgal_brep_mesh_domain_with_features);
+      if(!c3t3_cad_item)
+          {
+              qDebug()<<"c3t3 CAD item not created";
+              return;
+          }
+      c3t3_cad_item->setName(QString("%1 (c3t3)").arg(cad_item->name()));
+      cad_item->clearHighlight();
+      scene->addItem(c3t3_cad_item);
+
 }
+
+class DoomOfDialog
+{
+public:
+  DoomOfDialog(QDialog* dial)
+    :dialog(dial){}
+
+  ~DoomOfDialog()
+  {
+    delete dialog;
+  }
+private:
+  QDialog* dialog;
+};
 
 void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
 {
@@ -227,35 +244,45 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
                                          diag); // max
     ui_protection->sizeSpinBox->setValue(diag * 0.05); // default value
 
-    is_protected = brep->topoTrims().size();
+    is_protected = std::vector<bool>(brep->topoTrims().size());
     for(std::size_t i=0; i<is_protected.size(); ++i)
       is_protected[i] = false;
     for(std::size_t i=0; i< brep->topoTrims().size(); ++i)
     {
       QCheckBox* checkbox = new QCheckBox(QString("trim %1").arg(i), dialog);
       connect(checkbox, &QCheckBox::stateChanged,
-              [checkbox, cad_item, i, &is_protected](){
+              [this, checkbox, cad_item, i](){
         cad_item->checkTrimToProtect(static_cast<int>(i));
         if(checkbox->checkState() == Qt::Checked)
           is_protected[i] = true;
+        else
+          is_protected[i] = false;
       });
       checkbox->setChecked(true);
       ui_protection->trimsGroupBox->layout()->addWidget(checkbox);
     }
     connect(ui_protection->buttonBox->button(QDialogButtonBox::Ok), &QPushButton::clicked,
-            [this, brep, is_protected, cad_item, &dialog](){
+            [this, brep, cad_item, dialog](){
+      //DoomOfDialog destroyer(dialog);
       doProtectInitialization(ui_protection->sizeSpinBox->value(),
                               brep,
                               ui_protection->mergingToleranceSB->value(),
                               cad_item);
       dialog->deleteLater();
+      delete ui_protection;
+    }
+    );
+    connect(ui_protection->buttonBox->button(QDialogButtonBox::Cancel), &QPushButton::clicked,
+            [this, cad_item, dialog](){
+      //DoomOfDialog destroyer(dialog);
+      cad_item->clearHighlight();
+      dialog->deleteLater();
+      delete ui_protection;
     }
     );
     dialog->show();
 
-
 }
-
 
 void Polyhedron_demo_CAD_initialization_plugin::randomShootingInitialization(){
 

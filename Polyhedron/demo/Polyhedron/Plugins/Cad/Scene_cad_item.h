@@ -36,6 +36,7 @@ public :
   QMenu* contextMenu();
   dtkBRep* brep();
   void checkTrimToProtect(int i);
+  void clearHighlight();
   const std::vector<int>& trimsToProtect()const;
   const dtkBRep* brep()const;
 public Q_SLOTS:

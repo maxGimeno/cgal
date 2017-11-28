@@ -99,7 +99,9 @@ struct Scene_nurbs_item_priv{
         dtkFatal() << "The dtkAbstractNurbsPolyhedralSurfaceData could not be loaded by the factory under the cgal implementation";
     }
     dtkDebug() << "Initialization of polyhedral NURBS surface...";
-    polyhedral_surface->initialize(const_cast<dtkNurbsSurface*>(&m_nurbs_surface),1.0);
+    double approximation = 1e-4 * std::sqrt((bbox.xmax() - bbox.xmin()) * (bbox.xmax() - bbox.xmin()) + (bbox.ymax() - bbox.ymin()) * (bbox.ymax() - bbox.ymin()) + (bbox.zmax() - bbox.zmin()) * (bbox.zmax() - bbox.zmin()));
+       std::cerr << "approximation :" << approximation << std::endl;
+       polyhedral_surface->initialize(const_cast<dtkNurbsSurface*>(&m_nurbs_surface), approximation);
     dtkDebug() << "Polyhedral NURBS surface initialized...";
 
     dtkDebug() << "Recovering points and triangles...";

@@ -318,3 +318,34 @@ const std::vector<int>& Scene_cad_item::trimsToProtect()const
 {
   return d->trims_to_protect;
 }
+
+void Scene_cad_item::clearHighlight()
+{
+  d->trims_to_protect.clear();
+  CGAL::Three::Viewer_interface* viewer = static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first());
+  viewer->makeCurrent();
+  d->m_program = getShaderProgram(PROGRAM_NO_SELECTION, viewer);
+  d->m_program->bind();
+  vaos[D::INTERSECTION]->bind();
+  buffers[D::B_COLOR].bind();
+  buffers[D::B_COLOR].write(0, d->black_color.data(), d->black_color.size()* sizeof(float));
+  for(int i=0; i<d->trims_to_protect.size(); ++i)
+  {
+    int id = d->trims_to_protect[i];
+    int size = d->trim_sizes[id].second - d->trim_sizes[id].first;
+    std::vector<float> data(size);
+    for(int j=0; j<size; j+=3)
+    {
+      data[j] = 1.0;
+      data[j+1] = 0.85;
+      data[j+2] = 0.15;
+    }
+
+    buffers[D::B_COLOR].write(d->trim_sizes[id].first*sizeof(float), data.data(), size * sizeof(float));
+  }
+
+  buffers[D::B_COLOR].release();
+  vaos[D::INTERSECTION]->release();
+  d->m_program->release();
+  itemChanged();
+}
