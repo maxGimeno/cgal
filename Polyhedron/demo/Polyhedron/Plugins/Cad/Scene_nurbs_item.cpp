@@ -13,14 +13,13 @@
 typedef Scene_nurbs_item_priv D;
 //Vertex source code
 struct Scene_nurbs_item_priv{
-
   Scene_nurbs_item_priv(const dtkNurbsSurface& dtk_nurbs_surface,
                         Scene_nurbs_item* parent)
     : m_nurbs_surface(dtk_nurbs_surface), item(parent)
 
   {
     dtkLogger::instance().attachConsole();
-    dtkLogger::instance().setLevel(dtkLog::Info);
+    dtkLogger::instance().setLevel(dtkLog::Trace);
 
     trimmed_shown = false;
     float min_box[3];

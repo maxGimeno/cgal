@@ -41,6 +41,8 @@
 ## Recover Blaze (header only)
   ### Recover Blaze
     Clone git@bitbucket.org:blaze-lib/blaze.git.
+  ### Checkout to a former commit
+    git checkout 6727516
 
 ## Recover and compile openNURBS
    ### Recover openNURBS

@@ -78,7 +78,7 @@ void Polyhedron_demo_CAD_refine_plugin::refine()
   if(!c3t3_cad_item)
     return;
   C3t3& c3t3 = c3t3_cad_item->c3t3();
-  const Mesh_domain_with_features& mesh_domain = c3t3_cad_item->meshDomain();
+  const Mesh_domain& mesh_domain = c3t3_cad_item->meshDomain();
   std::cerr << "mesh domain adress in refine : " << &mesh_domain << std::endl;
   CGAL::Bbox_3 bbox = mesh_domain.bbox();
   std::cerr << bbox.xmin() << std::endl;
@@ -103,8 +103,8 @@ void Polyhedron_demo_CAD_refine_plugin::refine()
   ui.errorSpinBox->setValue(diag * 0.005);
 
 
-  int i = dialog.exec();
-  if(i == QDialog::Rejected)
+  int status = dialog.exec();
+  if(status == QDialog::Rejected)
     return;
 
   const double angle = ui.angleSpinBox->value();

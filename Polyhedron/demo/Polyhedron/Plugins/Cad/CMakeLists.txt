@@ -33,7 +33,6 @@ qt5_wrap_ui(CAD_refine_plugin_UI_FILES CAD_refine_dialog.ui)
 polyhedron_demo_plugin(cAD_refine_plugin
   CAD_refine_plugin
   ${CAD_refine_plugin_UI_FILES})
-
 target_link_libraries(cAD_refine_plugin
   polyhedron_demo
   scene_cad_item
@@ -59,9 +58,16 @@ target_link_libraries(rational_bezier_surface_plugin
   dtkCore
   dtkContinuousGeometryCore)
 
+polyhedron_demo_plugin(nurbs_surface_plugin
+  Nurbs_surface_plugin)
+target_link_libraries(nurbs_surface_plugin
+  polyhedron_demo
+  scene_nurbs_item
+  dtkCore
+  dtkContinuousGeometryCore)
+
 add_item(scene_c3t3_cad_item Scene_c3t3_cad_item.cpp)
 target_link_libraries(scene_c3t3_cad_item
-  scene_polyhedron_item
   scene_polygon_soup_item
   scene_basic_objects
   ${TBB_LIBRARIES})

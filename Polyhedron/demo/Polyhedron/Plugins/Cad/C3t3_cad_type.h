@@ -24,12 +24,11 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 // Domains
 // /////////////////////////////////////////////////////////////////
 typedef cgalBrepMeshDomainData< K > Mesh_domain;
-typedef CGAL::cgalMeshDomainWithRationalBezierFeatures< Mesh_domain > Mesh_domain_with_features;
-typedef Mesh_domain_with_features::Index Index;
-typedef Mesh_domain_with_features::Construct_initial_points Construct_initial_points;
+typedef Mesh_domain::Index Index;
+typedef Mesh_domain::Construct_initial_points Construct_initial_points;
 
 // Triangulation
-typedef CGAL::Compact_mesh_cell_base_3<K, Mesh_domain_with_features>    Cell_base;
+typedef CGAL::Compact_mesh_cell_base_3<K, Mesh_domain>    Cell_base;
 typedef CGAL::Triangulation_cell_base_with_info_3<int, K, Cell_base> Cell_base_with_info;
 
 // /////////////////////////////////////////////////////////////////
@@ -37,13 +36,13 @@ typedef CGAL::Triangulation_cell_base_with_info_3<int, K, Cell_base> Cell_base_w
 // /////////////////////////////////////////////////////////////////
 
 #ifdef CGAL_CONCURRENT_MESH_3
-  typedef CGAL::Mesh_triangulation_3<Mesh_domain_with_features,
+  typedef CGAL::Mesh_triangulation_3<Mesh_domain,
                                      K,
                                      CGAL::Parallel_tag,
                                      CGAL::Default,
                                      Cell_base_with_info>::type Tr;
 #else
-  typedef CGAL::Mesh_triangulation_3<Mesh_domain_with_features,
+  typedef CGAL::Mesh_triangulation_3<Mesh_domain,
                                      K,
                                      CGAL::Sequential_tag,
                                      CGAL::Default,

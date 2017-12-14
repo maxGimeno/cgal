@@ -146,7 +146,7 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
     dtkBRep* brep = cad_item->brep();
     if(!brep) return;
 
-    QDialog *dialog = new QDialog(new QWidget());
+    QDialog *dialog = new QDialog(mw);
     ui_protection = new Ui::CADMesherProtectInitializationDialog();
     ui_protection->setupUi(dialog);
     dialog->setWindowFlags(dialog->windowFlags() | Qt::WindowStaysOnTopHint);
@@ -160,7 +160,7 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
 
     connect(ui_protection->protectTrimCB, SIGNAL(stateChanged(int)), this, SLOT(updateProtectTrim(int)));
     ui_protection->mergingToleranceSB->setDisabled(true);
-
+    dtkLogger::instance().setLevel(dtkLog::Error);
     // ///////////////////////////////////////////////////////////////////
     // Recovers the topo trims and display them in the list
     // ///////////////////////////////////////////////////////////////////
@@ -197,13 +197,49 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
     int i = dialog->exec();
     cad_item->clearHighlight();
 
-    delete ui_protection;
-    if(i == QDialog::Rejected)
+    if(i == QDialog::Rejected) {
+        delete ui_protection;
         return;
+    }
 
     const double edge_sizing = ui_protection->sizeSpinBox->value();
 
-    Mesh_domain_with_features* cgal_brep_mesh_domain_with_features = new Mesh_domain_with_features(*brep);
+    // Mesh_domain_with_features* cgal_brep_mesh_domain_with_features = new Mesh_domain_with_features(*brep);
+    std::vector < dtkNurbsSurfaceIntersect * > intersects;
+    dtkContinuousGeometryPrimitives::AABB_3 aabb_test(0., 0., 0., 0., 0., 0.);
+    for(auto surf : brep->nurbsSurfaces()) {
+        dtkNurbsSurfaceIntersect *intersect = new dtkNurbsSurfaceIntersect(*(surf));
+        intersects.push_back(intersect);
+        intersect->initialize();
+        // ///////////////////////////////////////////////////////////////////
+        // Initializes the surface to make sure it is not modified during the parallel refinement process
+        // Recovers a point and the normal at that point on the surface, create a source point for a ray, and shoot in the opposite direction to the normal
+        // ///////////////////////////////////////////////////////////////////
+        // dtkContinuousGeometryPrimitives::Point_3 p(0., 0., 0.);
+        // dtkContinuousGeometryPrimitives::Vector_3 n(0., 0., 0.);
+        // double i = (surf->uKnots()[surf->uNbCps() + surf->uDegree() - 2] + surf->uKnots()[0]) / 2.;
+        // double j = (surf->vKnots()[surf->vNbCps() + surf->vDegree() - 2] + surf->vKnots()[0]) / 2.;
+        // surf->evaluatePoint(i, j, p.data());
+        // surf->evaluateNormal(i, j, n.data());
+        // dtkContinuousGeometryPrimitives::Point_3 s(p + n);
+        // dtkContinuousGeometryPrimitives::Line_3 l(s, n);
+        // std::list< dtkNurbsProbingPrimitives::IntersectionObject> intersections;
+        // intersect->intersect(intersections, l);
+        // qDebug() << "nb of intersections : " << intersections.size();
+        // ///////////////////////////////////////////////////////////////////
+        // Make sure we get at least 1 intersection point
+        // ///////////////////////////////////////////////////////////////////
+        // if(intersections.size() == 0) {
+        //     dtkFatal() << "initialization failed";
+        // }
+        // ///////////////////////////////////////////////////////////////////
+        // TODO : What to do for degenerated surfaces ?
+        // ///////////////////////////////////////////////////////////////////
+    }
+    dtkContinuousGeometryPrimitives::AABB_3 aabb(0., 0., 0., 0., 0., 0.);
+    brep->aabb(aabb.data());
+
+    Mesh_domain* cgal_brep_mesh_domain = new Mesh_domain(intersects, aabb);
     ///////////////////////////////////////////////////////////////////
     // Recovers the trims not to protect
     ///////////////////////////////////////////////////////////////////
@@ -215,6 +251,7 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
             not_to_protect.push_back(hash_topo_trims[item]);
         }
     }
+    delete ui_protection;
 
     dtkSeamProtectionGraph *protection_graph = nullptr;
 
@@ -226,7 +263,7 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
 
     C3t3 p_c3t3;
     Tr& tr = p_c3t3.triangulation();
-    const CGAL::Bbox_3& cgal_bbox = cgal_brep_mesh_domain_with_features->bbox();
+    const CGAL::Bbox_3& cgal_bbox = cgal_brep_mesh_domain->bbox();
     std::list< Weighted_point > w_points;
     w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
     w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
@@ -272,7 +309,7 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
     }
 
     // //Output
-    Scene_c3t3_cad_item *c3t3_cad_item = new Scene_c3t3_cad_item(p_c3t3, *cgal_brep_mesh_domain_with_features);
+    Scene_c3t3_cad_item *c3t3_cad_item = new Scene_c3t3_cad_item(p_c3t3, *cgal_brep_mesh_domain);
     if(!c3t3_cad_item)
         {
             qDebug()<<"c3t3 CAD item not created";
@@ -291,10 +328,10 @@ void Polyhedron_demo_CAD_initialization_plugin::randomShootingInitialization(){
     dtkBRep* brep = cad_item->brep();
     if(!brep) return;
 
-    Mesh_domain_with_features* cgal_brep_mesh_domain_with_features = new Mesh_domain_with_features(*brep);
+    Mesh_domain* cgal_brep_mesh_domain = new Mesh_domain(*brep);
     C3t3 p_c3t3;
     Tr& tr = p_c3t3.triangulation();
-    const CGAL::Bbox_3& cgal_bbox = cgal_brep_mesh_domain_with_features->bbox();
+    const CGAL::Bbox_3& cgal_bbox = cgal_brep_mesh_domain->bbox();
     std::list< Weighted_point > w_points;
     w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
     w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
@@ -316,9 +353,9 @@ void Polyhedron_demo_CAD_initialization_plugin::randomShootingInitialization(){
     //    Recovers the points
     ///////////////////////////////////////////////////////////////////
     std::vector<std::pair<Point_3, Index> > initial_points;
-    cgal_brep_mesh_domain_with_features->construct_initial_points_object()(std::back_inserter(initial_points), 20);
+    cgal_brep_mesh_domain->construct_initial_points_object()(std::back_inserter(initial_points), 20);
 
-    // cgal_brep_mesh_domain_with_features.
+    // cgal_brep_mesh_domain.
     for(auto& point : initial_points) {
         Vertex_handle vi = tr.insert(Weighted_point(point.first, 1.));
         CGAL_assertion(vi != Vertex_handle());
@@ -327,7 +364,7 @@ void Polyhedron_demo_CAD_initialization_plugin::randomShootingInitialization(){
     }
 
     // //Output
-    Scene_c3t3_cad_item *c3t3_cad_item = new Scene_c3t3_cad_item(p_c3t3, *cgal_brep_mesh_domain_with_features);
+    Scene_c3t3_cad_item *c3t3_cad_item = new Scene_c3t3_cad_item(p_c3t3, *cgal_brep_mesh_domain);
     if(!c3t3_cad_item)
         {
             qDebug()<<"c3t3 CAD item not created";
