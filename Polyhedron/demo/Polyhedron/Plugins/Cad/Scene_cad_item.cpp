@@ -20,8 +20,9 @@ struct Scene_cad_item_priv{
     const std::vector < dtkNurbsSurface* > nurbs_surfaces = m_brep->nurbsSurfaces();
 
     for (auto it = nurbs_surfaces.begin(); it != nurbs_surfaces.end(); ++it) {
-      Scene_nurbs_item* nurbs_item =  new Scene_nurbs_item(*(*it));
+      Scene_nurbs_item* nurbs_item =  new Scene_nurbs_item(*(*it), scene);
       nurbs_item->setFlatMode();
+      nurbs_item->setScene(scene);
       nurbs_item->setName(QString("Nurbs #%1").arg(i));
       scene->addItem(nurbs_item);
       item->addChild(nurbs_item);
@@ -359,6 +360,6 @@ void Scene_cad_item::highlight(const dtkTopoTrim *topo_trim)
     d->current_index = index;
     d->current_next_index = next_index;
     itemChanged();
-    emit highlighted(topo_trim);
-    emit updated();
+    Q_EMIT highlighted(topo_trim);
+    Q_EMIT updated();
 }

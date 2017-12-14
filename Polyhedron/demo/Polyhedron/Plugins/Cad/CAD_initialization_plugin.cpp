@@ -134,7 +134,7 @@ void Polyhedron_demo_CAD_initialization_plugin::updateProtectTrim(int cs)
 void Polyhedron_demo_CAD_initialization_plugin::onCurrentItemChanged(void) {
     auto item = hash_topo_trims.find(ui_protection->trimList->currentItem());
     if(item != hash_topo_trims.end()) {
-        emit highlight(item.value());
+        Q_EMIT highlight(item.value());
     }
 }
 

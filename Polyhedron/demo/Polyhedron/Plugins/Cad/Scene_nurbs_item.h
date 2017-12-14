@@ -10,6 +10,7 @@
 
 #include <CGAL/Three/Viewer_interface.h>
 #include <CGAL/Three/Scene_item.h>
+#include <CGAL/Three/Scene_group_item.h>
 
 class dtkTopoTrim;
 class dtkNurbsSurface;
@@ -17,11 +18,11 @@ class dtkNurbsSurface;
 struct Scene_nurbs_item_priv;
 
 class SCENE_NURBS_ITEM_EXPORT Scene_nurbs_item
-    :public CGAL::Three::Scene_item
+    :public CGAL::Three::Scene_group_item
 {
    Q_OBJECT
 public:
-  Scene_nurbs_item(const dtkNurbsSurface& dtk_nurbs_surface);
+  Scene_nurbs_item(const dtkNurbsSurface& dtk_nurbs_surface, CGAL::Three::Scene_interface* scene);
   ~Scene_nurbs_item();
   bool isEmpty() const;
 
@@ -35,12 +36,18 @@ public:
 
  public:
   Scene_item* clone() const {return 0;}
-
+  Bbox bbox() const
+  {
+    if(!is_bbox_computed)
+      compute_bbox();
+    return _bbox;
+  };
   void compute_bbox() const;
   QMenu* contextMenu();
 
 public Q_SLOTS:
   void show_trimmed(bool b);
+  void show_control_points(bool b);
   void highlight(const dtkTopoTrim *);
 
 protected:

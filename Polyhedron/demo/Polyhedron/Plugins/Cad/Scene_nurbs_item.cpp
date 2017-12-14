@@ -1,4 +1,5 @@
 #include "Scene_nurbs_item.h"
+#include "Scene_spheres_item.h"
 #define foreach Q_FOREACH
 
 #include <dtkNurbsSurface>
@@ -75,7 +76,6 @@ struct Scene_nurbs_item_priv{
     }
     bbox = CGAL::Three::Scene_item::Bbox(min_box[0], min_box[1], min_box[2],
         max_box[0], max_box[1], max_box[2]);
-
     m_untrimmed_elements.resize(m_nb_untrimmed_elements * 3);
     std::size_t cntr = 0;
     for (GLuint i = 0; i < (u_sampling); ++i) {
@@ -162,6 +162,30 @@ struct Scene_nurbs_item_priv{
       }
     }
     dtkDebug() << "Intersection lines generated...";
+  }
+
+  void compute_spheres()
+  {
+    if(!spheres_item)
+      return;
+    //control points
+    dtkContinuousGeometryPrimitives::Point_3 dtk_point(0., 0., .0);
+
+    for(std::size_t i = 0; i < m_nurbs_surface.uNbCps(); ++i) {
+      for(std::size_t j = 0; j < m_nurbs_surface.vNbCps(); ++j) {
+        m_nurbs_surface.controlPoint(i, j, dtk_point.data());
+        Scene_spheres_item::Kernel::Sphere_3 sphere(Scene_spheres_item::Kernel::Point_3(dtk_point[0],
+                                                    dtk_point[1],
+                                       dtk_point[2]), 0.5f);
+        spheres_item->add_sphere(sphere,i*m_nurbs_surface.vNbCps()+j, CGAL::Color(120,120,25));
+      }
+    }
+    spheres_item->setName(QString("Control Points"));
+  }
+  ~Scene_nurbs_item_priv()
+  {
+   if(spheres_item)
+     spheres_item->deleteLater();
   }
   void computeElements() const
   {
@@ -252,13 +276,17 @@ struct Scene_nurbs_item_priv{
   mutable std::size_t m_nb_untrimmed_elements;
   mutable bool initialized;
   mutable bool trimmed_shown;
+  mutable bool cp_shown;
   CGAL::Three::Scene_item::Bbox bbox;
   Scene_nurbs_item* item;
+  Scene_spheres_item* spheres_item;
 };
 
-Scene_nurbs_item::Scene_nurbs_item(const dtkNurbsSurface& dtk_nurbs_surface)
-  :CGAL::Three::Scene_item(D::NumberOfBuffers, D::NumberOfVaos)
+Scene_nurbs_item::Scene_nurbs_item(const dtkNurbsSurface& dtk_nurbs_surface,
+                                   CGAL::Three::Scene_interface* scene)
+  :CGAL::Three::Scene_group_item(QString("nurbs"),D::NumberOfBuffers, D::NumberOfVaos)
 {
+  this->scene = scene;
   d = new Scene_nurbs_item_priv(dtk_nurbs_surface, this);
 }
 
@@ -291,6 +319,7 @@ void Scene_nurbs_item::draw(CGAL::Three::Viewer_interface* viewer)const
     d->m_program->release();
   }
 
+  Scene_group_item::draw(viewer);
 }
 
 void Scene_nurbs_item::drawEdges(CGAL::Three::Viewer_interface * viewer) const
@@ -306,6 +335,8 @@ void Scene_nurbs_item::drawEdges(CGAL::Three::Viewer_interface * viewer) const
   viewer->glDrawArrays(GL_LINES, 0, d->intersection.size()/3);
   vaos[D::INTERSECTIONS]->release();
   d->m_program->release();
+
+  Scene_group_item::drawEdges(viewer);
 }
 
 void Scene_nurbs_item::compute_bbox() const
@@ -321,11 +352,38 @@ bool Scene_nurbs_item::isEmpty() const
 
 void Scene_nurbs_item::show_trimmed(bool b)
 {
+
   d->trimmed_shown = b;
   QAction* actionShowTrimmed = contextMenu()->findChild<QAction*>("actionShowTrimmed");
   if(!actionShowTrimmed)
     return;
   actionShowTrimmed->setChecked(b);
+  itemChanged();
+}
+
+void Scene_nurbs_item::show_control_points(bool b)
+{
+
+  d->cp_shown = b;
+  if(b)
+  {
+    d->spheres_item = new Scene_spheres_item(this, d->m_nurbs_surface.uNbCps() * d->m_nurbs_surface.vNbCps());
+    d->compute_spheres();
+    scene->addItem(d->spheres_item);
+    addChild(d->spheres_item);
+    lockChild(d->spheres_item);
+    scene->changeGroup(d->spheres_item, this);
+  }
+  else
+  {
+    unlockChild(d->spheres_item);
+    removeChild(d->spheres_item);
+    scene->erase(scene->item_id(d->spheres_item));
+  }
+  QAction* actionShowCPs = contextMenu()->findChild<QAction*>("actionShowCPs");
+  if(!actionShowCPs)
+    return;
+  actionShowCPs->setChecked(b);
   itemChanged();
 }
 
@@ -347,7 +405,13 @@ QMenu* Scene_nurbs_item::contextMenu()
     actionShowTrimmed->setObjectName("actionShowTrimmed");
     connect(actionShowTrimmed, SIGNAL(toggled(bool)),
             this, SLOT(show_trimmed(bool)));
-
+    QAction* actionShowCPs=
+      menu->addAction(tr("Show Control Points"));
+    actionShowCPs->setCheckable(true);
+    actionShowCPs->setChecked(false);
+    actionShowCPs->setObjectName("actionShowCPs");
+    connect(actionShowCPs, SIGNAL(toggled(bool)),
+            this, SLOT(show_control_points(bool)));
     menu->setProperty(prop_name, true);
   }
   return menu;
