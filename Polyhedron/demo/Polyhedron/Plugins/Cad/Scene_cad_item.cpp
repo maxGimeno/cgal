@@ -217,6 +217,18 @@ void Scene_cad_item::show_trimmed(bool b)
   }
 }
 
+void Scene_cad_item::show_control_points(bool b)
+{
+  Q_FOREACH(Scene_item* item, getChildren())
+  {
+    Scene_nurbs_item* nurbs = qobject_cast<Scene_nurbs_item*>(item);
+    if(!nurbs)
+      continue;
+
+    nurbs->show_control_points(b);
+  }
+}
+
 void Scene_cad_item::show_intersections(bool b)
 {
   d->intersections_shown = b;
@@ -241,6 +253,14 @@ QMenu* Scene_cad_item::contextMenu()
     actionShowTrimmed->setObjectName("actionShowTrimmed");
     connect(actionShowTrimmed, SIGNAL(toggled(bool)),
             this, SLOT(show_trimmed(bool)));
+
+    QAction* actionShowCPs=
+        menu->addAction(tr("Show Control Points"));
+    actionShowCPs->setCheckable(true);
+    actionShowCPs->setChecked(false);
+    actionShowCPs->setObjectName("actionShowCPs");
+    connect(actionShowCPs, SIGNAL(toggled(bool)),
+            this, SLOT(show_control_points(bool)));
 
     QAction* actionShowIntersections=
         menu->addAction(tr("Show Intersections"));

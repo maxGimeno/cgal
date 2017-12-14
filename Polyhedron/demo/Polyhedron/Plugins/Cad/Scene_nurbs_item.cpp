@@ -12,6 +12,85 @@
 #include <QMenu>
 
 typedef Scene_nurbs_item_priv D;
+class Scene_control_net_item : public Scene_spheres_item
+{
+public:
+  Scene_control_net_item(Scene_group_item* parent, std::size_t max_index = 0, bool planed = false)
+    :Scene_spheres_item(parent, max_index, planed)
+  {
+    vao_lines = new QOpenGLVertexArrayObject();
+    vao_lines->create();
+    vbo_lines = new QOpenGLBuffer();
+    vbo_lines->create();
+    is_initialized = false;
+  }
+  ~Scene_control_net_item()
+  {
+    vao_lines->destroy();
+    delete vao_lines;
+    vbo_lines->destroy();
+    delete vbo_lines;
+  }
+  void initializeBuffers(Viewer_interface* viewer)const
+  {
+    QOpenGLShaderProgram* program = getShaderProgram(Scene_nurbs_item::PROGRAM_NO_SELECTION, viewer);
+    program->bind();
+    vao_lines->bind();
+    vbo_lines->bind();
+
+    vbo_lines->allocate(control_net.data(), static_cast<int>(control_net.size() * sizeof(float)));
+    program->enableAttributeArray("vertex");
+    program->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
+    program->disableAttributeArray("colors");
+
+    vbo_lines->release();
+    vao_lines->release();
+    program->release();
+    is_initialized = true;
+  }
+  void draw_control_edges(Viewer_interface *viewer) const
+  {
+    if(!is_initialized)
+      initializeBuffers(viewer);
+    viewer->glEnable(GL_LINE_STIPPLE);
+    attribBuffers(viewer, PROGRAM_NO_SELECTION);
+    QOpenGLShaderProgram* program = getShaderProgram(PROGRAM_NO_SELECTION, viewer);
+    program->bind();
+    vao_lines->bind();
+    program->setAttributeValue("colors", QColor(Qt::black));
+    viewer->glLineStipple(1, 0xAAAA);
+    viewer->glDrawArrays(GL_LINES, 0, control_net.size()/3);
+
+    vao_lines->release();
+    program->release();
+    viewer->glDisable(GL_LINE_STIPPLE);
+  }
+
+  void draw(Viewer_interface *viewer) const
+  {
+    Scene_spheres_item::draw(viewer);
+    draw_control_edges(viewer);
+
+  }
+  void drawEdges(Viewer_interface *viewer) const
+  {
+    Scene_spheres_item::drawEdges(viewer);
+    if(renderingMode() == Wireframe)
+      draw_control_edges(viewer);
+  }
+  void set_control_edges(const std::vector<float>& edges)
+  {
+    control_net = edges;
+    is_initialized = false;
+  }
+private:
+  mutable std::vector<float> control_net;
+  QOpenGLVertexArrayObject *vao_lines;
+  QOpenGLBuffer* vbo_lines;
+  mutable bool is_initialized;
+
+
+};
 //Vertex source code
 struct Scene_nurbs_item_priv{
   Scene_nurbs_item_priv(const dtkNurbsSurface& dtk_nurbs_surface,
@@ -21,8 +100,9 @@ struct Scene_nurbs_item_priv{
   {
     dtkLogger::instance().attachConsole();
     dtkLogger::instance().setLevel(dtkLog::Trace);
-
+    spheres_item = NULL;
     trimmed_shown = false;
+    cp_shown = false;
     float min_box[3];
     float max_box[3];
     std::fill_n(min_box, 3, std::numeric_limits<float>::infinity());
@@ -176,10 +256,32 @@ struct Scene_nurbs_item_priv{
         m_nurbs_surface.controlPoint(i, j, dtk_point.data());
         Scene_spheres_item::Kernel::Sphere_3 sphere(Scene_spheres_item::Kernel::Point_3(dtk_point[0],
                                                     dtk_point[1],
-                                       dtk_point[2]), 0.5f);
+                                       dtk_point[2]), item->diagonalBbox()/280.0f);
         spheres_item->add_sphere(sphere,i*m_nurbs_surface.vNbCps()+j, CGAL::Color(120,120,25));
       }
     }
+    for(std::size_t i = 0; i < m_nurbs_surface.uNbCps(); ++i) {
+      for(std::size_t j = 0; j < m_nurbs_surface.vNbCps()-1; ++j) {
+        m_nurbs_surface.controlPoint(i, j, dtk_point.data());
+        control_net.push_back(dtk_point[0]);
+        control_net.push_back(dtk_point[1]);
+        control_net.push_back(dtk_point[2]);
+        m_nurbs_surface.controlPoint(i, j+1, dtk_point.data());
+        control_net.push_back(dtk_point[0]);
+        control_net.push_back(dtk_point[1]);
+        control_net.push_back(dtk_point[2]);
+      }}
+    for(std::size_t j = 0; j < m_nurbs_surface.vNbCps(); ++j) {
+      for(std::size_t i = 0; i < m_nurbs_surface.uNbCps()-1; ++i) {
+        m_nurbs_surface.controlPoint(i, j, dtk_point.data());
+        control_net.push_back(dtk_point[0]);
+        control_net.push_back(dtk_point[1]);
+        control_net.push_back(dtk_point[2]);
+        m_nurbs_surface.controlPoint(i+1, j, dtk_point.data());
+        control_net.push_back(dtk_point[0]);
+        control_net.push_back(dtk_point[1]);
+        control_net.push_back(dtk_point[2]);
+      }}
     spheres_item->setName(QString("Control Points"));
   }
   ~Scene_nurbs_item_priv()
@@ -239,6 +341,17 @@ struct Scene_nurbs_item_priv{
 
     item->buffers[B_INTERSECTIONS].release();
     item->vaos[INTERSECTIONS]->release();
+
+    item->vaos[CONTROL_NET]->bind();
+    item->buffers[B_CONTROL_NET].bind();
+
+    item->buffers[B_CONTROL_NET].allocate(control_net.data(), static_cast<int>(control_net.size() * sizeof(float)));
+    m_program->enableAttributeArray("vertex");
+    m_program->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
+    m_program->disableAttributeArray("colors");
+
+    item->buffers[B_CONTROL_NET].release();
+    item->vaos[CONTROL_NET]->release();
     m_program->release();
 
     initialized = true;
@@ -251,6 +364,7 @@ struct Scene_nurbs_item_priv{
     UNTRIMMED_FACES=0,
     TRIMMED_FACES,
     INTERSECTIONS,
+    CONTROL_NET,
     NumberOfVaos
   };
 
@@ -259,6 +373,7 @@ struct Scene_nurbs_item_priv{
     UNTRIMMED_FACES_BUFFER=0,
     TRIMMED_FACES_BUFFER,
     B_INTERSECTIONS,
+    B_CONTROL_NET,
     NumberOfBuffers
   };
 
@@ -267,6 +382,7 @@ struct Scene_nurbs_item_priv{
   mutable std::vector<unsigned int> m_untrimmed_elements;
   mutable std::vector<float> untrimmed_vertices;
   mutable std::vector<float> trimmed_vertices;
+  mutable std::vector<float> control_net;
 
   mutable std::vector<float> intersection;
 
@@ -279,7 +395,7 @@ struct Scene_nurbs_item_priv{
   mutable bool cp_shown;
   CGAL::Three::Scene_item::Bbox bbox;
   Scene_nurbs_item* item;
-  Scene_spheres_item* spheres_item;
+  Scene_control_net_item* spheres_item;
 };
 
 Scene_nurbs_item::Scene_nurbs_item(const dtkNurbsSurface& dtk_nurbs_surface,
@@ -318,7 +434,6 @@ void Scene_nurbs_item::draw(CGAL::Three::Viewer_interface* viewer)const
     vaos[D::UNTRIMMED_FACES]->release();
     d->m_program->release();
   }
-
   Scene_group_item::draw(viewer);
 }
 
@@ -367,8 +482,11 @@ void Scene_nurbs_item::show_control_points(bool b)
   d->cp_shown = b;
   if(b)
   {
-    d->spheres_item = new Scene_spheres_item(this, d->m_nurbs_surface.uNbCps() * d->m_nurbs_surface.vNbCps());
+    if(d->spheres_item)
+      return;
+    d->spheres_item = new Scene_control_net_item(this, d->m_nurbs_surface.uNbCps() * d->m_nurbs_surface.vNbCps());
     d->compute_spheres();
+    d->spheres_item->set_control_edges(d->control_net);
     scene->addItem(d->spheres_item);
     addChild(d->spheres_item);
     lockChild(d->spheres_item);
@@ -376,14 +494,18 @@ void Scene_nurbs_item::show_control_points(bool b)
   }
   else
   {
+    if(!d->spheres_item)
+      return;
     unlockChild(d->spheres_item);
     removeChild(d->spheres_item);
     scene->erase(scene->item_id(d->spheres_item));
+    d->spheres_item = NULL;
   }
   QAction* actionShowCPs = contextMenu()->findChild<QAction*>("actionShowCPs");
   if(!actionShowCPs)
     return;
   actionShowCPs->setChecked(b);
+  d->initialized = false;
   itemChanged();
 }
 
