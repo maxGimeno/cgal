@@ -27,11 +27,12 @@ struct Scene_rational_bezier_curve_item_priv{
       for(float f = 0.; f <= 1.; f += 0.01) {
           m_rational_bezier_curve.evaluatePoint(f, p.data());
           for(int i = 0; i < 3; ++i) {
-
-              std::cerr << p[i] << std::endl;
               polyline.push_back(p[i]);
           }
       }
+      dtkContinuousGeometryPrimitives::AABB_3 aabb(0., 0., 0., 0. ,0., 0.);
+      m_rational_bezier_curve.aabb(aabb.data());
+      bbox = CGAL::Bbox_3(aabb[0], aabb[1], aabb[2], aabb[3], aabb[4], aabb[5]);
     }
 
   void initializeBuffers(CGAL::Three::Viewer_interface *viewer)const
