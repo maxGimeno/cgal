@@ -26,7 +26,6 @@ public:
   Scene_item* clone() const {return 0;}
   QString toolTip() const {return QString();}
   bool supportsRenderingMode(RenderingMode m) const { return (m == Flat || m == FlatPlusEdges || m == Wireframe); }
-  void compute_bbox() const;
   QMenu* contextMenu();
 
 protected:

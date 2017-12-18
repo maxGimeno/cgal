@@ -204,42 +204,8 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
 
     const double edge_sizing = ui_protection->sizeSpinBox->value();
 
-    // Mesh_domain_with_features* cgal_brep_mesh_domain_with_features = new Mesh_domain_with_features(*brep);
-    std::vector < dtkNurbsSurfaceIntersect * > intersects;
-    dtkContinuousGeometryPrimitives::AABB_3 aabb_test(0., 0., 0., 0., 0., 0.);
-    for(auto surf : brep->nurbsSurfaces()) {
-        dtkNurbsSurfaceIntersect *intersect = new dtkNurbsSurfaceIntersect(*(surf));
-        intersects.push_back(intersect);
-        intersect->initialize();
-        // ///////////////////////////////////////////////////////////////////
-        // Initializes the surface to make sure it is not modified during the parallel refinement process
-        // Recovers a point and the normal at that point on the surface, create a source point for a ray, and shoot in the opposite direction to the normal
-        // ///////////////////////////////////////////////////////////////////
-        // dtkContinuousGeometryPrimitives::Point_3 p(0., 0., 0.);
-        // dtkContinuousGeometryPrimitives::Vector_3 n(0., 0., 0.);
-        // double i = (surf->uKnots()[surf->uNbCps() + surf->uDegree() - 2] + surf->uKnots()[0]) / 2.;
-        // double j = (surf->vKnots()[surf->vNbCps() + surf->vDegree() - 2] + surf->vKnots()[0]) / 2.;
-        // surf->evaluatePoint(i, j, p.data());
-        // surf->evaluateNormal(i, j, n.data());
-        // dtkContinuousGeometryPrimitives::Point_3 s(p + n);
-        // dtkContinuousGeometryPrimitives::Line_3 l(s, n);
-        // std::list< dtkNurbsProbingPrimitives::IntersectionObject> intersections;
-        // intersect->intersect(intersections, l);
-        // qDebug() << "nb of intersections : " << intersections.size();
-        // ///////////////////////////////////////////////////////////////////
-        // Make sure we get at least 1 intersection point
-        // ///////////////////////////////////////////////////////////////////
-        // if(intersections.size() == 0) {
-        //     dtkFatal() << "initialization failed";
-        // }
-        // ///////////////////////////////////////////////////////////////////
-        // TODO : What to do for degenerated surfaces ?
-        // ///////////////////////////////////////////////////////////////////
-    }
-    dtkContinuousGeometryPrimitives::AABB_3 aabb(0., 0., 0., 0., 0., 0.);
-    brep->aabb(aabb.data());
+    Mesh_domain* cgal_brep_mesh_domain = new Mesh_domain(*brep);
 
-    Mesh_domain* cgal_brep_mesh_domain = new Mesh_domain(intersects, aabb);
     ///////////////////////////////////////////////////////////////////
     // Recovers the trims not to protect
     ///////////////////////////////////////////////////////////////////

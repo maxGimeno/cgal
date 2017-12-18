@@ -58,6 +58,14 @@ target_link_libraries(rational_bezier_surface_plugin
   dtkCore
   dtkContinuousGeometryCore)
 
+polyhedron_demo_plugin(rational_bezier_curve_plugin
+  Rational_bezier_curve_plugin)
+target_link_libraries(rational_bezier_curve_plugin
+  polyhedron_demo
+  scene_rational_bezier_curve_item
+  dtkCore
+  dtkContinuousGeometryCore)
+
 polyhedron_demo_plugin(nurbs_surface_plugin
   Nurbs_surface_plugin)
 target_link_libraries(nurbs_surface_plugin

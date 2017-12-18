@@ -324,8 +324,8 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
     add_item(scene_nurbs_item Plugins/Cad/Scene_nurbs_item.cpp)
     target_link_libraries(scene_nurbs_item dtkCore dtkContinuousGeometryCore scene_basic_objects)
 
-#    add_item(scene_rational_bezier_curve_item Plugins/Cad/Scene_rational_bezier_curve_item.cpp)
-#    target_link_libraries(scene_rational_bezier_curve_item dtkCore dtkContinuousGeometryCore)
+   add_item(scene_rational_bezier_curve_item Plugins/Cad/Scene_rational_bezier_curve_item.cpp)
+   target_link_libraries(scene_rational_bezier_curve_item dtkCore dtkContinuousGeometryCore)
 
     add_item(scene_rational_bezier_surface_item Plugins/Cad/Scene_rational_bezier_surface_item.cpp)
     target_link_libraries(scene_rational_bezier_surface_item dtkCore dtkContinuousGeometryCore)
