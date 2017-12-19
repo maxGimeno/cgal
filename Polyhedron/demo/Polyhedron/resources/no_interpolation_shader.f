@@ -1,9 +1,8 @@
 #version 430 core
-
+/*
 in GS_OUT
 {
   vec4 fP;
-  vec3 fN;
   flat vec4 color[4];
   vec2 uv;
   flat vec4 prob[4];
@@ -58,4 +57,48 @@ void main(void)
       diffuse = max(abs(dot(N,L)),0) * light_diff*color;
   vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec;
   out_color = vec4((color*light_amb).xyz + diffuse.xyz + specular.xyz,1.0);
+}
+*/
+
+in VS_OUT
+{
+  vec4 fP;
+  vec4 out_color;
+}fs_in;
+uniform bool is_two_side;
+uniform vec4 light_pos;
+uniform vec4 light_diff;
+uniform vec4 light_spec;
+uniform vec4 light_amb;
+uniform float spec_power ;
+
+out vec4 out_color;
+
+void main(void)
+{
+vec4 color = fs_in.out_color;
+//compute and apply light effects
+vec3 L = light_pos.xyz - fs_in.fP.xyz;
+vec3 V = -fs_in.fP.xyz;
+
+vec3 N;
+vec3 X = dFdx(fs_in.fP.xyz);
+vec3 Y = dFdy(fs_in.fP.xyz);
+vec3 normal=normalize(cross(X,Y));
+
+if(normal == highp vec3(0.0,0.0,0.0))
+     N = highp vec3(0.0,0.0,0.0);
+ else
+     N = normalize(normal);
+L = normalize(L);
+V = normalize(V);
+
+vec3 R = reflect(-L, N);
+vec4 diffuse;
+if(!is_two_side)
+    diffuse = max(dot(N,L),0) * light_diff*color;
+else
+    diffuse = max(abs(dot(N,L)),0) * light_diff*color;
+vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec;
+out_color = vec4((color*light_amb).xyz + diffuse.xyz + specular.xyz,1.0);
 }

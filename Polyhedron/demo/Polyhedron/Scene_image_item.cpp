@@ -10,25 +10,12 @@
 
 #ifdef CGAL_USE_VTK
 #include <CGAL/read_vtk_image_data.h>
-
-#include <vtkImageData.h>
-#include <vtkDICOMImageReader.h>
-#include <vtkImageReader.h>
-#include <vtkImageGaussianSmooth.h>
-#include <vtkDemandDrivenPipeline.h>
-#include <vtkSmartPointer.h>
-#include <vtkVersion.h>
 #include <vtkSmartPointer.h>
 #include <vtkDiscreteMarchingCubes.h>
-#include <vtkVoxelModeller.h>
-#include <vtkSphereSource.h>
 #include <vtkImageData.h>
-#include <vtkDICOMImageReader.h>
 
-
-#include <vtkActor.h>
-#include <vtkPolyDataMapper.h>
 #include <vtkXMLPolyDataWriter.h>
+#include <vtkCell.h>
 #endif
 
 
@@ -308,13 +295,13 @@ fill_buffer_data()
       for ( k = 0 ; k < data_.zdim() ; k+=dz() )
       {
 
-        //treat_vertex(i,j,k);
         unsigned char v = data_.image_data(i,j,k);
         vtk_image->SetScalarComponentFromFloat((std::min)(i/dx(), data_.xdim()/dx()-1),
                                                (std::min)(j/dy(), data_.ydim()/dy()-1),
                                                (std::min)(k/dz(), data_.zdim()/dz()-1), 0, v);
         if(v!=0)
           contours.insert(v);
+
       }
     }
   }
@@ -326,18 +313,49 @@ fill_buffer_data()
   std::set<unsigned char>::iterator it = contours.begin();
   for(int i=0; i< solar->GetNumberOfContours(); ++i)
     solar->SetValue(i, *(it++));
-  solar->ComputeScalarsOn();
-  solar->ComputeGradientsOn();
-  solar->ComputeNormalsOn();
+
+  solar->ComputeNormalsOff();
   solar->Update();
-  vtkPolyData* output = solar->GetOutput();
+  vtkPolyData* poly_data = solar->GetOutput();
+  std::cerr<<"nb of surfaces:  "<<solar->GetNumberOfOutputPorts()<<std::endl;
+  // get nb of points and cells
+  vtkIdType nb_points = poly_data->GetNumberOfPoints();
+  vtkIdType nb_cells = poly_data->GetNumberOfCells();
+  std::cerr<<"nb of points:  "<<nb_points<<std::endl;
+  std::cerr<<"nb of cells:  "<<nb_cells<<std::endl;
+  const qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first())->offset();
+  //extract points
+  for (vtkIdType i = 0; i<nb_points; ++i)
+  {
+    double coords[3];
+    poly_data->GetPoint(i, coords);
+    vertices_.push_back(coords[0]+offset.x);
+    vertices_.push_back(coords[1]+offset.y);
+    vertices_.push_back(coords[2]+offset.z);
+    colors_.push_back(1.0f);
+    colors_.push_back(0.5f);
+    colors_.push_back(0.2f);
+  }
+
+  //extract cells
+  for (vtkIdType i = 0; i<nb_cells; ++i)
+  {
+    vtkCell* cell_ptr = poly_data->GetCell(i);
+
+    vtkIdType nb_vertices = cell_ptr->GetNumberOfPoints();
+    if (nb_vertices < 3)
+      return;
+    for(int n=0; n<nb_vertices; ++n)
+      quads_.push_back(cell_ptr->GetPointId(n));
+  }
+  /*vtkPolyData* output = solar->GetOutput();
   std::cerr<<"nb of points:  "<<output->GetNumberOfPoints()<<std::endl;
   std::cerr<<"nb of triangles:  "<<output->GetNumberOfPolys()<<std::endl;
   vtkSmartPointer<vtkXMLPolyDataWriter> writer =
       vtkSmartPointer<vtkXMLPolyDataWriter>::New();
   writer->SetInputData(output);
   writer->SetFileName("/home/gimeno/Data/test.vtp");
-  writer->Write();
+  writer->Write();*/
 }
 
 void
@@ -657,10 +675,10 @@ void Scene_image_item_priv::compile_shaders()
     {
       std::cerr<<"adding fragment shader FAILED"<<std::endl;
     }
-    if(!rendering_program.addShaderFromSourceFile(QOpenGLShader::Geometry,":/cgal/Polyhedron_3/resources/no_interpolation_shader.g"))
-    {
-      std::cerr<<"adding geometry shader FAILED"<<std::endl;
-    }
+    //if(!rendering_program.addShaderFromSourceFile(QOpenGLShader::Geometry,":/cgal/Polyhedron_3/resources/no_interpolation_shader.g"))
+    //{
+    //  std::cerr<<"adding geometry shader FAILED"<<std::endl;
+    //}
     rendering_program.link();
   }
   rendering_program.bindAttributeLocation("colors", 1);
@@ -824,12 +842,6 @@ Scene_image_item_priv::initializeBuffers()
     rendering_program.enableAttributeArray("vertex");
     rendering_program.setAttributeBuffer("vertex",GL_FLOAT,0,3);
     m_vbo[0].release();
-    m_vbo[1].bind();
-    m_vbo[1].allocate(helper.normals(), static_cast<int>(helper.normal_size()));
-    rendering_program.enableAttributeArray("normal");
-    rendering_program.setAttributeBuffer("normal",GL_FLOAT,0,3);
-    m_vbo[1].release();
-
     m_vbo[2].bind();
     m_vbo[2].allocate(helper.colors(), static_cast<int>(helper.color_size()));
     rendering_program.enableAttributeArray("inColor");
@@ -838,6 +850,7 @@ Scene_image_item_priv::initializeBuffers()
 
     m_ibo->bind();
     m_ibo->allocate(helper.quads(), static_cast<int>(helper.quad_size()));
+    std::cerr<<"indices size: "<<helper.quad_size()<<std::endl;
     vao[0].release();
 
     color.resize(0);
@@ -872,7 +885,8 @@ Scene_image_item_priv::draw_gl(Viewer_interface* viewer) const
     if(!is_ogl_4_3)
       viewer->glDrawElements(GL_TRIANGLES, m_ibo->size()/sizeof(GLuint), GL_UNSIGNED_INT, 0);
     else
-      viewer->glDrawElements(GL_LINES_ADJACENCY, m_ibo->size()/sizeof(GLuint), GL_UNSIGNED_INT, 0);
+      //viewer->glDrawElements(GL_LINES_ADJACENCY, m_ibo->size()/sizeof(GLuint), GL_UNSIGNED_INT, 0);
+      viewer->glDrawElements(GL_TRIANGLES, m_ibo->size()/sizeof(GLuint), GL_UNSIGNED_INT, 0);
     vao[0].release();
   }
   rendering_program.release();
