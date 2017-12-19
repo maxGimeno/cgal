@@ -60,6 +60,7 @@
 #include <vtkImageReader.h>
 #include <vtkImageGaussianSmooth.h>
 #include <vtkDemandDrivenPipeline.h>
+#include <vtkSmartPointer.h>
 #endif
 
 // Covariant return types don't work for scalar types and we cannot
@@ -968,6 +969,7 @@ void convert(Image* image)
 CGAL::Three::Scene_item*
 Io_image_plugin::load(QFileInfo fileinfo) {
   QApplication::restoreOverrideCursor();
+
   Image* image = new Image;
   if(fileinfo.suffix() != "H" && fileinfo.suffix() != "HH" &&
      !image->read(fileinfo.filePath().toUtf8()))
@@ -1121,9 +1123,11 @@ Io_image_plugin::load(QFileInfo fileinfo) {
     createPlanes(image_item);
   }
   else
+  {
     image_item = new Scene_image_item(image,voxel_scale, false);
-  image_item->setName(fileinfo.baseName());
-  return image_item;
+    image_item->setName(fileinfo.baseName());
+    return image_item;
+  }
 }
 
 bool Io_image_plugin::canSave(const CGAL::Three::Scene_item* item)

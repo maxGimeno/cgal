@@ -1,11 +1,36 @@
 #include "config.h"
-
 #include "Scene_image_item.h"
+
 #include "Image_type.h"
 #include <QColor>
 #include <map>
 #include <CGAL/ImageIO.h>
 #include <CGAL/use.h>
+#include <boost/unordered_set.hpp>
+
+#ifdef CGAL_USE_VTK
+#include <CGAL/read_vtk_image_data.h>
+
+#include <vtkImageData.h>
+#include <vtkDICOMImageReader.h>
+#include <vtkImageReader.h>
+#include <vtkImageGaussianSmooth.h>
+#include <vtkDemandDrivenPipeline.h>
+#include <vtkSmartPointer.h>
+#include <vtkVersion.h>
+#include <vtkSmartPointer.h>
+#include <vtkDiscreteMarchingCubes.h>
+#include <vtkVoxelModeller.h>
+#include <vtkSphereSource.h>
+#include <vtkImageData.h>
+#include <vtkDICOMImageReader.h>
+
+
+#include <vtkActor.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkXMLPolyDataWriter.h>
+#endif
+
 
 
 
@@ -33,13 +58,14 @@ public:
   double vx() const { return im_.vx(); }
   double vy() const { return im_.vy(); }
   double vz() const { return im_.vz(); }
+  unsigned char image_data(std::size_t i, std::size_t j, std::size_t k) const;
+  const _image* getImage() const{ return im_.image(); }
   
 private:
   unsigned char non_null_neighbor_data(std::size_t i,
                                        std::size_t j,
                                        std::size_t k) const;
   
-  unsigned char image_data(std::size_t i, std::size_t j, std::size_t k) const;
   
   void add_to_normal(unsigned char v,
                      float& x, float& y, float& z,
@@ -213,7 +239,7 @@ add_to_normal(unsigned char v,
 class Vertex_buffer_helper
 {
 public:
-  Vertex_buffer_helper(const Image_accessor& data, bool is_ogl_4_3);
+  Vertex_buffer_helper(const Image_accessor& data, bool is_ogl_4_3, QString name);
   
   void fill_buffer_data();
 
@@ -252,13 +278,14 @@ private:
   std::vector<GLfloat> colors_, normals_, vertices_;
   std::vector<GLuint> quads_;
   bool is_ogl_4_3;
+  QString filename;
 };
 
 int Vertex_buffer_helper::vertex_not_found_ = -1;
 
 Vertex_buffer_helper::
-Vertex_buffer_helper(const Image_accessor& data, bool b)
-  : data_(data), is_ogl_4_3(b)
+Vertex_buffer_helper(const Image_accessor& data, bool b, QString name)
+  : data_(data), is_ogl_4_3(b), filename(name)
 {}
 
 
@@ -266,17 +293,51 @@ void
 Vertex_buffer_helper::
 fill_buffer_data()
 {
+  vtkSmartPointer<vtkImageData> vtk_image = vtkSmartPointer<vtkImageData>::New();
+  vtk_image->SetSpacing(1,1,1);
+  vtk_image->SetDimensions(data_.xdim()/dx(), data_.ydim()/dy(), data_.zdim()/dz());
+  vtk_image->AllocateScalars(VTK_FLOAT, 1);
+  vtk_image->SetSpacing(1.0, 1.0, 1.0 );
+  vtk_image->SetOrigin(0.0, 0.0, 0.0 );
   std::size_t i,j,k;
-  for ( i = 0 ; i <= data_.xdim() ; i+=dx() )
+  std::set<unsigned char> contours;
+  for ( i = 0 ; i < data_.xdim() ; i+=dx() )
   {
-    for ( j = 0 ; j <= data_.ydim() ; j+=dy() )
+    for ( j = 0 ; j < data_.ydim() ; j+=dy() )
     {
-      for ( k = 0 ; k <= data_.zdim() ; k+=dz() )
+      for ( k = 0 ; k < data_.zdim() ; k+=dz() )
       {
-        treat_vertex(i,j,k);
+
+        //treat_vertex(i,j,k);
+        unsigned char v = data_.image_data(i,j,k);
+        vtk_image->SetScalarComponentFromFloat((std::min)(i/dx(), data_.xdim()/dx()-1),
+                                               (std::min)(j/dy(), data_.ydim()/dy()-1),
+                                               (std::min)(k/dz(), data_.zdim()/dz()-1), 0, v);
+        if(v!=0)
+          contours.insert(v);
       }
     }
   }
+  //vtk_image->Print(std::cerr);
+  vtkSmartPointer<vtkDiscreteMarchingCubes> solar =
+      vtkSmartPointer<vtkDiscreteMarchingCubes>::New();
+  solar->SetInputData(vtk_image);
+  solar->SetNumberOfContours(contours.size());
+  std::set<unsigned char>::iterator it = contours.begin();
+  for(int i=0; i< solar->GetNumberOfContours(); ++i)
+    solar->SetValue(i, *(it++));
+  solar->ComputeScalarsOn();
+  solar->ComputeGradientsOn();
+  solar->ComputeNormalsOn();
+  solar->Update();
+  vtkPolyData* output = solar->GetOutput();
+  std::cerr<<"nb of points:  "<<output->GetNumberOfPoints()<<std::endl;
+  std::cerr<<"nb of triangles:  "<<output->GetNumberOfPolys()<<std::endl;
+  vtkSmartPointer<vtkXMLPolyDataWriter> writer =
+      vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+  writer->SetInputData(output);
+  writer->SetFileName("/home/gimeno/Data/test.vtp");
+  writer->Write();
 }
 
 void
@@ -754,7 +815,7 @@ Scene_image_item_priv::initializeBuffers()
                                                   m_voxel_scale,
                                                   m_voxel_scale,
                                                   m_voxel_scale);
-    internal::Vertex_buffer_helper helper (image_data_accessor, is_ogl_4_3);
+    internal::Vertex_buffer_helper helper (image_data_accessor, is_ogl_4_3, item->name());
     helper.fill_buffer_data();
     rendering_program.bind();
     vao[0].bind();
