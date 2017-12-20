@@ -16,6 +16,9 @@
 
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkCell.h>
+#include <vtkCellData.h>
+#include <vtkPointData.h>
+#include <vtkCellDataToPointData.h>
 #endif
 
 
@@ -47,6 +50,8 @@ public:
   double vz() const { return im_.vz(); }
   unsigned char image_data(std::size_t i, std::size_t j, std::size_t k) const;
   const _image* getImage() const{ return im_.image(); }
+  std::map<unsigned char, QColor> colors_;
+  const QColor default_color_;
   
 private:
   unsigned char non_null_neighbor_data(std::size_t i,
@@ -61,8 +66,6 @@ private:
 private:
   const Image& im_;
   int dx_, dy_, dz_;
-  const QColor default_color_;
-  std::map<unsigned char, QColor> colors_;
 };
 
 
@@ -280,12 +283,12 @@ void
 Vertex_buffer_helper::
 fill_buffer_data()
 {
+  qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first())->offset();
   vtkSmartPointer<vtkImageData> vtk_image = vtkSmartPointer<vtkImageData>::New();
-  vtk_image->SetSpacing(1,1,1);
   vtk_image->SetDimensions(data_.xdim()/dx(), data_.ydim()/dy(), data_.zdim()/dz());
   vtk_image->AllocateScalars(VTK_FLOAT, 1);
-  vtk_image->SetSpacing(1.0, 1.0, 1.0 );
-  vtk_image->SetOrigin(0.0, 0.0, 0.0 );
+  vtk_image->SetSpacing(dx()*data_.vx(), dy()*data_.vx(), dz()*data_.vx());
+  vtk_image->SetOrigin(0,0,0);
   std::size_t i,j,k;
   std::set<unsigned char> contours;
   for ( i = 0 ; i < data_.xdim() ; i+=dx() )
@@ -305,36 +308,43 @@ fill_buffer_data()
       }
     }
   }
-  //vtk_image->Print(std::cerr);
   vtkSmartPointer<vtkDiscreteMarchingCubes> solar =
       vtkSmartPointer<vtkDiscreteMarchingCubes>::New();
   solar->SetInputData(vtk_image);
   solar->SetNumberOfContours(contours.size());
   std::set<unsigned char>::iterator it = contours.begin();
   for(int i=0; i< solar->GetNumberOfContours(); ++i)
-    solar->SetValue(i, *(it++));
-
-  solar->ComputeNormalsOff();
+  {
+    solar->SetValue(i, *(it));
+    ++it;
+  }
+  solar->ComputeScalarsOn();
   solar->Update();
   vtkPolyData* poly_data = solar->GetOutput();
-  std::cerr<<"nb of surfaces:  "<<solar->GetNumberOfOutputPorts()<<std::endl;
+  vtkSmartPointer<vtkCellDataToPointData> c2p = vtkSmartPointer<vtkCellDataToPointData>::New();
+  c2p->SetInputData(solar->GetOutput());
+  c2p->Update();
+  vtkDataArray* scalar_data =  c2p->GetOutput()->GetPointData()->GetScalars();
   // get nb of points and cells
   vtkIdType nb_points = poly_data->GetNumberOfPoints();
   vtkIdType nb_cells = poly_data->GetNumberOfCells();
-  std::cerr<<"nb of points:  "<<nb_points<<std::endl;
-  std::cerr<<"nb of cells:  "<<nb_cells<<std::endl;
-  const qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first())->offset();
   //extract points
+
   for (vtkIdType i = 0; i<nb_points; ++i)
   {
     double coords[3];
     poly_data->GetPoint(i, coords);
+    QColor c;
+    std::map<unsigned char, QColor>::const_iterator color = data_.colors_.find(scalar_data->GetComponent(i,0));
+    if ( data_.colors_.end() == color ) { c = data_.default_color_; }
+    else
+      c = color->second;
     vertices_.push_back(coords[0]+offset.x);
     vertices_.push_back(coords[1]+offset.y);
     vertices_.push_back(coords[2]+offset.z);
-    colors_.push_back(1.0f);
-    colors_.push_back(0.5f);
-    colors_.push_back(0.2f);
+    colors_.push_back(c.redF());
+    colors_.push_back(c.greenF());
+    colors_.push_back(c.blueF());
   }
 
   //extract cells
@@ -348,14 +358,6 @@ fill_buffer_data()
     for(int n=0; n<nb_vertices; ++n)
       quads_.push_back(cell_ptr->GetPointId(n));
   }
-  /*vtkPolyData* output = solar->GetOutput();
-  std::cerr<<"nb of points:  "<<output->GetNumberOfPoints()<<std::endl;
-  std::cerr<<"nb of triangles:  "<<output->GetNumberOfPolys()<<std::endl;
-  vtkSmartPointer<vtkXMLPolyDataWriter> writer =
-      vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-  writer->SetInputData(output);
-  writer->SetFileName("/home/gimeno/Data/test.vtp");
-  writer->Write();*/
 }
 
 void
@@ -850,7 +852,6 @@ Scene_image_item_priv::initializeBuffers()
 
     m_ibo->bind();
     m_ibo->allocate(helper.quads(), static_cast<int>(helper.quad_size()));
-    std::cerr<<"indices size: "<<helper.quad_size()<<std::endl;
     vao[0].release();
 
     color.resize(0);
