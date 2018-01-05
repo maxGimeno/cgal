@@ -38,47 +38,48 @@ struct Scene_cad_item_priv{
 
     std::size_t index = 0;
     for(auto topo_trim : brep->topoTrims()) {
-        std::cerr << topo_trim << std::endl;
         intersection_colors_indices.insert(topo_trim, index);
         color_indices.insert(index);
         dtkNurbsCurve* nurb = topo_trim->m_nurbs_curve_3d;
-        std::size_t length = nurb->nbCps() + nurb->degree() - 1;
-        double knots[length];
-        nurb->knots(knots);
-        dtkContinuousGeometryPrimitives::Point_3 p(0,0,0);
-        nurb->evaluatePoint(knots[0], p.data());
-        for(int j=0; j<3; ++j)
-            intersection.push_back(p[j]);
-        ++index;
-        for(float f = knots[0]+1/100.0*(knots[length-1]-knots[0]);
-            f<knots[length-1] - 1/100.0*(knots[length-1]-knots[0]);
-            f+=1/100.0*(knots[length-1]-knots[0]))
-            {
-                nurb->evaluatePoint(f, p.data());
-                for(int j=0; j<3; ++j) {
-                    intersection.push_back(p[j]);
+        if (nurb != nullptr) {
+            std::size_t length = nurb->nbCps() + nurb->degree() - 1;
+            double knots[length];
+            nurb->knots(knots);
+            dtkContinuousGeometryPrimitives::Point_3 p(0,0,0);
+            nurb->evaluatePoint(knots[0], p.data());
+            for(int j=0; j<3; ++j)
+                intersection.push_back(p[j]);
+            ++index;
+            for(float f = knots[0]+1/100.0*(knots[length-1]-knots[0]);
+                f<knots[length-1] - 1/100.0*(knots[length-1]-knots[0]);
+                f+=1/100.0*(knots[length-1]-knots[0]))
+                {
+                    nurb->evaluatePoint(f, p.data());
+                    for(int j=0; j<3; ++j) {
+                        intersection.push_back(p[j]);
+                    }
+                    intersection_colors.push_back((float)0);
+                    intersection_colors.push_back((float)0);
+                    intersection_colors.push_back((float)0);
+                    ++index;
+                    for(int j=0; j<3; ++j) {
+                        intersection.push_back(p[j]);
+                    }
+                    intersection_colors.push_back((float)0);
+                    intersection_colors.push_back((float)0);
+                    intersection_colors.push_back((float)0);
+                    ++index;
                 }
-                intersection_colors.push_back((float)0);
-                intersection_colors.push_back((float)0);
-                intersection_colors.push_back((float)0);
-                ++index;
-                for(int j=0; j<3; ++j) {
-                    intersection.push_back(p[j]);
-                }
-                intersection_colors.push_back((float)0);
-                intersection_colors.push_back((float)0);
-                intersection_colors.push_back((float)0);
-                ++index;
-            }
 
-        nurb->evaluatePoint(knots[length-1], p.data());
-        for(int j=0; j<3; ++j)
-            intersection.push_back(p[j]);
-        ++index;
-        intersection_colors.push_back((float)0);
-        intersection_colors.push_back((float)0);
-        intersection_colors.push_back((float)0);
-    }
+            nurb->evaluatePoint(knots[length-1], p.data());
+            for(int j=0; j<3; ++j)
+                intersection.push_back(p[j]);
+            ++index;
+            intersection_colors.push_back((float)0);
+            intersection_colors.push_back((float)0);
+            intersection_colors.push_back((float)0);
+        }
+        }
   }
 
   void initializeBuffers(CGAL::Three::Viewer_interface *viewer)const
