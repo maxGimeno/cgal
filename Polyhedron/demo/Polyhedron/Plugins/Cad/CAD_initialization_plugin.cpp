@@ -321,7 +321,6 @@ void Polyhedron_demo_CAD_initialization_plugin::randomShootingInitialization(){
     std::vector<std::pair<Point_3, Index> > initial_points;
     cgal_brep_mesh_domain->construct_initial_points_object()(std::back_inserter(initial_points), 20);
 
-    // cgal_brep_mesh_domain.
     for(auto& point : initial_points) {
         Vertex_handle vi = tr.insert(Weighted_point(point.first, 1.));
         CGAL_assertion(vi != Vertex_handle());
