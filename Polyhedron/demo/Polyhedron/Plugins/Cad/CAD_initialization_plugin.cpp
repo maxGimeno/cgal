@@ -224,7 +224,7 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
     if(ui_protection->protectTrimCB->checkState() == Qt::Checked) {
         protection_graph = new dtkSeamProtectionGraph(*brep, ui_protection->sizeSpinBox->value(), ui_protection->mergingToleranceSB->value(), false, not_to_protect);
     } else {
-        protection_graph = new dtkSeamProtectionGraph(*brep, ui_protection->sizeSpinBox->value(), 0., true);
+        protection_graph = new dtkSeamProtectionGraph(*brep, ui_protection->sizeSpinBox->value(), ui_protection->mergingToleranceSB->value(), true);
     }
 
     C3t3 p_c3t3;
