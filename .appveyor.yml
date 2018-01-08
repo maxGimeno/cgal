@@ -4,4 +4,5 @@ build_script:
 - cmd: echo "Hello world."
 install:
 -  cinst boost-msvc-12
+-  cinst cmake
 test: off
