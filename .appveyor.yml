@@ -1,0 +1,5 @@
+version: 1.0.{build}
+image: Visual Studio 2013
+build_script:
+- cmd: echo "Hello world."
+test: off
