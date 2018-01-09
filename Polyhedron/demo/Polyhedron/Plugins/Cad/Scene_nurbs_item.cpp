@@ -509,12 +509,14 @@ void Scene_nurbs_item::show_bezier_surfaces(bool b)
     std::vector< std::pair< dtkRationalBezierSurface *, double * > > rational_bezier_surfaces;
     d->m_nurbs_surface.decomposeToRationalBezierSurfaces(rational_bezier_surfaces);
     std::srand(0);
+    std::size_t i = 0;
     for(auto surf : rational_bezier_surfaces) {
         double red = std::rand() / double(RAND_MAX) * 255;
         double green = std::rand() / double(RAND_MAX) * 255;
         double blue = std::rand() / double(RAND_MAX) * 255;
         d->beziers_item.push_back(new Scene_rational_bezier_surface_item(*surf.first));
         d->beziers_item.back()->setColor(QColor(red, green, blue));
+        d->beziers_item.back()->setName(QString("Rational Bezier Surface #%1").arg(i));
         scene->addItem(d->beziers_item.back());
         addChild(d->beziers_item.back());
         lockChild(d->beziers_item.back());
