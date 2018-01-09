@@ -48,6 +48,7 @@ public :
 public Q_SLOTS:
   void show_trimmed(bool b);
   void show_control_points(bool b);
+  void show_bezier_surfaces(bool b);
   void show_intersections(bool b);
 
   void highlight(const dtkTopoTrim *);

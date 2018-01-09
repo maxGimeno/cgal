@@ -230,6 +230,19 @@ void Scene_cad_item::show_control_points(bool b)
   }
 }
 
+void Scene_cad_item::show_bezier_surfaces(bool b)
+{
+  Q_FOREACH(Scene_item* item, getChildren())
+  {
+    Scene_nurbs_item* nurbs = qobject_cast<Scene_nurbs_item*>(item);
+    if(!nurbs)
+      continue;
+
+    nurbs->setVisible(!b);
+    nurbs->show_bezier_surfaces(b);
+  }
+}
+
 void Scene_cad_item::show_intersections(bool b)
 {
   d->intersections_shown = b;
@@ -262,6 +275,14 @@ QMenu* Scene_cad_item::contextMenu()
     actionShowCPs->setObjectName("actionShowCPs");
     connect(actionShowCPs, SIGNAL(toggled(bool)),
             this, SLOT(show_control_points(bool)));
+
+    QAction* actionShowBezierSurfaces=
+        menu->addAction(tr("Show Bezier Surfaces"));
+    actionShowBezierSurfaces->setCheckable(true);
+    actionShowBezierSurfaces->setChecked(false);
+    actionShowBezierSurfaces->setObjectName("actionShowBezierSurfaces");
+    connect(actionShowBezierSurfaces, SIGNAL(toggled(bool)),
+            this, SLOT(show_bezier_surfaces(bool)));
 
     QAction* actionShowIntersections=
         menu->addAction(tr("Show Intersections"));
