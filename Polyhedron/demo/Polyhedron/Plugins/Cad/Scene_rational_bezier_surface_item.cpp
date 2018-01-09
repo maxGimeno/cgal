@@ -15,7 +15,6 @@ struct Scene_rational_bezier_surface_item_priv{
   Scene_rational_bezier_surface_item_priv(const dtkRationalBezierSurface& dtk_rational_bezier_surface,
                         Scene_rational_bezier_surface_item* parent)
     : m_rational_bezier_surface(dtk_rational_bezier_surface), item(parent)
-
   {
     dtkLogger::instance().attachConsole();
     dtkLogger::instance().setLevel(dtkLog::Error);
@@ -146,7 +145,14 @@ Scene_rational_bezier_surface_item::Scene_rational_bezier_surface_item(const dtk
 
 Scene_rational_bezier_surface_item::~Scene_rational_bezier_surface_item() { if(d) delete d; }
 
-
+QString Scene_rational_bezier_surface_item::toolTip() const {
+    return tr("<p><b>Rational Bezier Surface</b></p>"
+              "<p> Degree in U direction: %1<br />"
+              "Degree in V direction: %2</p>%3")
+        .arg(d->m_rational_bezier_surface.uDegree())
+        .arg(d->m_rational_bezier_surface.vDegree())
+        .arg(property("toolTip").toString());
+}
 
 void Scene_rational_bezier_surface_item::draw(CGAL::Three::Viewer_interface* viewer)const
 {

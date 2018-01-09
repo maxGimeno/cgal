@@ -25,7 +25,7 @@ public:
   void draw(CGAL::Three::Viewer_interface *) const;
   void drawEdges(CGAL::Three::Viewer_interface *) const;
   Scene_item* clone() const {return 0;}
-  QString toolTip() const {return QString();}
+  QString toolTip() const Q_DECL_OVERRIDE;
   bool supportsRenderingMode(RenderingMode m) const { return (m == Flat || m == FlatPlusEdges || m == Wireframe); }
   void compute_bbox() const;
   QMenu* contextMenu();
