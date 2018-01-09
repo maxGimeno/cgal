@@ -24,6 +24,7 @@
 //dtk-nurbs-probing
 #include <dtkSeamProtectionGraph>
 
+//Qt
 #include <QObject>
 #include <QAction>
 #include <QMainWindow>
@@ -59,10 +60,8 @@ public:
     this->mw = mainWindow;
     actionProtectInitialization = new QAction(tr("Initialization by protection"), mw);
     actionRandomShootingInitialization = new QAction(tr("Initialization by random shooting"), mw);
-    actionSamplingInitialization = new QAction(tr("Initialization by sampling the surfaces"), mw);
     actionProtectInitialization->setProperty("subMenuName", "Mesh initialization");
     actionRandomShootingInitialization->setProperty("subMenuName", "Mesh initialization");
-    actionSamplingInitialization->setProperty("subMenuName", "Mesh initialization");
     if(actionProtectInitialization) {
       connect(actionProtectInitialization, SIGNAL(triggered()),
               this, SLOT(protectInitialization()));
@@ -71,10 +70,6 @@ public:
       connect(actionRandomShootingInitialization, SIGNAL(triggered()),
               this, SLOT(randomShootingInitialization()));
     }
-    if(actionSamplingInitialization != nullptr) {
-        connect(actionSamplingInitialization, SIGNAL(triggered()),
-                this, SLOT(samplingInitialization()));
-    }
   }
 
   bool applicable(QAction*) const {
@@ -82,13 +77,12 @@ public:
   }
 
   QList<QAction*> actions() const {
-      return QList<QAction*>() << actionProtectInitialization << actionRandomShootingInitialization << actionSamplingInitialization;
+      return QList<QAction*>() << actionProtectInitialization << actionRandomShootingInitialization;
   }
 
 public Q_SLOTS:
     void protectInitialization();
     void randomShootingInitialization();
-    void samplingInitialization();
 
     void updateProtectTrim(int);
 
@@ -100,7 +94,6 @@ Q_SIGNALS:
 private:
     QAction *actionProtectInitialization;
     QAction *actionRandomShootingInitialization;
-    QAction *actionSamplingInitialization;
     Scene_interface *scene;
     QMainWindow *mw;
 
@@ -140,9 +133,10 @@ void Polyhedron_demo_CAD_initialization_plugin::onCurrentItemChanged(void) {
 
 void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
 {
+    dtkLogger::instance().attachConsole();
+    dtkLogger::instance().setLevel(dtkLog::Info);
     Scene_cad_item* cad_item = qobject_cast<Scene_cad_item*>(scene->item(scene->selectionIndices().first()));
     if(!cad_item) {return;}
-
     dtkBRep* brep = cad_item->brep();
     if(!brep) return;
 
@@ -204,7 +198,7 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
 
     const double edge_sizing = ui_protection->sizeSpinBox->value();
 
-    Mesh_domain* cgal_brep_mesh_domain = new Mesh_domain(*brep);
+    Mesh_domain *cgal_brep_mesh_domain = new Mesh_domain(*brep);
 
     ///////////////////////////////////////////////////////////////////
     // Recovers the trims not to protect
@@ -224,7 +218,7 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
     if(ui_protection->protectTrimCB->checkState() == Qt::Checked) {
         protection_graph = new dtkSeamProtectionGraph(*brep, ui_protection->sizeSpinBox->value(), ui_protection->mergingToleranceSB->value(), false, not_to_protect);
     } else {
-        protection_graph = new dtkSeamProtectionGraph(*brep, ui_protection->sizeSpinBox->value(), ui_protection->mergingToleranceSB->value(), true);
+        protection_graph = new dtkSeamProtectionGraph(*brep, ui_protection->sizeSpinBox->value(), ui_protection->sizeSpinBox->value(), true);
     }
 
     C3t3 p_c3t3;
@@ -287,7 +281,6 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
 
 
 void Polyhedron_demo_CAD_initialization_plugin::randomShootingInitialization(){
-
     Scene_cad_item* cad_item = qobject_cast<Scene_cad_item*>(scene->item(scene->selectionIndices().first()));
     if(!cad_item) {return;}
 
@@ -337,10 +330,6 @@ void Polyhedron_demo_CAD_initialization_plugin::randomShootingInitialization(){
         }
     c3t3_cad_item->setName(QString("%1 (c3t3)").arg(cad_item->name()));
     scene->addItem(c3t3_cad_item);
-}
-
-void Polyhedron_demo_CAD_initialization_plugin::samplingInitialization(){
-
 }
 
 #include "CAD_initialization_plugin.moc"
