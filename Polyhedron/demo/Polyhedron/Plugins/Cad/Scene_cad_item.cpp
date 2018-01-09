@@ -23,7 +23,7 @@ struct Scene_cad_item_priv{
       Scene_nurbs_item* nurbs_item =  new Scene_nurbs_item(*(*it), scene);
       nurbs_item->setFlatMode();
       nurbs_item->setScene(scene);
-      nurbs_item->setName(QString("Nurbs #%1").arg(i));
+      nurbs_item->setName(QString("NURBS Surface #%1").arg(i));
       scene->addItem(nurbs_item);
       item->addChild(nurbs_item);
       nurbs_item->moveToGroup(item);
