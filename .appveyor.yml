@@ -1,10 +1,11 @@
 version: 1.0.{build}
 image: Visual Studio 2013
 build_script:
-- cmd: echo "Hello world."
+- cmd: cd C:\projects\cgal\ && mkdir build && cd build && cmake .. && cd ../AABB_tree/test/AABB_tree && mkdir build && cd build && cmake -DCGAL_DIR=:\projects\cgal\build .. && cmake --build .
 install:
 -  set "CONDA_ROOT=C:\Miniconda36-x64"
 -  set "PATH=%CONDA_ROOT%;%CONDA_ROOT%\Scripts;%CONDA_ROOT%\Library\bin;%PATH%"
+-  set "BOOST_ROOT=C:\Libraries/boost"
 -  conda install -y -c conda-forge cmake 
 -  conda install -y -c anaconda-nb-extensions gmp 
 -  conda install -y -c conda-forge mpfr
