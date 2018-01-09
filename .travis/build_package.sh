@@ -7,7 +7,7 @@ function build_examples {
   mkdir -p build-travis
   cd build-travis
   cmake -DCGAL_DIR="/usr/local/lib/cmake/CGAL" -DCMAKE_CXX_FLAGS_RELEASE="${CXX_FLAGS}" ..
-  make -j2
+  cmake --build .
 }
 
 function build_tests {
@@ -24,7 +24,7 @@ function build_demo {
     #use qt5 instead of qt4
 #    export QT_SELECT=5
     qmake NO_QT_VERSION_SUFFIX=yes
-    make -j2
+  cmake --build .
     if [ ! -f libQGLViewer.so ]; then
         echo "libQGLViewer.so not made"
         exit 1
@@ -45,7 +45,7 @@ function build_demo {
     export QGLVIEWERROOT
   fi
   cmake -DCGAL_DIR="/usr/local/lib/cmake/CGAL" -DQt5_DIR="/opt/qt55/lib/cmake/Qt5" -DQt5Svg_DIR="/opt/qt55/lib/cmake/Qt5Svg" -DQt5OpenGL_DIR="/opt/qt55/lib/cmake/Qt5OpenGL" -DCGAL_DONT_OVERRIDE_CMAKE_FLAGS:BOOL=ON -DCMAKE_CXX_FLAGS_RELEASE="${CXX_FLAGS} ${EXTRA_CXX_FLAGS}" ..
-  make -j2
+  cmake --build .
 }
 
 IFS=$' '
@@ -59,7 +59,7 @@ do
     mkdir -p build-travis
     pushd build-travis
     cmake -DCGAL_ENABLE_CHECK_HEADERS=ON -DQt5_DIR="/opt/qt55/lib/cmake/Qt5" ../..
-    make -j2 check_headers
+  cmake --build . --target check_headers
     popd
   	#parse current matrix and check that no package has been forgotten
 	  old_IFS=$IFS
