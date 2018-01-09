@@ -1,6 +1,10 @@
 #include "Scene_nurbs_item.h"
 #include "Scene_spheres_item.h"
+#include "Scene_rational_bezier_surface_item.h"
+
 #define foreach Q_FOREACH
+
+#include <random>
 
 #include <dtkNurbsSurface>
 #include <dtkNurbsPolyhedralSurface>
@@ -103,6 +107,7 @@ struct Scene_nurbs_item_priv{
     spheres_item = NULL;
     trimmed_shown = false;
     cp_shown = false;
+    bezier_shown = false;
     float min_box[3];
     float max_box[3];
     std::fill_n(min_box, 3, std::numeric_limits<float>::infinity());
@@ -284,10 +289,14 @@ struct Scene_nurbs_item_priv{
       }}
     spheres_item->setName(QString("Control Points"));
   }
+
   ~Scene_nurbs_item_priv()
   {
    if(spheres_item)
      spheres_item->deleteLater();
+   for(auto item : beziers_item) {
+       item->deleteLater();
+   }
   }
   void computeElements() const
   {
@@ -393,9 +402,11 @@ struct Scene_nurbs_item_priv{
   mutable bool initialized;
   mutable bool trimmed_shown;
   mutable bool cp_shown;
+  mutable bool bezier_shown;
   CGAL::Three::Scene_item::Bbox bbox;
   Scene_nurbs_item* item;
   Scene_control_net_item* spheres_item;
+  std::vector< Scene_rational_bezier_surface_item * > beziers_item;
 };
 
 Scene_nurbs_item::Scene_nurbs_item(const dtkNurbsSurface& dtk_nurbs_surface,
@@ -408,7 +419,18 @@ Scene_nurbs_item::Scene_nurbs_item(const dtkNurbsSurface& dtk_nurbs_surface,
 
 Scene_nurbs_item::~Scene_nurbs_item() { if(d) delete d; }
 
-
+QString Scene_nurbs_item::toolTip() const {
+    return tr("<p><b>NURBS Surface</b></p>"
+              "<p>Number of control points in U direction: %1<br />"
+              "Number of control points in V direction: %2<br />"
+              "Degree in U direction: %3<br />"
+              "Degree in V direction: %4</p>%5")
+        .arg(d->m_nurbs_surface.uNbCps())
+        .arg(d->m_nurbs_surface.vNbCps())
+        .arg(d->m_nurbs_surface.uDegree())
+        .arg(d->m_nurbs_surface.vDegree())
+        .arg(property("toolTip").toString());
+}
 
 void Scene_nurbs_item::draw(CGAL::Three::Viewer_interface* viewer)const
 {
@@ -476,6 +498,51 @@ void Scene_nurbs_item::show_trimmed(bool b)
   itemChanged();
 }
 
+void Scene_nurbs_item::show_bezier_surfaces(bool b)
+{
+  d->bezier_shown = b;
+    if(b)
+  {
+    if(!d->beziers_item.empty())
+      return;
+
+    std::vector< std::pair< dtkRationalBezierSurface *, double * > > rational_bezier_surfaces;
+    d->m_nurbs_surface.decomposeToRationalBezierSurfaces(rational_bezier_surfaces);
+    std::srand(0);
+    for(auto surf : rational_bezier_surfaces) {
+        double red = std::rand() / double(RAND_MAX) * 255;
+        double green = std::rand() / double(RAND_MAX) * 255;
+        double blue = std::rand() / double(RAND_MAX) * 255;
+        d->beziers_item.push_back(new Scene_rational_bezier_surface_item(*surf.first));
+        d->beziers_item.back()->setColor(QColor(red, green, blue));
+        scene->addItem(d->beziers_item.back());
+        addChild(d->beziers_item.back());
+        lockChild(d->beziers_item.back());
+        scene->changeGroup(d->beziers_item.back(), this);
+    }
+  }
+  else
+  {
+    if(d->beziers_item.empty())
+      return;
+    for(auto item : d->beziers_item) {
+        unlockChild(item);
+        removeChild(item);
+        scene->erase(scene->item_id(item));
+    }
+    for(auto item : d->beziers_item) {
+        delete item;
+    }
+    d->beziers_item.clear();
+  }
+  QAction* actionShowBeziers = contextMenu()->findChild<QAction*>("actionShowBeziers");
+  if(!actionShowBeziers)
+    return;
+  actionShowBeziers->setChecked(b);
+  d->initialized = false;
+  itemChanged();
+}
+
 void Scene_nurbs_item::show_control_points(bool b)
 {
 
@@ -534,6 +601,13 @@ QMenu* Scene_nurbs_item::contextMenu()
     actionShowCPs->setObjectName("actionShowCPs");
     connect(actionShowCPs, SIGNAL(toggled(bool)),
             this, SLOT(show_control_points(bool)));
+    QAction* actionShowBeziers=
+        menu->addAction(tr("Show Bezier Surfaces"));
+    actionShowBeziers->setCheckable(true);
+    actionShowBeziers->setChecked(false);
+    actionShowBeziers->setObjectName("actionShowBeziers");
+    connect(actionShowBeziers, SIGNAL(toggled(bool)),
+            this, SLOT(show_bezier_surfaces(bool)));
     menu->setProperty(prop_name, true);
   }
   return menu;

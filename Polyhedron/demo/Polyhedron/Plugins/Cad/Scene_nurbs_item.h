@@ -31,7 +31,7 @@ public:
   void drawEdges(CGAL::Three::Viewer_interface *) const;
 
  public:
-  QString toolTip() const {return QString();}
+  QString toolTip() const Q_DECL_OVERRIDE;
   bool supportsRenderingMode(RenderingMode m) const { return (m == Flat || m == FlatPlusEdges || m == Wireframe); }
 
  public:
@@ -48,6 +48,7 @@ public:
 public Q_SLOTS:
   void show_trimmed(bool b);
   void show_control_points(bool b);
+  void show_bezier_surfaces(bool b);
   void highlight(const dtkTopoTrim *);
 
 protected:
