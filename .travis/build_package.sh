@@ -6,7 +6,7 @@ CXX_FLAGS="-DCGAL_NDEBUG"
 function build_examples {
   mkdir -p build-travis
   cd build-travis
-  cmake -DCGAL_DIR="/usr/local/lib/cmake/CGAL" -DCMAKE_CXX_FLAGS_RELEASE="${CXX_FLAGS}" ..
+  cmake -DCGAL_DIR="/usr/local/lib/cmake/CGAL" -DCMAKE_CXX_FLAGS_RELEASE="${CXX_FLAGS}" -G "Visual Studio 12 2013 Win64" ..
   cmake --build .
 }
 
@@ -44,7 +44,7 @@ function build_demo {
     QGLVIEWERROOT=$PWD/qglviewer
     export QGLVIEWERROOT
   fi
-  cmake -DCGAL_DIR="/usr/local/lib/cmake/CGAL" -DQt5_DIR="/opt/qt55/lib/cmake/Qt5" -DQt5Svg_DIR="/opt/qt55/lib/cmake/Qt5Svg" -DQt5OpenGL_DIR="/opt/qt55/lib/cmake/Qt5OpenGL" -DCGAL_DONT_OVERRIDE_CMAKE_FLAGS:BOOL=ON -DCMAKE_CXX_FLAGS_RELEASE="${CXX_FLAGS} ${EXTRA_CXX_FLAGS}" ..
+  cmake -DCGAL_DIR="/usr/local/lib/cmake/CGAL" -DQt5_DIR="/opt/qt55/lib/cmake/Qt5" -DQt5Svg_DIR="/opt/qt55/lib/cmake/Qt5Svg" -DQt5OpenGL_DIR="/opt/qt55/lib/cmake/Qt5OpenGL" -DCGAL_DONT_OVERRIDE_CMAKE_FLAGS:BOOL=ON -DCMAKE_CXX_FLAGS_RELEASE="${CXX_FLAGS} ${EXTRA_CXX_FLAGS}" -G "Visual Studio 12 2013 Win64" ..
   cmake --build .
 }
 
@@ -58,8 +58,8 @@ do
     zsh $ROOT/Scripts/developer_scripts/test_merge_of_branch HEAD
     mkdir -p build-travis
     pushd build-travis
-    cmake -DCGAL_ENABLE_CHECK_HEADERS=ON -DQt5_DIR="/opt/qt55/lib/cmake/Qt5" ../..
-  cmake --build . --target check_headers
+    cmake -DCGAL_ENABLE_CHECK_HEADERS=ON -DQt5_DIR="/opt/qt55/lib/cmake/Qt5" -G "Visual Studio 12 2013 Win64" ../..
+    cmake --build . --target check_headers
     popd
   	#parse current matrix and check that no package has been forgotten
 	  old_IFS=$IFS
