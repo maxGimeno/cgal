@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/CGAL/cgal.svg?branch=master)](https://travis-ci.org/CGAL/cgal)
+[![codecov.io](https://codecov.io/gh/maxGimeno/cgal/coverage.svg?branch=master)](https://codecov.io/gh/maxGimeno/cgal?branch=master)
 
 ![CGAL](Installation/doc_html/images/cgal_2013_grey.png)
 
