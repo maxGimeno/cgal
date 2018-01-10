@@ -52,9 +52,12 @@ environment:
     - PACKAGE: 'Voronoi_diagram_2 wininst '
     - PACKAGE: 'Polyhedron_demo'
 
+##Only for qglviewer
+#init:
+#  - call "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" %platform%
 install:
     -  set "CONDA_ROOT=C:\Miniconda36-x64"
-    -  set "PATH=%CONDA_ROOT%;%CONDA_ROOT%\Scripts;%CONDA_ROOT%\Library\bin;C:\Cygwin\bin\;C:\Qt\5.6\msvc2013_64\bin;%PATH%"
+    -  set "PATH=%CONDA_ROOT%;%CONDA_ROOT%\Scripts;%CONDA_ROOT%\Library\bin;;C:\Qt\5.6\msvc2013_64\bin;%PATH%"
     -  set "BOOST_ROOT=C:\Libraries/boost"
     -  conda install -y -c conda-forge cmake
     -  conda install -y -c anaconda-nb-extensions gmp
@@ -68,4 +71,4 @@ before_build:
 
 build_script:
 - cd C:\projects\cgal\.travis
-- bash.exe -x -e build_package.sh 1 %PACKAGE%
+- C:\Cygwin\bin\bash.exe -x -e build_package.sh 1 %PACKAGE%

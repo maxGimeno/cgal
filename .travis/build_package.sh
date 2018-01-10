@@ -142,26 +142,29 @@ do
     echo "No test found for $ARG"
 	fi
   #Packages like Periodic_3_triangulation_3 contain multiple demos
-  for DEMO in $DEMOS; do
-    DEMO=${DEMO#"$ROOT"}
-    echo $DEMO
-        #If there is no demo subdir, try in GraphicsView
-    if [ ! -d "$ROOT/$DEMO" ] || [ ! -f "$ROOT/$DEMO/CMakeLists.txt" ]; then
-     DEMO="GraphicsView/demo/$ARG"
-    fi
-          if [ "$ARG" != Polyhedron ] && [ -d "$ROOT/$DEMO" ]
-        then
-      cd $ROOT/$DEMO
+  #Don't try to build demos in appveyor, at least for now.
+  if [ $IS_WINDOWS = 0 ]; then
+    for DEMO in $DEMOS; do
+      DEMO=${DEMO#"$ROOT"}
+      echo $DEMO
+          #If there is no demo subdir, try in GraphicsView
+      if [ ! -d "$ROOT/$DEMO" ] || [ ! -f "$ROOT/$DEMO/CMakeLists.txt" ]; then
+       DEMO="GraphicsView/demo/$ARG"
+      fi
+            if [ "$ARG" != Polyhedron ] && [ -d "$ROOT/$DEMO" ]
+          then
+        cd $ROOT/$DEMO
+        build_demo
+      elif [ "$ARG" != Polyhedron_demo ]; then
+        echo "No demo found for $ARG"
+            fi
+    done
+    if [ "$ARG" = Polyhedron_demo ]; then
+      DEMO=Polyhedron/demo/Polyhedron
+      NEED_3D=1
+      cd "$ROOT/$DEMO"
       build_demo
-    elif [ "$ARG" != Polyhedron_demo ]; then
-      echo "No demo found for $ARG"
-          fi
-  done
-  if [ "$ARG" = Polyhedron_demo ]; then
-    DEMO=Polyhedron/demo/Polyhedron
-    NEED_3D=1
-    cd "$ROOT/$DEMO"
-    build_demo
+    fi
   fi
 done
 
