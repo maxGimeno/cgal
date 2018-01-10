@@ -2,12 +2,17 @@
 set -e
 
 CXX_FLAGS="-DCGAL_NDEBUG"
-
+IS_WINDOWS=$1
 function build_examples {
   mkdir -p build-travis
   cd build-travis
-  cmake -DCGAL_DIR="/usr/local/lib/cmake/CGAL" -DCMAKE_CXX_FLAGS_RELEASE="${CXX_FLAGS}" -G "Visual Studio 12 2013 Win64" ..
-  cmake --build .
+  if [ $IS_WINDOWS = 1 ]; then
+    cmake -DCGAL_DIR="/usr/local/lib/cmake/CGAL" -DCMAKE_CXX_FLAGS_RELEASE="${CXX_FLAGS}" -G "Visual Studio 12 2013 Win64" ..
+    cmake --build .
+  else
+    cmake -DCGAL_DIR="/usr/local/lib/cmake/CGAL" -DCMAKE_CXX_FLAGS_RELEASE="${CXX_FLAGS}" ..
+    make -j2
+  fi
 }
 
 function build_tests {
@@ -24,7 +29,11 @@ function build_demo {
     #use qt5 instead of qt4
 #    export QT_SELECT=5
     qmake NO_QT_VERSION_SUFFIX=yes
-  cmake --build .
+    if [ $IS_WINDOWS = 1 ]; then
+      nmake
+    else
+      make -j2
+    fi
     if [ ! -f libQGLViewer.so ]; then
         echo "libQGLViewer.so not made"
         exit 1
@@ -44,22 +53,33 @@ function build_demo {
     QGLVIEWERROOT=$PWD/qglviewer
     export QGLVIEWERROOT
   fi
-  cmake -DCGAL_DIR="/usr/local/lib/cmake/CGAL" -DQt5_DIR="/opt/qt55/lib/cmake/Qt5" -DQt5Svg_DIR="/opt/qt55/lib/cmake/Qt5Svg" -DQt5OpenGL_DIR="/opt/qt55/lib/cmake/Qt5OpenGL" -DCGAL_DONT_OVERRIDE_CMAKE_FLAGS:BOOL=ON -DCMAKE_CXX_FLAGS_RELEASE="${CXX_FLAGS} ${EXTRA_CXX_FLAGS}" -G "Visual Studio 12 2013 Win64" ..
-  cmake --build .
+  if [ $IS_WINDOWS = 1 ]; then
+    cmake -DCGAL_DIR="/usr/local/lib/cmake/CGAL" -DQt5_DIR="/opt/qt55/lib/cmake/Qt5" -DQt5Svg_DIR="/opt/qt55/lib/cmake/Qt5Svg" -DQt5OpenGL_DIR="/opt/qt55/lib/cmake/Qt5OpenGL" -DCGAL_DONT_OVERRIDE_CMAKE_FLAGS:BOOL=ON -DCMAKE_CXX_FLAGS_RELEASE="${CXX_FLAGS} ${EXTRA_CXX_FLAGS}" -G "Visual Studio 12 2013 Win64" ..
+    cmake --build .
+  else
+    cmake -DCGAL_DIR="/usr/local/lib/cmake/CGAL" -DQt5_DIR="/opt/qt55/lib/cmake/Qt5" -DQt5Svg_DIR="/opt/qt55/lib/cmake/Qt5Svg" -DQt5OpenGL_DIR="/opt/qt55/lib/cmake/Qt5OpenGL" -DCGAL_DONT_OVERRIDE_CMAKE_FLAGS:BOOL=ON -DCMAKE_CXX_FLAGS_RELEASE="${CXX_FLAGS} ${EXTRA_CXX_FLAGS}" ..
+    make -j2
+  fi
 }
 
 IFS=$' '
 ROOT="$PWD/.."
 NEED_3D=0
+shift
 for ARG in $(echo "$@")
 do
   if [ "$ARG" = "CHECK" ]
-	then
+        then
     zsh $ROOT/Scripts/developer_scripts/test_merge_of_branch HEAD
     mkdir -p build-travis
     pushd build-travis
-    cmake -DCGAL_ENABLE_CHECK_HEADERS=ON -DQt5_DIR="/opt/qt55/lib/cmake/Qt5" -G "Visual Studio 12 2013 Win64" ../..
-    cmake --build . --target check_headers
+    if [ $IS_WINDOWS = 1 ]; then
+      cmake -DCGAL_ENABLE_CHECK_HEADERS=ON -DQt5_DIR="/opt/qt55/lib/cmake/Qt5" -G "Visual Studio 12 2013 Win64" ../..
+      cmake --build . --target check_headers
+    else
+      cmake -DCGAL_ENABLE_CHECK_HEADERS=ON -DQt5_DIR="/opt/qt55/lib/cmake/Qt5" ../..
+      make -j2 check_headers
+    fi
     popd
   	#parse current matrix and check that no package has been forgotten
 	  old_IFS=$IFS
@@ -125,24 +145,24 @@ do
   for DEMO in $DEMOS; do
     DEMO=${DEMO#"$ROOT"}
     echo $DEMO
-  	#If there is no demo subdir, try in GraphicsView
+        #If there is no demo subdir, try in GraphicsView
     if [ ! -d "$ROOT/$DEMO" ] || [ ! -f "$ROOT/$DEMO/CMakeLists.txt" ]; then
      DEMO="GraphicsView/demo/$ARG"
     fi
-	  if [ "$ARG" != Polyhedron ] && [ -d "$ROOT/$DEMO" ]
-  	then
+          if [ "$ARG" != Polyhedron ] && [ -d "$ROOT/$DEMO" ]
+        then
       cd $ROOT/$DEMO
       build_demo
     elif [ "$ARG" != Polyhedron_demo ]; then
       echo "No demo found for $ARG"
-	  fi
+          fi
   done
   if [ "$ARG" = Polyhedron_demo ]; then
     DEMO=Polyhedron/demo/Polyhedron
     NEED_3D=1
     cd "$ROOT/$DEMO"
     build_demo
-  fi  
+  fi
 done
 
 # Local Variables:

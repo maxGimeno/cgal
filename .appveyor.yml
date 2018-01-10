@@ -68,4 +68,4 @@ before_build:
 
 build_script:
 - cd C:\projects\cgal\.travis
-- bash.exe -x -e build_package.sh %PACKAGE%
+- bash.exe -x -e build_package.sh 1 %PACKAGE%
