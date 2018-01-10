@@ -64,7 +64,7 @@ before_script:
 - cd .. 
 script: 
 - cd ./.travis
-- bash -x -e ./build_package.sh $PACKAGE
+- bash -x -e ./build_package.sh 0 $PACKAGE
 addons: 
   apt:
     sources:
