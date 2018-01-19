@@ -1343,23 +1343,24 @@ void MainWindow::showSceneContextMenu(const QPoint& p) {
         QMenu menu;
         Q_FOREACH(QString name, menu_actions.keys())
         {
-          menu.addAction(name,
-                         [this, name]()
-          {
-            Q_FOREACH(Scene::Item_id id, scene->selectionIndices())
-            {
-              Scene_item* item = scene->item(id);
-              Q_FOREACH(QAction* action, item->contextMenu()->actions())
-              {
-                if(action->text() == name)
-                {
-                  action->trigger();
-                  break;
-                }
-              }
-            }
-          }
-          );
+          QAction* action = menu.addAction(name);
+          connect(action, &QAction::triggered, this,
+            [this, name]()
+                    {
+                      Q_FOREACH(Scene::Item_id id, scene->selectionIndices())
+                      {
+                        Scene_item* item = scene->item(id);
+                        Q_FOREACH(QAction* action, item->contextMenu()->actions())
+                        {
+                          if(action->text() == name)
+                          {
+                            action->trigger();
+                            break;
+                          }
+                        }
+                      }
+                    }
+                    );
         }
 
           QAction* reload = menu.addAction(tr("&Reload Item from File"));
