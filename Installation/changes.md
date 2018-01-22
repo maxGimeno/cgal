@@ -67,6 +67,13 @@ Release date: April 2018
     `manifold()`, `manifold_with_boundary()`, and `non_manifold()` are
     added.
 
+### Optimal Transportation Curve Reconstruction
+
+-   New method `run_under_wasserstein_tolerance()` which allows the
+    user to perform curve reconstruction by relying on a threshold on
+    the Wasserstein distance. This is useful when the number of edges
+    in the expected output reconstruction is not known.
+
 ### Polygon Mesh Processing
 
 -   Added two functions for orienting connected components :
@@ -90,11 +97,17 @@ Release date: April 2018
     alternative to RANSAC for plane detection.
 -   **Breaking change**: the API of `CGAL::regularize_planes()` is
     generalized to accept other types of input than the RANSAC output.
+-   Add a callback mechanism for both `CGAL::Efficient_RANSAC` and
+    `CGAL::Region_growing`.
 
 ### Point Set Processing
 
 -   **Breaking change**: the API of `CGAL::structure_point_set()` is
     generalized to accept other types of input than the RANSAC output.
+-   **Breaking change**: the API of all functions of Point Set
+    Processing is modified to use ranges (instead of iterators) and
+    Named Parameters (similarly to the API of Polygon Mesh
+    Processing). The old API is kept as deprecated.
 
 ### CGAL and the Boost Graph Library (BGL)
 
