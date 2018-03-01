@@ -30,11 +30,11 @@ namespace CGAL {
 
 template <typename Tr1, 
           typename Tr2,
-          typename Update_vertex,
-          typename Update_cell>
+          typename Convert_vertex,
+          typename Convert_cell>
 std::istream& file_input(std::istream& is, Tr2 &tr,
-                         Update_vertex update_vertex = Update_vertex(),
-                         Update_cell update_cell = Update_cell())
+                         Convert_vertex convert_vertex = Convert_vertex(),
+                         Convert_cell convert_cell = Convert_cell())
   // reads
   // the dimension
   // the number of finite vertices
@@ -74,7 +74,7 @@ std::istream& file_input(std::istream& is, Tr2 &tr,
     V[i] = tr.tds().create_vertex();
     Vertex1 v;
     if(!(is >> v)) return is;
-    if(!update_vertex(v, *V[i])) {
+    if(!convert_vertex(v, *V[i])) {
       is.setstate(std::ios_base::failbit);
       return is;
     }
@@ -88,7 +88,7 @@ std::istream& file_input(std::istream& is, Tr2 &tr,
   for (std::size_t j=0 ; j < m; j++) {
     Cell1 c;
     if(!(is >> c)) return is;
-    if(!update_cell(c, *(C[j]))) {
+    if(!convert_cell(c, *(C[j]))) {
       is.setstate(std::ios_base::failbit);
       return is;
     }
