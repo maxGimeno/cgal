@@ -17,6 +17,7 @@ function build_tests {
 function build_demo {
   mkdir -p build-travis
   cd build-travis
+#GO! GO! POWER RANGER !
   if [ $NEED_3D = 1 ]; then
     #install libqglviewer
     git clone --depth=4 -b v2.6.3 --single-branch https://github.com/GillesDebunne/libQGLViewer.git ./qglviewer
