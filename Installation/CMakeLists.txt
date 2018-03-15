@@ -86,7 +86,7 @@ if ( CGAL_BRANCH_BUILD )
   message(STATUS "Installation package directory: ${CGAL_INSTALLATION_PACKAGE_DIR}")
   message(STATUS "Maintenance package directory: ${CGAL_MAINTENANCE_PACKAGE_DIR}")
   message(STATUS "Core package directory: ${CGAL_CORE_PACKAGE_DIR}")
-
+  
 else ( CGAL_BRANCH_BUILD )
 
   # get release name
@@ -108,6 +108,13 @@ else ( CGAL_BRANCH_BUILD )
 
   # Enable testing with BUILD_TESTING
   option(BUILD_TESTING "Build the testing tree." OFF)
+  # Enable coverage with TESTING_WITH_COVERAGE
+  option(TESTING_WITH_COVERAGE "Build the testing tree with coverage." OFF)
+  
+  if(TESTING_WITH_COVERAGE)
+    set(BUILD_TESTING ON)
+    set(WITH_tests ON)
+  endif(TESTING_WITH_COVERAGE)
   include(CTest)
   if(BUILD_TESTING AND NOT POLICY CMP0064)
     message(FATAL_ERROR "CGAL support of CTest requires CMake version 3.4 or later.
@@ -442,7 +449,10 @@ message( STATUS "System: ${CMAKE_SYSTEM_NAME}" )
 #                                    -= FLAGS =-
 #
 #--------------------------------------------------------------------------------------------------
-
+if(TESTING_WITH_COVERAGE)
+  uniquely_add_flags ( CMAKE_CXX_FLAGS "--coverage -fprofile-arcs -ftest-coverage" )
+  uniquely_add_flags( CMAKE_EXE_LINKER_FLAGS    "--coverage -fprofile-arcs -ftest-coverage" )
+endif()
 if( MSVC )
   
   uniquely_add_flags ( CGAL_CXX_FLAGS "-D_SCL_SECURE_NO_DEPRECATE;-D_SCL_SECURE_NO_WARNINGS" )
@@ -793,7 +803,6 @@ foreach (package ${CGAL_CONFIGURED_PACKAGES})
     set(CGAL_INCLUDE_DIRS ${CGAL_INCLUDE_DIRS} ${package}/include)
   endif()
 endforeach()
-
 include_directories (${CGAL_INCLUDE_DIRS})
 
 cache_get(CGAL_3RD_PARTY_PRECONFIGURED )
@@ -966,7 +975,7 @@ if ( NOT RUNNING_CGAL_AUTO_TEST )
   add_programs(examples examples OFF )
   add_programs(demo     demos    OFF )
   if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/test")
-    add_programs(test     tests    OFF )
+    add_programs(test     tests    ${TESTING_WITH_COVERAGE} )
   endif()
 endif()
 
