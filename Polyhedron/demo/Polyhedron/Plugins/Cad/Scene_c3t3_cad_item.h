@@ -1,3 +1,5 @@
+#undef QT_NO_KEYWORDS
+
 #ifndef SCENE_C3T3_CAD_ITEM_H
 #define SCENE_C3T3_CAD_ITEM_H
 

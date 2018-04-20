@@ -1,3 +1,4 @@
+#undef QT_NO_KEYWORDS
 #include "Scene_nurbs_item.h"
 #include "Scene_spheres_item.h"
 #include "Scene_rational_bezier_surface_item.h"

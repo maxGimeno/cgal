@@ -1,3 +1,4 @@
+#undef QT_NO_KEYWORDS
 #define foreach Q_FOREACH
 #include <dtkBRep>
 #include <dtkNurbsSurface>

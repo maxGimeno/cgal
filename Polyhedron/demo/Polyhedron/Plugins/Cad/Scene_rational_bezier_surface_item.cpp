@@ -1,3 +1,4 @@
+#undef QT_NO_KEYWORDS
 #include "Scene_rational_bezier_surface_item.h"
 #define foreach Q_FOREACH
 

@@ -1,3 +1,4 @@
+#undef QT_NO_KEYWORDS
 #include "config.h"
 #include "Scene_spheres_item.h"
 #include "Scene_c3t3_cad_item.h"
