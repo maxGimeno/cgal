@@ -68,7 +68,7 @@ public:
       nurbs_surface_data->create(fileinfo.absoluteFilePath().toStdString());
       dtkNurbsSurface *nurbs_surface = new dtkNurbsSurface(nurbs_surface_data);
 
-      Scene_nurbs_item* item = new Scene_nurbs_item(*nurbs_surface);
+      Scene_nurbs_item* item = new Scene_nurbs_item(*nurbs_surface, this->scene);
       item->setName(fileinfo.baseName());
       item->setFlatMode();
       scene->setSelectedItem(scene->item_id(item));
