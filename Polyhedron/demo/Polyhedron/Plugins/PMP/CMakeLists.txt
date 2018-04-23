@@ -161,3 +161,5 @@ polyhedron_demo_plugin(degenerated_faces_sm_plugin Degenerated_faces_plugin)
 target_link_libraries(degenerated_faces_sm_plugin PUBLIC scene_surface_mesh_item scene_surface_mesh_selection_item)
 target_compile_definitions(degenerated_faces_sm_plugin PUBLIC "-DUSE_SURFACE_MESH" )
 
+polyhedron_demo_plugin(sandbox_plugin Project_against_mesh_plugin)
+target_link_libraries(sandbox_plugin PUBLIC scene_surface_mesh_item)

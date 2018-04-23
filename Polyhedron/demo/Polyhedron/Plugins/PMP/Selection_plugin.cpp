@@ -759,7 +759,7 @@ public Q_SLOTS:
         QMessageBox::warning(mw,
                              tr("Degenerated Face_graph"),
                              tr("Degenerated faces have been detected. Problems may occur "
-                                "for operations other tha \"Move point\". "));
+                                "for operations other than \"Move point\". "));
       }
       Q_EMIT save_handleType();
       on_editionBox_changed(ui_widget.editionBox->currentIndex());
