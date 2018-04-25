@@ -17,14 +17,20 @@
 #include <CGAL/AABB_halfedge_graph_segment_primitive.h>
 #include <CGAL/Polygon_mesh_processing/remesh.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
+#include <CGAL/boost/graph/Euler_operations.h>
+#include <CGAL/Polygon_mesh_processing/intersection.h>
+
+#include <CGAL/boost/graph/Face_filtered_graph.h>
 
 #include "Messages_interface.h"
 #include "Scene_surface_mesh_item.h"
 #include "create_sphere.h"
 #include "Scene.h"
 
-using namespace CGAL::Three;
+#include "triangulate_primitive.h"
 
+using namespace CGAL::Three;
+namespace Euler=CGAL::Euler;
 class Scene_create_surface_item : public CGAL::Three::Scene_item
 {
   Q_OBJECT
@@ -392,7 +398,16 @@ private Q_SLOTS:
     QApplication::setOverrideCursor(Qt::WaitCursor);
     surface_item = new Scene_surface_mesh_item();
     SMesh& mesh = *surface_item->face_graph();
+    typedef boost::graph_traits<SMesh>::vertex_descriptor vertex_descriptor;    
+    typename boost::property_map< SMesh,CGAL::vertex_point_t>::type vpmap
+        = get(CGAL::vertex_point, mesh);
+    SMesh& tmesh =*item->face_graph();
+    typename boost::property_map< SMesh,CGAL::vertex_point_t>::type t_vpmap
+        = get(CGAL::vertex_point, tmesh);
     typedef boost::graph_traits<SMesh>::vertex_descriptor vertex_descriptor;
+    typedef boost::graph_traits<SMesh>::halfedge_descriptor halfedge_descriptor;
+    typedef boost::graph_traits<SMesh>::edge_descriptor edge_descriptor;
+    typedef boost::graph_traits<SMesh>::face_descriptor face_descriptor;
     GLdouble matrix[16];
     create_surface_item->manipulatedFrame()->getMatrix(matrix);
     QMatrix4x4 trans_mat;
@@ -401,6 +416,7 @@ private Q_SLOTS:
       trans_mat.data()[i] = (float)matrix[i];
     }
     Point_3 points[4];
+    Point_3 transformed_points[4];
     vertex_descriptor v[4];
     points[0] = Point_3(create_surface_item->getP1().x(),
                         create_surface_item->getP1().y(),
@@ -422,17 +438,42 @@ private Q_SLOTS:
                     points[i].y(),
                     points[i].z());
       QVector3D transformed_pos = trans_mat*pos;
-      v[i] = mesh.add_vertex(Point_3(transformed_pos.x(),
+      transformed_points[i] = Point_3(transformed_pos.x(),
                                      transformed_pos.y(),
-                                     transformed_pos.z()));
+                                     transformed_pos.z());
+      v[i] = mesh.add_vertex(transformed_points[i]);
     }
     QVector3D dir = trans_mat * QVector3D(0,0,-1);
     mesh.add_face(v[0],v[1],v[2]);
     mesh.add_face(v[0],v[2],v[3]);
     surface_item->compute_bbox();
+    QApplication::restoreOverrideCursor();
+    double el=QInputDialog::getDouble(mw, "Edge length", "Enter Target Edge Length", 0.03*surface_item->diagonalBbox(),
+                                      0, 2147483647, 17);
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    //get border of the patch and get plane's equation
+    halfedge_descriptor border_hd;
+    std::vector<halfedge_descriptor> patch_border;
+    BOOST_FOREACH(halfedge_descriptor hd, halfedges(mesh))
+    {
+      if(is_border(hd, mesh))
+      {
+        border_hd = hd;
+        break;
+      }
+    }
     
+    EPICK::Plane_3 proj_plane(transformed_points[0],
+                              transformed_points[1],
+                              transformed_points[2]);
+    std::vector<EPICK::Point_2> proj_border;
+    BOOST_FOREACH(halfedge_descriptor hd, halfedges_around_face(border_hd, mesh))
+    {
+      patch_border.push_back(hd);
+      proj_border.push_back(proj_plane.to_2d(proj_plane.projection(get(vpmap, target(hd, mesh)))));
+    }
     CGAL::Polygon_mesh_processing::isotropic_remeshing(faces(mesh),
-                                                       0.03*surface_item->diagonalBbox(),
+                                                       el,
                                                        mesh,
                                                        CGAL::Polygon_mesh_processing::parameters::all_default());
     typedef CGAL::AABB_face_graph_triangle_primitive<SMesh>  Facet_primitive;
@@ -445,10 +486,56 @@ private Q_SLOTS:
                 faces(*item->face_graph()).second,
                 *item->face_graph());
     tree.build();
+    //collect faces intersected by patch and remove them:
+    //use the technique in selection plugin with lasso:
+    //home/gimeno/CGAL/Polyhedron/demo/Polyhedron/Scene_polyhedron_item_k_ring_selection.h : l.257
+    std::set<face_descriptor> rm_faces;
+    BOOST_FOREACH(face_descriptor f, faces(tmesh))
+    {
+      bool is_vertex_inside = false;
+      BOOST_FOREACH(vertex_descriptor v, CGAL::vertices_around_face(halfedge(f, tmesh), tmesh))
+      {
+        //project v on da plane
+        EPICK::Point_2 proj_p = proj_plane.to_2d(proj_plane.projection(get(t_vpmap, v)));
+        //if projected point is inside the patch, add its adjacent faces
+        if (CGAL::bounded_side_2(proj_border.begin(),
+                                 proj_border.end(),
+                                 proj_p,
+                                 EPICK())  == CGAL::ON_BOUNDED_SIDE)
+        {
+          BOOST_FOREACH(face_descriptor fat, faces_around_target(halfedge(v, tmesh), tmesh))
+              rm_faces.insert(fat);
+          is_vertex_inside = true;
+        }
+      }
+      if(!is_vertex_inside) //else if triangle intersects patch border, remove face
+      {
+        for(std::size_t id = 0; id <proj_border.size(); ++id)
+        {
+          EPICK::Segment_2 border_seg(proj_border[id], proj_border[(id+1)%proj_border.size()]);
+          halfedge_descriptor bobby = halfedge(f, tmesh);
+          EPICK::Triangle_2 tri(
+                proj_plane.to_2d(proj_plane.projection(get(t_vpmap, target(bobby, tmesh)))),
+                proj_plane.to_2d(proj_plane.projection(get(t_vpmap, target(prev(bobby, tmesh), tmesh)))),
+                proj_plane.to_2d(proj_plane.projection(get(t_vpmap, target(prev(prev(bobby, tmesh), tmesh), tmesh)))));
+          if(CGAL::do_intersect(tri, border_seg))
+          {
+            rm_faces.insert(f);
+            break;
+          }
+        }
+      }
+    }
+    //get border edges
+    CGAL::Face_filtered_graph<SMesh> patch_zone(tmesh, rm_faces);
+    std::vector<edge_descriptor> border_edges;
+    BOOST_FOREACH(edge_descriptor ed, edges(patch_zone))
+    {
+      if(is_border(ed, patch_zone))
+        border_edges.push_back(ed);
+    }
     
-    typedef boost::graph_traits<SMesh>::vertex_descriptor vertex_descriptor;    
-    typename boost::property_map< SMesh,CGAL::vertex_point_t>::type vpmap
-        = get(CGAL::vertex_point, mesh);
+    //project patch
     BOOST_FOREACH(vertex_descriptor vd, vertices(mesh))
     {
       EPICK::Ray_3 ray(mesh.point(vd), Facet_traits::Vector_3(dir.x(), dir.y(), dir.z()));
@@ -460,7 +547,17 @@ private Q_SLOTS:
         }
       }
     }
+    //rm zone faces
+    BOOST_FOREACH(face_descriptor f, rm_faces)
+      CGAL::Euler::remove_face(halfedge(f, tmesh), tmesh);
+    //merge meshes
+    //insert patch in mesh: 
+    // iterate opposite-border edges and create new face/edges with closest vertex in patch
+    
     mesh.collect_garbage();
+    tmesh.collect_garbage();
+    item->invalidateOpenGLBuffers();
+    item->itemChanged();
     scene->addItem(surface_item);
     scene->erase(scene->item_id(create_surface_item));
     QApplication::restoreOverrideCursor();
