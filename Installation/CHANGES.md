@@ -1,6 +1,13 @@
 Release History
 ===============
 
+Release 4.13
+------------
+
+### 2D and 3D Linear Geometry Kernel
+-   An operator() that takes a Ray_3 has been added to the concept
+    ConstructProjectedPoint 3.
+
 Release 4.12
 ------------
 
