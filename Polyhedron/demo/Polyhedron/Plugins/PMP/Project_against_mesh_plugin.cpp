@@ -31,6 +31,38 @@
 
 using namespace CGAL::Three;
 namespace Euler=CGAL::Euler;
+typedef boost::graph_traits<SMesh>::vertex_descriptor vertex_descriptor;
+typedef boost::graph_traits<SMesh>::halfedge_descriptor halfedge_descriptor;
+typedef boost::graph_traits<SMesh>::edge_descriptor edge_descriptor;
+typedef boost::graph_traits<SMesh>::face_descriptor face_descriptor;
+struct Is_selected_edge_property_map{
+  typedef boost::property_map<SMesh,boost::edge_index_t>::type EImap;
+
+  std::vector<bool>* is_selected_ptr;
+  EImap* edge_index_map;
+  Is_selected_edge_property_map()
+    : is_selected_ptr(NULL), edge_index_map(NULL) {}
+  Is_selected_edge_property_map(std::vector<bool>& is_selected, EImap* map)
+    : is_selected_ptr( &is_selected), edge_index_map(map)
+  {}
+
+  std::size_t id(edge_descriptor ed) {
+    return get(*edge_index_map, ed);
+  }
+
+  friend bool get(Is_selected_edge_property_map map, edge_descriptor ed)
+  {
+    CGAL_assertion(map.is_selected_ptr!=NULL);
+    return (*map.is_selected_ptr)[map.id(ed)];
+  }
+
+  friend void put(Is_selected_edge_property_map map, edge_descriptor ed, bool b)
+  {
+    CGAL_assertion(map.is_selected_ptr!=NULL);
+    (*map.is_selected_ptr)[map.id(ed)]=b;
+  }
+};
+
 class Scene_create_surface_item : public CGAL::Three::Scene_item
 {
   Q_OBJECT
@@ -386,7 +418,9 @@ private Q_SLOTS:
                                                    scene->bbox().max(0),
                                                    scene->bbox().max(1),
                                                    (scene->bbox().max(2) + scene->bbox().min(2))/2));
-    scene->addItem(create_surface_item);
+    scene->setSelectedItem(
+          scene->addItem(create_surface_item)
+          );
   }
   
   void projectSurface()
@@ -396,18 +430,14 @@ private Q_SLOTS:
     if(!item)
       return;
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    surface_item = new Scene_surface_mesh_item();
-    SMesh& mesh = *surface_item->face_graph();
-    typedef boost::graph_traits<SMesh>::vertex_descriptor vertex_descriptor;    
+    //surface_item = new Scene_surface_mesh_item();
+    //SMesh& mesh = *surface_item->face_graph();
+    SMesh mesh;
     typename boost::property_map< SMesh,CGAL::vertex_point_t>::type vpmap
         = get(CGAL::vertex_point, mesh);
     SMesh& tmesh =*item->face_graph();
     typename boost::property_map< SMesh,CGAL::vertex_point_t>::type t_vpmap
         = get(CGAL::vertex_point, tmesh);
-    typedef boost::graph_traits<SMesh>::vertex_descriptor vertex_descriptor;
-    typedef boost::graph_traits<SMesh>::halfedge_descriptor halfedge_descriptor;
-    typedef boost::graph_traits<SMesh>::edge_descriptor edge_descriptor;
-    typedef boost::graph_traits<SMesh>::face_descriptor face_descriptor;
     GLdouble matrix[16];
     create_surface_item->manipulatedFrame()->getMatrix(matrix);
     QMatrix4x4 trans_mat;
@@ -446,9 +476,14 @@ private Q_SLOTS:
     QVector3D dir = trans_mat * QVector3D(0,0,-1);
     mesh.add_face(v[0],v[1],v[2]);
     mesh.add_face(v[0],v[2],v[3]);
-    surface_item->compute_bbox();
+    //surface_item->compute_bbox();
+    CGAL::Bbox_3 bbox = CGAL::Polygon_mesh_processing::bbox(mesh);  
     QApplication::restoreOverrideCursor();
-    double el=QInputDialog::getDouble(mw, "Edge length", "Enter Target Edge Length", 0.03*surface_item->diagonalBbox(),
+    double el=QInputDialog::getDouble(mw, "Edge length", "Enter Target Edge Length", 0.03*CGAL::sqrt(
+                                        (bbox.xmax()-bbox.xmin()) * (bbox.xmax()-bbox.xmin())+
+                                        (bbox.ymax()-bbox.ymin()) * (bbox.ymax()-bbox.ymin())+
+                                        (bbox.zmax()-bbox.zmin()) * (bbox.zmax()-bbox.zmin())
+                                         ),
                                       0, 2147483647, 17);
     QApplication::setOverrideCursor(Qt::WaitCursor);
     //get border of the patch and get plane's equation
@@ -496,11 +531,11 @@ private Q_SLOTS:
       BOOST_FOREACH(vertex_descriptor v, CGAL::vertices_around_face(halfedge(f, tmesh), tmesh))
       {
         //project v on da plane
-        EPICK::Point_2 proj_p = proj_plane.to_2d(proj_plane.projection(get(t_vpmap, v)));
-        //if projected point is inside the patch, add its adjacent faces
+        EPICK::Point_2 proj_p_2D = proj_plane.to_2d(proj_plane.projection(get(t_vpmap, v)));
+        //if projected point is inside the patch, remove its adjacent faces
         if (CGAL::bounded_side_2(proj_border.begin(),
                                  proj_border.end(),
-                                 proj_p,
+                                 proj_p_2D,
                                  EPICK())  == CGAL::ON_BOUNDED_SIDE)
         {
           BOOST_FOREACH(face_descriptor fat, faces_around_target(halfedge(v, tmesh), tmesh))
@@ -526,14 +561,81 @@ private Q_SLOTS:
         }
       }
     }
-    //get border edges
-    CGAL::Face_filtered_graph<SMesh> patch_zone(tmesh, rm_faces);
-    std::vector<edge_descriptor> border_edges;
-    BOOST_FOREACH(edge_descriptor ed, edges(patch_zone))
+    
+    
+    
+    //get border edges of the selected patches
+    std::vector<halfedge_descriptor> boundary_edges;
+    CGAL::Polygon_mesh_processing::border_halfedges(rm_faces, tmesh, std::back_inserter(boundary_edges));
+    std::vector<bool> mark(edges(tmesh).size(), false);
+    boost::property_map<SMesh, boost::edge_index_t>::type edge_index
+      = get(boost::edge_index, tmesh);
+    Is_selected_edge_property_map spmap(mark, &edge_index);
+    BOOST_FOREACH(halfedge_descriptor h, boundary_edges)
+      put(spmap, edge(h, tmesh), true);
+
+    boost::vector_property_map<int,
+      boost::property_map<SMesh, boost::face_index_t>::type>
+      fccmap;
+
+    //get connected componant from the picked face
+    std::set<face_descriptor> final_sel;
+    std::size_t nb_cc = CGAL::Polygon_mesh_processing::connected_components(tmesh
+          , fccmap
+          , CGAL::Polygon_mesh_processing::parameters::edge_is_constrained_map(spmap));
+    std::vector<bool> is_cc_done(nb_cc, false);
+
+    BOOST_FOREACH(face_descriptor f, rm_faces)
     {
-      if(is_border(ed, patch_zone))
-        border_edges.push_back(ed);
+
+      int cc_id = get(fccmap, f);
+      if(is_cc_done[cc_id])
+      {
+        continue;
+      }
+      CGAL::Halfedge_around_face_circulator<SMesh> hafc(halfedge(f, tmesh), tmesh);
+      CGAL::Halfedge_around_face_circulator<SMesh> end = hafc;
+      double x(0), y(0), z(0);
+      int total(0);
+      CGAL_For_all(hafc, end)
+      {
+        EPICK::Point_3 p = get(t_vpmap, target(*hafc, tmesh));
+        x+=p.x(); y+=p.y(); z+=p.z();
+        total++;
+      }
+      if(total == 0)
+        continue;
+      
+      EPICK::Point_3  center(x/(double)total, y/(double)total, z/(double)total);
+      EPICK::Point_3 orig = proj_plane.projection(center);
+      EPICK::Vector_3 direction = center - orig;
+      //if intersection 
+      if(item->intersect_face(orig.x(),
+                              orig.y(),
+                              orig.z(),
+                              direction.x(),
+                              direction.y(),
+                              direction.z(),
+                              f))
+      {
+        is_cc_done[cc_id] = true;
+      }
     }
+    BOOST_FOREACH(face_descriptor f, faces(tmesh))
+    {
+      if(is_cc_done[get(fccmap, f)])
+        final_sel.insert(f);
+    }
+    
+    //end collect faces to remove
+//    //get border edges
+//    CGAL::Face_filtered_graph<SMesh> patch_zone(tmesh, rm_faces);
+//    std::vector<edge_descriptor> border_edges;
+//    BOOST_FOREACH(edge_descriptor ed, edges(patch_zone))
+//    {
+//      if(is_border(ed, patch_zone))
+//        border_edges.push_back(ed);
+//    }
     
     //project patch
     BOOST_FOREACH(vertex_descriptor vd, vertices(mesh))
@@ -548,17 +650,19 @@ private Q_SLOTS:
       }
     }
     //rm zone faces
-    BOOST_FOREACH(face_descriptor f, rm_faces)
+    BOOST_FOREACH(face_descriptor f, final_sel)
       CGAL::Euler::remove_face(halfedge(f, tmesh), tmesh);
     //merge meshes
+    mesh.collect_garbage();
+    tmesh.collect_garbage();
+    CGAL::copy_face_graph(mesh, tmesh);
     //insert patch in mesh: 
     // iterate opposite-border edges and create new face/edges with closest vertex in patch
-    
     mesh.collect_garbage();
     tmesh.collect_garbage();
     item->invalidateOpenGLBuffers();
     item->itemChanged();
-    scene->addItem(surface_item);
+    //scene->addItem(surface_item);
     scene->erase(scene->item_id(create_surface_item));
     QApplication::restoreOverrideCursor();
   }
