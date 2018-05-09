@@ -37,7 +37,7 @@
      <x>0</x>
      <y>0</y>
      <width>978</width>
-     <height>22</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -296,7 +296,7 @@
             <x>0</x>
             <y>0</y>
             <width>541</width>
-            <height>173</height>
+            <height>176</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout">
@@ -516,7 +516,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Orthographic Projection</string>
+    <string>&amp;Orthographic Projection</string>
    </property>
   </action>
   <action name="actionColorItems">
@@ -547,6 +547,9 @@
   </customwidget>
  </customwidgets>
  <resources>
+  <include location="Polyhedron_3.qrc"/>
+  <include location="Polyhedron_3.qrc"/>
+  <include location="Polyhedron_3.qrc"/>
   <include location="Polyhedron_3.qrc"/>
  </resources>
  <connections/>
