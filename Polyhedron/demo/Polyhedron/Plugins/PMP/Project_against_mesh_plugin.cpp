@@ -39,6 +39,9 @@
 #include "Scene.h"
 
 #include "triangulate_primitive.h"
+
+#define WITH_EDGE
+
 using namespace CGAL::Three;
 namespace Euler=CGAL::Euler;
 typedef boost::graph_traits<SMesh>::vertex_descriptor vertex_descriptor;
@@ -90,10 +93,77 @@ public :
           (p1.y()+p2.y())/2.0,
           (p1.z()+p2.z())/2.0);
     frame->setPosition( center_+offset);
+    
     vertex_spheres.resize(0);
     normal_spheres.resize(0);
     create_flat_sphere(1.0f, vertex_spheres, normal_spheres,10);
     mode = 'a';
+  }
+  void expand(char p_mode, double mult)
+  {
+    double p1x=p1.x(), p1y=p1.y(),
+        p2x=p2.x(), p2y=p2.y();
+    switch(p_mode)
+    {
+    case 'a':
+    case 'w':
+      p1x-=mult;
+      p2x+=mult;
+      break;
+    default:
+      break;
+    }
+    switch(p_mode)
+    {
+    case 'a':
+    case 'h':
+      p1y-=mult;
+      p2y+=mult;
+      break;
+    default:
+      break;
+    }
+    p1 = Point_3(p1x,
+                 p1y,
+                 p1.z());
+    p2 = Point_3(
+          p2x,
+          p2y,
+          p2.z());
+    invalidateOpenGLBuffers();
+  }
+  
+  void shrink(char p_mode, double mult)
+  {
+    double p1x=p1.x(), p1y=p1.y(),
+        p2x=p2.x(), p2y=p2.y();
+    switch(p_mode)
+    {
+    case 'a':
+    case 'w':
+      p1x = (std::min)(p1x + mult, p2x - mult);
+      p2x = p2x - mult;
+      break;
+    default:
+      break;
+    }
+    switch(p_mode){
+    case 'a':
+    case 'h':
+      p1y = (std::min)(p1y + mult, p2y - mult);
+      p2y-=mult;
+      break;
+    default:
+      break;
+    }
+    p1 = Point_3(p1x,
+                 p1y,
+                 p1.z());
+    p2 = Point_3(
+          p2x,
+          p2y,
+          p2.z());
+    invalidateOpenGLBuffers();
   }
   CGAL::Three::Scene_item::ManipulatedFrame* manipulatedFrame() Q_DECL_OVERRIDE { return frame; }
   bool manipulatable() const Q_DECL_OVERRIDE { return true; }
@@ -177,12 +247,14 @@ public :
     are_buffers_filled = false;
     _bbox=Bbox(p1.x(), p1.y(), p1.z(),
                p2.x(), p2.y(), p2.z());
+    is_diag_bbox_computed = false;
     redraw();
   }
   //fills the std::vector
   void computeElements() const
   {
     vertices.resize(18);
+    
     vertices[0] = p1.x()-center_.x;  vertices[3] = p2.x()-center_.x;    
     vertices[1] = p1.y()-center_.y;  vertices[4] = p1.y()-center_.y;
     vertices[2] = p1.z()-center_.z;  vertices[5] = p1.z()-center_.z;
@@ -203,71 +275,19 @@ public :
   QString toolTip() const Q_DECL_OVERRIDE {return QString();}
   bool keyPressEvent(QKeyEvent *e) Q_DECL_OVERRIDE
   {
+    double mult = 
+        e->modifiers().testFlag(Qt::ShiftModifier)
+        ? 0.1 * diagonalBbox()
+        : 0.01 * diagonalBbox();
+    
     if (e->key()==Qt::Key_Plus)
     {
-      double p1x=p1.x(), p1y=p1.y(),
-          p2x=p2.x(), p2y=p2.y();
-      switch(mode)
-      {
-      case 'a':
-      case 'w':
-        p1x-=0.01*diagonalBbox();
-        p2x+=0.01*diagonalBbox();
-        break;
-      default:
-        break;
-      }
-      switch(mode)
-      {
-      case 'a':
-      case 'h':
-        p1y-=0.01*diagonalBbox();
-        p2y+=0.01*diagonalBbox();
-        break;
-      default:
-        break;
-      }
-      p1 = Point_3(p1x,
-                   p1y,
-                   p1.z());
-      p2 = Point_3(
-            p2x,
-            p2y,
-            p2.z());
-      invalidateOpenGLBuffers();
+      expand(mode, mult);
       return true;
     }
     else if (e->key() == Qt::Key_Minus)
     {
-      double p1x=p1.x(), p1y=p1.y(),
-          p2x=p2.x(), p2y=p2.y();
-      switch(mode)
-      {
-      case 'a':
-      case 'w':
-        p1x+=0.01*diagonalBbox();
-        p2x-=0.01*diagonalBbox();
-        break;
-      default:
-        break;
-      }
-      switch(mode){
-      case 'a':
-      case 'h':
-        p1y+=0.01*diagonalBbox();
-        p2y-=0.01*diagonalBbox();
-        break;
-      default:
-        break;
-      }
-      p1 = Point_3(p1x,
-                   p1y,
-                   p1.z());
-      p2 = Point_3(
-            p2x,
-            p2y,
-            p2.z());
-      invalidateOpenGLBuffers();
+     shrink(mode, mult);
       return true;
     }
     else if(e->key() == Qt::Key_A)
@@ -365,22 +385,30 @@ class Project_against_mesh_plugin :
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
   Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
   
-  typedef CGAL::Triangulation_2_projection_traits_3<EPICK>   P_traits;
+  typedef CGAL::Triangulation_2_projection_traits_3<EPICK>                   P_traits;
   
   typedef CGAL::Triangulation_vertex_base_with_info_2<halfedge_descriptor,
-  P_traits>        Vb;
-  struct Face_info {
+  P_traits>                                                                  Vb;
+  struct                                                                     Face_info 
+  {
     typename boost::graph_traits<SMesh>::halfedge_descriptor e[3];
     bool is_external;
   };
   typedef CGAL::Triangulation_face_base_with_info_2<Face_info,
-  P_traits>          Fb1;
-  typedef CGAL::Constrained_triangulation_face_base_2<P_traits, Fb1>   Fb;
-  typedef CGAL::Triangulation_data_structure_2<Vb,Fb>                  TDS;
-  typedef CGAL::Exact_predicates_tag                                   Itag;
+  P_traits>                                                                  Fb1;
+  typedef CGAL::Constrained_triangulation_face_base_2<P_traits, Fb1>         Fb;
+  typedef CGAL::Triangulation_data_structure_2<Vb,Fb>                        TDS;
+  typedef CGAL::Exact_predicates_tag                                         Itag;
   typedef CGAL::Constrained_Delaunay_triangulation_2<P_traits,
                                                       TDS,
-                                                      Itag>             CDT;
+                                                      Itag>                  CDT;
+  
+  typedef CGAL::AABB_face_graph_triangle_primitive<SMesh>                    Facet_primitive;
+  typedef CGAL::AABB_traits<EPICK, Facet_primitive>                          Facet_traits;
+  typedef CGAL::AABB_tree<Facet_traits>                                      Facet_tree;
+  typedef boost::optional<Facet_tree::
+  Intersection_and_primitive_id<EPICK::Ray_3>::Type>                         Ray_intersection;
+  
 public:
   //decides if the plugin's actions will be displayed or not.
   bool applicable(QAction* action) const Q_DECL_OVERRIDE
@@ -431,14 +459,76 @@ private Q_SLOTS:
   }
   void createSurface()
   {
-    create_surface_item = new Scene_create_surface_item(Point_3(
-                                                          scene->bbox().min(0),
-                                                          scene->bbox().min(1),
-                                                          (scene->bbox().max(2) + scene->bbox().min(2))/2.0),
-                                                        Point_3(
-                                                          scene->bbox().max(0),
-                                                          scene->bbox().max(1),
-                                                          (scene->bbox().max(2) + scene->bbox().min(2))/2.0));
+    Point_3 bbox_min(
+          scene->bbox().min(0),
+          scene->bbox().min(1),
+          (scene->bbox().max(2) + scene->bbox().min(2))/2.0),
+        bbox_max(
+          scene->bbox().max(0),
+          scene->bbox().max(1),
+          (scene->bbox().max(2) + scene->bbox().min(2))/2.0);
+    create_surface_item = 
+        new Scene_create_surface_item(bbox_min, bbox_max);
+    Scene_surface_mesh_item* item =
+        qobject_cast<Scene_surface_mesh_item*>(scene->item(scene->mainSelectionIndex()));
+    if(item)
+    {
+      CGAL::Three::Viewer_interface* viewer =
+          static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first());
+      qglviewer::Camera* cam = viewer->camera();
+      //get World coords for viewer corners.
+      qglviewer::Vec proj_corners[3];
+      int w(viewer->width()), h(viewer->height());
+      proj_corners[0] = qglviewer::Vec(0,h,0);
+      proj_corners[1] = qglviewer::Vec(w,0,0);
+      proj_corners[2] = qglviewer::Vec(0,0,0);
+      EPICK::Point_3 corners[3];
+      for(int i = 0; i< 3; ++i)
+      {
+         qglviewer::Vec res = cam->unprojectedCoordinatesOf(proj_corners[i]);
+        corners[i] = EPICK::Point_3(res.x, res.y, res.z);
+      }
+      //shoot to the item and create the create_surface_item
+      //at the midle of the segment camera_pos->intersection. 
+      connect(item, &Scene_item::aboutToBeDestroyed,
+              [this, item](){
+        tree_map[item] = NULL;
+      });
+      connect(item, &Scene_item::itemChanged,
+              [this, item](){
+        tree_map[item] = NULL;
+      });
+      Facet_tree* tree = tree_map[item];
+      if(!tree)
+      {
+        tree = new Facet_tree();
+        tree->insert(faces(*item->face_graph()).first,
+                     faces(*item->face_graph()).second,
+                     *item->face_graph());
+        tree->build();
+        tree_map[item] = tree;
+      }
+      EPICK::Point_3 cam_pos(cam->position().x, cam->position().y, cam->position().z);
+      EPICK::Ray_3 ray(
+            cam_pos,
+            EPICK::Vector_3(cam->viewDirection().x, cam->viewDirection().y, cam->viewDirection().z));
+      Ray_intersection intersection = tree->first_intersection(ray);
+      
+      if(intersection){
+        if(boost::get<EPICK::Point_3>(&(intersection->first))){
+          const EPICK::Point_3* p = boost::get<EPICK::Point_3>(&(intersection->first));
+          EPICK::Vector_3 dir = EPICK::Segment_3(cam_pos, *p).to_vector();
+          qglviewer::Vec center(
+                (corners[0].x()+corners[1].x())/2.0 + dir.x()/2.0,
+                (corners[0].y()+corners[1].y())/2.0 + dir.y()/2.0,
+                (corners[0].z()+corners[1].z())/2.0 + dir.z()/2.0);
+          create_surface_item->manipulatedFrame()->setPosition( center + viewer->offset());
+          qglviewer::Quaternion orientation(qglviewer::Vec(0,0,-1),
+                                            qglviewer::Vec(dir.x(), dir.y(), dir.z()));
+          create_surface_item->manipulatedFrame()->setOrientation(orientation);
+        }
+      }
+    }
     scene->setSelectedItem(
           scene->addItem(create_surface_item)
           );
@@ -527,16 +617,15 @@ private Q_SLOTS:
     mesh.add_face(v[0],v[1],v[2]);
     mesh.add_face(v[0],v[2],v[3]);
     
-    typedef CGAL::AABB_face_graph_triangle_primitive<SMesh>  Facet_primitive;
-    typedef CGAL::AABB_traits<EPICK, Facet_primitive>        Facet_traits;
-    typedef CGAL::AABB_tree<Facet_traits>                    Facet_tree;
-    typedef boost::optional<Facet_tree::Intersection_and_primitive_id<EPICK::Ray_3>::Type> Ray_intersection;
-    
-    Facet_tree tree;
-    tree.insert(faces(*item->face_graph()).first,
-                faces(*item->face_graph()).second,
-                *item->face_graph());
-    tree.build();
+    Facet_tree* tree = tree_map[item];
+    if(!tree)
+    {
+      tree = new Facet_tree();
+      tree->insert(faces(*item->face_graph()).first,
+                  faces(*item->face_graph()).second,
+                  *item->face_graph());
+      tree->build();
+    }
     //project faces on plane. From there, collect faces that are inside the patch for removal, 
     // and collect faces that intersect the patch border for re-triangulation.
     std::set<face_descriptor> rm_faces;
@@ -680,7 +769,9 @@ private Q_SLOTS:
     typedef boost::bimap<vertex_descriptor, CDT::Vertex_handle>  Vd2vhMap;
     typedef Vd2vhMap::value_type v_pair;
     Vd2vhMap vd2vh;
+#ifdef WITH_EDGE
     Scene_polylines_item* line_item = new Scene_polylines_item();
+#endif
     BOOST_FOREACH(face_descriptor f, intersecting_faces)
     {
       std::vector<EPICK::Point_3> proj_points;
@@ -713,7 +804,8 @@ private Q_SLOTS:
         {
           vd2vh.insert(v_pair(outside_vertices[id], vs[id]));
           vd2vh.insert(v_pair(outside_vertices[(id+1)%vs.size()], vs[(id+1)%vs.size()]));
-          //not if edge intersects border
+          //not if edge intersects border, or it
+          //adds an traversing constraint, which we don't want.
           bool intersect_border = false;
           for(std::size_t bid = 0; bid <proj_border.size(); ++bid)
           {
@@ -730,10 +822,12 @@ private Q_SLOTS:
           {
             cdt.insert_constraint(vs[id],
                                   vs[(id+1)%vs.size()]);
+#ifdef WITH_EDGE
             std::vector<EPICK::Point_3> edge;
             edge.push_back(get(t_vpmap, outside_vertices[id]));
             edge.push_back(get(t_vpmap, outside_vertices[(id+1)%vs.size()]));
             line_item->polylines.push_back(edge);
+#endif
           }
         }
       }
@@ -775,7 +869,7 @@ private Q_SLOTS:
       if(vd2vh.right.find(fit) == vd2vh.right.end())
       {
         EPICK::Ray_3 ray(fit->point(), EPICK::Vector_3(dir.x(), dir.y(), dir.z()));
-        Ray_intersection intersection = tree.first_intersection(ray);
+        Ray_intersection intersection = tree->first_intersection(ray);
         if(intersection){
           if(boost::get<EPICK::Point_3>(&(intersection->first))){
             const EPICK::Point_3* p = boost::get<EPICK::Point_3>(&(intersection->first));
@@ -788,8 +882,10 @@ private Q_SLOTS:
         {
           QApplication::restoreOverrideCursor();
           QMessageBox::warning(mw, "Error", "Some points projected in the void. Aborting.");
+#ifdef WITH_EDGE
           if(line_item)
             delete line_item;
+#endif
           return;
         }
       }
@@ -825,19 +921,23 @@ private Q_SLOTS:
     CGAL::Polygon_mesh_processing::stitch_borders(tmesh);
     item->invalidateOpenGLBuffers();
     item->itemChanged();
+#ifdef WITH_EDGE
     line_item->setName("Constraint edges");
     line_item->setColor(QColor(Qt::red));
     scene->addItem(line_item);
+#endif
     scene->erase(scene->item_id(create_surface_item));
     QApplication::restoreOverrideCursor();
   }
   
 private:
+  
   QList<QAction*> _actions;
   Messages_interface* messageInterface;
   //The reference to the scene
   CGAL::Three::Scene_interface* scene;
   //The reference to the main window
+  boost::unordered_map<Scene_surface_mesh_item*, Facet_tree*> tree_map;
   QMainWindow* mw;
   QAction* actionCreateSurface;
   QAction* actionProjectSurface;
