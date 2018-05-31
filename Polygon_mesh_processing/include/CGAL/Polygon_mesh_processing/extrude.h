@@ -41,7 +41,8 @@ namespace extrude_impl{
 template<typename BorderHalfedgesRange, class PolygonMesh>
 void create_strip(const BorderHalfedgesRange& input_halfedges,
                  const BorderHalfedgesRange& output_halfedges,
-                  PolygonMesh& mesh)
+                  PolygonMesh& mesh,
+                  bool is_orientation_inverted=true)
 {
   CGAL_assertion(input_halfedges.size() == output_halfedges.size());
   typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor halfedge_descriptor;
@@ -49,16 +50,28 @@ void create_strip(const BorderHalfedgesRange& input_halfedges,
   for(std::size_t i = 0; i < input_halfedges.size(); ++i)
   {
     halfedge_descriptor h1 = input_halfedges[i], h2=output_halfedges[i],
-        nh1 = next(h1, mesh), ph2 = prev(h2, mesh);
+        nh1 = next(h1, mesh), ph2 = is_orientation_inverted ? prev(h2, mesh) 
+                                                            : next(h2,mesh);
     halfedge_descriptor newh = halfedge(add_edge(mesh), mesh),
         newh_opp = opposite(newh, mesh);
     // set target vertices of the new halfedges
     set_target(newh, target(h1, mesh), mesh);
-    set_target(newh_opp, target(ph2, mesh), mesh);
+    if(is_orientation_inverted)
+      set_target(newh_opp, target(ph2, mesh), mesh);
+    else
+      set_target(newh_opp, source(ph2, mesh), mesh);
     // update next/prev pointers
     set_next(h1, newh_opp, mesh);
-    set_next(newh_opp, h2, mesh);
-    set_next(ph2, newh, mesh);
+    if(is_orientation_inverted)
+    {
+      set_next(newh_opp, h2, mesh);
+      set_next(ph2, newh, mesh);
+    }
+    else
+    {
+      set_next(newh_opp, opposite(h2, mesh), mesh);
+      set_next(opposite(ph2,mesh), newh, mesh);
+    }
     set_next(newh, nh1, mesh);
   }
   for(std::size_t i = 0; i < input_halfedges.size(); ++i)
@@ -279,7 +292,29 @@ void extrude_mesh(const InputMesh& input,
   extrude_impl::Identity_functor top;
   extrude_mesh(input, output, bot,top, np_in, np_out);
 }
-//convenience overload
+
+
+template <class InputMesh,
+          class OutputMesh,
+          class PolyLine>
+void sweep_mesh(const InputMesh& input, 
+                  OutputMesh& output, 
+                  const PolyLine& guide)
+{
+  //copy bot and top in output. 
+  //foreach section of guide
+  //  if !last: copy border of bot 
+  //  else: just use bot.
+  //  add_strip.
+  //  apply rotation of center(section.target), angle (bissector), axis(orthogonal to plane defined by section and section.next) 
+
+}
+
+
+
+
+
+//convenience overloads
 template <class InputMesh,
           class OutputMesh,
           typename Vector>
