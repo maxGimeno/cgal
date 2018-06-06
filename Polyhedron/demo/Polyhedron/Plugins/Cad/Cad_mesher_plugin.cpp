@@ -120,7 +120,7 @@ void Polyhedron_demo_remeshing_plugin::remesh()
                             facet_angle = angle
                             );
 
-  Mesh_domain_with_features cgal_brep_mesh_domain_with_features(*brep);
+  CGAL::cgalMeshDomainWithRationalBezierFeatures< cgalBrepMeshDomainData <K> > cgal_brep_mesh_domain_with_features(*brep);
   ///////////////////////////////////////////////////////////////////
   //    Recovers the features
   ///////////////////////////////////////////////////////////////////
