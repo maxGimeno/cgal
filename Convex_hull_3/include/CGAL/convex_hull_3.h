@@ -1023,16 +1023,16 @@ void convex_hull_3(InputIterator first, InputIterator beyond,
 
 
 template <class InputRange,
+          class PointPropertyMap,
           class OutputIterator,
-          class VertexPointMap,
           class Traits>
 OutputIterator
-extreme_vertices(const InputRange& range, 
+extreme_vertices(const InputRange& range,
+                 PointPropertyMap map, 
                  OutputIterator out,
-                 VertexPointMap vpm,
                  const Traits& traits)
 {
-  Vertex_to_point_traits_adapter<Traits, VertexPointMap> traits_adapter(vpm, traits);
+  Vertex_to_point_traits_adapter<Traits, PointPropertyMap> traits_adapter(map, traits);
   extreme_points_3(range, out,traits_adapter);
   return out;
 }
