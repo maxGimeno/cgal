@@ -35,6 +35,7 @@
 #include <CGAL/Projection_traits_xz_3.h>
 #include <CGAL/Projection_traits_yz_3.h>
 #include <CGAL/Convex_hull_traits_3.h>
+#include <CGAL/Vertex_to_point_traits_adapter_3.h>
 #include <CGAL/Convex_hull_2/ch_assertions.h>
 #include <CGAL/Triangulation_data_structure_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
@@ -1020,6 +1021,21 @@ void convex_hull_3(InputIterator first, InputIterator beyond,
     polyhedron, traits);
 }
 
+
+template <class InputRange,
+          class OutputIterator,
+          class VertexPointMap,
+          class Traits>
+OutputIterator
+extreme_vertices(const InputRange& range, 
+                 OutputIterator out,
+                 VertexPointMap vpm,
+                 const Traits& traits)
+{
+  Vertex_to_point_traits_adapter<Traits, VertexPointMap> traits_adapter(vpm, traits);
+  extreme_points_3(range, out,traits_adapter);
+  return out;
+}
 
 template <class InputIterator, class Polyhedron_3>
 void convex_hull_3(InputIterator first, InputIterator beyond,

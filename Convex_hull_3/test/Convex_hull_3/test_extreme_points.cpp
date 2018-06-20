@@ -1,7 +1,6 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/convex_hull_3.h>
-#include <CGAL/Vertex_to_point_traits_adapter_3.h>
 #include <CGAL/Convex_hull_traits_3.h>
 #include <CGAL/Exact_rational.h>
 #include <CGAL/Cartesian.h>
@@ -204,22 +203,6 @@ void test_equal_points()
 }
 
 
-
-template <class InputRange,
-          class OutputIterator,
-          class VertexPointMap,
-          class Traits>
-OutputIterator
-extreme_vertices(const InputRange& range, 
-                 OutputIterator out,
-                 VertexPointMap vpm,
-                 const Traits& traits)
-{
-  CGAL::Vertex_to_point_traits_adapter<Traits, VertexPointMap> traits_adapter(vpm, traits);
-  CGAL::extreme_points_3(range, out,traits_adapter);
-  return out;
-}
-
 void test_extreme_vertices(const char* fname)
 {
   std::ifstream input(fname);
@@ -229,7 +212,7 @@ void test_extreme_vertices(const char* fname)
     exit(1);
   }  
   std::vector<boost::graph_traits<Polyhedron_3>::vertex_descriptor> verts;
-  extreme_vertices(vertices(P), std::back_inserter(verts) , get(CGAL::vertex_point, P),
+  CGAL::extreme_vertices(vertices(P), std::back_inserter(verts) , get(CGAL::vertex_point, P),
                    CGAL::Convex_hull_traits_3<K, Polyhedron_3, CGAL::Tag_true>());
   std::cout<<verts.size()<<std::endl;
 }

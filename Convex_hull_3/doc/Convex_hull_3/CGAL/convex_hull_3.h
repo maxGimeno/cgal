@@ -89,5 +89,28 @@ extreme_points_3(InputRange range,
               OutputIterator out,
               const Traits& traits);
 
+/*!
+\ingroup PkgConvexHull3Functions
+
+\brief copies in `out` the vertices on the convex hull of the vertices in `range`.
+
+\tparam InputRange a range of `vertex_descriptor`, model of `ConstRange`.
+        Its iterator type is `InputIterator`.
+\tparam OutputIterator must be an output iterator where `vertex_descriptor`s of the same type as the input can be put.
+\tparam Traits must be model of the concept `ConvexHullTraits_3`.
+
+@param range the range of input vertices.
+@param out an output iterator where the extreme vertices will be put.
+@param traits an instance of `Traits`.
+*/
+template <class InputRange,
+          class OutputIterator,
+          class VertexPointMap,
+          class Traits>
+OutputIterator
+extreme_vertices(const InputRange& range, 
+                 OutputIterator out,
+                 VertexPointMap vpm,
+                 const Traits& traits);
 
 } /* namespace CGAL */
