@@ -67,7 +67,7 @@ For instance, use macports in the following way:
 sudo port install cgal
 </PRE>
 
-or if Qt5 are desired
+or if Qt5 is desired
 
 <PRE>
 sudo port install cgal +qt5 +universal +demos
@@ -101,8 +101,21 @@ to select and download some precompiled third party libraries. However, you will
 the library using your favorite compiler.
 
 A <a href="https://www.cgal.org/windows_installation.html">tutorial</a> is provided on how to proceed with Microsoft Visual Studio.
+ You can also use the package manager vcpkg, with the following command:
+ <PRE>
+vcpkg install cgal
+</PRE>
 
+or if Qt5 is desired
 
+<PRE>
+vcpkg install cgal[qt]
+</PRE>
+
+You can then use the cgal libraries and headers in CMake using the toolchain with:
+<PRE>
+-DCMAKE_TOOLCHAIN_FILE=VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake
+</PRE>
 
 \section secgettingcgal Downloading CGAL 
 
