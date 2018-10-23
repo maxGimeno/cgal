@@ -7,11 +7,6 @@ project( Surface_mesh_segmentation_Examples )
 cmake_minimum_required(VERSION 2.8.11)
 
 
-if ( COMMAND cmake_policy )
-
-  cmake_policy( SET CMP0003 NEW )  
-
-endif()
 
 # CGAL and its components
 find_package( CGAL QUIET COMPONENTS  )
@@ -72,6 +67,6 @@ create_single_source_cgal_program( "extract_segmentation_into_mesh_example.cpp")
 
 if(OpenMesh_FOUND)
   create_single_source_cgal_program( "segmentation_from_sdf_values_OpenMesh_example.cpp" )
-  target_link_libraries( segmentation_from_sdf_values_OpenMesh_example ${OPENMESH_LIBRARIES} )
+  target_link_libraries( segmentation_from_sdf_values_OpenMesh_example PRIVATE ${OPENMESH_LIBRARIES} )
 endif()
 

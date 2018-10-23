@@ -13,6 +13,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0+
 // 
 //
 // Author(s)     : Andreas Fabri, Fernando Cacciola
@@ -20,14 +21,11 @@
 #ifndef CGAL_GRAPH_TRAITS_TRIANGULATION_2_H
 #define CGAL_GRAPH_TRAITS_TRIANGULATION_2_H
 
-#include <CGAL/license/Triangulation_2.h>
-
-
 #include <functional>
 
 // include this to avoid a VC15 warning
 #include <CGAL/boost/graph/named_function_params.h>
-
+#include <CGAL/boost/graph/graph_traits_Triangulation_data_structure_2.h>
 #include <boost/config.hpp>
 #include <boost/iterator_adaptors.hpp>
 #include <boost/graph/graph_traits.hpp>
@@ -46,114 +44,6 @@
 namespace CGAL {
 
   namespace detail {
-
-template < class T, class EdgeBase >
-class Edge : public EdgeBase {
-
-public:
-  typedef typename T::Face_handle Face_handle ;
-  
-  Edge()
-  {}
-
-  Edge(Face_handle  fh, int i)
-    : EdgeBase(fh,i)
-  {}
-  
-  Edge(const EdgeBase& e)
-    : EdgeBase(e)
-  {}
-
-  Edge(const Edge& e)
-    : EdgeBase(e)
-  {}
-
-  Edge&
-  operator=(const Edge& e)
-  {
-    this->first = e.first;
-    this->second = e.second;
-    return *this;
-  }
-
-  friend std::size_t hash_value(const Edge& e)
-  {
-    if (e.first==Face_handle()) return 0;
-    return hash_value(e.first<e.first->neighbor(e.second)?
-                      e.first:e.first->neighbor(e.second));
-  }
-
-  bool operator==(const Edge& other) const
-  {
-    if((this->first == other.first)&&(this->second == other.second)) return true;
-    Face_handle fh = this->first->neighbor(this->second);
-    if(other.first != fh) return false;
-    int i = fh->index(this->first);
-    return (other.second == i);
-  }
-
-  bool operator!=(Edge& other) const
-  {
-    return ! (*this == other);
-  }
-};
-
-template <class Circ, class E>
-class Out_edge_circulator : public Circ
-{
-private:
-  mutable E e;
-
-public:
-
-  typedef E value_type;
-  typedef E* pointer;
-  typedef E& reference;
-
-  Out_edge_circulator()
-    : Circ()
-  {}
-
-  Out_edge_circulator(Circ c)
-    : Circ(c)
-  {}
-
-  const E& operator*() const
-  {
-    E ed = static_cast<const Circ*>(this)->operator*();
-    e = E(ed.first->neighbor(ed.second), ed.first->neighbor(ed.second)->index(ed.first));
-    return e;
-  }
-};
- 
-template <class Circ, class E>
-class In_edge_circulator : public Circ
-{
-private:
-  mutable E e;
-
-public:
-
-  typedef E value_type;
-  typedef E* pointer;
-  typedef E& reference;
-
-  In_edge_circulator()
-    : Circ()
-  {}
-
-  In_edge_circulator(Circ c)
-    : Circ(c)
-  {}
-
-  const E& operator*() const
-{
-    typename Circ::value_type ed = static_cast<const Circ*>(this)->operator*();
-    e = E(ed);
-    return e;
-  }
-};
-  
 
     template <typename Tr>
     struct T2_halfedge_descriptor
@@ -242,10 +132,10 @@ namespace boost {
     typedef size_type faces_size_type;
     typedef size_type degree_size_type;
 
-  // nulls
-  static vertex_descriptor   null_vertex() { return vertex_descriptor(); }
-  static face_descriptor     null_face()   { return face_descriptor(); }
-  static halfedge_descriptor     null_halfedge()   { return halfedge_descriptor(); }
+    // nulls
+    static vertex_descriptor   null_vertex() { return vertex_descriptor(); }
+    static face_descriptor     null_face()   { return face_descriptor(); }
+    static halfedge_descriptor     null_halfedge()   { return halfedge_descriptor(); }
   };
 
 
@@ -363,6 +253,57 @@ namespace CGAL {
     return edge_descriptor(e.first,e.second);
   }
 
+  template <class Gt, class Tds>
+  std::pair<typename boost::graph_traits< Triangulation_2<Gt,Tds> >::edge_descriptor,
+            bool>
+  edge(typename boost::graph_traits< Triangulation_2<Gt,Tds> >::vertex_descriptor u,
+       typename boost::graph_traits< Triangulation_2<Gt,Tds> >::vertex_descriptor v,
+       const Triangulation_2<Gt,Tds>& g)
+  {
+    typedef typename boost::graph_traits< Triangulation_2<Gt,Tds> >::edge_descriptor edge_descriptor;
+
+    typename Triangulation_2<Gt,Tds>::Edge_circulator c = g.incident_edges(u), done(c);
+    if (c != 0) {
+      do {
+        // find the index of the other vertex of *c
+        int indv = 3 - c->first->index(u) - c->second;
+        if(c->first->vertex(indv) == v)
+          return std::make_pair(edge_descriptor(c->first, c->second), true);
+      } while (++c != done);
+    }
+
+    return std::make_pair(edge_descriptor(), false);
+  }
+
+  template <class Gt, class Tds>
+  std::pair<typename boost::graph_traits<Triangulation_2<Gt,Tds> >::halfedge_descriptor,
+            bool>
+  halfedge(typename boost::graph_traits<Triangulation_2<Gt,Tds> >::vertex_descriptor u,
+           typename boost::graph_traits<Triangulation_2<Gt,Tds> >::vertex_descriptor v,
+           const Triangulation_2<Gt,Tds>& g)
+  {
+    typedef typename boost::graph_traits< Triangulation_2<Gt,Tds> >::halfedge_descriptor halfedge_descriptor;
+    typedef typename boost::graph_traits< Triangulation_2<Gt,Tds> >::edge_descriptor edge_descriptor;
+    typedef typename boost::graph_traits< Triangulation_2<Gt,Tds> >::face_descriptor face_descriptor;
+
+    std::pair<edge_descriptor, bool> eb = edge(u, v, g);
+
+    if(!eb.second)
+      return std::make_pair(halfedge_descriptor(), false);
+
+    const edge_descriptor& e = eb.first;
+
+    if(e.first->vertex(g.ccw(e.first->index(u))) == v)
+    {
+      return std::make_pair(halfedge_descriptor(e.first, e.second), true);
+    }
+    else
+    {
+      face_descriptor nf = e.first->neighbor(e.second);
+      int idx = nf->index(e.first);
+      return std::make_pair(halfedge_descriptor(nf, idx), true);
+    }
+  }
 
   template <class Gt, class Tds>
   inline Iterator_range<typename boost::graph_traits< Triangulation_2<Gt,Tds> >::vertex_iterator>  
@@ -530,7 +471,7 @@ namespace CGAL {
     {}
     
     long operator[](key_type vh) const {
-      return vh->id(); 
+      return vh->id();
     }
   };
 
@@ -545,11 +486,11 @@ namespace CGAL {
 
     friend reference get(T2_vertex_point_map<Gt,Tds>, key_type vh)
     { 
-      return vh->point(); 
+      return vh->point();
     }
     friend void put(T2_vertex_point_map<Gt,Tds>, key_type vh, reference v)
     {
-      vh->point()=v; 
+      vh->point() = v;
     }
     reference operator[](key_type vh) const {
       return vh->point();
@@ -637,8 +578,6 @@ namespace CGAL {
     };
   };
 
-
-
   template <>
   struct T2_property_map<boost::vertex_point_t> {
     template <class Gt, class Tds>
@@ -648,7 +587,6 @@ namespace CGAL {
     };
   };
 
-
   template <>
   struct T2_property_map<boost::edge_index_t> {
     template <class Gt, class Tds>
@@ -657,7 +595,6 @@ namespace CGAL {
       typedef T2_edge_id_map<Gt,Tds> const_type;
     };
   };
-
 
   template <>
   struct T2_property_map<boost::edge_weight_t> {
@@ -738,14 +675,6 @@ namespace std {
 #endif
 
 #ifndef CGAL_CFG_NO_STD_HASH
-
-  template < class T, class EdgeBase>
-  struct hash<CGAL::detail::Edge<T,EdgeBase> > {
-    std::size_t operator()(const CGAL::detail::Edge<T,EdgeBase>& e) const
-    {
-      return hash_value(e);
-    }
-  }; 
 
   template < class Tr>
   struct hash<CGAL::detail::T2_halfedge_descriptor<Tr> > {

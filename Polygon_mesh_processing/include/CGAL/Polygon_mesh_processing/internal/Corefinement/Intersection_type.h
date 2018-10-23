@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Sebastien Loriot
@@ -28,6 +29,7 @@
 #include <CGAL/property_map.h>
 
 namespace CGAL{
+namespace Polygon_mesh_processing {
 namespace Corefinement{
 
 enum Intersection_type {ON_FACE,ON_EDGE,ON_VERTEX,EMPTY,COPLANAR_TRIANGLES};
@@ -49,6 +51,6 @@ struct Coplanar_intersection{
 
 };
 
-} } // CGAL::Corefinement
+} } } // CGAL::Polygon_mesh_processing::Corefinement
 
 #endif // CGAL_PMP_INTERNAL_COREFINEMENT_INTERSECTION_TYPE_H

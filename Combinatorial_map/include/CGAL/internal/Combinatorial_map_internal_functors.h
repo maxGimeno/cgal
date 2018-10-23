@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0+
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 //
@@ -328,7 +329,7 @@ struct Correct_invalid_attributes_functor
     unsigned int nb=0;
     bool found_dart = false;
 
-    for ( CGAL::CMap_dart_iterator_basic_of_cell<CMap,i>
+    for ( typename CMap::template Dart_of_cell_basic_range<i>::iterator
             it(amap, adart, amark); it.cont(); ++it, ++nb )
     {
       if ( a!=amap.template attribute<i>(it) )

@@ -1,29 +1,19 @@
-# Created by the script cgal_create_cmake_script
-# This is the CMake script for compiling a CGAL application.
-
-
 project( Triangulation_3_Examples )
 
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 2.8.12)
 
+if(NOT POLICY CMP0070 AND POLICY CMP0053)
+  # Only set CMP0053 to OLD with CMake<3.10, otherwise there is a warning.
+  cmake_policy(SET CMP0053 OLD)
+endif()
 
-find_package(CGAL QUIET)
+find_package(CGAL COMPONENTS Qt5)
+
+if(CGAL_Qt5_FOUND)
+    add_definitions(-DCGAL_USE_BASIC_VIEWER -DQT_NO_KEYWORDS)
+endif()
 
 if ( CGAL_FOUND )
-
-  include( ${CGAL_USE_FILE} )
-  
-  find_package( TBB QUIET )
-
-  if( TBB_FOUND )
-    include(${TBB_USE_FILE})
-    list(APPEND CGAL_3RD_PARTY_LIBRARIES ${TBB_LIBRARIES})
-  endif()
-
-  include( CGAL_CreateSingleSourceCGALProgram )
-
-  include_directories (BEFORE "../../include")
-
   create_single_source_cgal_program( "adding_handles_3.cpp" )
   create_single_source_cgal_program( "color.cpp" )
   create_single_source_cgal_program( "copy_triangulation_3.cpp" )
@@ -33,13 +23,15 @@ if ( CGAL_FOUND )
   create_single_source_cgal_program( "info_insert_with_pair_iterator_regular.cpp" )
   create_single_source_cgal_program( "info_insert_with_transform_iterator.cpp" )
   create_single_source_cgal_program( "info_insert_with_zip_iterator.cpp" )
-  create_single_source_cgal_program( "parallel_insertion_and_removal_in_regular_3.cpp" )
-  create_single_source_cgal_program( "parallel_insertion_in_delaunay_3.cpp" )
   create_single_source_cgal_program( "regular_3.cpp" )
   create_single_source_cgal_program( "regular_with_info_3.cpp" )
-  create_single_source_cgal_program( "sequential_parallel.cpp" )
   create_single_source_cgal_program( "simple_triangulation_3.cpp" )
   create_single_source_cgal_program( "simplex.cpp" )
+
+  create_single_source_cgal_program("draw_triangulation_3.cpp")
+  if(CGAL_Qt5_FOUND)
+    target_link_libraries(draw_triangulation_3 PUBLIC CGAL::CGAL_Qt5)
+  endif()
 
 else()
   

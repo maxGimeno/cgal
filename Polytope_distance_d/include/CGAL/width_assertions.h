@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 // 
 //
 // Author(s)     : Thomas Herrmann
@@ -94,7 +95,7 @@
 #define VISITED_CHECK 0
 #define IMPASSABLE_CHECK 0
 
- #include<stream.h>
+ #include<iostream>
 
  #define DEBUGENDL(doit,msg,var)\
  if(doit!=0) std::cout << msg << " " << var << endl;

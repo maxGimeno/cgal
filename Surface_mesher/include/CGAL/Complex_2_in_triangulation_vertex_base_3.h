@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Steve Oudot, David Rey, Mariette Yvinec, Laurent Rineau, Andreas Fabri
@@ -104,4 +105,4 @@ namespace CGAL {
 }  // namespace CGAL
 
 
-#endif  // CGAL_COMPLEX_2_IN_TRIANGULATION_CELL_BASE_3_H
+#endif // CGAL_COMPLEX_2_IN_TRIANGULATION_VERTEX_BASE_3_H

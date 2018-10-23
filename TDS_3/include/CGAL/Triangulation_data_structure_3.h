@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Monique Teillaud <Monique.Teillaud@sophia.inria.fr>
 //                 Sylvain Pion
@@ -27,6 +28,7 @@
 
 #include <CGAL/license/TDS_3.h>
 
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/basic.h>
 
@@ -39,6 +41,7 @@
 #include <boost/unordered_set.hpp>
 #include <CGAL/utility.h>
 #include <CGAL/iterator.h>
+#include <CGAL/internal/Has_member_visited.h>
 
 #include <CGAL/Unique_hash_map.h>
 #include <CGAL/triangulation_assertions.h>
@@ -1075,8 +1078,6 @@ public:
     return incident_facets_threadsafe<False_filter>(v, facets);
   }
 
-  BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(Has_member_visited,Has_visited_for_vertex_extractor,false)
-
   template <class Filter, class OutputIterator>
   OutputIterator
   incident_edges_1d(Vertex_handle v, OutputIterator edges, Filter f = Filter()) const
@@ -1109,7 +1110,8 @@ public:
       return incident_edges_1d(v, edges, f);
     }
     return visit_incident_cells<Vertex_extractor<Edge_feeder_treatment<OutputIterator>,
-                                                 OutputIterator, Filter, Has_member_visited<Vertex>::value>,
+                                                 OutputIterator, Filter,
+                                                 internal::Has_member_visited<Vertex>::value>,
     OutputIterator>(v, edges, f);
   }
 
@@ -1128,7 +1130,8 @@ public:
     }
     return visit_incident_cells_threadsafe<
       Vertex_extractor<Edge_feeder_treatment<OutputIterator>,
-                       OutputIterator, Filter, Has_member_visited<Vertex>::value>,
+                       OutputIterator, Filter,
+                       internal::Has_member_visited<Vertex>::value>,
       OutputIterator>(v, edges, f);
   }
 
@@ -1179,7 +1182,8 @@ public:
       return vertices;
     }
     return visit_incident_cells<Vertex_extractor<Vertex_feeder_treatment<OutputIterator>,
-    OutputIterator, Filter, Has_member_visited<Vertex>::value>,
+                                OutputIterator, Filter,
+                                internal::Has_member_visited<Vertex>::value>,
     OutputIterator>(v, vertices, f);
   }
 
@@ -1340,7 +1344,7 @@ public:
         Vertex_extractor<Vertex_feeder_treatment<OutputVertexIterator>,
                          OutputVertexIterator, 
                          VertexFilter, 
-                         Has_member_visited<Vertex>::value>,
+                         internal::Has_member_visited<Vertex>::value>,
         OutputVertexIterator
       >(v, vertices, cells, f);
   }
@@ -3690,7 +3694,7 @@ is_valid(Cell_handle c, bool verbose, int level) const
             return false;
           }
         
-          int j1n,j2n,j3n;
+          int j1n=4,j2n=4,j3n=4;
           if ( ! n->has_vertex(c->vertex((i+1)&3),j1n) ) {
             if (verbose) { std::cerr << "vertex " << ((i+1)&3)
                                      << " not vertex of neighbor "
@@ -4009,5 +4013,7 @@ count_cells(size_type & i, bool verbose, int level) const
 }
 
 } //namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_TRIANGULATION_DATA_STRUCTURE_3_H

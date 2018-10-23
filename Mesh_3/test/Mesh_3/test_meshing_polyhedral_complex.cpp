@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Jane Tournois
@@ -61,7 +62,7 @@ struct Polyhedral_complex_tester : public Tester<K>
     typedef CGAL::Mesh_complex_3_in_triangulation_3<
       Tr,
       typename Mesh_domain::Corner_index,
-      typename Mesh_domain::Curve_segment_index> C3t3;
+      typename Mesh_domain::Curve_index> C3t3;
     typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
 
     //Input
@@ -101,7 +102,7 @@ struct Polyhedral_complex_tester : public Tester<K>
     // Mesh generation
     C3t3 c3t3;
 
-    CGAL::internal::Mesh_3::init_c3t3_with_features(c3t3, domain, criteria,
+    CGAL::Mesh_3::internal::init_c3t3_with_features(c3t3, domain, criteria,
       true /*nonlinear_growth_of_balls*/);
     domain.add_vertices_to_c3t3_on_patch_without_feature_edges(c3t3);
 

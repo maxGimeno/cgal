@@ -5,6 +5,7 @@
 
 #include <QtOpenGL/qgl.h>
 #include <CGAL/Qt/DemosMainWindow.h>
+#include <CGAL/Three/Three.h>
 
 #include <QScriptEngine>
 #include <QScriptable>
@@ -48,6 +49,7 @@ namespace Ui {
 class MAINWINDOW_EXPORT MainWindow : 
   public CGAL::Qt::DemosMainWindow,
   public Messages_interface,
+  public CGAL::Three::Three,
   protected QScriptable
 {
   Q_OBJECT
@@ -68,7 +70,7 @@ public:
    * Then it creates and initializes the scene and do the
    * connexions with the UI. Finally it loads the plugins.*/
 
-  MainWindow(QWidget* parent = 0);
+  MainWindow(bool verbose = false,QWidget* parent = 0);
   ~MainWindow();
 
   /*! Finds an IO plugin.
@@ -240,13 +242,18 @@ public Q_SLOTS:
    * set_face_graph_default_type sets the global state of the application to `Polyhedron mode` or `Surface_mesh mode`.
    */
   void set_face_graph_default_type(MainWindow::Face_graph_mode m);
+
+  /*!
+   * Writes the statistics dialog content in a text file.
+   */
+  void exportStatistics();
 protected Q_SLOTS:
 
    //!Gets the new selected item(s) from the Geometric Objects view and updates the scene
    //!and viewer accordingly.
   /*!
    * Set the scene selected item or selected item list. Sets the manipulated
-   * frame of the viewer to the new selected item's and calls updateGL().
+   * frame of the viewer to the new selected item's and calls update().
    */
   void selectionChanged();
   //! Scrolls to the new selected item from its name in the Geometric Objects list.
@@ -326,6 +333,9 @@ protected Q_SLOTS:
   void on_actionSaveSnapshot_triggered();
   //!Opens a Dialog to choose a color and make it the background color.
   void on_actionSetBackgroundColor_triggered();
+  //!Opens a Dialog to change the lighting settings
+  void on_actionSetLighting_triggered();
+  
   /*! Opens a Dialog to enter coordinates of the new center point and sets it
    * with viewerShow.
    *@see viewerShow(float, float, float, float, float, float)
@@ -349,7 +359,8 @@ protected Q_SLOTS:
   void on_actionRecenterScene_triggered();
   //!Resizes the header of the scene view
   void resetHeader();
-
+  //!apply an action named `name` to all selected items
+  void propagate_action();
 protected:
   QList<QAction*> createSubMenus(QList<QAction*>);
   /*! For each objects in the Geometric Objects view, loads the associated plugins.
@@ -380,7 +391,7 @@ protected:
   QList<int> getSelectedSceneItemIndices() const;
 private:
   void updateMenus();
-  void load_plugin(QString names, bool blacklisted);
+  bool load_plugin(QString names, bool blacklisted);
   void recurseExpand(QModelIndex index);
   QMap<QString, QMenu*> menu_map;
   QString get_item_stats();
@@ -388,12 +399,15 @@ private:
   void setMenus(QString, QString, QAction *a);
   /// plugin black-list
   QSet<QString> plugin_blacklist;
+  QMap<QString, std::vector<QString> > PathNames_map; //For each non-empty plugin directory, contains a vector of plugin names
+  QMap<QString, QString > pluginsStatus_map; //For each non-empty plugin directory, contains a vector of plugin names
   Scene* scene;
   Viewer* viewer;
   QSortFilterProxyModel* proxyModel;
   QTreeView* sceneView;
   Ui::MainWindow* ui;
   QVector<CGAL::Three::Polyhedron_demo_io_plugin_interface*> io_plugins;
+  QString last_saved_dir;
   QMap<QString,QString> default_plugin_selection;
   // typedef to make Q_FOREACH work
   typedef QPair<CGAL::Three::Polyhedron_demo_plugin_interface*, QString> PluginNamePair;
@@ -401,11 +415,13 @@ private:
   //!Called when "Add new group" in the file menu is triggered.
   QAction* actionAddToGroup;
   QAction* actionResetDefaultLoaders;
+  CGAL::Three::Three* three;
   void print_message(QString message) { messages->information(message); }
   Messages_interface* messages;
 
   QDialog *statistics_dlg;
   Ui::Statistics_on_item_dialog* statistics_ui;
+  bool verbose;
   void insertActionBeforeLoadPlugin(QMenu*, QAction *actionToInsert);
 
 #ifdef QT_SCRIPT_LIB
@@ -421,7 +437,6 @@ public:
   void evaluate_script_quiet(QString script, 
                              const QString & fileName = QString());
 #endif
-
 private Q_SLOTS:
   void set_facegraph_mode_adapter(bool is_polyhedron);
 };

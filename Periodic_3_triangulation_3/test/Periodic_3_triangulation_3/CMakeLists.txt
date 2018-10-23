@@ -4,7 +4,7 @@
 
 project( Periodic_3_triangulation_3_Tests )
 
-cmake_minimum_required(VERSION 2.8.10)
+cmake_minimum_required(VERSION 2.8.11)
 
 find_package(CGAL QUIET COMPONENTS Core )
 
@@ -20,6 +20,7 @@ if ( CGAL_FOUND )
 
   create_single_source_cgal_program( "test_p3rt3_as_p3t3.cpp" )
   create_single_source_cgal_program( "test_p3rt3_insert_remove_point_set.cpp" )
+  create_single_source_cgal_program( "test_p3rt3_versus_rt3.cpp" )
   create_single_source_cgal_program( "test_periodic_3_alpha_shape_3.cpp" )
   create_single_source_cgal_program( "test_periodic_3_delaunay_3.cpp" )
   create_single_source_cgal_program( "test_periodic_3_delaunay_hierarchy_3.cpp" )

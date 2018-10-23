@@ -18,6 +18,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0+
 // 
 //
 // Author(s)     : Geert-Jan Giezeman <geert@cs.uu.nl>
@@ -35,6 +36,7 @@
 #include <list>
 #include <iterator>
 
+#include <CGAL/algorithm.h>
 #include <CGAL/circulator.h>
 #include <CGAL/enum.h>
 
@@ -120,26 +122,24 @@ class Polygon_2 {
     ///
     /// @{
 
-    /// 
+    /// vertex iterator type
     typedef typename Container::iterator       Vertex_iterator;
 
 
     //typedef typename Container::const_iterator Vertex_const_iterator; ??
 
 #ifdef DOXYGEN_RUNNING
+  /// vertex circulator type
   typedef unspecified_type Vertex_circulator;
-    typedef unspecified_type Edge_const_iterator;
-
-    typedef unspecified_type Edge_const_circulator;
-#else 
-    typedef Vertex_const_circulator            Vertex_circulator;
-    /// 
-    typedef Polygon_2_edge_iterator<Traits_P,Container_P>
-            Edge_const_iterator;
-
-    /// 
-    typedef Polygon_2_const_edge_circulator<Traits_P,Container_P>
-            Edge_const_circulator;
+  /// edge circulator type
+  typedef unspecified_type Edge_const_iterator;
+  /// edge circular type
+  typedef unspecified_type Edge_const_circulator;
+#else
+    typedef Vertex_const_circulator Vertex_circulator;
+    typedef Polygon_2_edge_iterator<Traits_P,Container_P> Edge_const_iterator;
+    typedef Polygon_2_const_edge_circulator<Traits_P,
+                                            Container_P> Edge_const_circulator;
 #endif // DOXYGEN_RUNNING    
     /// @}
 
@@ -175,10 +175,12 @@ class Polygon_2 {
     void set(Vertex_iterator i, const Point_2& q)
      { *i = q; }
 
+    /// \cond
     void set(Polygon_circulator<Container>const &i, const Point_2& q)
      {
        *i.mod_iterator() = q;
      }
+    /// \endcond
 
     /// Inserts the vertex `q` before `i`. The return value points to
     /// the inserted vertex.
@@ -187,6 +189,8 @@ class Polygon_2 {
         return d_container.insert(i,q);
       }
 
+    /// Inserts the vertex `q` before `i`. The return value points to
+    /// the inserted vertex.
     Vertex_iterator insert(Vertex_circulator i, const Point_2& q)
       {
         return d_container.insert(i.mod_iterator(),q);
@@ -194,13 +198,16 @@ class Polygon_2 {
 
     /// Inserts the vertices in the range `[first, last)`
     /// before `i`.  The value type of points in the range
-    /// `[first,last)} must be \ccStyle{Point_2`.
+    /// `[first,last)` must be `Point_2`.
     template <class InputIterator>
     void insert(Vertex_iterator i,
                 InputIterator first,
                 InputIterator last)
       { d_container.insert(i, first, last); }
 
+    /// Inserts the vertices in the range `[first, last)`
+    /// before `i`.  The value type of points in the range
+    /// `[first,last)` must be `Point_2`.
     template <class InputIterator>
     void insert(Vertex_circulator i,
                 InputIterator first,
@@ -217,6 +224,7 @@ class Polygon_2 {
         return d_container.erase(i);
       }
 
+    /// Erases the vertex pointed to by `i`.
     Vertex_circulator erase(Vertex_circulator i)
       {
         return Vertex_circulator(&d_container,
@@ -387,31 +395,32 @@ class Polygon_2 {
     /// @}
 
 
-    /// \name 
+    /// \name Convenience Orientation Functions
     /// For convenience we provide the following Boolean functions:
     /// @{
 
+    /// returns `orientation() == COUNTERCLOCKWISE`
     bool is_counterclockwise_oriented() const
       { return orientation() == COUNTERCLOCKWISE; }
-
+    /// returns `orientation() == CLOCKWISE`
     bool is_clockwise_oriented() const
       { return orientation() == CLOCKWISE; }
-
+    /// returns `orientation() == COLLINEAR`
     bool is_collinear_oriented() const
       { return orientation() == COLLINEAR; }
-
+    /// returns `oriented_side(q) == ON_POSITIVE_SIDE`
     bool has_on_positive_side(const Point_2& q) const
       { return oriented_side(q) == ON_POSITIVE_SIDE; }
-
+    /// returns `oriented_side(q) == ON_NEGATIVE_SIDE`
     bool has_on_negative_side(const Point_2& q) const
       { return oriented_side(q) == ON_NEGATIVE_SIDE; }
-
+    /// returns `bounded_side(q) == ON_BOUNDARY`
     bool has_on_boundary(const Point_2& q) const
       { return bounded_side(q) == ON_BOUNDARY; }
-
+    /// returns `bounded_side(q) == ON_BOUNDED_SIDE`
     bool has_on_bounded_side(const Point_2& q) const
       { return bounded_side(q) == ON_BOUNDED_SIDE; }
-
+    /// returns `bounded_side(q) == ON_UNBOUNDED_SIDE`
     bool has_on_unbounded_side(const Point_2& q) const
       { return bounded_side(q) == ON_UNBOUNDED_SIDE; }
 
@@ -425,7 +434,7 @@ class Polygon_2 {
     const Point_2& vertex(std::size_t i) const
       {
         CGAL_precondition( i < d_container.size() );
-        return *(d_container.begin() + i);
+        return *(cpp11::next(d_container.begin(), i));
       }
 
 
@@ -435,7 +444,7 @@ class Polygon_2 {
 
     /// Returns the `i`-th edge.
     Segment_2 edge(std::size_t i) const
-      { return *(edges_begin() + i); }
+      { return *(cpp11::next(edges_begin(), i)); }
 
     /// @}
 

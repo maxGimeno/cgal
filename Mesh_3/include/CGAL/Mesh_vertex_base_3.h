@@ -13,9 +13,9 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL: https://scm.gforge.inria.fr/svn/cgal/branches/features/Mesh_3-experimental-GF/Mesh_3/include/CGAL/Mesh_vertex_base_3.h $
-// $Id: Mesh_vertex_base_3.h 69674 2012-06-18 09:34:06Z jtournoi $
-//
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Stéphane Tayeb, Andreas Fabri
 //
@@ -281,7 +281,7 @@ operator>>(std::istream &is, Mesh_vertex_base_3<GT,MD,Vb>& v)
   CGAL_assertion(v.in_dimension() >= -1);
   CGAL_assertion(v.in_dimension() < 4);
   typename Vertex::Index index =
-    internal::Mesh_3::Read_mesh_domain_index<MD>()(v.in_dimension(), is);
+    Mesh_3::internal::Read_mesh_domain_index<MD>()(v.in_dimension(), is);
   v.set_index(index);
   return is;
 }
@@ -302,7 +302,7 @@ operator<<(std::ostream &os, const Mesh_vertex_base_3<GT,MD,Vb>& v)
   } else {
     CGAL::write(os, v.in_dimension());
   }
-  internal::Mesh_3::Write_mesh_domain_index<MD>()(os, 
+  Mesh_3::internal::Write_mesh_domain_index<MD>()(os,
                                                   v.in_dimension(),
                                                   v.index());
   return os;

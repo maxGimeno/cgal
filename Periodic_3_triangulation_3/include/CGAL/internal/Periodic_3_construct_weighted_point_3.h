@@ -12,7 +12,12 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
 // Author(s)     : Mael Rouxel-Labbé
+
 #ifndef CGAL_PERIODIC_3_CONSTRUCT_WEIGHTED_POINT_3_H
 #define CGAL_PERIODIC_3_CONSTRUCT_WEIGHTED_POINT_3_H
 
@@ -20,13 +25,13 @@
 
 namespace CGAL {
 
-template < typename K, typename Construct_weighted_point_3_base>
+template <typename K_, typename Construct_weighted_point_3_base_>
 class Periodic_3_construct_weighted_point_3
-  : public Construct_weighted_point_3_base
+  : public Construct_weighted_point_3_base_
 {
-  typedef Construct_weighted_point_3_base       Base;
+  typedef Construct_weighted_point_3_base_      Base;
 
-  typedef K                                     Kernel;
+  typedef K_                                    Kernel;
 
   typedef typename Kernel::Point_3              Point_3;
   typedef typename Kernel::Weighted_point_3     Weighted_point_3;
@@ -35,7 +40,7 @@ class Periodic_3_construct_weighted_point_3
 
 public:
   Periodic_3_construct_weighted_point_3(const Iso_cuboid_3* dom,
-                                        const Construct_weighted_point_3_base& wp)
+                                        const Base& wp)
     : Base(wp), _dom(dom)
   { }
 

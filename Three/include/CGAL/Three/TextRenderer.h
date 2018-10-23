@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Laurent RINEAU, Maxime Gimeno
@@ -137,7 +138,7 @@ private:
 class VIEWER_EXPORT TextRenderer : public QObject{
   Q_OBJECT
 public:
-    TextRenderer() : max_textItems(30000)
+    TextRenderer() : max_textItems(10000)
     {
     }
     //!Draws all the `TextItem`s
@@ -155,9 +156,11 @@ public:
     //!
     void addTextList(TextListItem*);
     //!Removes a `textItem` from TextRenderer::local_textItems
+    //! @attention the memory of the TextItem is not de-allocated.
     //! @see addText(TextItem*)
     void removeText(TextItem* textItem);
     //!Removes a TextItemList from TextRenderer::textItems
+    //! //! @attention the memory of the TextItems is not de-allocated.
     void removeTextList(TextListItem*);
     //!The local TextListItem.
     QList<TextItem*> getLocalTextItems(){return local_textItems;}

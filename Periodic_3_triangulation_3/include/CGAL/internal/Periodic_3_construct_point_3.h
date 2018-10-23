@@ -12,6 +12,10 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
 // Author(s)     : Monique Teillaud <Monique.Teillaud@sophia.inria.fr>
 //                 Sylvain Pion <Sylvain.Pion@sophia.inria.fr>
 //                 Andreas Fabri <Andreas.Fabri@sophia.inria.fr>
@@ -25,13 +29,13 @@
 
 namespace CGAL {
 
-template < typename K, typename Construct_point_3_base>
+template <typename K_, typename Construct_point_3_base_>
 class Periodic_3_construct_point_3
-  : public Construct_point_3_base
+  : public Construct_point_3_base_
 {
-  typedef Construct_point_3_base             Base;
+  typedef Construct_point_3_base_            Base;
 
-  typedef K                                  Kernel;
+  typedef K_                                 Kernel;
 
   typedef typename Kernel::Point_3           Point;
   typedef typename Kernel::Weighted_point_3  Weighted_point;
@@ -40,22 +44,22 @@ class Periodic_3_construct_point_3
 
 public:
   Periodic_3_construct_point_3(const Iso_cuboid_3* dom,
-                               const Construct_point_3_base& cp)
+                               const Base& cp)
     : Base(cp), _dom(dom)
   { }
 
   using Base::operator();
 
   Point operator() ( const Point& p, const Offset& o ) const {
-    return Point(p.x() + (_dom->xmax() - _dom->xmin()) * o.x(),
-                 p.y() + (_dom->ymax() - _dom->ymin()) * o.y(),
-                 p.z() + (_dom->zmax() - _dom->zmin()) * o.z());
+    return operator()(p.x() + (_dom->xmax() - _dom->xmin()) * o.x(),
+                      p.y() + (_dom->ymax() - _dom->ymin()) * o.y(),
+                      p.z() + (_dom->zmax() - _dom->zmin()) * o.z());
   }
 
   Point operator() ( const Weighted_point& p, const Offset& o ) const {
-    return Point(p.x() + (_dom->xmax() - _dom->xmin()) * o.x(),
-                 p.y() + (_dom->ymax() - _dom->ymin()) * o.y(),
-                 p.z() + (_dom->zmax() - _dom->zmin()) * o.z());
+    return operator()(p.x() + (_dom->xmax() - _dom->xmin()) * o.x(),
+                      p.y() + (_dom->ymax() - _dom->ymin()) * o.y(),
+                      p.z() + (_dom->zmax() - _dom->zmin()) * o.z());
   }
 
 private:

@@ -1,24 +1,3 @@
-// Copyright (c) 1998  INRIA Sophia-Antipolis (France).
-// All rights reserved.
-//
-// This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL$
-// $Id$
-// $Date$
-//
-//
-// Author(s)     : Aymeric PELLE <aymeric.pelle@sophia.inria.fr>
-
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 
@@ -27,6 +6,7 @@
 
 #include <CGAL/Random.h>
 #include <CGAL/point_generators_3.h>
+#include <CGAL/Timer.h>
 
 #include <algorithm>
 #include <cassert>
@@ -63,6 +43,7 @@ public:
   typedef typename P3RT3::Facet                               Facet;
   typedef typename P3RT3::Cell                                Cell;
   typedef typename P3RT3::Vertex_iterator                     Vertex_iterator;
+  typedef typename P3RT3::Unique_vertex_iterator              Unique_vertex_iterator;
   typedef typename P3RT3::Cell_iterator                       Cell_iterator;
   typedef typename P3RT3::Segment                             Segment;
   typedef typename P3RT3::Triangle                            Triangle;
@@ -96,6 +77,100 @@ public:
 
     P3RT3 p3rt3;
     assert(p3rt3.is_valid());
+  }
+
+  static void test_is_gabriel()
+  {
+    std::cout << "--- test is_gabriel" << std::endl;
+
+    P3RT3 p3rt3;
+
+    typename P3RT3::Geom_traits::Power_side_of_bounded_power_sphere_3
+      side_of_bounded_power_sphere =
+      p3rt3.geom_traits().power_side_of_bounded_power_sphere_3_object();
+
+    Weighted_point_3 t(Point_3(0.5,0.5,0.45), 0.01);
+    Weighted_point_3 s(Point_3(0.5,0.5,0.49), 0.006);
+    Weighted_point_3 q(Point_3(0.5,0.5,0.5), 0.015);
+    Weighted_point_3 p(Point_3(0.95,0.95,0.96), 0.001);
+    Weighted_point_3 r(Point_3(0.01,0.008,0.01), 0.002);
+    p3rt3.insert(p);
+    p3rt3.insert(q);
+    p3rt3.insert(r);
+    p3rt3.insert(s);
+    p3rt3.insert(t);
+
+    assert(p3rt3.is_valid());
+
+    std::cout << "p3rt3.number_of_vertices() " << p3rt3.number_of_vertices() << std::endl;
+    assert(p3rt3.number_of_vertices() == 4);
+    assert(std::distance(p3rt3.unique_vertices_begin(), p3rt3.unique_vertices_end()) == 4);
+    assert(p3rt3.number_of_stored_vertices() == 108);
+
+    for(Unique_vertex_iterator iter = p3rt3.unique_vertices_begin(), end_iter = p3rt3.unique_vertices_end(); iter != end_iter; ++iter)
+    {
+      Vertex_handle vh((Vertex_iterator(iter)));
+      std::cout << p3rt3.is_Gabriel(vh) << std::endl;
+      if(p3rt3.is_Gabriel(vh))
+      {
+        for(Unique_vertex_iterator iter2 = p3rt3.unique_vertices_begin(), end_iter2 = p3rt3.unique_vertices_end(); iter2 != end_iter2; ++iter2)
+        {
+          Vertex_handle vh2((Vertex_iterator(iter2)));
+
+          if(vh2->point() == vh->point())
+          {
+            assert(p3rt3.is_Gabriel(vh2)); // consistency check
+          }
+          else
+          {
+            // Check that w/e the offset, the power distance is positive
+            for(int i = -1; i < 2; ++i) {
+              for(int j = -1; j < 2; ++j) {
+                for(int k = -1; k < 2; ++k)
+                {
+                  const Offset off(i, j, k);
+//                  std::cout << "power distance: " << p3rt3.geom_traits().compute_power_product_3_object()(
+//                                 Weighted_point_3(vh->point().point(), vh->point().weight()),
+//                                 p3rt3.geom_traits().construct_weighted_point_3_object()(vh2->point(), off)) << std::endl;
+                  if(!(side_of_bounded_power_sphere(vh->point(), vh2->point(),
+                                                      Offset(), off) != CGAL::ON_BOUNDED_SIDE))
+                  {
+                    assert(false);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      else
+      {
+        bool found = false;
+        for(Vertex_iterator iter2 = p3rt3.vertices_begin(), end_iter2 = p3rt3.vertices_end(); iter2 != end_iter2; ++iter2)
+        {
+          Vertex_handle vh2 = iter2;
+          if(vh2->point() == vh->point())
+          {
+            assert(!p3rt3.is_Gabriel(vh2)); // consistency check
+          }
+          else
+          {
+            for(int i = -1; i < 2; ++i) {
+              for(int j = -1; j < 2; ++j) {
+                for(int k = -1; k < 2; ++k)
+                {
+                  const Offset off = vh->offset() + Offset(i, j, k);
+                  if(!(side_of_bounded_power_sphere(vh->point(), vh2->point(),
+                                                    vh->offset(), off) != CGAL::ON_BOUNDED_SIDE))
+                    found = true;
+                }
+              }
+            }
+          }
+        } // iter2
+        assert(found); // must have found a point that is in the smallest orthogonal power sphere
+      } // is_gabriel(vh)
+    }
   }
 
   static void test_insert_1 ()
@@ -742,6 +817,7 @@ public:
 
   static void test ()
   {
+    test_is_gabriel();
     test_find_conflicts();
     test_insert_range(800, 7);
     test_construction_and_insert_range(800, 7);
@@ -757,7 +833,6 @@ public:
     test_insert_two_points_with_the_same_position();
     test_remove();
     test_27_to_1_sheeted_covering();
-    //////    Iso_cuboid unitaire ->  0 <= weight < 0.015625
     test_insert_rnd_as_delaunay(100, 0.);
     test_insert_rnd_as_delaunay(100, 0.01);
   }
@@ -765,6 +840,8 @@ public:
 
 int main (int, char**)
 {
+  CGAL::Timer t;
+  t.start();
   std::cout << "TESTING ..." << std::endl;
 
   CGAL::Set_ieee_double_precision pfr;
@@ -774,6 +851,7 @@ int main (int, char**)
   std::cout << "Epick ..." << std::endl;
   Tests<CGAL::Epick>::test();
 
+  std::cout << t.time() << " sec." << std::endl;
   std::cout << "EXIT SUCCESS" << std::endl;
   return EXIT_SUCCESS;
 }

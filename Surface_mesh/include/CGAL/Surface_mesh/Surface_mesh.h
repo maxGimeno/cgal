@@ -11,6 +11,10 @@
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
 //
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
@@ -19,13 +23,16 @@
 #ifndef CGAL_SURFACE_MESH_H
 #define CGAL_SURFACE_MESH_H
 
+
 #include <CGAL/license/Surface_mesh.h>
 
+#include <CGAL/disable_warnings.h>
 
 #include <iterator>
 #include <algorithm>
 #include <utility>
 #include <iostream>
+#include <sstream>
 #include <cstddef>
 #include <vector>
 #include <string>
@@ -36,7 +43,6 @@
 #include <boost/array.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/foreach.hpp>
-
 #include <CGAL/property_map.h>
 #include <CGAL/Iterator_range.h>
 #include <CGAL/circulator.h>
@@ -49,6 +55,8 @@
 #include <CGAL/boost/graph/Euler_operations.h>
 #include <CGAL/IO/File_scanner_OFF.h>
 #include <CGAL/Handle_hash_function.h>
+#include <CGAL/boost/graph/named_params_helper.h>
+#include <CGAL/boost/graph/named_function_params.h>
 
 namespace CGAL {
 
@@ -68,17 +76,17 @@ namespace CGAL {
         /// We write -1, which is <a href="http://en.cppreference.com/w/cpp/concept/numeric_limits">
         /// <tt>std::numeric_limits<size_type>::max()</tt></a>
         /// as `size_type` is an unsigned type. 
-        explicit SM_Index(size_type _idx=-1) : idx_(_idx) {}
+        explicit SM_Index(size_type _idx=(std::numeric_limits<size_type>::max)()) : idx_(_idx) {}
 
         /// Get the underlying index of this index
         operator size_type() const { return idx_; }
 
-        /// reset index to be invalid (index=-1)
-        void reset() { idx_=-1; }
+        /// reset index to be invalid (index=std::numeric_limits<size_type>::max())
+        void reset() { idx_=(std::numeric_limits<size_type>::max)(); }
 
-        /// return whether the index is valid, i.e., the index is not equal to -1.
+        /// return whether the index is valid, i.e., the index is not equal to `%std::numeric_limits<size_type>::max()`.
         bool is_valid() const { 
-          size_type inf = -1;
+          size_type inf = (std::numeric_limits<size_type>::max)();
           return idx_ != inf;
         }
 
@@ -115,9 +123,7 @@ namespace CGAL {
         /// decrement.
         SM_Index operator--(int) { SM_Index tmp(*this); --idx_; return tmp; }
 
-
-      
-     
+        SM_Index operator+=(std::ptrdiff_t n) { idx_ = size_type(std::ptrdiff_t(idx_) + n); return *this; }
       
     private:
         size_type idx_;
@@ -137,7 +143,7 @@ namespace CGAL {
     {
     public:
 
-        SM_Vertex_index() : SM_Index<SM_Vertex_index>(-1) {}
+        SM_Vertex_index() : SM_Index<SM_Vertex_index>((std::numeric_limits<size_type>::max)()) {}
 
         explicit SM_Vertex_index(size_type _idx) : SM_Index<SM_Vertex_index>(_idx) {}
 
@@ -163,7 +169,7 @@ namespace CGAL {
         typedef void pointer;
         typedef void reference;
 
-        SM_Halfedge_index() : SM_Index<SM_Halfedge_index>(-1) {}
+        SM_Halfedge_index() : SM_Index<SM_Halfedge_index>((std::numeric_limits<size_type>::max)()) {}
 
         explicit SM_Halfedge_index(size_type _idx) : SM_Index<SM_Halfedge_index>(_idx) {}
 
@@ -179,7 +185,7 @@ namespace CGAL {
     {
     public:
 
-        SM_Face_index() : SM_Index<SM_Face_index>(-1) {}
+        SM_Face_index() : SM_Index<SM_Face_index>((std::numeric_limits<size_type>::max)()) {}
 
         explicit SM_Face_index(size_type _idx) : SM_Index<SM_Face_index>(_idx) {}
 
@@ -196,9 +202,9 @@ namespace CGAL {
     public:
         typedef boost::uint32_t size_type;
 
-        SM_Edge_index() : halfedge_(-1) { }
+        SM_Edge_index() : halfedge_((std::numeric_limits<size_type>::max)()) { }
 
-        SM_Edge_index(size_type idx) : halfedge_(idx * 2) { }
+        explicit SM_Edge_index(size_type idx) : halfedge_(idx * 2) { }
 
         explicit SM_Edge_index(SM_Halfedge_index he) : halfedge_(he) { }
 
@@ -208,10 +214,10 @@ namespace CGAL {
         // returns the underlying index of this index.
         operator size_type() const { return (size_type)halfedge_ / 2; }
 
-        // resets index to be invalid (index=-1)
+        // resets index to be invalid (index=std::numeric_limits<size_type>::max())
         void reset() { halfedge_.reset(); }
 
-        // returns whether the index is valid, i.e., the index is not equal to -1.
+        // returns whether the index is valid, i.e., the index is not equal to std::numeric_limits<size_type>::max().
         bool is_valid() const { return halfedge_.is_valid(); }
 
         // Are two indices equal?
@@ -455,12 +461,12 @@ private: //------------------------------------------------------ iterator types
     class Index_iterator
       : public boost::iterator_facade< Index_iterator<Index_>,
                                        Index_,
-                                       std::bidirectional_iterator_tag
+                                       std::random_access_iterator_tag
                                        >
     {
         typedef boost::iterator_facade< Index_iterator<Index_>,
                                         Index_,
-                                        std::bidirectional_iterator_tag
+                                        std::random_access_iterator_tag
                                         > Facade;
     public:
         Index_iterator() : hnd_(), mesh_(NULL) {}
@@ -489,6 +495,51 @@ private: //------------------------------------------------------ iterator types
                while ( mesh_->has_valid_index(hnd_) && mesh_->is_removed(hnd_)) --hnd_;
         }
 
+        void advance(std::ptrdiff_t n)
+        {
+            CGAL_assertion(mesh_ != NULL);
+            
+            if (mesh_->has_garbage())
+            {
+              if (n > 0)
+                for (std::ptrdiff_t i = 0; i < n; ++ i)
+                  increment();
+              else
+                for (std::ptrdiff_t i = 0; i < -n; ++ i)
+                  decrement();
+            }
+            else
+              hnd_ += n;
+        }
+
+        std::ptrdiff_t distance_to(const Index_iterator& other) const
+        {
+            if (mesh_->has_garbage())
+            {
+              bool forward = (other.hnd_ > hnd_);
+              
+              std::ptrdiff_t out = 0;
+              Index_iterator it = *this;
+              while (!it.equal(other))
+              {
+                if (forward)
+                {
+                  ++ it;
+                  ++ out;
+                }
+                else
+                {
+                  -- it;
+                  -- out;
+                }
+              }
+              return out;
+            }
+
+            // else
+            return std::ptrdiff_t(other.hnd_) - std::ptrdiff_t(this->hnd_);
+        }
+      
         bool equal(const Index_iterator& other) const
         {
             return this->hnd_ == other.hnd_;
@@ -515,7 +566,7 @@ public:
 
     /// \brief The range over all vertex indices.
     ///
-    /// A model of <a href="http://www.boost.org/libs/range/doc/html/range/concepts/bidirectional_range.html">BidirectionalRange</a> with value type `Vertex_index`.
+    /// A model of <a href="https://www.boost.org/libs/range/doc/html/range/concepts/bidirectional_range.html">BidirectionalRange</a> with value type `Vertex_index`.
     /// \sa `vertices()`
     /// \sa `Halfedge_range`, `Edge_range`, `Face_range`
 #ifdef DOXYGEN_RUNNING
@@ -530,7 +581,7 @@ public:
 
     /// \brief The range over all halfedge indices.
     ///
-    /// A model of <a href="http://www.boost.org/libs/range/doc/html/range/concepts/bidirectional_range.html">BidirectionalRange</a> with value type `Halfedge_index`.
+    /// A model of <a href="https://www.boost.org/libs/range/doc/html/range/concepts/bidirectional_range.html">BidirectionalRange</a> with value type `Halfedge_index`.
     /// \sa `halfedges()`
     /// \sa `Vertex_range`, `Edge_range`, `Face_range`
 #ifdef DOXYGEN_RUNNING
@@ -545,7 +596,7 @@ public:
 
     /// \brief The range over all edge indices.
     ///
-    /// A model of <a href="http://www.boost.org/libs/range/doc/html/range/concepts/bidirectional_range.html">BidirectionalRange</a> with value type `Edge_index`.
+    /// A model of <a href="https://www.boost.org/libs/range/doc/html/range/concepts/bidirectional_range.html">BidirectionalRange</a> with value type `Edge_index`.
     /// \sa `edges()`
     /// \sa `Halfedge_range`, `Vertex_range`, `Face_range`
 #ifdef DOXYGEN_RUNNING
@@ -560,7 +611,7 @@ public:
 #endif
     /// \brief The range over all face indices.
     ///
-    /// A model of <a href="http://www.boost.org/libs/range/doc/html/range/concepts/bidirectional_range.html">BidirectionalRange</a> with value type `Face_index`.
+    /// A model of <a href="https://www.boost.org/libs/range/doc/html/range/concepts/bidirectional_range.html">BidirectionalRange</a> with value type `Face_index`.
     /// \sa `faces()`
     /// \sa `Vertex_range`, `Halfedge_range`, `Edge_range`
  #ifdef DOXYGEN_RUNNING
@@ -834,12 +885,13 @@ public:
    /// adds a new vertex, and resizes vertex properties if necessary.
     Vertex_index add_vertex()
     {
-      size_type inf = -1;
+      size_type inf = (std::numeric_limits<size_type>::max)();
       if(vertices_freelist_ != inf){
         size_type idx = vertices_freelist_;
         vertices_freelist_ = (size_type)vconn_[Vertex_index(vertices_freelist_)].halfedge_;
         --removed_vertices_;
         vremoved_[Vertex_index(idx)] = false;
+        vprops_.reset(Vertex_index(idx));
         return Vertex_index(idx);
       } else {
         vprops_.push_back();
@@ -865,12 +917,13 @@ public:
     Halfedge_index add_edge()
     {
       Halfedge_index h0, h1;
-      size_type inf = -1;
+      size_type inf = (std::numeric_limits<size_type>::max)();
       if(edges_freelist_ != inf){
         size_type idx = edges_freelist_;
         edges_freelist_ = (size_type)hconn_[Halfedge_index(edges_freelist_)].next_halfedge_;
         --removed_edges_;
         eremoved_[Edge_index(Halfedge_index(idx))] = false;
+        hprops_.reset(Halfedge_index(idx));
         return Halfedge_index(idx);
       } else {
         eprops_.push_back();
@@ -901,11 +954,12 @@ public:
     /// adds a new face, and resizes face properties if necessary.
     Face_index add_face()
     {
-      size_type inf = -1;
+      size_type inf = (std::numeric_limits<size_type>::max)();
       if(faces_freelist_ != inf){
         size_type idx = faces_freelist_;
         faces_freelist_ = (size_type)fconn_[Face_index(faces_freelist_)].halfedge_;
         --removed_faces_;
+        fprops_.reset(Face_index(idx));
         fremoved_[Face_index(idx)] = false;
         return Face_index(idx);
       } else {
@@ -1095,11 +1149,11 @@ public:
         hconn_[hi].prev_halfedge_ = Halfedge_index(size_type(hconn_[hi].prev_halfedge_)+nh);
       }
     }
-    size_type nil = -1;
-    if(other.vertices_freelist_ != nil){
-      if(vertices_freelist_ != nil){
+    size_type inf_value = (std::numeric_limits<size_type>::max)();
+    if(other.vertices_freelist_ != inf_value){
+      if(vertices_freelist_ != inf_value){
         Vertex_index vi(nv+other.vertices_freelist_);
-        Halfedge_index inf(-1);
+        Halfedge_index inf((std::numeric_limits<size_type>::max)());
         while(vconn_[vi].halfedge_ != inf){
           vi = Vertex_index(size_type(vconn_[vi].halfedge_));
         }
@@ -1107,10 +1161,10 @@ public:
       }
       vertices_freelist_ = nv + other.vertices_freelist_; 
     }
-    if(other.faces_freelist_ != nil){
-      if(faces_freelist_ != nil){
+    if(other.faces_freelist_ != inf_value){
+      if(faces_freelist_ != inf_value){
         Face_index fi(nf+other.faces_freelist_);
-        Halfedge_index inf(-1);
+        Halfedge_index inf((std::numeric_limits<size_type>::max)());
         while(fconn_[fi].halfedge_ != inf){
           fi = Face_index(size_type(fconn_[fi].halfedge_));
         }
@@ -1118,10 +1172,10 @@ public:
       }
       faces_freelist_ = nf + other.faces_freelist_; 
     }
-    if(other.edges_freelist_ != nil){
-      if(edges_freelist_ != nil){
+    if(other.edges_freelist_ != inf_value){
+      if(edges_freelist_ != inf_value){
         Halfedge_index hi((nh>>1)+other.edges_freelist_);
-        Halfedge_index inf(-1);
+        Halfedge_index inf((std::numeric_limits<size_type>::max)());
         while(hconn_[hi].next_halfedge_ != inf){
           hi = hconn_[hi].next_halfedge_;
         }
@@ -1808,10 +1862,14 @@ private: //--------------------------------------------------- property handling
   
     template<class I, class T>
     std::pair<Property_map<I, T>, bool>
-    add_property_map(const std::string& name, const T t=T()) {
+    add_property_map(std::string name=std::string(), const T t=T()) {
+      if(name.empty()){
+        std::ostringstream oss;
+        oss << "anonymous-property-" << anonymous_property_++;
+        name = std::string(oss.str());
+      }
       return Property_selector<I>(this)().template add<T>(name, t);
     }
-
  
     /// returns a property map named `name` with key type `I` and value type `T`, 
     /// and a Boolean that is `true` if the property exists. 
@@ -1881,26 +1939,26 @@ private: //--------------------------------------------------- property handling
  /// \name Null Elements
     ///@{
 
-  /// returns `Vertex_index(-1)`.
+  /// returns `Vertex_index(std::numeric_limits<size_type>::%max())`.
   static Vertex_index null_vertex()
   {
-    return vertex_index(-1);
+    return vertex_index((std::numeric_limits<size_type>::max)());
   }
 
-  /// returns `Edge_index(-1)`.
+  /// returns `Edge_index(std::numeric_limits<size_type>::%max())`.
   static Edge_index null_edge()
   {
-    return edge_index(-1);
+    return edge_index((std::numeric_limits<size_type>::max)());
   }
-  /// returns `Halfedge_index(-1)`.
+  /// returns `Halfedge_index(std::numeric_limits<size_type>::%max())`.
   static Halfedge_index null_halfedge()
   {
-    return halfedge_index(-1);
+    return halfedge_index((std::numeric_limits<size_type>::max)());
   }
-  /// returns `Face_index(-1)`.
+  /// returns `Face_index(std::numeric_limits<size_type>::%max())`.
   static Face_index null_face()
   {
-    return face_index(-1);
+    return face_index((std::numeric_limits<size_type>::max)());
   }
   /// @}
 
@@ -1936,6 +1994,8 @@ private: //------------------------------------------------------- private data
     size_type edges_freelist_;
     size_type faces_freelist_;
     bool garbage_;
+
+    size_type anonymous_property_;
 };
 
   /*! \addtogroup PkgSurface_mesh
@@ -1962,10 +2022,11 @@ private: //------------------------------------------------------- private data
   /// \relates Surface_mesh
   /// Inserts the surface mesh in an output stream in Ascii OFF format. 
   /// Only the \em point property is inserted in the stream.
+  /// If an alternative vertex_point map is given through `np`, 
+  /// then it  will be used instead of the default one.
   /// \pre `operator<<(std::ostream&,const P&)` must be defined.
- 
-  template <typename P>
-  bool write_off(std::ostream& os, const Surface_mesh<P>& sm) {
+  template <typename P, typename NamedParameters>
+  bool write_off(std::ostream& os, const Surface_mesh<P>& sm, const NamedParameters& np) {
     typedef Surface_mesh<P> Mesh;
     typedef typename Mesh::Vertex_index Vertex_index;
     typedef typename Mesh::Face_index Face_index;
@@ -1982,10 +2043,14 @@ private: //------------------------------------------------------- private data
     else
       os << "COFF\n" << sm.number_of_vertices() << " " << sm.number_of_faces() << " 0\n";
     std::vector<int> reindex;
+    typename Polygon_mesh_processing::GetVertexPointMap<Surface_mesh<P>, NamedParameters>::const_type
+        vpm = choose_param(get_param(np, internal_np::vertex_point),
+                           get_const_property_map(CGAL::vertex_point, sm));
     reindex.resize(sm.num_vertices());
     int n = 0;
     BOOST_FOREACH(Vertex_index v, sm.vertices()){
-      os << sm.point(v);
+      
+      os << get(vpm, v);
       if(has_vcolors)
       {
         CGAL::Color color = vcolors[v];
@@ -2010,13 +2075,17 @@ private: //------------------------------------------------------- private data
     return os.good();
   }
 
+  template <typename P>
+  bool write_off(std::ostream& os, const Surface_mesh<P>& sm) {
+    return write_off(os, sm, CGAL::parameters::all_default());
+  }
   /// \relates Surface_mesh
   /// 
-  /// This operator calls `write_off(std::istream& , CGAL::Surface_mesh)`.
+  /// This operator calls `write_off(std::ostream& os, const CGAL::Surface_mesh& sm)`.
    template <typename P>
   std::ostream& operator<<(std::ostream& os, const Surface_mesh<P>& sm)
   {
-    write_off(os, sm);
+    write_off(os, sm, CGAL::parameters::all_default());
     return os;
   }
 
@@ -2044,12 +2113,14 @@ private: //------------------------------------------------------- private data
   /// format and appends it to the surface mesh `sm`.
   /// The operator reads the point property as well as "v:normal", "v:color", and "f:color".
   /// Vertex texture coordinates are ignored.
+  /// If an alternative vertex_point map is given through `np`, 
+  /// then it  will be used instead of the default one.
   /// \pre `operator>>(std::istream&,const P&)` must be defined.
   /// \pre The data in the stream must represent a two-manifold. If this is not the case
   ///      the `failbit` of `is` is set and the mesh cleared.
 
-  template <typename P>
-  bool read_off(std::istream& is, Surface_mesh<P>& sm)
+  template <typename P, typename NamedParameters>
+  bool read_off(std::istream& is, Surface_mesh<P>& sm, NamedParameters np)
   {
    typedef Surface_mesh<P> Mesh;
    typedef typename Kernel_traits<P>::Kernel K;
@@ -2057,6 +2128,9 @@ private: //------------------------------------------------------- private data
    typedef typename Mesh::Face_index Face_index;
    typedef typename Mesh::Vertex_index Vertex_index;
    typedef typename Mesh::size_type size_type;
+    typename CGAL::Polygon_mesh_processing::GetVertexPointMap<Surface_mesh<P>, NamedParameters>::type
+        vpm = choose_param(get_param(np, CGAL::internal_np::vertex_point),
+                           get_property_map(CGAL::vertex_point, sm));
     int n, f, e;
     std::string off;
     is >> sm_skip_comments;
@@ -2083,7 +2157,11 @@ private: //------------------------------------------------------- private data
     for(int i=0; i < n; i++){
       is >> sm_skip_comments;
       is >> p;
-      Vertex_index vi= sm.add_vertex(p);
+      
+      Vertex_index vi = sm.add_vertex();
+      put(vpm, vi, p);
+      
+      
       vertexmap[i] = vi;
       if(v_has_normals){
         is >> v;
@@ -2153,9 +2231,15 @@ private: //------------------------------------------------------- private data
   }
 
 
+  template <typename P>
+  bool read_off(std::istream& is, Surface_mesh<P>& sm)
+  {
+    return read_off(is, sm, parameters::all_default());
+  }
  
   /// \relates Surface_mesh
-  /// This operator calls `read_off(std::istream& , CGAL::Surface_mesh)`.
+  /// This operator calls `read_off(std::istream& is, CGAL::Surface_mesh& sm)`.
+  /// \attention Up to %CGAL 4.10 this operator called `sm.clear()`.
   template <typename P>
   std::istream& operator>>(std::istream& is, Surface_mesh<P>& sm)
   {
@@ -2180,8 +2264,9 @@ Surface_mesh()
     fremoved_ = add_property_map<Face_index, bool>("f:removed", false).first;
 
     removed_vertices_ = removed_edges_ = removed_faces_ = 0;
-    vertices_freelist_ = edges_freelist_ = faces_freelist_ = -1;
+    vertices_freelist_ = edges_freelist_ = faces_freelist_ = (std::numeric_limits<size_type>::max)();
     garbage_ = false;
+    anonymous_property_ = 0;
 }
 
 
@@ -2216,6 +2301,7 @@ operator=(const Surface_mesh<P>& rhs)
         edges_freelist_    = rhs.edges_freelist_;
         faces_freelist_    = rhs.faces_freelist_;
         garbage_           = rhs.garbage_;
+        anonymous_property_ = rhs.anonymous_property_;
     }
 
     return *this;
@@ -2268,6 +2354,7 @@ assign(const Surface_mesh<P>& rhs)
         edges_freelist_    = rhs.edges_freelist_;
         faces_freelist_    = rhs.faces_freelist_;
         garbage_           = rhs.garbage_;
+        anonymous_property_ = rhs.anonymous_property_;
     }
 
     return *this;
@@ -2290,8 +2377,9 @@ clear()
     fprops_.shrink_to_fit();
 
     removed_vertices_ = removed_edges_ = removed_faces_ = 0;
-    vertices_freelist_ = edges_freelist_ = faces_freelist_ = -1;
+    vertices_freelist_ = edges_freelist_ = faces_freelist_ = (std::numeric_limits<size_type>::max)();
     garbage_ = false;
+    anonymous_property_ = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -2616,6 +2704,8 @@ namespace internal{
 }
 
 } // CGAL
+ 
+#ifndef DOXYGEN_RUNNING
 
 namespace std {
 
@@ -2628,7 +2718,7 @@ namespace std {
 
   template <>
   struct hash<CGAL::SM_Halfedge_index >
-    : public std::unary_function<CGAL::SM_Halfedge_index, std::size_t> {
+    : public CGAL::cpp98::unary_function<CGAL::SM_Halfedge_index, std::size_t> {
 
     std::size_t operator()(const CGAL::SM_Halfedge_index& i) const
     {
@@ -2638,7 +2728,7 @@ namespace std {
 
   template <>
   struct hash<CGAL::SM_Vertex_index >
-    : public std::unary_function<CGAL::SM_Vertex_index, std::size_t>  {
+    : public CGAL::cpp98::unary_function<CGAL::SM_Vertex_index, std::size_t>  {
 
     std::size_t operator()(const CGAL::SM_Vertex_index& i) const
     {
@@ -2648,7 +2738,7 @@ namespace std {
 
   template <>
   struct hash<CGAL::SM_Face_index > 
-    : public std::unary_function<CGAL::SM_Face_index, std::size_t> {
+    : public CGAL::cpp98::unary_function<CGAL::SM_Face_index, std::size_t> {
 
     std::size_t operator()(const CGAL::SM_Face_index& i) const
     {
@@ -2658,7 +2748,7 @@ namespace std {
 
   template <>
   struct hash<CGAL::SM_Edge_index >
-    : public std::unary_function<CGAL::SM_Edge_index, std::size_t>  {
+    : public CGAL::cpp98::unary_function<CGAL::SM_Edge_index, std::size_t>  {
 
     std::size_t operator()(const CGAL::SM_Edge_index& i) const
     {
@@ -2683,6 +2773,10 @@ namespace boost {
   };
 
 } // namespace boost
+
+#endif // DOXYGEN_RUNNING
+
+#include <CGAL/enable_warnings.h>
 
 #endif /* CGAL_SURFACE_MESH_H */
 

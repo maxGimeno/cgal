@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)    : Samuel Hornus
 
@@ -22,6 +23,7 @@
 
 #include <CGAL/license/Triangulation.h>
 
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/internal/Triangulation/utilities.h>
 #include <CGAL/Triangulation_data_structure.h>
@@ -35,7 +37,7 @@
 #include <CGAL/Random.h>
 
 #include <boost/iterator/filter_iterator.hpp>
-#include <boost/iterator/transform_iterator.hpp>
+#include <CGAL/boost/iterator/transform_iterator.hpp>
 
 namespace CGAL {
 
@@ -182,6 +184,12 @@ public:
         Finite_full_cell_const_iterator;
     typedef boost::filter_iterator<Finiteness_predicate, Facet_iterator>
         Finite_facet_iterator;
+
+    //Tag to distinguish Delaunay from regular triangulations
+    typedef Tag_false                               Weighted_tag;
+
+    // Tag to distinguish periodic triangulations from others
+    typedef Tag_false                               Periodic_tag;
 
 protected: // DATA MEMBERS
 
@@ -452,9 +460,9 @@ public:
 
     Facet_iterator facets_begin() { return tds().facets_begin(); }
     Facet_iterator facets_end() { return tds().facets_end(); }
-    Facet_iterator finite_facets_begin()
+    Finite_facet_iterator finite_facets_begin()
     { return Finite_facet_iterator(Finiteness_predicate(*this), facets_begin(), facets_end()); }
-    Facet_iterator finite_facets_end()
+    Finite_facet_iterator finite_facets_end()
     { return Finite_facet_iterator(Finiteness_predicate(*this), facets_end(), facets_end()); }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - SOME PREDICATE FUNCTORS
@@ -1423,5 +1431,7 @@ operator<<(std::ostream & os, const Triangulation<TT, TDS> & tr)
 }
 
 } //namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_TRIANGULATION_H

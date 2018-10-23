@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 // 
 //
 // Author(s)     : Jane Tournois
@@ -99,21 +100,21 @@ void sum_normals(const PM& pmesh,
 * \ingroup PMP_normal_grp
 * computes the outward unit vector normal to face `f`.
 * @tparam PolygonMesh a model of `FaceGraph`
-* @tparam NamedParameters a sequence of \ref namedparameters
+* @tparam NamedParameters a sequence of \ref pmp_namedparameters "Named Parameters"
 *
 * @param f the face on which the normal is computed
 * @param pmesh the polygon mesh containing `f`
-* @param np optional sequence of \ref namedparameters among the ones listed below
+* @param np optional sequence of \ref pmp_namedparameters "Named Parameters" among the ones listed below
 *
 * \cgalNamedParamsBegin
 *    \cgalParamBegin{vertex_point_map} the property map with the points associated to the vertices of `pmesh`.
 *   If this parameter is omitted, an internal property map for
-*   `CGAL::vertex_point_t` should be available in `PolygonMesh`\cgalParamEnd
+*   `CGAL::vertex_point_t` must be available in `PolygonMesh`\cgalParamEnd
 *    \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `Kernel`\cgalParamEnd
 * \cgalNamedParamsEnd
 *
 * @return the computed normal. The return type is a 3D vector type. It is
-* either deduced from the `geom_traits` \ref namedparameters if provided,
+* either deduced from the `geom_traits` \ref pmp_namedparameters "Named Parameters" if provided,
 * or from the geometric traits class deduced from the point property map
 * of `pmesh`.
 *
@@ -162,12 +163,12 @@ compute_face_normal(typename boost::graph_traits<PolygonMesh>::face_descriptor f
 *
 * @param pmesh the polygon mesh
 * @param fnm the property map in which the normals are written
-* @param np optional sequence of \ref namedparameters among the ones listed below
+* @param np optional sequence of \ref pmp_namedparameters "Named Parameters" among the ones listed below
 *
 * \cgalNamedParamsBegin
 *    \cgalParamBegin{vertex_point_map} the property map with the points associated to the vertices of `pmesh`.
 *   If this parameter is omitted, an internal property map for
-*   `CGAL::vertex_point_t` should be available in `PolygonMesh`\cgalParamEnd
+*   `CGAL::vertex_point_t` must be available in `PolygonMesh`\cgalParamEnd
 *    \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `Kernel`\cgalParamEnd
 * \cgalNamedParamsEnd
 *
@@ -199,17 +200,17 @@ compute_face_normals(const PolygonMesh& pmesh
 *
 * @param v the vertex at which the normal is computed
 * @param pmesh the polygon mesh containing `v`
-* @param np optional sequence of \ref namedparameters among the ones listed below
+* @param np optional sequence of \ref pmp_namedparameters "Named Parameters" among the ones listed below
 *
 * \cgalNamedParamsBegin
 *    \cgalParamBegin{vertex_point_map} the property map with the points associated to the vertices of `pmesh`.
 *   If this parameter is omitted, an internal property map for
-*   `CGAL::vertex_point_t` should be available in `PolygonMesh`\cgalParamEnd
+*   `CGAL::vertex_point_t` must be available in `PolygonMesh`\cgalParamEnd
 *    \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `Kernel`\cgalParamEnd
 * \cgalNamedParamsEnd
 *
 * @return the computed normal. The return type is a 3D vector type. It is
-* either deduced from the `geom_traits` \ref namedparameters if provided,
+* either deduced from the `geom_traits` \ref pmp_namedparameters "Named Parameters" if provided,
 * or the geometric traits class deduced from the point property map
 * of `pmesh`.
 *
@@ -279,12 +280,12 @@ compute_vertex_normal(typename boost::graph_traits<PolygonMesh>::vertex_descript
 *
 * @param pmesh the polygon mesh
 * @param vnm the property map in which the normals are written
-* @param np optional sequence of \ref namedparameters among the ones listed below
+* @param np optional sequence of \ref pmp_namedparameters "Named Parameters" among the ones listed below
 *
 * \cgalNamedParamsBegin
 *    \cgalParamBegin{vertex_point_map} the property map with the points associated to the vertices of `pmesh`.
 *   If this parameter is omitted, an internal property map for
-*   `CGAL::vertex_point_t` should be available in `PolygonMesh`\cgalParamEnd
+*   `CGAL::vertex_point_t` must be available in `PolygonMesh`\cgalParamEnd
 *    \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `Kernel`\cgalParamEnd
 * \cgalNamedParamsEnd
 *
@@ -325,12 +326,12 @@ compute_vertex_normals(const PolygonMesh& pmesh
 * @param pmesh the polygon mesh
 * @param vnm the property map in which the vertex normals are written
 * @param fnm the property map in which the face normals are written
-* @param np optional sequence of \ref namedparameters among the ones listed below
+* @param np optional sequence of \ref pmp_namedparameters "Named Parameters" among the ones listed below
 *
 * \cgalNamedParamsBegin
 *    \cgalParamBegin{vertex_point_map} the property map with the points associated to the vertices of `pmesh`.
 *   If this parameter is omitted, an internal property map for
-*   `CGAL::vertex_point_t` should be available in `PolygonMesh`\cgalParamEnd
+*   `CGAL::vertex_point_t` must be available in `PolygonMesh`\cgalParamEnd
 *    \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `Kernel`\cgalParamEnd
 * \cgalNamedParamsEnd
 *

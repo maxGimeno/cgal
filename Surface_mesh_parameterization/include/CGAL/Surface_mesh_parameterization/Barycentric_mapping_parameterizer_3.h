@@ -12,12 +12,18 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
 // Author(s)     : Laurent Saboret, Pierre Alliez, Bruno Levy
 
 #ifndef CGAL_SURFACE_MESH_PARAMETERIZATION_BARYCENTRIC_MAPPING_PARAMETERIZER_3_H
 #define CGAL_SURFACE_MESH_PARAMETERIZATION_BARYCENTRIC_MAPPING_PARAMETERIZER_3_H
 
 #include <CGAL/license/Surface_mesh_parameterization.h>
+
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/Surface_mesh_parameterization/internal/validity.h>
 #include <CGAL/Surface_mesh_parameterization/Circular_border_parameterizer_3.h>
@@ -72,15 +78,9 @@ namespace Surface_mesh_parameterization {
 ///              Eigen::BiCGSTAB<Eigen_sparse_matrix<double>::EigenType,
 ///                              Eigen::IncompleteLUT< double > > >
 /// \endcode
-/*!
-\sa `CGAL::Surface_mesh_parameterization::Fixed_border_parameterizer_3<TriangleMesh, BorderParameterizer, SolverTraits>`
-\sa `CGAL::Surface_mesh_parameterization::ARAP_parameterizer_3<TriangleMesh, BorderParameterizer, SolverTraits>`
-\sa `CGAL::Surface_mesh_parameterization::Discrete_authalic_parameterizer_3<TriangleMesh, BorderParameterizer, SolverTraits>`
-\sa `CGAL::Surface_mesh_parameterization::Discrete_conformal_map_parameterizer_3<TriangleMesh, BorderParameterizer, SolverTraits>`
-\sa `CGAL::Surface_mesh_parameterization::LSCM_parameterizer_3<TriangleMesh, BorderParameterizer>`
-\sa `CGAL::Surface_mesh_parameterization::Mean_value_coordinates_parameterizer_3<TriangleMesh, BorderParameterizer, SolverTraits>`
-\sa `CGAL::Surface_mesh_parameterization::Orbifold_Tutte_parameterizer_3<SeamMesh, SolverTraits>`
- */
+///
+/// \sa `CGAL::Surface_mesh_parameterization::Fixed_border_parameterizer_3<TriangleMesh, BorderParameterizer, SolverTraits>`
+///
 template < typename TriangleMesh_,
            typename BorderParameterizer_ = Default,
            typename SolverTraits_ = Default >
@@ -189,5 +189,7 @@ protected:
 } // namespace Surface_mesh_parameterization
 
 } // namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_SURFACE_MESH_PARAMETERIZATION_BARYCENTRIC_MAPPING_PARAMETERIZER_3_H

@@ -122,24 +122,30 @@ Polyhedron_demo_c3t3_binary_io_plugin::load(QFileInfo fileinfo) {
               }
             }
         }
+
         //if there is no facet in the complex, we add the border facets.
         if(item->c3t3().number_of_facets_in_complex() == 0)
         {
-          for( C3t3::Triangulation::All_cells_iterator
-               cit = item->c3t3().triangulation().all_cells_begin();
-               cit != item->c3t3().triangulation().all_cells_end();
-               ++cit)
+          for( C3t3::Triangulation::Finite_facets_iterator
+               fit = item->c3t3().triangulation().finite_facets_begin();
+               fit != item->c3t3().triangulation().finite_facets_end();
+               ++fit)
           {
-            if(item->c3t3().triangulation().is_infinite(cit))
+            typedef C3t3::Triangulation::Cell_handle      Cell_handle;
+
+            Cell_handle c = fit->first;
+            Cell_handle nc = c->neighbor(fit->second);
+
+            // By definition, Subdomain_index() is supposed to be the id of the exterior
+            if(c->subdomain_index() != C3t3::Triangulation::Cell::Subdomain_index() &&
+               nc->subdomain_index() == C3t3::Triangulation::Cell::Subdomain_index())
             {
-              for(int i=0; i<4; ++i)
-              {
-               if(!item->c3t3().triangulation().is_infinite(cit, i))
-                 item->c3t3().add_to_complex(cit, i, 1);
-              }
+              // Color the border facet with the index of its cell
+              item->c3t3().add_to_complex(c, fit->second, c->subdomain_index());
             }
           }
         }
+
         item->c3t3_changed();
         item->resetCutPlane();
         return item;
@@ -218,7 +224,7 @@ struct Fake_mesh_domain {
   typedef CGAL::Tag_true Has_features;
   typedef int Subdomain_index;
   typedef std::pair<int,int> Surface_patch_index;
-  typedef int Curve_segment_index;
+  typedef int Curve_index;
   typedef int Corner_index;
   typedef boost::variant<Subdomain_index,Surface_patch_index> Index;
 };
@@ -231,7 +237,7 @@ typedef CGAL::Regular_triangulation_3<Fake_gt, Fake_tds> Fake_tr;
 typedef CGAL::Mesh_complex_3_in_triangulation_3<
   Fake_tr,
   Fake_mesh_domain::Corner_index,
-  Fake_mesh_domain::Curve_segment_index> Fake_c3t3;
+  Fake_mesh_domain::Curve_index> Fake_c3t3;
 
 template <class Vb = CGAL::Triangulation_vertex_base_3<Kernel> >
 struct Fake_CDT_3_vertex_base : public Vb
@@ -430,7 +436,28 @@ Polyhedron_demo_c3t3_binary_io_plugin::
 try_load_a_cdt_3(std::istream& is, C3t3& c3t3)
 {
   std::cerr << "Try load a CDT_3...";
-  CGAL::set_binary_mode(is);
+  std::string s;
+  if(!(is >> s)) return false;
+  bool binary = (s == "binary");
+  if(binary) {
+    if(!(is >> s)) return false;
+  }
+  if (s != "CGAL" ||
+      !(is >> s) ||
+      s != "c3t3") 
+  {
+    return false;
+  }
+  std::getline(is, s);
+  if(s != "") {
+    if(s != std::string(" ") + CGAL::Get_io_signature<Fake_CDT_3>()()) {
+      std::cerr << "load_binary_file:"
+                << "\n  expected format: " << CGAL::Get_io_signature<Fake_CDT_3>()()
+                << "\n       got format:" << s << std::endl;
+      return false;
+    }
+  }
+  if(binary) CGAL::set_binary_mode(is);
   if(CGAL::file_input<
        Fake_CDT_3,
        C3t3::Triangulation,

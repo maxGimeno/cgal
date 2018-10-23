@@ -13,6 +13,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0+
 // 
 //
 // Author(s)     : Andreas Fabri
@@ -20,13 +21,11 @@
 #ifndef CGAL_QT_EXPORT_H
 #define CGAL_QT_EXPORT_H
 
-#include <CGAL/license/GraphicsView.h>
-
-
 #include <CGAL/config.h>
 #include <CGAL/export/helpers.h>
 
-#if defined(CGAL_BUILD_SHARED_LIBS) || defined(CGAL_USE_Qt5_RESOURCES)
+#if ( defined(CGAL_BUILD_SHARED_LIBS) && ( ! defined(CGAL_HEADER_ONLY) ) ) \
+  || defined(CGAL_USE_Qt5_RESOURCES)
 
 #  if defined(CGAL_Qt5_EXPORTS) || defined(CGAL_USE_Qt5_RESOURCES)
 // defined by CMake or in cpp files of the dll

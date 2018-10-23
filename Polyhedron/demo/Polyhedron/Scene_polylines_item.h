@@ -63,6 +63,9 @@ public:
 
 
     void smooth(std::vector<Point_3>& polyline);
+    //When selecting a polylineitem, we don't want to select its children, so we can still apply Operations to it
+    QList<Scene_interface::Item_id> getChildrenForSelection() const { return QList<Scene_interface::Item_id>(); }
+    void setWidth(int i);
 
 public Q_SLOTS:
     virtual void invalidateOpenGLBuffers();

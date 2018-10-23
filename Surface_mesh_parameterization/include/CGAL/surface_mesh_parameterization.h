@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Mael Rouxel-Labbé
@@ -24,6 +25,7 @@
 * Convenience header file including the headers for all
 * the free functions of this package.
 */
+
 
 #include <CGAL/Surface_mesh_parameterization/ARAP_parameterizer_3.h>
 #include <CGAL/Surface_mesh_parameterization/Barycentric_mapping_parameterizer_3.h>

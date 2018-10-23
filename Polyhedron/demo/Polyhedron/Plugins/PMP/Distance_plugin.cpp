@@ -20,7 +20,7 @@
 #include <CGAL/Polygon_mesh_processing/bbox.h>
 #include <CGAL/Polygon_mesh_processing/distance.h>
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
-#include <boost/iterator/counting_iterator.hpp>
+#include <CGAL/boost/iterator/counting_iterator.hpp>
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Spatial_sort_traits_adapter_3.h>
 #include <CGAL/property_map.h>
@@ -302,6 +302,8 @@ private:
       double hausdorff = compute_distances(*poly_B,
                                            sorted_points,
                                            distances);
+      if(hausdorff == 0)
+        hausdorff++;
       //compute the colors
       colors.resize(sorted_points.size()*3);
       for(std::size_t i=0; i<sorted_points.size(); ++i)

@@ -1,24 +1,3 @@
-// Copyright (c) 1998, 2015  INRIA Sophia-Antipolis (France).
-// All rights reserved.
-//
-// This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL$
-// $Id$
-//
-//
-// Author(s)     : Francois Rebufat
-//                 Manuel Caroli
-//                 Aymeric Pelle
 
 #include <iostream>
 
@@ -57,24 +36,20 @@ int main(int, char**)
   timer.start();
 
   typedef CGAL::Periodic_3_Delaunay_triangulation_3<PDTT1>   P3TD3_K1;
-  _test_periodic_3_triangulation_3_constructors( P3TD3_K1() );
   _test_cls_periodic_3_triangulation_3(P3TD3_K1(),
                                        PDTT1::Point(0.711476,-0.0713565,-0.52312),
                                        "data/P3DT3_covering_test_HOM.tri",
                                        "data/P3DT3_covering_test.tri");
 
   typedef CGAL::Periodic_3_Delaunay_triangulation_3<PDTT2>   P3TD3_K2;
-  _test_periodic_3_triangulation_3_constructors( P3TD3_K2() );
   _test_cls_periodic_3_triangulation_3(P3TD3_K2(),
                                        PDTT2::Point(0.711476,-0.0713565,-0.52312),
                                        "data/P3DT3_covering_test_HOM.tri",
                                        "data/P3DT3_covering_test.tri",
                                        true /*exact*/);
 
-  typedef CGAL::Periodic_3_Delaunay_triangulation_3<PDTT3>   P3TD3_K3;
-  _test_periodic_3_triangulation_3_constructors( P3TD3_K3() );
-
   // commented because it takes too long to test it
+//  typedef CGAL::Periodic_3_Delaunay_triangulation_3<PDTT3>   P3TD3_K3;
 //  _test_cls_periodic_3_triangulation_3(P3TD3_K3(),
 //                                       PDTT3::Point(0.711476,-0.0713565,-0.52312),
 //                                       "data/P3DT3_covering_test_HOM.tri",

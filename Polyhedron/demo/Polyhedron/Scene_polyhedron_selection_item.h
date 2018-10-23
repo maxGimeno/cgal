@@ -1,22 +1,22 @@
 #ifndef SCENE_POLYHEDRON_SELECTION_ITEM_H
 #define SCENE_POLYHEDRON_SELECTION_ITEM_H
-#include "opengl_tools.h"
+
 #include "Scene_polyhedron_selection_item_config.h"
 #include "Plugins/PMP/Scene_facegraph_item_k_ring_selection.h"
 #include "Travel_isolated_components.h"
 
 #ifdef USE_SURFACE_MESH
 #include "Scene_surface_mesh_item.h"
-#include <CGAL/Mesh_3/properties_Surface_mesh.h>
 #else
 #include "Polyhedron_type.h"
-#include <CGAL/Mesh_3/properties_Polyhedron_3.h>
 #endif
 #include "Scene_polyhedron_item_decorator.h"
 #include <CGAL/property_map.h>
 #include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 #include <CGAL/Polygon_mesh_processing/connected_components.h>
+#include <CGAL/Three/Scene_print_item_interface.h>
+
 #include "Polyhedron_demo_detect_sharp_edges.h"
 
 // Laurent Rineau, 2016/04/07: that header should not be included here, but
@@ -33,7 +33,7 @@
 #include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
 #include <CGAL/boost/graph/Euler_operations.h>
 
-#include <QGLViewer/manipulatedFrame.h>
+#include <CGAL/Qt/manipulatedFrame.h>
 
 namespace PMP = CGAL::Polygon_mesh_processing;
 
@@ -201,9 +201,12 @@ struct Selection_traits<typename SelectionItem::fg_edge_descriptor, SelectionIte
 //////////////////////////////////////////////////////////////////////////
 struct Scene_polyhedron_selection_item_priv;
 class SCENE_POLYHEDRON_SELECTION_ITEM_EXPORT Scene_polyhedron_selection_item 
-  : public Scene_polyhedron_item_decorator
+  : public Scene_polyhedron_item_decorator,
+    public CGAL::Three::Scene_print_item_interface
 {
   Q_OBJECT
+  Q_INTERFACES(CGAL::Three::Scene_print_item_interface)
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PrintInterface/1.0")
 
 friend class Polyhedron_demo_selection_plugin;
 
@@ -220,6 +223,14 @@ public:
   ~Scene_polyhedron_selection_item();
   void inverse_selection();
   void setPathSelection(bool b);
+  //For ID printing
+  void printPrimitiveId(QPoint, CGAL::Three::Viewer_interface*);
+  bool printVertexIds(CGAL::Three::Viewer_interface*) const;
+  bool printEdgeIds(CGAL::Three::Viewer_interface*) const;
+  bool printFaceIds(CGAL::Three::Viewer_interface*) const;
+  void printAllIds(CGAL::Three::Viewer_interface*);
+  bool testDisplayId(double, double, double, CGAL::Three::Viewer_interface*)const;
+  bool shouldDisplayIds(CGAL::Three::Scene_item *current_item) const;
 
 protected: 
   void init(Scene_face_graph_item* poly_item, QMainWindow* mw);
@@ -422,11 +433,13 @@ public:
     case Active_handle::PATH:
       selected_edges.insert(edges(*polyhedron()).first, edges(*polyhedron()).second);
       invalidateOpenGLBuffers();
-      QGLViewer* v = *QGLViewer::QGLViewerPool().begin();
+      CGAL::QGLViewer* v = *CGAL::QGLViewer::QGLViewerPool().begin();
       v->update();
       break;
     }
   }
+
+  void select_boundary();
   void select_all_NT();
   // select all of vertex, facet or edge (use fg_vertex_descriptor, fg_face_descriptor, fg_edge_descriptor as template argument)
   template<class HandleType>
@@ -772,11 +785,10 @@ public:
   {
     CGAL::detect_sharp_edges(polyhedron(), angle);
 
-    boost::property_map<Face_graph,CGAL::halfedge_is_feature_t>::type is_feature = get(CGAL::halfedge_is_feature,*polyhedron());
+    boost::property_map<Face_graph,CGAL::edge_is_feature_t>::type is_feature = get(CGAL::edge_is_feature,*polyhedron());
     BOOST_FOREACH(fg_edge_descriptor e, edges(*polyhedron()))
     {
-      fg_halfedge_descriptor h = halfedge(e, *polyhedron());
-      if (get(is_feature,h))
+      if (get(is_feature,e))
         selected_edges.insert(e);
     }
     invalidateOpenGLBuffers();
@@ -800,6 +812,7 @@ Q_SIGNALS:
   void updateInstructions(QString);
   void simplicesSelected(CGAL::Three::Scene_item*);
   void isCurrentlySelected(Scene_facegraph_item_k_ring_selection*);
+  void printMessage(QString);
 
 public Q_SLOTS:
 
@@ -813,6 +826,7 @@ public Q_SLOTS:
   void validateMoveVertex();
   void compute_normal_maps();
   void clearHL();
+  QString toolTip() const;
 
   // slots are called by signals of polyhedron_k_ring_selector
   void selected(const std::set<fg_vertex_descriptor>& m)

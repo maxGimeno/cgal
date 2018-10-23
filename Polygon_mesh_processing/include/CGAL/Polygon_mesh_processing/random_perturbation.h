@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Jane Tournois
@@ -22,6 +23,8 @@
 #define CGAL_POLYGON_MESH_PROCESSING_RANDOM_PERTURBATION_H
 
 #include <CGAL/license/Polygon_mesh_processing/meshing_hole_filling.h>
+
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/Polygon_mesh_processing/internal/Isotropic_remeshing/remesh_impl.h>
 
@@ -114,13 +117,13 @@ namespace internal {
 *         vertices of type `boost::graph_traits<TriangleMesh>::%vertex_descriptor`.
 *         Its iterator type is `ForwardIterator`. 
 * @tparam TriangleMesh model of `MutableFaceGraph`.
-* @tparam NamedParameters a sequence of \ref namedparameters
+* @tparam NamedParameters a sequence of \ref pmp_namedparameters "Named Parameters"
 *
 * @param vertices the range of vertices to be perturbed
 * @param tmesh the triangulated surface mesh
 * @param perturbation_max_size the maximal length of moves that can be applied to
 *        vertices of `tmesh`.
-* @param np optional sequence of \ref namedparameters among the ones listed below
+* @param np optional sequence of \ref pmp_namedparameters "Named Parameters" among the ones listed below
 *
 * \cgalNamedParamsBegin
 *  \cgalParamBegin{geom_traits} a geometric traits class instance, model of `Kernel`.
@@ -132,7 +135,7 @@ namespace internal {
 *    constrained-or-not status of each vertex of `tmesh`. A constrained vertex
 *    cannot be modified at all during perturbation
 *  \cgalParamEnd
-*  \cgalParamBegin{do_project} a boolean that sets whether vertices should be reprojected
+*  \cgalParamBegin{do_project} a boolean that sets whether vertices are reprojected
 *    on the input surface after their coordinates random perturbation
 *  \cgalParamEnd
 *  \cgalParamBegin{random_seed} a non-negative integer value to seed the random
@@ -171,10 +174,10 @@ void random_perturbation(VertexRange vertices
   typedef typename boost::lookup_named_param_def <
       internal_np::vertex_is_constrained_t,
       NamedParameters,
-      internal::No_constraint_pmap<vertex_descriptor>//default
+      Constant_property_map<vertex_descriptor, bool> // default
     > ::type VCMap;
   VCMap vcmap = choose_param(get_param(np, internal_np::vertex_is_constrained),
-                             internal::No_constraint_pmap<vertex_descriptor>());
+                             Constant_property_map<vertex_descriptor, bool>(false));
 
   unsigned int seed = choose_param(get_param(np, internal_np::random_seed), -1);
   bool do_project = choose_param(get_param(np, internal_np::do_project), true);
@@ -229,6 +232,8 @@ void random_perturbation(TriangleMesh& tmesh
 
 } //end namespace Polygon_mesh_processing
 } //end namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif //CGAL_POLYGON_MESH_PROCESSING_RANDOM_PERTURBATION_H
 

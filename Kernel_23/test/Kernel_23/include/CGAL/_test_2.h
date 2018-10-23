@@ -15,6 +15,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0+
 // 
 //
 // Author(s)     : Stefan Schirra
@@ -50,7 +51,7 @@ template <class R>
 bool
 _test_2(const R& r)
 {
- return
+	return 
     _test_cls_vector_2(r)
  && _test_fct_vector_2(r)
  && _test_cls_point_2(r)

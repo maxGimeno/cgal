@@ -12,6 +12,10 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
 // Author(s)     : Julia Floetotto, Mael Rouxel-Labbé
 
 #ifndef CGAL_VORONOI_INTERSECTION_2_TRAITS_3_H
@@ -159,16 +163,16 @@ public:
 
   Comparison_result operator()(const Point& p, const Point& q) const
   {
-    if(normal.x()!=Coord_type(0))
+    if(normal.x() != Coord_type(0))
       return (Comparison_result) CGAL_NTS
-          sign(Vector(normal.y(),-normal.x(),Coord_type(0))*(p-q));
-    if(normal.y()!= Coord_type(0))
+          sign(Vector(normal.y(), -normal.x(), Coord_type(0))*(p-q));
+    if(normal.y() != Coord_type(0))
       return (Comparison_result) CGAL_NTS
-          sign(Vector(-normal.y(),normal.x(),Coord_type(0))*(p-q));
+          sign(Vector(-normal.y(), normal.x(), Coord_type(0))*(p-q));
 
-    CGAL_assertion(normal.z()!= Coord_type(0));
+    CGAL_assertion(normal.z() != Coord_type(0));
     return (Comparison_result) CGAL_NTS
-        sign(Vector(-normal.z(),Coord_type(0),normal.x())*(p-q));
+        sign(Vector(-normal.z(), Coord_type(0), normal.x())*(p-q));
   }
 
 private:
@@ -191,16 +195,16 @@ public:
 
   Comparison_result operator()(const Point& p, const Point& q) const
   {
-    if(normal.x()!=Coord_type(0))
+    if(normal.x() != Coord_type(0))
       return (Comparison_result) CGAL_NTS
-          sign(Vector(normal.z(),Coord_type(0),-normal.x())*(p-q));
-    if(normal.y()!= Coord_type(0))
+          sign(Vector(normal.z(), Coord_type(0), -normal.x())*(p-q));
+    if(normal.y() != Coord_type(0))
       return (Comparison_result) CGAL_NTS
-          sign(Vector(Coord_type(0),normal.z(),-normal.y())*(p-q));
+          sign(Vector(Coord_type(0), normal.z(), -normal.y())*(p-q));
 
-    CGAL_assertion(normal.z()!= Coord_type(0));
+    CGAL_assertion(normal.z() != Coord_type(0));
     return (Comparison_result) CGAL_NTS
-        sign(Vector(Coord_type(0),-normal.z(),normal.y())*(p-q));
+        sign(Vector(Coord_type(0), -normal.z(), normal.y())*(p-q));
   }
 
 private:

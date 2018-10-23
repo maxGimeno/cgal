@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0+
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 //
@@ -1132,6 +1133,48 @@ bool test3D()
   if ( !map.is_isomorphic_to(map2, false) )
   {
     std::cout<<"Error: map and map2 are not isomorphic (after insertion/removal).\n";
+    assert(false);
+    return false;
+  }
+
+  if (CGAL::degree<Map, 0>(map2, d1)!=4)
+  {
+    std::cout<<"Error: 0-degree is wrong: "<<CGAL::degree<Map, 0>(map2, d1)<<" instead of 4."<<std::endl;
+    assert(false);
+    return false;
+  }
+  
+  if (CGAL::degree<Map, 1>(map2, d1)!=3)
+  {
+    std::cout<<"Error: 1-degree is wrong: "<<CGAL::degree<Map, 1>(map2, d1)<<" instead of 3."<<std::endl;
+    assert(false);
+    return false;
+  }
+  
+  if (CGAL::degree<Map, 2>(map2, d1)!=2)
+  {
+    std::cout<<"Error: 2-degree is wrong: "<<CGAL::degree<Map, 2>(map2, d1)<<" instead of 2."<<std::endl;
+    assert(false);
+    return false;
+  }
+  
+  if (CGAL::codegree<Map, 1>(map2, d1)!=2)
+  {
+    std::cout<<"Error: 1-codegree is wrong: "<<CGAL::codegree<Map, 1>(map2, d1)<<" instead of 2."<<std::endl;
+    assert(false);
+    return false;
+  }
+  
+  if (CGAL::codegree<Map, 2>(map2, d1)!=4)
+  {
+    std::cout<<"Error: 2-codegree is wrong: "<<CGAL::codegree<Map, 2>(map2, d1)<<" instead of 4."<<std::endl;
+    assert(false);
+    return false;
+  }
+  
+  if (CGAL::codegree<Map, 3>(map2, d1)!=6)
+  {
+    std::cout<<"Error: 3-codegree is wrong: "<<CGAL::codegree<Map, 3>(map2, d1)<<" instead of 6."<<std::endl;
     assert(false);
     return false;
   }

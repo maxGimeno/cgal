@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Authors: Weisheng Si, Quincy Tse
@@ -57,9 +58,10 @@ namespace CGAL {
  *
  */
 template <typename Kernel_, typename Graph_>
-class  Less_by_direction_2 : public std::binary_function <typename Graph_::vertex_descriptor,
-        typename Graph_::vertex_descriptor, bool> {
-
+class Less_by_direction_2
+  : public CGAL::cpp98::binary_function <typename Graph_::vertex_descriptor,
+                                         typename Graph_::vertex_descriptor, bool>
+{
 public:
     // typedef for C++11 - doesn't hurt to also have for C++98
     typedef typename Graph_::vertex_descriptor first_argument_type;

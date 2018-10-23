@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Laurent RINEAU, Maxime Gimeno
@@ -39,8 +40,10 @@ namespace Three {
   class Viewer_interface;
 }
 }
+namespace CGAL{
 namespace qglviewer {
   class ManipulatedFrame;
+}
 }
 
 class QMenu;
@@ -70,24 +73,25 @@ public:
    */
  enum OpenGL_program_IDs
  {
-  PROGRAM_WITH_LIGHT = 0,      //! Used to render a surface or an edge affected by the light. It uses a per fragment lighting model, and renders the selected item brighter.
-  PROGRAM_WITHOUT_LIGHT,       //! Used to render a polyhedron edge or points. It renders in a uniform color and is not affected by light. \attention It renders the selected item in black.
-  PROGRAM_NO_SELECTION,        //! Used to render a polyline or a surface that is not affected by light, like a cutting plane. It renders in a uniform color that does not change with selection.
-  PROGRAM_WITH_TEXTURE,        //! Used to render a textured polyhedron. Affected by light.
-  PROGRAM_PLANE_TWO_FACES,     //! Used to render a two-faced plane. The two faces have a different color. Not affected by light.
-  PROGRAM_WITH_TEXTURED_EDGES, //! Used to render the edges of a textured polyhedron. Not affected by light.
-  PROGRAM_INSTANCED,           //! Used to display instanced rendered spheres.Affected by light.
-  PROGRAM_INSTANCED_WIRE,      //! Used to display instanced rendered wired spheres. Not affected by light.
-  PROGRAM_C3T3,                //! Used to render a c3t3_item. It discards any fragment on a side of a plane, meaning that nothing is displayed on this side of the plane. Affected by light.
-  PROGRAM_C3T3_EDGES,          //! Used to render the edges of a c3t3_item. It discards any fragment on a side of a plane, meaning that nothing is displayed on this side of the plane. Not affected by light.
-  PROGRAM_CUTPLANE_SPHERES,    //! Used to render the spheres of an item with a cut plane.
-  PROGRAM_SPHERES,             //! Used to render one or several spheres.
-  PROGRAM_C3T3_TETS,           //! Used to render the tetrahedra of the intersection of a c3t3_item.
-  PROGRAM_FLAT,                //! Used to render flat shading without pre computing normals
-  NB_OF_PROGRAMS               //! Holds the number of different programs in this enum.
+  PROGRAM_WITH_LIGHT = 0,      /** Used to render a surface or edge affected by the light. It uses a per fragment lighting model, and renders brighter the selected item.*/
+  PROGRAM_WITHOUT_LIGHT,       /** Used to render a polygon edge or points. It renders in a uniform color and is not affected by light. It renders the selected item in black.*/
+  PROGRAM_NO_SELECTION,        /** Used to render a polyline or a surface that is not affected by light, like a cutting plane. It renders in a uniform color that does not change with selection.*/
+  PROGRAM_WITH_TEXTURE,        /** Used to render a textured polyhedron. Affected by light.*/
+  PROGRAM_PLANE_TWO_FACES,     /** Used to render a two-faced plane. The two faces have a different color. Not affected by light.*/
+  PROGRAM_WITH_TEXTURED_EDGES, /** Used to render the edges of a textured polyhedorn. Not affected by light.*/
+  PROGRAM_INSTANCED,           /** Used to display instanced rendered spheres.Affected by light.*/
+  PROGRAM_INSTANCED_WIRE,      /** Used to display instanced rendered wired spheres. Not affected by light.*/
+  PROGRAM_C3T3,                /** Used to render a c3t3_item. It discards any fragment on a side of a plane, meaning that nothing is displayed on this side of the plane. Affected by light.*/
+  PROGRAM_C3T3_EDGES,          /** Used to render the edges of a c3t3_item. It discards any fragment on a side of a plane, meaning that nothing is displayed on this side of the plane. Not affected by light.*/
+  PROGRAM_CUTPLANE_SPHERES,    /** Used to render the spheres of an item with a cut plane.*/
+  PROGRAM_SPHERES,             /** Used to render one or several spheres.*/
+  PROGRAM_FLAT,                /** Used to render flat shading without pre computing normals*/
+  PROGRAM_OLD_FLAT,            /** Used to render flat shading without pre computing normals without geometry shader*/
+  PROGRAM_SOLID_WIREFRAME,     //! Used to render edges with width superior to 1.
+  NB_OF_PROGRAMS               /** Holds the number of different programs in this enum.*/
  };
   typedef CGAL::Bbox_3 Bbox;
-  typedef qglviewer::ManipulatedFrame ManipulatedFrame;
+  typedef CGAL::qglviewer::ManipulatedFrame ManipulatedFrame;
   //! \brief The default color of a scene_item.
   //!
   //! This color is the one that will be displayed if none is specified after its creation.
@@ -149,11 +153,6 @@ public:
    * @see initializeBuffers()
    */
   virtual void drawPoints(CGAL::Three::Viewer_interface*) const { drawPoints(); }
-
-  //! Draws the splats of the item in the viewer using GLSplat functions.
-  virtual void drawSplats() const {}
-  //! Draws the splats of the item in the viewer using the GLSplat library.
-  virtual void drawSplats(CGAL::Three::Viewer_interface*) const {drawSplats();}
 
   //! Called by the scene. If b is true, then this item is currently selected.
   virtual void selection_changed(bool b);
@@ -237,7 +236,19 @@ public:
   //! the Operations menu, actions to save or clone the item if it is supported
   //! and any contextual action for the item.
   virtual QMenu* contextMenu();
+  //!
+  //! \brief setId informs the item of its current index in the scene entries.
+  //!
+  void setId(int id);
 
+  //!
+  //! \brief getId returns the current index of this item in the scene entries.
+  //!
+  int getId()const;
+
+  //! invalidates the context menu. Call it when supportsRenderingMode() changes, 
+  //! for example.
+  void resetMenu();
   //!Handles key press events.
   virtual bool keyPressEvent(QKeyEvent*){return false;}
 
@@ -350,17 +361,21 @@ public Q_SLOTS:
   void setPointsPlusNormalsMode(){
     setRenderingMode(PointsPlusNormals);
   }
-  //!Sets the RenderingMode to Splatting.
-  void setSplattingMode(){
-    setRenderingMode(Splatting);
-  }
   
   //!Emits an aboutToBeDestroyed() signal.
   //!Override this function to delete what needs to be deleted on destruction.
   //!This might be needed as items are not always deleted right away by Qt and this behaviour may cause a simily
   //!memory leak, for example when multiple items are created at the same time.
   virtual void itemAboutToBeDestroyed(Scene_item*);
-
+  //!Returns the alpha value for the item.
+    //! Must be called within a valid openGl context.
+    virtual float alpha() const;
+  
+    //! Sets the value of the aplha Slider for this item.
+    //!
+    //! Must be overriden;
+    //! \param alpha must be between 0 and 255
+    virtual void setAlpha(int alpha);
   //!Selects a point through raycasting.
   virtual void select(double orig_x,
                       double orig_y,
@@ -438,6 +453,7 @@ protected:
   /*! Contains the VAOs.
    */
   std::vector<QOpenGLVertexArrayObject*> vaos;
+  int cur_id;
   //!Adds a VAO to the Map.
   void addVaos(int i)
   {
@@ -445,15 +461,10 @@ protected:
       vaos[i] = n_vao;
   }
 
-  /*! Fills the VBOs with data. Must be called after each call to #computeElements().
-   * @see compute_elements()
+  /*! Fills the VBOs with data.
    */
   void initializeBuffers(){}
 
-  /*! Collects all the data for the shaders. Must be called in #invalidateOpenGLBuffers().
-   * @see invalidateOpenGLBuffers().
-   */
-  void computeElements(){}
   /*! Passes all the uniform data to the shaders.
    * According to program_name, this data may change.
    */

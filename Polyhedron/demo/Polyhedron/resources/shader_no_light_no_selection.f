@@ -1,6 +1,17 @@
-#version 120
-varying highp vec4 color;
+#version 150
+in vec4 color;
+in float dist[6];
+uniform bool is_clipbox_on;
+out vec4 out_color;
 void main(void) 
 {
-  gl_FragColor = color; 
+if(is_clipbox_on)
+  if(dist[0]>0.0 ||
+     dist[1]>0.0 ||
+     dist[2]>0.0 ||
+     dist[3]>0.0 ||
+     dist[4]>0.0 ||
+     dist[5]>0.0)
+    discard;
+  out_color = color; 
 }  

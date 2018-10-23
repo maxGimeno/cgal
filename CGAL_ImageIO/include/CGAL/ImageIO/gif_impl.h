@@ -15,6 +15,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0+
 //
 //
 // Author(s)     :  ASCLEPIOS Project (INRIA Sophia-Antipolis), Laurent Rineau
@@ -697,4 +698,6 @@ static int GifError(const char *st) {
   
   return -1;
 }
+
+#undef CGAL_GLOBAL_STATE_VAR
 

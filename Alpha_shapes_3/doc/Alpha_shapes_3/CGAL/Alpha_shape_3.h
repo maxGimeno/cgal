@@ -17,8 +17,9 @@ The modifying functions `insert` and `remove` will overwrite
 the one inherited from the underlying triangulation class `Dt`.
 At the moment, only the static version is implemented.
 
-\tparam Dt must be either `Delaunay_triangulation_3`, `Regular_triangulation_3`
-or `Periodic_3_triangulation_3`. Note that `Dt::Geom_traits`, `Dt::Vertex`, and `Dt::Face`
+\tparam Dt must be either `Delaunay_triangulation_3`, `Regular_triangulation_3`,
+`Periodic_3_Delaunay_triangulation_3` or `Periodic_3_regular_triangulation_3`.
+Note that `Dt::Geom_traits`, `Dt::Vertex`, and `Dt::Face`
 must be model the concepts `AlphaShapeTraits_3`,
 `AlphaShapeVertex_3` and `AlphaShapeCell_3`, respectively.
 
@@ -31,7 +32,9 @@ overhead. Note that the tag `ExactAlphaComparisonTag` is currently ignored (mean
 if `Dt::Geom_traits::FT` is not a floating point number type as this strategy
 does not make sense if the traits class already provides exact constructions.
 
-\warning When the tag `ExactAlphaComparisonTag` is set to \link Tag_true `Tag_true`\endlink,
+\warning
+<ul>
+<li>When the tag `ExactAlphaComparisonTag` is set to \link Tag_true `Tag_true`\endlink,
 the class `Cartesian_converter` is used internally to switch between the traits class
 and the %CGAL kernel `CGAL::Simple_cartesian<NT>`, where `NT` can be either `CGAL::Interval_nt` or
 `CGAL::Exact_rational`. `Cartesian_converter` must thus offer the necessary functors
@@ -41,9 +44,19 @@ the basic `Cartesian_converter`, for example when a custom point is used.
 In this case, a partial specialization of `Cartesian_converter`
 must be provided by the user. An example of such specialization is given in the
 two-dimensional Alpha Shapes example \ref Alpha_shapes_2/ex_alpha_projection_traits.cpp "ex_alpha_projection_traits.cpp".
+<li>The tag `ExactAlphaComparisonTag` cannot be used in conjonction with periodic triangulations.
+When the tag `ExactAlphaComparisonTag` is set to \link Tag_true `Tag_true`\endlink,
+the evaluations of predicates such as `Side_of_oriented_sphere_3` are done lazily.
+Consequently, the predicates store pointers to the geometrical positions of the
+points passed as arguments of the predicates. It is thus important that
+these points are not temporary objects. Points of the triangulation are accessed
+using the function `point(Cell_handle, int)` of the underlying triangulation.
+In the case of periodic triangulations, the `point(Cell_handle, int)` function
+is actually a construction that returns a temporary, which thus cannot be used
+along with a lazy predicate evaluation.
+</ul>
 
 \cgalHeading{I/O}
-
 The I/O operators are defined for `iostream`, and for 
 the window stream provided by \cgal. The format for the iostream 
 is an internal format. 
@@ -438,13 +451,13 @@ size_type number_of_solid_components(const FT& alpha = get_alpha()) const;
 
 /*!
 Returns an iterator pointing to smallest \f$ \alpha\f$ value 
-such that the alpha shape satisfies the following two properties: 
+such that the alpha shape satisfies the following two properties:
 
-all data points are either on the boundary or in the interior 
-of the regularized version of the alpha shape. 
+- All data points are either on the boundary or in the interior
+of the regularized version of the alpha shape.
 
-The number of solid component of the alpha shape is equal to or 
-smaller than `nb_components`. 
+- The number of solid component of the alpha shape is equal to or
+smaller than `nb_components`.
 */ 
 Alpha_iterator find_optimal_alpha(size_type nb_components) const; 
 

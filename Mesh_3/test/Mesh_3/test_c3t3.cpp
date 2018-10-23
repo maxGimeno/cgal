@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Stephane Tayeb
@@ -31,7 +32,7 @@
 // IO
 #include <fstream>
 #include <iostream>
-#include <CGAL/IO/Polyhedron_iostream.h>
+#include <CGAL/Polyhedron_3.h>
 #include <CGAL/IO/File_medit.h>
 #include <CGAL/IO/File_tetgen.h>
 

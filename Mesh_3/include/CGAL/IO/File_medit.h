@@ -15,6 +15,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Laurent RINEAU, Stephane Tayeb
@@ -24,24 +25,25 @@
 
 #include <CGAL/license/Mesh_3.h>
 
-
 #include <CGAL/Mesh_3/config.h>
 
-#include <iostream>
-#include <iomanip>
-#include <map>
-#include <set>
-#include <vector>
-#include <string>
 #include <CGAL/utility.h>
 #include <CGAL/basic.h>
 
+#include <boost/type_traits/is_same.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/utility/enable_if.hpp>
+
+#include <iomanip>
+#include <iostream>
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
 
 namespace CGAL {
 
 namespace Mesh_3 {
-
 
 //-------------------------------------------------------
 // Needed in verbose mode
@@ -790,7 +792,7 @@ output_to_medit(std::ostream& os,
        ++vit)
   {
     V[vit] = inum++;
-    Weighted_point p = vit->point();
+    Weighted_point p = tr.point(vit);
     os << CGAL::to_double(p.x()) << ' '
        << CGAL::to_double(p.y()) << ' '
        << CGAL::to_double(p.z()) << ' '
@@ -863,9 +865,6 @@ output_to_medit(std::ostream& os,
 
 } // end namespace Mesh_3
 
-  
-
-  
 /**
  * @brief outputs mesh to medit format
  * @param os the stream
@@ -880,7 +879,7 @@ void
 output_to_medit(std::ostream& os,
                 const C3T3& c3t3,
                 bool rebind = false,
-                bool show_patches = false) 
+                bool show_patches = false)
 {
   if ( rebind )
   {

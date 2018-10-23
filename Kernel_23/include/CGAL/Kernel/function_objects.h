@@ -18,6 +18,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0+
 //
 //
 // Author(s)     : Stefan Schirra, Sylvain Pion,
@@ -2048,6 +2049,20 @@ namespace CommonKernelFunctors {
       CGAL_assertion(e_pt!=NULL);
       return *e_pt;
     }
+
+    Point
+    operator()(const Plane& plane,
+               const Point& l1, const Point& l2) const
+    {
+      Line line = construct_line( l1, l2 );
+
+      typename cpp11::result_of<typename K::Intersect_3(Plane,Line)>::type
+        res = typename K::Intersect_3()(plane,line);
+      CGAL_assertion(res!=boost::none);
+      const Point* e_pt = boost::get<Point>(&(*res));
+      CGAL_assertion(e_pt!=NULL);
+      return *e_pt;
+    }
   };
 
   template <typename K>
@@ -2854,10 +2869,7 @@ namespace CommonKernelFunctors {
                const typename K::Segment_3& segment,
                const K& k)
     {
-      typedef typename K::Point_3 Point_3;
 
-      typename K::Construct_projected_point_3 projection =
-          k.construct_projected_point_3_object();
       typename K::Is_degenerate_3 is_degenerate =
           k.is_degenerate_3_object();
       typename K::Construct_vertex_3 vertex =
@@ -2866,20 +2878,27 @@ namespace CommonKernelFunctors {
       if(is_degenerate(segment))
         return vertex(segment, 0);
 
-      // Project query on segment supporting line
-      const Point_3 proj = projection(segment.supporting_line(), query);
-
-      Point_3 closest_point_on_segment;
-      bool inside = is_inside_segment_3(proj,segment,closest_point_on_segment,k);
-
+      if(segment.to_vector() * (query-segment.source()) <= 0)
+        return segment.source();
+      if(segment.to_vector() * (query-segment.target()) >= 0)
+        return segment.target();
       // If proj is inside segment, returns it
-      if ( inside )
-        return proj;
-
-      // Else returns the constructed point
-      return closest_point_on_segment;
+      return k.construct_projected_point_3_object()(segment.supporting_line(), query);
     }
 
+    typename K::Point_3
+    operator()(const typename K::Point_3& query,
+               const typename K::Ray_3& ray,
+               const K& k)
+    {
+      if ( ray.to_vector() * (query-ray.source()) <= 0)
+        return ray.source();
+      else
+      {
+        return k.construct_projected_point_3_object()(ray.supporting_line(), query);
+      }
+    }
+    
     // code for operator for plane and point is defined in
     // CGAL/Cartesian/function_objects.h and CGAL/Homogeneous/function_objects.h
   };
@@ -3239,6 +3258,47 @@ namespace CommonKernelFunctors {
       );
       return c.rep().has_on_bounded_side(p); 
     }
+
+    bool operator()(const Sphere_3& s1, const Sphere_3& s2,
+                    const Point_3& a, const Point_3& b) const
+    {
+      typedef typename K::Circle_3    Circle_3;
+      typedef typename K::Point_3     Point_3;
+      typedef typename K::Segment_3   Segment_3;
+      typedef typename K::Plane_3     Plane_3;
+      typedef typename K::Intersect_3 Intersect_3;
+
+      const Has_on_bounded_side_3& has_on_bounded_side = *this;
+
+      const bool a_in_s1 = has_on_bounded_side(s1, a);
+      const bool a_in_s2 = has_on_bounded_side(s2, a);
+
+      if(!(a_in_s1 || a_in_s2)) return false;
+
+      const bool b_in_s1 = has_on_bounded_side(s1, b);
+      const bool b_in_s2 = has_on_bounded_side(s2, b);
+
+      if(!(b_in_s1 || b_in_s2)) return false;
+
+      if(a_in_s1 && b_in_s1) return true;
+      if(a_in_s2 && b_in_s2) return true;
+
+      if(!K().do_intersect_3_object()(s1, s2)) return false;
+      const Circle_3 circ(s1, s2);
+      const Plane_3& plane = circ.supporting_plane();
+      typename CGAL::cpp11::result_of<Intersect_3(Plane_3, Segment_3)>::type
+        optional = K().intersect_3_object()(plane, Segment_3(a, b));
+      CGAL_kernel_assertion_msg(bool(optional) == true,
+                                "the segment does not intersect the supporting"
+                                " plane");
+      using boost::get;
+      const Point_3* p = get<Point_3>(&*optional);
+      CGAL_kernel_assertion_msg(p != 0,
+                                "the segment intersection with the plane is "
+                                "not a point");
+      return squared_distance(circ.center(), *p) < circ.squared_radius();
+    }
+
   };
 
   template <typename K>

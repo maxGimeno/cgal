@@ -17,6 +17,9 @@ if ( CGAL_FOUND )
 
   # VisualC++ optimization for applications dealing with large data
   if (MSVC)
+    # Quit warning in the lasreader
+    add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS)
+    
     if ( CMAKE_SIZEOF_VOID_P EQUAL 4 )
       # Allow Windows 32bit applications to use up to 3GB of RAM
       SET (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
@@ -30,20 +33,16 @@ if ( CGAL_FOUND )
   endif()
 
   # Activate concurrency?
-  option(ACTIVATE_CONCURRENT_PSP3
+  option(CGAL_ACTIVATE_CONCURRENT_PSP3
          "Enable concurrency"
          OFF)
      
-  if( ACTIVATE_CONCURRENT_PSP3 OR ENV{ACTIVATE_CONCURRENT_PSP3} )
+  if( CGAL_ACTIVATE_CONCURRENT_PSP3 OR ENV{CGAL_ACTIVATE_CONCURRENT_PSP3} )
     find_package( TBB REQUIRED )
-    if( TBB_FOUND )
-      include(${TBB_USE_FILE})
-      list(APPEND CGAL_3RD_PARTY_LIBRARIES ${TBB_LIBRARIES})
-    endif()
   endif()
 
   # Executables that do *not* require EIGEN or LAPACK
-  create_single_source_cgal_program( "average_spacing_example.cpp" )
+    create_single_source_cgal_program( "average_spacing_example.cpp" )
   create_single_source_cgal_program( "bilateral_smooth_point_set_example.cpp" )
   create_single_source_cgal_program( "grid_simplification_example.cpp" )
   create_single_source_cgal_program( "grid_simplify_indices.cpp" )
@@ -58,6 +57,7 @@ if ( CGAL_FOUND )
   create_single_source_cgal_program( "wlop_simplify_and_regularize_point_set_example.cpp" )
   create_single_source_cgal_program( "edge_aware_upsample_point_set_example.cpp" )
   create_single_source_cgal_program( "structuring_example.cpp" )
+  create_single_source_cgal_program( "callback_example.cpp" )
 
   set(needed_cxx_features cxx_rvalue_references cxx_variadic_templates)    
   create_single_source_cgal_program( "read_ply_points_with_colors_example.cpp" CXX_FEATURES ${needed_cxx_features} )
@@ -69,7 +69,7 @@ if ( CGAL_FOUND )
     include_directories(${LASLIB_INCLUDE_DIR})
     include_directories(${LASZIP_INCLUDE_DIR})
     create_single_source_cgal_program( "read_las_example.cpp" CXX_FEATURES ${needed_cxx_features} )
-    target_link_libraries(read_las_example ${LASLIB_LIBRARIES})
+    target_link_libraries(read_las_example PRIVATE ${LASLIB_LIBRARIES})
   else()
     message(STATUS "NOTICE : the LAS reader test requires LASlib and will not be compiled.")
   endif()
@@ -96,6 +96,20 @@ if ( CGAL_FOUND )
 
   endif(EIGEN3_FOUND OR LAPACK_FOUND)
 
+  foreach(target
+      scale_estimation_example
+      wlop_simplify_and_regularize_point_set_example
+      bilateral_smooth_point_set_example
+      edge_aware_upsample_point_set_example
+      average_spacing_example
+      normals_example
+      jet_smoothing_example
+      normal_estimation
+      callback_example)
+    if(TBB_FOUND AND TARGET ${target})
+      CGAL_target_use_TBB(${target})
+    endif()
+  endforeach()
 
 else()
     message(STATUS "NOTICE: This program requires the CGAL library, and will not be compiled.")

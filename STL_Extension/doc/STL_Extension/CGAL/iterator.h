@@ -295,8 +295,7 @@ think of it as being connected to <TT>/dev/null</TT>.
 
 */
 
-class Emptyset_iterator {
-public:
+struct Emptyset_iterator {
 
 /// \name Creation
 /// @{
@@ -348,8 +347,7 @@ argument, and not the iterator itself.
 
 */
 template< typename Iterator, typename Predicate >
-class Filter_iterator {
-public:
+struct Filter_iterator {
 
 /// \name Creation
 /// @{
@@ -646,7 +644,7 @@ Join_input_iterator_2(I1 i1,I2 i2,const Op& op=Op());
 /*!
 \ingroup STLIterators
 
-The class `Join_input_iterator_3` joins two iterators. The result is again an iterator (of the same
+The class `Join_input_iterator_3` joins three iterators. The result is again an iterator (of the same
 iterator category type as the original iterator) that reads an object
 from the stream and applies a function object to that object.
 

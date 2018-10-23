@@ -12,11 +12,15 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
+// $URL$
+// $Id$
+// SPDX-License-Identifier: LGPL-3.0+
+//
 // Author(s)     : Philipp Möller, Mael Rouxel-Labbé
 
 // Including this header will cause compilation to fail
 // if CGAL_NO_DEPRECATED_CODE is defined. If this is not the case, it will issue
-// a warning during compilation unless CGAL_NO_DEPRECATION_WARNINGS.
+// a warning during compilation, unless CGAL_NO_DEPRECATION_WARNINGS is defined.
 
 // CGAL_DEPRECATED_HEADER, CGAL_REPLACEMENT_HEADER, and
 // CGAL_DEPRECATED_MESSAGE_DETAILS can be defined
@@ -52,11 +56,11 @@
 #  define CGAL_INTERNAL_DEPRECATED_MESSAGE_HEADERS \
             CGAL_INTERNAL_DEPRECATED_MESSAGE_DEPRECATED_HEADER \
             CGAL_INTERNAL_NO_DEPRECATED_CODE_MESSAGE \
-            " Please use `" CGAL_REPLACEMENT_HEADER "` instead.\n"
+            " Please use `" CGAL_REPLACEMENT_HEADER "` instead. "
 #else
 #  define CGAL_INTERNAL_DEPRECATED_MESSAGE_HEADERS \
             CGAL_INTERNAL_DEPRECATED_MESSAGE_DEPRECATED_HEADER \
-            CGAL_INTERNAL_NO_DEPRECATED_CODE_MESSAGE "\n"
+            CGAL_INTERNAL_NO_DEPRECATED_CODE_MESSAGE " "
 #endif
 
 // if more details are given, print them

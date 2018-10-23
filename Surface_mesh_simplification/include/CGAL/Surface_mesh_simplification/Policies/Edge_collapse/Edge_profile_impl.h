@@ -13,6 +13,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
 //
@@ -27,13 +28,13 @@ namespace CGAL {
 namespace Surface_mesh_simplification
 {
 
-  template<class ECM, class VertexPointMap>
+  template<class TM, class VertexPointMap>
 
 template<class VertexIdxMap
         ,class EdgeIdxMap
         >
-  Edge_profile<ECM,VertexPointMap>::Edge_profile ( halfedge_descriptor  const& aV0V1
-                                , ECM&                    aSurface
+  Edge_profile<TM,VertexPointMap>::Edge_profile ( halfedge_descriptor  const& aV0V1
+                                , TM&                    aSurface
                                 , VertexIdxMap     const& 
                                 , VertexPointMap const& aVertex_point_map
                                 , EdgeIdxMap       const&
@@ -101,8 +102,8 @@ template<class VertexIdxMap
 }
 
 
-  template<class ECM, class VertexPointMap>
-  void Edge_profile<ECM,VertexPointMap>::Extract_borders()
+  template<class TM, class VertexPointMap>
+  void Edge_profile<TM,VertexPointMap>::Extract_borders()
 {
   halfedge_descriptor e = mV0V1;
   halfedge_descriptor oe = opposite(e, surface_mesh());
@@ -134,8 +135,8 @@ template<class VertexIdxMap
 
 // Extract all triangles (its normals) and vertices (the link) around the collapsing edge p_q
 //
-  template<class ECM, class VertexPointMap>
-  void Edge_profile<ECM,VertexPointMap>::Extract_triangles_and_link()
+  template<class TM, class VertexPointMap>
+  void Edge_profile<TM,VertexPointMap>::Extract_triangles_and_link()
 {
   #ifdef CGAL_SMS_EDGE_PROFILE_ALWAYS_NEED_UNIQUE_VERTEX_IN_LINK
   std::set<vertex_descriptor> vertex_already_inserted;
@@ -152,7 +153,7 @@ template<class VertexIdxMap
 
   // counterclockwise around v0
   halfedge_descriptor e02 = opposite(prev(v0_v1(),surface_mesh()), surface_mesh());
-  vertex_descriptor v, v2 =target(e02,surface_mesh());
+  vertex_descriptor v=target(e02,surface_mesh()), v2=v;
   while(e02 != endleft) {
     #ifdef CGAL_SMS_EDGE_PROFILE_ALWAYS_NEED_UNIQUE_VERTEX_IN_LINK
     if (vertex_already_inserted.insert(v2).second)
@@ -161,12 +162,14 @@ template<class VertexIdxMap
     bool is_b = is_border(e02);
     e02 = opposite(prev(e02,surface_mesh()), surface_mesh());
     v = target(e02,surface_mesh());
-    if(! is_b){
+    if( !is_b )
       mTriangles.push_back(Triangle(v,v0(),v2) ) ;
-    }
     v2 = v;
   }
-  if(v != vR() && (v!= vertex_descriptor())){
+
+  e02 = opposite(prev(v1_v0(),surface_mesh()), surface_mesh());
+  if(target(e02, surface_mesh())!=v ) // add the vertex if it is not added in the following loop
+  {
     #ifdef CGAL_SMS_EDGE_PROFILE_ALWAYS_NEED_UNIQUE_VERTEX_IN_LINK
     if (vertex_already_inserted.insert(v).second)
     #endif
@@ -174,8 +177,8 @@ template<class VertexIdxMap
   }
 
   // counterclockwise around v1
-  e02 = opposite(prev(v1_v0(),surface_mesh()), surface_mesh());
   v2 = target(e02,surface_mesh());
+  v = v2;
   while(e02 != endright) {
     #ifdef CGAL_SMS_EDGE_PROFILE_ALWAYS_NEED_UNIQUE_VERTEX_IN_LINK
     if (vertex_already_inserted.insert(v2).second)
@@ -184,18 +187,22 @@ template<class VertexIdxMap
     bool is_b = is_border(e02);
     e02 = opposite(prev(e02,surface_mesh()), surface_mesh());
     v = target(e02,surface_mesh());
-    if(! is_b){
+    if( !is_b ){
       mTriangles.push_back(Triangle(v,v1(),v2) ) ;
     }
     v2 = v;
   }
-  if(v != vL() && (v!= vertex_descriptor())){
+
+  if(mLink.empty() || //handle link of an isolated triangle
+     target(opposite(prev(v0_v1(),surface_mesh()), surface_mesh()), surface_mesh())!=v)
+  {
     #ifdef CGAL_SMS_EDGE_PROFILE_ALWAYS_NEED_UNIQUE_VERTEX_IN_LINK
     if (vertex_already_inserted.insert(v).second)
     #endif
     mLink.push_back(v);
   }
-  
+
+  CGAL_assertion(!mLink.empty());
 }
 
 } // namespace Surface_mesh_simplification

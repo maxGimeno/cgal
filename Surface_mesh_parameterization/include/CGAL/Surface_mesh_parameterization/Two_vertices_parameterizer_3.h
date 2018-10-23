@@ -12,6 +12,10 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
 // Author(s)     : Laurent Saboret, Pierre Alliez, Bruno Levy
 
 #ifndef CGAL_SURFACE_MESH_PARAMETERIZATION_TWO_VERTICES_PARAMETERIZER_3_H_INCLUDED
@@ -19,11 +23,15 @@
 
 #include <CGAL/license/Surface_mesh_parameterization.h>
 
+#include <CGAL/disable_warnings.h>
+
 #include <CGAL/Surface_mesh_parameterization/internal/Containers_filler.h>
 #include <CGAL/Surface_mesh_parameterization/internal/kernel_traits.h>
 #include <CGAL/Surface_mesh_parameterization/Error_code.h>
 
+#include <CGAL/Polygon_mesh_processing/connected_components.h>
 #include <boost/foreach.hpp>
+#include <boost/function_output_iterator.hpp>
 
 #include <cfloat>
 #include <climits>
@@ -129,12 +137,12 @@ public:
     const PPM ppmap = get(vertex_point, mesh);
 
     // Get mesh's bounding box
-    double xmin = (std::numeric_limits<double>::max)();
-    double ymin = (std::numeric_limits<double>::max)();
-    double zmin = (std::numeric_limits<double>::max)();
-    double xmax = (std::numeric_limits<double>::min)();
-    double ymax = (std::numeric_limits<double>::min)();
-    double zmax = (std::numeric_limits<double>::min)();
+    double xmin = std::numeric_limits<double>::infinity();
+    double ymin = std::numeric_limits<double>::infinity();
+    double zmin = std::numeric_limits<double>::infinity();
+    double xmax = -std::numeric_limits<double>::infinity();
+    double ymax = -std::numeric_limits<double>::infinity();
+    double zmax = -std::numeric_limits<double>::infinity();
 
     BOOST_FOREACH(vertex_descriptor vd, vertices) {
       const Point_3& position = get(ppmap,vd);
@@ -226,10 +234,10 @@ public:
 
     // Project onto longest bounding box axes,
     // Set extrema vertices' (u,v) in unit square and mark them as "parameterized"
-    double umin = (std::numeric_limits<double>::max)();
-    double umax = (std::numeric_limits<double>::min)();
-    double vmin = (std::numeric_limits<double>::max)();
-    double vmax = (std::numeric_limits<double>::min)();
+    double umin = std::numeric_limits<double>::infinity();
+    double umax = -std::numeric_limits<double>::infinity();
+    double vmin = std::numeric_limits<double>::infinity();
+    double vmax = -std::numeric_limits<double>::infinity();
 
     BOOST_FOREACH(vertex_descriptor vd, vertices) {
       const Point_3& position = get(ppmap, vd);
@@ -319,5 +327,7 @@ public:
 } // Surface_mesh_parameterization
 
 } // namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_SURFACE_MESH_PARAMETERIZATION_TWO_VERTICES_PARAMETERIZER_3_H_INCLUDED

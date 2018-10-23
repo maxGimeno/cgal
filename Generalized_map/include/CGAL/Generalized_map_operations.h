@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0+
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 //
@@ -22,6 +23,7 @@
 
 #include <CGAL/GMap_dart_const_iterators.h>
 #include <CGAL/internal/Combinatorial_map_group_functors.h>
+#include <CGAL/Combinatorial_map_basic_operations.h>
 
 #include <deque>
 

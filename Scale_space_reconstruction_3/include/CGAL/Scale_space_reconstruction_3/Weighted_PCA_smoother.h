@@ -14,6 +14,10 @@
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
 // Author(s):      Thijs van Lankveld, Simon Giraudot
 
 
@@ -57,11 +61,10 @@ namespace Scale_space_reconstruction_3
 
  *  \tparam DiagonalizeTraits model of `DiagonalizeTraits` that
  *  determines how to diagonalize a weighted covariance matrix to
- *  approximate a weighted point set. It can be omitted: if Eigen 3
- *  (or greater) is available and `CGAL_EIGEN3_ENABLED` is defined
- *  then an overload using `Eigen_diagonalize_traits` is
- *  provided. Otherwise, the internal implementation
- *  `Diagonalize_traits` is used.
+ *  approximate a weighted point set. It can be omitted if Eigen 3 (or
+ *  greater) is available and `CGAL_EIGEN3_ENABLED` is defined: in
+ *  that case, an overload using `Eigen_diagonalize_traits` is
+ *  provided.
  *  \tparam ConcurrencyTag indicates whether to use concurrent
  *  processing. It can be omitted: if TBB (or greater) is available
  *  and `CGAL_LINKED_WITH_TBB` is defined then `Parallel_tag` is

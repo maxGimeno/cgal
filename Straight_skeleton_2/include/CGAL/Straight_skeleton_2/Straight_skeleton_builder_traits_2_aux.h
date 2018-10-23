@@ -13,6 +13,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Fernando Cacciola <fernando_cacciola@ciudad.com.ar>
 //
@@ -125,7 +126,7 @@ public:
       if ( fr )
         return From_Filtered(fr);
     }
-    catch (Uncertain_conversion_exception) {}
+    catch (Uncertain_conversion_exception&) {}
 
     Protect_FPU_rounding<!Protection> P(CGAL_FE_TONEAREST);
     EC_result_type er = Exact_construction(To_Exact(a1)) ;
@@ -143,7 +144,7 @@ public:
       if ( fr )
         return From_Filtered(fr);
     }
-    catch (Uncertain_conversion_exception) {}
+    catch (Uncertain_conversion_exception&) {}
     
     Protect_FPU_rounding<!Protection> P(CGAL_FE_TONEAREST);
     EC_result_type er = Exact_construction(To_Exact(a1), To_Exact(a2)) ;
@@ -161,7 +162,7 @@ public:
       if ( fr )
         return From_Filtered(fr);
     }
-    catch (Uncertain_conversion_exception) {}
+    catch (Uncertain_conversion_exception&) {}
     
     Protect_FPU_rounding<!Protection> P(CGAL_FE_TONEAREST);
     EC_result_type er = Exact_construction(To_Exact(a1), To_Exact(a2), To_Exact(a3)) ;
@@ -180,7 +181,7 @@ public:
       if ( fr )
         return From_Filtered(fr);
     }
-    catch (Uncertain_conversion_exception) {}
+    catch (Uncertain_conversion_exception&) {}
     
     Protect_FPU_rounding<!Protection> P(CGAL_FE_TONEAREST);
     EC_result_type er = Exact_construction(To_Exact(a1), To_Exact(a2), To_Exact(a3), To_Exact(a4)) ;
@@ -199,7 +200,7 @@ public:
       if ( fr )
         return From_Filtered(fr);
     }
-    catch (Uncertain_conversion_exception) {}
+    catch (Uncertain_conversion_exception&) {}
     
     Protect_FPU_rounding<!Protection> P(CGAL_FE_TONEAREST);
     EC_result_type er = Exact_construction(To_Exact(a1), To_Exact(a2), To_Exact(a3), To_Exact(a4), To_Exact(a5)) ;
@@ -299,10 +300,10 @@ public:
         mCSIdx=0; mNCSIdx=1; break ;
         
       case TRISEGMENT_COLLINEARITY_ALL:
-        mCSIdx=-1; mNCSIdx=-1; break ;
+        mCSIdx = mNCSIdx = (std::numeric_limits<unsigned>::max)(); break ;
         
       case TRISEGMENT_COLLINEARITY_NONE:
-        mCSIdx=-1; mNCSIdx=-1; break ;
+        mCSIdx = mNCSIdx = (std::numeric_limits<unsigned>::max)(); break ;
     }
   }
     

@@ -15,6 +15,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 // 
 // Author(s) : Jane Tournois, Raul Gallegos, Pierre Alliez, Stéphane Tayeb
 //
@@ -145,7 +146,7 @@ public:
                                             moving_vertices.size()/100);
     big_moves_.resize(big_moves_size, FT(0));
 
-    std::size_t nb_vertices_moved = -1;
+    std::size_t nb_vertices_moved = (std::numeric_limits<std::size_t>::max)();
     bool convergence_stop = false;
 
     // Iterate
@@ -307,7 +308,7 @@ private:
     // Find the minimum value
     do
     {
-      if(face->is_in_domain())
+      if (!cdt_.is_infinite(face))
         min_sqr = (std::min)(min_sqr, sq_circumradius(face));
       face++;
     }

@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 // 
 //
 // Author(s)     : Sebastien Loriot
@@ -23,6 +24,7 @@
 
 #include <CGAL/license/Spatial_searching.h>
 
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/Kd_tree_rectangle.h>
 #include <CGAL/Euclidean_distance.h> //for default distance specialization
@@ -31,6 +33,7 @@
 
 #include <boost/mpl/has_xxx.hpp>
 #include <boost/type_traits/is_same.hpp>
+#include <boost/utility/enable_if.hpp>
 
 namespace CGAL{
 
@@ -109,11 +112,23 @@ public:
     // This is needed because of an undocumented requirement of 
     // Orthogonal_k_neighbor_search and Orthogonal_incremental_neighbor_search: 
     // Traits::Construct_cartesian_const_iterator should be callable 
-    // on the query point type
-    typename Base_traits::Cartesian_const_iterator_d operator()(const typename Base_traits::Point_d& p) const
+    // on the query point type. If the query point type is the same as
+    // Point_with_info, we disable it.
+
+    template <typename Point> // boost::disable_if requires a template argument to work
+    typename Base_traits::Cartesian_const_iterator_d operator()(const Point& p,
+                                                                typename boost::disable_if<
+                                                                boost::is_same<Point_with_info,
+                                                                Point> >::type* = 0
+      ) const
     { return Base::operator() (p); }
 
-    typename Base_traits::Cartesian_const_iterator_d operator()(const typename Base_traits::Point_d& p, int)  const
+    template <typename Point> // boost::disable_if requires a template argument to work
+    typename Base_traits::Cartesian_const_iterator_d operator()(const Point& p, int,
+                                                                typename boost::disable_if<
+                                                                boost::is_same<Point_with_info,
+                                                                Point> >::type* = 0
+      ) const
     { return Base::operator() (p,0); }
   };
   
@@ -191,5 +206,7 @@ public:
 };
 
 }//namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif //CGAL_SEARCH_TRAITS_WITH_INFO

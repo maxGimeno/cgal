@@ -9,6 +9,7 @@
 #include "Scene_edit_polyhedron_item.h"
 #include "Scene_polyhedron_selection_item.h"
 #include <CGAL/Polygon_mesh_processing/repair.h>
+#include <CGAL/Polygon_mesh_processing/shape_predicates.h>
 #include <QAction>
 #include <QMainWindow>
 #include <QFileDialog>
@@ -126,7 +127,13 @@ void Polyhedron_demo_edit_polyhedron_plugin::init(QMainWindow* mainWindow, CGAL:
 {
   mw = mainWindow;
   scene = scene_interface;
-  actionDeformation = new QAction("Surface Mesh Deformation", mw);
+  actionDeformation = new QAction(
+      #ifdef USE_SURFACE_MESH
+          "Surface Mesh Deformation"
+      #else
+          " Polyhedron Deformation"
+      #endif
+        , mw);
   actionDeformation->setProperty("subMenuName", "Triangulated Surface Mesh Deformation");
   actionDeformation->setObjectName("actionDeformation");
   actionDeformation->setShortcutContext(Qt::ApplicationShortcut);
@@ -140,10 +147,24 @@ void Polyhedron_demo_edit_polyhedron_plugin::init(QMainWindow* mainWindow, CGAL:
 
   ////////////////// Construct widget /////////////////////////////
   // First time, construct docking window
-  dock_widget = new QDockWidget("Mesh Deformation", mw);
+  dock_widget = new QDockWidget(
+      #ifdef USE_SURFACE_MESH
+          "Surface Mesh Deformation"
+      #else
+          " Polyhedron Deformation"
+      #endif
+        , mw);
   dock_widget->setVisible(false); // do not show at the beginning
 
   ui_widget.setupUi(dock_widget); 
+  dock_widget->setWindowTitle(tr(
+                              #ifdef USE_SURFACE_MESH
+                                  "Surface Mesh Deformation"
+                              #else
+                                  " Polyhedron Deformation"
+                              #endif
+                                ));
+
   mw->addDockWidget(Qt::LeftDockWidgetArea, dock_widget);
 
   connect(ui_widget.AddCtrlVertPushButton, SIGNAL(clicked()), this, SLOT(on_AddCtrlVertPushButton_clicked()));
@@ -376,6 +397,7 @@ void Polyhedron_demo_edit_polyhedron_plugin::dock_widget_visibility_changed(bool
         Scene_facegraph_item* item = convert_to_plain_facegraph(i, edit_item);
         item->setRenderingMode(last_RM);
         updateSelectionItems(item);
+        item->itemChanged();
       }
     }
   }
@@ -400,10 +422,7 @@ void Polyhedron_demo_edit_polyhedron_plugin::dock_widget_visibility_changed(bool
         bool is_valid = true;
         BOOST_FOREACH(boost::graph_traits<Face_graph>::face_descriptor fd, faces(*poly_item->face_graph()))
         {
-          if (CGAL::is_degenerate_triangle_face(fd,
-                                 *poly_item->face_graph(),
-                                 get(boost::vertex_point,
-                                     *poly_item->face_graph()), Kernel()))
+          if (CGAL::Polygon_mesh_processing::is_degenerate_triangle_face(fd, *poly_item->face_graph()))
           {
             is_valid = false;
             break;
@@ -581,7 +600,7 @@ void Polyhedron_demo_edit_polyhedron_plugin::importSelection(Scene_polyhedron_se
   }
   edit_item->invalidateOpenGLBuffers();
   selection_item->setVisible(false);
-  (*QGLViewer::QGLViewerPool().begin())->update();
+  (*CGAL::QGLViewer::QGLViewerPool().begin())->update();
 }
 
 void Polyhedron_demo_edit_polyhedron_plugin::updateSelectionItems(Scene_facegraph_item* target)

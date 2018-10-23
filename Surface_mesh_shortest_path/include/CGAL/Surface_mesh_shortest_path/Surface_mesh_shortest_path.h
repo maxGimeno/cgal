@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Stephen Kiazyk
 
@@ -22,6 +23,7 @@
 
 #include <CGAL/license/Surface_mesh_shortest_path.h>
 
+#include <CGAL/disable_warnings.h>
 
 #include <iterator>
 #include <vector>
@@ -45,6 +47,7 @@
 #include <CGAL/Surface_mesh_shortest_path/internal/Cone_tree.h>
 #include <CGAL/Surface_mesh_shortest_path/internal/misc_functions.h>
 
+#include <CGAL/boost/graph/helpers.h>
 #include <CGAL/boost/graph/iterator.h>
 #include <boost/variant/get.hpp>
 
@@ -143,6 +146,7 @@ public:
 
 #ifndef CGAL_NO_DEPRECATED_CODE
   // deprecated in CGAL 4.10
+  /// \deprecated
   typedef Barycentric_coordinates Barycentric_coordinate;
 #endif
 
@@ -1267,7 +1271,7 @@ private:
       propagateRight = rightSide;
     }
 
-    if (node->level() <= num_faces(m_graph))
+    if (node->level() <= static_cast<std::size_t>(num_faces(m_graph)))
     {
       if (propagateLeft)
       {
@@ -1738,29 +1742,34 @@ private:
             he = next(he, m_graph);
           }
 
-          halfedge_descriptor oppositeHalfedge = opposite(he, m_graph);
-
-          std::size_t oppositeIndex = internal::edge_index(oppositeHalfedge, m_graph);
-
-          FT oppositeLocationCoords[3] = { FT(0.0), FT(0.0), FT(0.0) };
-          oppositeLocationCoords[oppositeIndex] = cbcw(location, (associatedEdge + 1) % 3);
-          oppositeLocationCoords[(oppositeIndex + 1) % 3] = cbcw(location, associatedEdge);
           std::pair<Node_distance_pair,Barycentric_coordinates> mainFace = nearest_on_face(f, location);
-          Barycentric_coordinates oppositeLocation(cbc(oppositeLocationCoords[0], oppositeLocationCoords[1], oppositeLocationCoords[2]));
-          std::pair<Node_distance_pair,Barycentric_coordinates> otherFace = nearest_on_face(face(oppositeHalfedge, m_graph), oppositeLocation);
 
-          if (mainFace.first.first == NULL)
+          halfedge_descriptor oppositeHalfedge = opposite(he, m_graph);
+          if(!CGAL::is_border(oppositeHalfedge, m_graph))
           {
-            return otherFace;
+              std::size_t oppositeIndex = internal::edge_index(oppositeHalfedge, m_graph);
+
+              FT oppositeLocationCoords[3] = { FT(0.0), FT(0.0), FT(0.0) };
+              oppositeLocationCoords[oppositeIndex] = cbcw(location, (associatedEdge + 1) % 3);
+              oppositeLocationCoords[(oppositeIndex + 1) % 3] = cbcw(location, associatedEdge);
+              Barycentric_coordinates oppositeLocation(cbc(oppositeLocationCoords[0], oppositeLocationCoords[1], oppositeLocationCoords[2]));
+              std::pair<Node_distance_pair,Barycentric_coordinates> otherFace = nearest_on_face(face(oppositeHalfedge, m_graph), oppositeLocation);
+
+              if (mainFace.first.first == NULL)
+              {
+                return otherFace;
+              }
+              else if (otherFace.first.first == NULL)
+              {
+                return mainFace;
+              }
+              else
+              {
+                return mainFace.first.second < otherFace.first.second ? mainFace : otherFace;
+              }
           }
-          else if (otherFace.first.first == NULL)
-          {
-            return mainFace;
-          }
-          else
-          {
-            return mainFace.first.second < otherFace.first.second ? mainFace : otherFace;
-          }
+
+          return mainFace;
         }
         break;
       case CGAL::Surface_mesh_shortest_paths_3::BARYCENTRIC_COORDINATES_ON_VERTEX:
@@ -2052,7 +2061,6 @@ public:
       std::cout << "Final node count: " << m_currentNodeCount << std::endl;
     }
     return;
-    CGAL_assertion(m_currentNodeCount == 0);
 #endif
   }
 
@@ -2589,7 +2597,7 @@ public:
   /// \name Nearest Face Location Queries
   /// @{
 
-  /*
+  /*!
   \brief Returns the nearest face location to the given point.
     Note that this will (re-)build an `AABB_tree` on each call. If you need
     to  call this function more than once, use `build_aabb_tree()` to cache a
@@ -2612,10 +2620,11 @@ public:
   /// \cond
 
   template <class AABBTraits>
-  static Face_location locate(const Point_3& location, const Triangle_mesh& tm, Vertex_point_map vertexPointMap, const Traits& traits = Traits())
+  static Face_location locate(const Point_3& location, const Triangle_mesh& tm,
+                              Vertex_point_map vertexPointMap, const Traits& traits = Traits())
   {
     AABB_tree<AABBTraits> tree;
-    build_aabb_tree(tm, tree);
+    build_aabb_tree(tm, tree, vertexPointMap);
     return locate(location, tree, tm, vertexPointMap, traits);
   }
 
@@ -2653,7 +2662,7 @@ public:
 
   /// \endcond
 
-  /*
+  /*!
   \brief Returns the face location along `ray` nearest to its source point.
     Note that this will (re-)build an `AABB_tree` on each call. If you need
     to  call this function more than once, use `build_aabb_tree()` to cache a
@@ -2676,10 +2685,11 @@ public:
   /// \cond
 
   template <class AABBTraits>
-  static Face_location locate(const Ray_3& ray, const Triangle_mesh& tm, Vertex_point_map vertexPointMap, const Traits& traits = Traits())
+  static Face_location locate(const Ray_3& ray, const Triangle_mesh& tm,
+                              Vertex_point_map vertexPointMap, const Traits& traits = Traits())
   {
     AABB_tree<AABBTraits> tree;
-    build_aabb_tree(tm, tree);
+    build_aabb_tree(tm, tree, vertexPointMap);
     return locate(ray, tree, tm, vertexPointMap, traits);
   }
 
@@ -2773,17 +2783,24 @@ public:
   template <class AABBTraits>
   void build_aabb_tree(AABB_tree<AABBTraits>& outTree) const
   {
-    build_aabb_tree(m_graph, outTree);
+    build_aabb_tree(m_graph, outTree, m_vertexPointMap);
+  }
+
+  template <class AABBTraits>
+  void build_aabb_tree(AABB_tree<AABBTraits>& outTree, Vertex_point_map vertexPointMap) const
+  {
+    build_aabb_tree(m_graph, outTree, vertexPointMap);
   }
 
   /// \cond
 
   template <class AABBTraits>
-  static void build_aabb_tree(const Triangle_mesh& tm, AABB_tree<AABBTraits>& outTree)
+  static void build_aabb_tree(const Triangle_mesh& tm, AABB_tree<AABBTraits>& outTree,
+                              Vertex_point_map vertexPointMap)
   {
     face_iterator facesStart, facesEnd;
     boost::tie(facesStart, facesEnd) = faces(tm);
-    outTree.rebuild(facesStart, facesEnd, tm);
+    outTree.rebuild(facesStart, facesEnd, tm, vertexPointMap);
     outTree.build();
   }
   /// \endcond
@@ -2791,5 +2808,7 @@ public:
 };
 
 } // namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_SURFACE_MESH_SHORTEST_PATH_SURFACE_MESH_SHORTEST_PATH_H

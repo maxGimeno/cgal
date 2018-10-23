@@ -12,6 +12,10 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
 // Author(s)     : Julia Floetotto
 
 // ATTENTION : the surface is supposed to be a closed surface
@@ -304,7 +308,8 @@ surface_neighbor_coordinates_3(const Dt& dt,
   dt.vertices_on_conflict_zone_boundary(p, c, std::back_inserter(conflict_vertices));
 
   for (typename std::list< Vertex_handle >::iterator it = conflict_vertices.begin();
-       it != conflict_vertices.end();){
+       it != conflict_vertices.end();)
+  {
     if(dt.is_infinite(*it)){
       typename std::list< Vertex_handle >::iterator itp = it;
       it++;

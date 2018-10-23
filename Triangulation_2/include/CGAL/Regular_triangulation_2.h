@@ -12,6 +12,10 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
 // Author(s)     : Frederic Fichel, Mariette Yvinec, Julia Floetotto
 
 #ifndef CGAL_REGULAR_TRIANGULATION_2_H
@@ -56,6 +60,7 @@ class Regular_triangulation_2
 
 public:
   typedef Self                                 Triangulation;
+  typedef Triangulation_2<Gt, Tds>             Triangulation_base;
   typedef Tds                                  Triangulation_data_structure;
   typedef Gt                                   Geom_traits;
 
@@ -109,7 +114,9 @@ public:
   using Base::OUTSIDE_CONVEX_HULL;
   using Base::orientation;
   using Base::locate;
+#ifndef CGAL_NO_STRUCTURAL_FILTERING
   using Base::inexact_locate;
+#endif
   using Base::incident_faces;
   using Base::is_infinite;
   using Base::degree;
@@ -199,8 +206,11 @@ public:
   typedef Finite_edges_iterator                Edge_iterator;
   typedef Finite_vertices_iterator             Vertex_iterator;
 
- //Tag to distinguish Delaunay from regular triangulations
+  //Tag to distinguish Delaunay from regular triangulations
   typedef Tag_true  Weighted_tag;
+
+  // Tag to distinguish periodic triangulations from others
+  typedef Tag_false  Periodic_tag;
 
 private:
   size_type _hidden_vertices;
@@ -433,7 +443,8 @@ private:
   template<class Construct_bare_point, class Container>
   struct Index_to_Bare_point
   {
-    const Bare_point& operator()(const std::size_t& i) const
+    typename boost::result_of<const Construct_bare_point(const Weighted_point&)>::type
+    operator()(const std::size_t& i) const
     {
       return cp(c[i]);
     }

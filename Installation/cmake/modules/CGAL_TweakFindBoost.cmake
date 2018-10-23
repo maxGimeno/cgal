@@ -25,6 +25,9 @@
 # Boost versions, even if the file FindBoost.cmake is old.
 
 if( NOT CGAL_TweakFindBoost )
+  if(POLICY CMP0077)
+    cmake_policy(SET CMP0077 OLD)
+  endif()
   if(DEFINED CGAL_Boost_USE_STATIC_LIBS)
     # If the option is loaded from CGALConfig.h, use its value as default
     # value.  But the user will still have the choice to change the
@@ -52,10 +55,9 @@ if( NOT CGAL_TweakFindBoost )
       # One must add -DBOOST_ALL_DYN_LINK to DEFINITIONS to use Boost
       # auto-link with shared libraries.
 
-      # First, add the variable to cache, if it was loaded from CGALConfig.cmake
-      cache_set(CGAL_3RD_PARTY_DEFINITIONS "${CGAL_3RD_PARTY_DEFINITIONS}")
-      # Then amend it
-      add_to_cached_list(CGAL_3RD_PARTY_DEFINITIONS -DBOOST_ALL_DYN_LINK)
+      list(APPEND CGAL_3RD_PARTY_DEFINITIONS -DBOOST_ALL_DYN_LINK)
+      set(CGAL_3RD_PARTY_DEFINITIONS "${CGAL_3RD_PARTY_DEFINITIONS}"
+	CACHE INTERNAL "3rd party definitions for CGAL")
     endif()
   endif()
 

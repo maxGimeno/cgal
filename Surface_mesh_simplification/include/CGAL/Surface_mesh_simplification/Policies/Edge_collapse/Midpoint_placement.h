@@ -13,6 +13,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
 //
@@ -30,11 +31,13 @@ namespace CGAL {
 namespace Surface_mesh_simplification
 {
 
-  template<class ECM_>
+  template<class TM_>
 class Midpoint_placement
 {
 public:
-    
+
+  typedef TM_ TM;
+  
   Midpoint_placement()
   {}
   

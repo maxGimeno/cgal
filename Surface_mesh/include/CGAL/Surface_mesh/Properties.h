@@ -14,6 +14,10 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
 
 
 #ifndef CGAL_SURFACE_MESH_PROPERTY_H
@@ -21,6 +25,7 @@
 
 #include <CGAL/license/Surface_mesh.h>
 
+#ifndef DOXYGEN_RUNNING
 
 #include <vector>
 #include <string>
@@ -60,6 +65,9 @@ public:
 
     /// Extend the number of elements by one.
     virtual void push_back() = 0;
+
+    /// Reset element to default value
+    virtual void reset(size_t idx) = 0;
 
     virtual bool transfer(const Base_property_array& other) = 0;
 
@@ -117,6 +125,11 @@ public: // virtual interface of Base_property_array
     virtual void push_back()
     {
         data_.push_back(value_);
+    }
+
+    virtual void reset(size_t idx)
+    {
+        data_[idx] = value_;
     }
 
     bool transfer(const Base_property_array& other)
@@ -397,6 +410,13 @@ public:
         ++size_;
     }
 
+    // reset element to its default property values
+    void reset(size_t idx)
+    {
+        for (std::size_t i=0; i<parrays_.size(); ++i)
+            parrays_[i]->reset(idx);
+    }
+
     // swap elements i0 and i1 in all arrays
     void swap(size_t i0, size_t i1) const
     {
@@ -546,6 +566,8 @@ private:
 } // Properties
 
 } // CGAL
+
+#endif // DOXYGEN_RUNNING
 
 //=============================================================================
 #endif // CGAL_SURFACE_MESH_PROPERTY_H

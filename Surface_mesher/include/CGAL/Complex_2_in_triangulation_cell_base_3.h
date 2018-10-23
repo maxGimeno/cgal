@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Steve Oudot, David Rey, Mariette Yvinec, Laurent Rineau, Andreas Fabri
@@ -25,9 +26,7 @@
 
 #include <CGAL/license/Surface_mesher.h>
 
-
-
-#include <CGAL/Triangulation_cell_base_3.h>
+#include <CGAL/Delaunay_triangulation_cell_base_3.h>
 
 #include <bitset>
 #include <string>
@@ -35,7 +34,7 @@
 namespace CGAL {
 
 
-  template < class GT, class Cb = Triangulation_cell_base_3 <GT> >
+  template < class GT, class Cb = Delaunay_triangulation_cell_base_3 <GT> >
   class Complex_2_in_triangulation_cell_base_3 : public Cb {
 
   public:

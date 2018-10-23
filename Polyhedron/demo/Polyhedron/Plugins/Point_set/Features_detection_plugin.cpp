@@ -1,3 +1,4 @@
+#include <QAction>
 #include <QApplication>
 #include <QMessageBox>
 #include <QMainWindow>
@@ -82,10 +83,8 @@ void Polyhedron_demo_features_detection_plugin::on_actionDetectFeatures_triggere
         << dialog.offsetRadius() << " and convolution radius=" << dialog.convolveRadius() << ")...\n";
 
     CGAL::Timer task_timer; task_timer.start();
-    CGAL::compute_vcm(points->begin(), points->end(),
-                      points->point_map(),
-                      cov, dialog.offsetRadius(), dialog.convolveRadius(),
-                      Kernel());
+    CGAL::compute_vcm(*points, cov, dialog.offsetRadius(), dialog.convolveRadius(),
+                      points->parameters());
     task_timer.stop();
     std::cerr << "done: " << task_timer.time() << " seconds\n";
 

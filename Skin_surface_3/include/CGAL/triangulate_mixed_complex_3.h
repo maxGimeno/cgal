@@ -14,6 +14,7 @@
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Nico Kruithof <Nico@cs.rug.nl>
@@ -1215,7 +1216,7 @@ orientation(Tmc_Cell_handle ch)
 
   // filtered kernel
   o = _tmc.geom_traits().orientation_3_object()(pts[0], pts[1], pts[2], pts[3]);
-  } catch (Uncertain_conversion_exception) {
+  } catch (Uncertain_conversion_exception&) {
     Protect_FPU_rounding<false> P(CGAL_FE_TONEAREST);
     typedef Exact_predicates_exact_constructions_kernel EK;
     typedef Cartesian_converter<EK, Tmc_traits>         Exact_converter;

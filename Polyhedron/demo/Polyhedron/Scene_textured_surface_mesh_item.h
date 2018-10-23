@@ -34,7 +34,7 @@ public:
   virtual QString toolTip() const;
 
   // Indicate if rendering mode is supported
-  virtual bool supportsRenderingMode(RenderingMode m) const { return (m != Splatting && m != PointsPlusNormals && m != Points && m != Gouraud && m != ShadedPoints); }
+  virtual bool supportsRenderingMode(RenderingMode m) const { return (m != PointsPlusNormals && m != Points && m != Gouraud && m != ShadedPoints); }
   // Points/Wireframe/Flat/Gouraud OpenGL drawing in a display list
   void draw() const {}
   virtual void draw(CGAL::Three::Viewer_interface*) const;
@@ -51,7 +51,7 @@ public:
   void compute_bbox() const;
   virtual void invalidateOpenGLBuffers();
   virtual void selection_changed(bool);
-  void add_border_edges(std::vector<float> border_edges);
+  void add_border_edges(std::vector<float> border_edges, bool is_opengl_4_3);
 
 Q_SIGNALS:
   void selectionChanged();

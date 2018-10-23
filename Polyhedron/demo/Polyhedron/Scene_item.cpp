@@ -18,6 +18,8 @@ CGAL::Three::Scene_item::Scene_item(int buffers_size, int vaos_size)
     vaosSize(vaos_size),
     vaos(vaos_size)
 {
+
+  CGAL::QGLViewer::QGLViewerPool().first()->makeCurrent();
   is_bbox_computed = false;
   is_diag_bbox_computed = false;
   for(int i=0; i<vaosSize; i++)
@@ -77,8 +79,6 @@ QString modeName(RenderingMode mode) {
         return QObject::tr("Gouraud");
     case PointsPlusNormals:
         return QObject::tr("pts+normals");
-    case Splatting:
-        return QObject::tr("splats");
     default:
         Q_ASSERT(false);
         return QObject::tr("unknown");
@@ -102,8 +102,6 @@ const char* slotName(RenderingMode mode) {
         return SLOT(setGouraudMode());
     case PointsPlusNormals:
         return SLOT(setPointsPlusNormalsMode());
-    case Splatting:
-        return SLOT(setSplattingMode());
     default:
         Q_ASSERT(false);
         return "";
@@ -123,10 +121,6 @@ QMenu* CGAL::Three::Scene_item::contextMenu()
     }
 
     defaultContextMenu = new QMenu(name());
-    // defaultContextMenu->addAction(name());
-    // defaultContextMenu->addSeparator();
-    // QMenu* modeMenu = new QMenu(QObject::tr("Rendering mode"),
-    //                             defaultContextMenu);
     for(unsigned int mode = 0; mode < NumberOfRenderingMode;
         ++mode)
     {
@@ -136,11 +130,16 @@ QMenu* CGAL::Three::Scene_item::contextMenu()
                                       .arg(mName),
                                       this,
                                       slotName(RenderingMode(mode)));
+        defaultContextMenu->actions().last()->setProperty("is_groupable", true);
     }
-    // defaultContextMenu->addAction(modeMenu->menuAction());
     return defaultContextMenu;
 }
 
+void CGAL::Three::Scene_item::resetMenu()
+{
+  delete defaultContextMenu;
+  defaultContextMenu = nullptr;
+}
 CGAL::Three::Scene_group_item* CGAL::Three::Scene_item::parentGroup() const {
   return parent_group;
 }
@@ -190,16 +189,18 @@ void CGAL::Three::Scene_item::attribBuffers(CGAL::Three::Viewer_interface* viewe
        if(is_selected) c = c.lighter(120);
        viewer->getShaderProgram(program_name)->setAttributeValue
          ("color_facets",
-          c.redF(),
-          c.greenF(),
-          c.blueF());
+          GLfloat(c.redF()),
+          GLfloat(c.greenF()),
+          GLfloat(c.blueF()));
     }
     else if(program_name == PROGRAM_WITH_TEXTURED_EDGES)
     {
         if(is_selected) c = c.lighter(50);
         viewer->getShaderProgram(program_name)->setUniformValue
           ("color_lines",
-           QVector3D(c.redF(), c.greenF(), c.blueF()));
+           QVector3D(float(c.redF()),
+                     float(c.greenF()),
+                     float(c.blueF())));
     }
     viewer->getShaderProgram(program_name)->release();
 }
@@ -208,7 +209,7 @@ void CGAL::Three::Scene_item::attribBuffers(CGAL::Three::Viewer_interface* viewe
 QOpenGLShaderProgram* CGAL::Three::Scene_item::getShaderProgram(int name, CGAL::Three::Viewer_interface * viewer) const
 {
     if(viewer == 0)
-        viewer = dynamic_cast<CGAL::Three::Viewer_interface*>(*QGLViewer::QGLViewerPool().begin());
+        viewer = dynamic_cast<CGAL::Three::Viewer_interface*>(*CGAL::QGLViewer::QGLViewerPool().begin());
     return viewer->getShaderProgram(name);
 }
 
@@ -234,4 +235,16 @@ void CGAL::Three::Scene_item::compute_diag_bbox()const
         + CGAL::square(b_box.zmax() - b_box.zmin())
         );
 
+}
+
+void Scene_item::setId(int id)         {cur_id = id; }
+int  Scene_item::getId() const         { return cur_id; }
+float Scene_item::alpha() const
+{
+  return 1.0f;
+}
+
+void Scene_item::setAlpha(int )
+{
+ 
 }

@@ -12,6 +12,10 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
 // Author(s)     : Mael Rouxel-Labbé
 
 #ifndef CGAL_SURFACE_MESH_PARAMETERIZATION_INTERNAL_ERROR_CODE_H
@@ -34,6 +38,7 @@ enum Error_code
   ERROR_EMPTY_MESH,               ///< Input mesh is empty
   ERROR_NON_TRIANGULAR_MESH,      ///< Input mesh is not triangular
   ERROR_NO_TOPOLOGICAL_DISC,      ///< Input mesh is not a topological disc
+  ERROR_NO_TOPOLOGICAL_BALL,      ///< Input mesh is not a topological ball
   ERROR_BORDER_TOO_SHORT,         ///< This border parameterization requires a longer border
   ERROR_NON_CONVEX_BORDER,        ///< This parameterization method requires a convex border
   ERROR_CANNOT_SOLVE_LINEAR_SYSTEM,///< Cannot solve linear system
@@ -41,10 +46,11 @@ enum Error_code
   ERROR_WRONG_PARAMETER           ///< A method received an unexpected parameter
 };
 
-/// Get message corresponding to an error code
+/// \ingroup PkgSurfaceParameterizationEnums
+/// \brief Get the message corresponding to an error code.
 /// \param error_code The code returned by `parameterize()`
-/// \return           The string describing the error code
-const char* get_error_message(int error_code)
+/// \return The string describing the error code.
+inline const char* get_error_message(int error_code)
 {
   // Messages corresponding to Error_code list above. Must be kept in sync!
   static const char* error_message[ERROR_WRONG_PARAMETER+1] = {

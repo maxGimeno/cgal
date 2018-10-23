@@ -12,9 +12,9 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL: svn+ssh://hemmer@scm.gforge.inria.fr/svn/cgal/trunk/Polynomial/include/CGAL/Polynomial.h $
-// $Id: Polynomial.h 47254 2008-12-06 21:18:27Z afabri $
-// 
+// $URL$
+// $Id$
+// SPDX-License-Identifier: LGPL-3.0+
 //
 // Author(s)     :   Michael Kerber <mkerber@mpi-inf.mpg.de>
 //
@@ -101,6 +101,8 @@ void test_algebraic_kernel_2(const AlgebraicKernel_2& ak_2) {
   {                                                             \
     typedef typename Name::argument_type AT_;                   \
     typedef typename Name::result_type   RT_;                   \
+    CGAL_USE_TYPE(AT_);                                           \
+    CGAL_USE_TYPE(RT_);                                           \
     {CGAL_static_assertion(( ::boost::is_same<AT,AT_>::value));}  \
     {CGAL_static_assertion(( ::boost::is_same<RT,RT_>::value));}  \
   }
@@ -109,6 +111,9 @@ void test_algebraic_kernel_2(const AlgebraicKernel_2& ak_2) {
     typedef typename Name::first_argument_type AT1_;                    \
     typedef typename Name::second_argument_type AT2_;                   \
     typedef typename Name::result_type   RT_;                           \
+    CGAL_USE_TYPE(AT1_);                                                 \
+    CGAL_USE_TYPE(AT2_);                                                \
+    CGAL_USE_TYPE(RT_);                                                 \
     {CGAL_static_assertion(( ::boost::is_same<AT1,AT1_>::value));}        \
     {CGAL_static_assertion(( ::boost::is_same<AT2,AT2_>::value));}        \
     {CGAL_static_assertion(( ::boost::is_same<RT,RT_>::value));}          \

@@ -1,9 +1,10 @@
 //#define CGAL_PMP_REMESHING_VERBOSE
 
-#include "opengl_tools.h"
+
 #include "Scene_edit_polyhedron_item.h"
 #include "Scene_spheres_item.h"
 #include <CGAL/Three/Viewer_interface.h>
+#include <CGAL/Qt/constraint.h>
 #include <boost/foreach.hpp>
 #include <algorithm>
 #include <QTime>
@@ -82,7 +83,7 @@ struct Scene_edit_polyhedron_item_priv
   void pivoting_end(Mesh* mesh);
   template<typename Mesh>
   void read_roi(const char* file_name, Mesh* mesh);
-  void draw_ROI_and_control_vertices(CGAL::Three::Viewer_interface* viewer, qglviewer::ManipulatedFrame* frame, const qglviewer::Vec &center) const;
+  void draw_ROI_and_control_vertices(CGAL::Three::Viewer_interface* viewer, CGAL::qglviewer::ManipulatedFrame* frame, const CGAL::qglviewer::Vec &center) const;
   template<typename Mesh, typename M_Deform_mesh>
   void apply_reset_drawing_data(Mesh* mesh, M_Deform_mesh* m_deform_mesh);
   template<typename Mesh>
@@ -130,9 +131,11 @@ struct Scene_edit_polyhedron_item_priv
   mutable std::vector<GLdouble> normals;
   mutable std::vector<GLdouble> pos_bbox;
   mutable std::vector<GLdouble> pos_axis;
+  mutable std::vector<unsigned int> plane_idx;
   mutable std::vector<GLdouble> pos_frame_plane;
   mutable QOpenGLShaderProgram *program;
   mutable QOpenGLShaderProgram bbox_program;
+  mutable QOpenGLShaderProgram transparent_plane_program;
   mutable std::size_t nb_ROI;
   mutable std::size_t nb_control;
   mutable std::size_t nb_axis;
@@ -156,7 +159,7 @@ struct Scene_edit_polyhedron_item_priv
   Mouse_keyboard_state_deformation state;
 
   //For constraint rotation
-  qglviewer::LocalConstraint rot_constraint;
+  CGAL::qglviewer::LocalConstraint rot_constraint;
   bool is_rot_free;
 
   bool own_poly_item; //indicates if the poly_item should be deleted by the destructor
@@ -289,7 +292,7 @@ void Scene_edit_polyhedron_item_priv::init_values()
                                (item->bbox().zmax()-item->bbox().zmin()))) / 15.0;
 
   // interleave events of viewer (there is only one viewer)
-  QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
+  CGAL::QGLViewer* viewer = *CGAL::QGLViewer::QGLViewerPool().begin();
   viewer->installEventFilter(item);
 
   // create an empty group of control vertices for starting
@@ -302,7 +305,26 @@ void Scene_edit_polyhedron_item_priv::init_values()
 
     const char vertex_shader_source_bbox[] =
     {
-        "#version 120 \n"
+        "#version 150  \n"
+        "in vec3 vertex; \n"
+        "in vec3 colors; \n"
+
+        "uniform mat4 mvp_matrix; \n"
+        "uniform mat4 rotations; \n"
+        "uniform vec3 translation; \n"
+        "uniform vec3 translation_2; \n"
+        "out vec3 fColors; \n"
+        " \n"
+
+        "void main(void) \n"
+        "{ \n"
+        "   fColors = colors; \n"
+        "   gl_Position = mvp_matrix * (rotations *(vec4(translation_2,0.0)+vec4(vertex,1.0) )+ vec4(translation,0.0)) ; \n"
+        "} \n"
+    };
+    
+    const char vertex_shader_source_comp_bbox[] =
+    {
         "attribute highp vec3 vertex; \n"
         "attribute highp vec3 colors; \n"
 
@@ -321,7 +343,16 @@ void Scene_edit_polyhedron_item_priv::init_values()
     };
     const char fragment_shader_source[]=
     {
-        "#version 120 \n"
+        "#version 150  \n"
+        "in vec3 fColors; \n"
+        "out vec4 out_color; \n"
+        "void main(void) \n"
+        "{ \n"
+        " out_color = vec4(fColors, 1.0); \n"
+        "} \n"
+    };
+    const char fragment_shader_source_comp[]=
+    {
         "varying vec3 fColors; \n"
         " \n"
         "void main(void) \n"
@@ -329,10 +360,151 @@ void Scene_edit_polyhedron_item_priv::init_values()
         " gl_FragColor = vec4(fColors, 1.0); \n"
         "} \n"
     };
-    bbox_program.addShaderFromSourceCode(QOpenGLShader::Vertex,vertex_shader_source_bbox);
-    bbox_program.addShaderFromSourceCode(QOpenGLShader::Fragment,fragment_shader_source);
+    if(QOpenGLContext::currentContext()->format().majorVersion() >= 3)
+    {
+      bbox_program.addShaderFromSourceCode(QOpenGLShader::Vertex,vertex_shader_source_bbox);
+      bbox_program.addShaderFromSourceCode(QOpenGLShader::Fragment,fragment_shader_source);
+    }
+    else
+    {
+      bbox_program.addShaderFromSourceCode(QOpenGLShader::Vertex,vertex_shader_source_comp_bbox);
+      bbox_program.addShaderFromSourceCode(QOpenGLShader::Fragment,fragment_shader_source_comp);
+    }
     bbox_program.link();
 
+    //Vertex source code
+    const char vertex_source[] =
+    {
+      "#version 150                                      \n"
+      "in vec4 vertex;                     \n"
+      "in vec4 colors;                     \n"
+      "uniform  mat4 mvp_matrix;                   \n"
+      "uniform  mat4 f_matrix;                     \n"
+      "out vec4 color;                        \n"
+      "out float dist[6];                     \n"
+      "uniform bool is_clipbox_on;                      \n"
+      "uniform mat4 clipbox1;                   \n"
+      "uniform mat4 clipbox2;                   \n"
+      "                                                 \n"
+      "void compute_distances(void)                     \n"
+      "{                                                \n"
+      "  for(int i=0; i<3; ++i)                         \n"
+      "  {                                              \n"
+      "    dist[i]=                                     \n"
+      "    clipbox1[i][0]*vertex.x+                     \n"
+      "    clipbox1[i][1]*vertex.y+                     \n"
+      "    clipbox1[i][2]*vertex.z +                    \n"
+      "    clipbox1[i][3];                              \n"
+      "    dist[i+3]=                                   \n"
+      "    clipbox2[i][0]*vertex.x+                     \n"
+      "    clipbox2[i][1]*vertex.y+                     \n"
+      "    clipbox2[i][2]*vertex.z +                    \n"
+      "    clipbox2[i][3];                              \n"
+      "  }                                              \n"
+      "}                                                \n"
+      "                                                 \n"
+      "void main(void)                                  \n"
+      "{                                                \n"
+      "   color = colors;                               \n"
+      "   if(is_clipbox_on)                             \n"
+      "    compute_distances();                         \n"
+      "   gl_Position = mvp_matrix * f_matrix * vertex; \n"
+      "}                                                \n"
+    };
+    
+    const char vertex_source_comp[] =
+    {
+      "attribute highp vec4 vertex;                     \n"
+      "attribute highp vec4 colors;                     \n"
+      "uniform highp mat4 mvp_matrix;                   \n"
+      "uniform highp mat4 f_matrix;                     \n"
+      "varying highp vec4 color;                        \n"
+      "varying highp float dist[6];                     \n"
+      "uniform bool is_clipbox_on;                      \n"
+      "uniform highp mat4 clipbox1;                   \n"
+      "uniform highp mat4 clipbox2;                   \n"
+      "                                                 \n"
+      "void compute_distances(void)                     \n"
+      "{                                                \n"
+      "  for(int i=0; i<3; ++i)                         \n"
+      "  {                                              \n"
+      "    dist[i]=                                     \n"
+      "    clipbox1[i][0]*vertex.x+                     \n"
+      "    clipbox1[i][1]*vertex.y+                     \n"
+      "    clipbox1[i][2]*vertex.z +                    \n"
+      "    clipbox1[i][3];                              \n"
+      "    dist[i+3]=                                   \n"
+      "    clipbox2[i][0]*vertex.x+                     \n"
+      "    clipbox2[i][1]*vertex.y+                     \n"
+      "    clipbox2[i][2]*vertex.z +                    \n"
+      "    clipbox2[i][3];                              \n"
+      "  }                                              \n"
+      "}                                                \n"
+      "                                                 \n"
+      "void main(void)                                  \n"
+      "{                                                \n"
+      "   color = colors;                               \n"
+      "   if(is_clipbox_on)                             \n"
+      "    compute_distances();                         \n"
+      "   gl_Position = mvp_matrix * f_matrix * vertex; \n"
+      "}                                                \n"
+    };
+
+    //Fragment source code
+    const char fragment_source[] =
+    {
+      "#version 150                  \n"
+      "in vec4 color;    \n"
+      "in float dist[6]; \n"
+      "uniform bool is_clipbox_on;  \n"
+      "out vec4 out_color; \n"
+      
+      "void main(void)              \n"
+      "{                            \n"
+      "if(is_clipbox_on)            \n"
+      "  if(dist[0]>0.0 ||            \n"
+      "     dist[1]>0.0 ||            \n"
+      "     dist[2]>0.0 ||            \n"
+      "     dist[3]>0.0 ||            \n"
+      "     dist[4]>0.0 ||            \n"
+      "     dist[5]>0.0)              \n"
+      "    discard;                 \n"
+      "  out_color = color;      \n"
+      "}                            \n"
+      "                             \n"
+    };
+    const char fragment_source_comp[] =
+    {
+      "varying highp vec4 color;    \n"
+      "varying highp float dist[6]; \n"
+      "uniform bool is_clipbox_on;  \n"
+      "void main(void)              \n"
+      "{                            \n"
+      "if(is_clipbox_on)            \n"
+      "  if(dist[0]>0.0 ||            \n"
+      "     dist[1]>0.0 ||            \n"
+      "     dist[2]>0.0 ||            \n"
+      "     dist[3]>0.0 ||            \n"
+      "     dist[4]>0.0 ||            \n"
+      "     dist[5]>0.0)              \n"
+      "    discard;                 \n"
+      "  gl_FragColor = color;      \n"
+      "}                            \n"
+      "                             \n"
+    };
+    
+    if(QOpenGLContext::currentContext()->format().majorVersion() >= 3)
+    {
+      transparent_plane_program.addShaderFromSourceCode(QOpenGLShader::Vertex,vertex_source);
+      transparent_plane_program.addShaderFromSourceCode(QOpenGLShader::Fragment,fragment_source);
+    }
+    else
+    {
+      transparent_plane_program.addShaderFromSourceCode(QOpenGLShader::Vertex,vertex_source_comp);
+      transparent_plane_program.addShaderFromSourceCode(QOpenGLShader::Fragment,fragment_source_comp);
+    }
+    transparent_plane_program.bindAttributeLocation("colors", 1);
+    transparent_plane_program.link();
     ui_widget->remeshing_iterations_spinbox->setValue(1);
 
     ui_widget->remeshing_edge_length_spinbox->setValue(length_of_axis);
@@ -340,6 +512,7 @@ void Scene_edit_polyhedron_item_priv::init_values()
     ui_widget->remeshingEdgeLengthInput_checkBox->setChecked(false);
 
 }
+
 Scene_edit_polyhedron_item::Scene_edit_polyhedron_item
 (Scene_polyhedron_item* poly_item,
  Ui::DeformMesh* ui_widget,
@@ -413,7 +586,7 @@ void Scene_edit_polyhedron_item_priv::initializeBuffers(CGAL::Three::Viewer_inte
     {
         std::vector<GLdouble> vertices;
         std::vector<GLdouble> *vertices_ptr;
-        const qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first())->offset();
+        const CGAL::qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(CGAL::QGLViewer::QGLViewerPool().first())->offset();
         if(offset.norm() !=0)
         {
           vertices.resize(positions.size());
@@ -547,7 +720,7 @@ void Scene_edit_polyhedron_item_priv::initializeBuffers(CGAL::Three::Viewer_inte
     }
     //vao for the frame plane
     {
-        program = item->getShaderProgram(Scene_edit_polyhedron_item::PROGRAM_NO_SELECTION, viewer);
+        program = &transparent_plane_program;
         program->bind();
         item->vaos[Frame_plane]->bind();
         item->buffers[Frame_vertices].bind();
@@ -634,7 +807,7 @@ void Scene_edit_polyhedron_item_priv::compute_normals_and_vertices(Mesh* mesh)
     control_points.resize(0);
     control_color.resize(0);
     pos_frame_plane.resize(0);
-    const qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first())->offset();
+    const CGAL::qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(CGAL::QGLViewer::QGLViewerPool().first())->offset();
     Facegraph_selector fs(this);
     typedef typename boost::property_map<Mesh, boost::vertex_point_t>::type VertexPointMap;
     VertexPointMap pmap = get(boost::vertex_point, *mesh);
@@ -661,7 +834,7 @@ void Scene_edit_polyhedron_item_priv::compute_normals_and_vertices(Mesh* mesh)
     for(std::size_t i=0; i<ROI_color.size()/3; i++)
       ROI_color[3*i+1]=1.0;
 
-    QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
+    CGAL::QGLViewer* viewer = *CGAL::QGLViewer::QGLViewerPool().begin();
 
     for(typename std::list<Control_vertices_data<Mesh> >::const_iterator hgb_data = fs.get_ctrl_vertex_frame_map(mesh).begin(); hgb_data != fs.get_ctrl_vertex_frame_map(mesh).end(); ++hgb_data)
     {
@@ -1306,7 +1479,7 @@ bool Scene_edit_polyhedron_item::eventFilter(QObject* /*target*/, QEvent *event)
   bool ctrl_released_now = !d->state.ctrl_pressing && old_state.ctrl_pressing;
   if(ctrl_pressed_now || ctrl_released_now || event->type() == QEvent::HoverMove)
   {// activate a handle manipulated frame
-    QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
+    CGAL::QGLViewer* viewer = *CGAL::QGLViewer::QGLViewerPool().begin();
     const QPoint& p = viewer->mapFromGlobal(QCursor::pos());
 
     bool need_repaint;
@@ -1330,7 +1503,7 @@ bool Scene_edit_polyhedron_item::eventFilter(QObject* /*target*/, QEvent *event)
   return false;
 }
 
-#include "opengl_tools.h"
+
 void Scene_edit_polyhedron_item::drawEdges(CGAL::Three::Viewer_interface* viewer) const {
     if(!are_buffers_filled)
     {
@@ -1348,16 +1521,6 @@ void Scene_edit_polyhedron_item::drawEdges(CGAL::Three::Viewer_interface* viewer
     viewer->glDrawElements(GL_LINES, (GLsizei) d->_edges.size(), GL_UNSIGNED_INT, d->_edges.data());
     d->program->release();
     vaos[Scene_edit_polyhedron_item_priv::Edges]->release();
-
-
-    vaos[Scene_edit_polyhedron_item_priv::Frame_plane]->bind();
-    d->program = getShaderProgram(PROGRAM_NO_SELECTION);
-    attribBuffers(viewer,PROGRAM_NO_SELECTION);
-    d->program->bind();
-    d->program->setAttributeValue("colors", QColor(0,0,0));
-    viewer->glDrawArrays(GL_LINE_LOOP, 0, (GLsizei)d->pos_frame_plane.size()/3);
-    d->program->release();
-    vaos[Scene_edit_polyhedron_item_priv::Frame_plane]->release();
 
 
   if(rendering_mode == Wireframe) {
@@ -1385,41 +1548,74 @@ void Scene_edit_polyhedron_item::draw(CGAL::Three::Viewer_interface* viewer) con
   drawEdges(viewer);
   draw_ROI_and_control_vertices(viewer);
 
+  drawTransparent(viewer);
+
+}
+
+void Scene_edit_polyhedron_item::drawTransparent(Viewer_interface *viewer) const
+{
+  if(d->ui_widget->ActivateFixedPlaneCheckBox->isChecked())
+  {
+    GLdouble d_mat[16];
+    QMatrix4x4 mvp_mat;
+    viewer->camera()->getModelViewProjectionMatrix(d_mat);
+    for (int i=0; i<16; ++i)
+      mvp_mat.data()[i] = GLfloat(d_mat[i]);
+    viewer->glEnable(GL_BLEND);
+    viewer->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    vaos[Scene_edit_polyhedron_item_priv::Frame_plane]->bind();
+    d->program = &d->transparent_plane_program;
+    d->program->bind();
+    d->program->setUniformValue("is_clipbox_on", false);
+    d->program->setUniformValue("mvp_matrix", mvp_mat);
+    d->program->setUniformValue("f_matrix", QMatrix4x4());
+    d->program->setAttributeValue("colors", QColor(128,64,64,128));
+    viewer->glDrawElements(GL_TRIANGLES, (GLsizei) d->plane_idx.size(), GL_UNSIGNED_INT, d->plane_idx.data());
+    d->program->release();
+    vaos[Scene_edit_polyhedron_item_priv::Frame_plane]->release();
+    viewer->glDisable(GL_BLEND);
+  }
 }
 
 template<typename Mesh>
-void Scene_edit_polyhedron_item::draw_frame_plane(QGLViewer* , Mesh* mesh) const
+void Scene_edit_polyhedron_item::draw_frame_plane(CGAL::QGLViewer* , Mesh* mesh) const
 {
-  d->pos_frame_plane.resize(15);
+  d->pos_frame_plane.resize(12);
   Facegraph_selector fs;
   for(typename std::list<Control_vertices_data<Mesh> >::const_iterator hgb_data = fs.get_ctrl_vertex_frame_map(mesh, d).begin();
       hgb_data != fs.get_ctrl_vertex_frame_map(mesh, d).end(); ++hgb_data)
   {
     const double diag = scene_diag();
-    qglviewer::Vec base1(1,0,0);
-    qglviewer::Vec base2(0,1,0);
+    CGAL::qglviewer::Vec base1(1,0,0);
+    CGAL::qglviewer::Vec base2(0,1,0);
 
-    qglviewer::Quaternion orientation=hgb_data->frame->orientation();
+    CGAL::qglviewer::Quaternion orientation=hgb_data->frame->orientation();
     base1=orientation.rotate(base1);
     base2=orientation.rotate(base2);
 
-    qglviewer::Vec center = hgb_data->calculate_initial_center();
-    qglviewer::Vec p1 = center - diag*base1 - diag*base2;
-    qglviewer::Vec p2 = center + diag*base1 - diag*base2;
-    qglviewer::Vec p3 = center + diag*base1 + diag*base2;
-    qglviewer::Vec p4 = center - diag*base1 + diag*base2;
+    CGAL::qglviewer::Vec center = hgb_data->calculate_initial_center();
+    CGAL::qglviewer::Vec p1 = center - diag*base1 - diag*base2;
+    CGAL::qglviewer::Vec p2 = center + diag*base1 - diag*base2;
+    CGAL::qglviewer::Vec p3 = center + diag*base1 + diag*base2;
+    CGAL::qglviewer::Vec p4 = center - diag*base1 + diag*base2;
 
     d->pos_frame_plane[0] = p1.x ; d->pos_frame_plane[1] = p1.y; d->pos_frame_plane[2] =p1.z ;
     d->pos_frame_plane[3] = p2.x ; d->pos_frame_plane[4] = p2.y; d->pos_frame_plane[5] =p2.z ;
     d->pos_frame_plane[6] = p3.x ; d->pos_frame_plane[7] = p3.y; d->pos_frame_plane[8] =p3.z ;
     d->pos_frame_plane[9] = p4.x ; d->pos_frame_plane[10]= p4.y; d->pos_frame_plane[11] =p4.z ;
-    d->pos_frame_plane[12] = p1.x ; d->pos_frame_plane[13]= p1.y; d->pos_frame_plane[14] =p1.z ;
+    d->plane_idx.push_back(0);
+    d->plane_idx.push_back(1);
+    d->plane_idx.push_back(2);
+    d->plane_idx.push_back(0);
+    d->plane_idx.push_back(2);
+    d->plane_idx.push_back(3);
+
   }
 }
-void Scene_edit_polyhedron_item_priv::draw_ROI_and_control_vertices(CGAL::Three::Viewer_interface* viewer, qglviewer::ManipulatedFrame* frame, const qglviewer::Vec &center) const
+void Scene_edit_polyhedron_item_priv::draw_ROI_and_control_vertices(CGAL::Three::Viewer_interface* viewer, CGAL::qglviewer::ManipulatedFrame* frame, const CGAL::qglviewer::Vec &center) const
 {
   // Draw the axis
-  QGLViewer* viewerB = *QGLViewer::QGLViewerPool().begin();
+  CGAL::QGLViewer* viewerB = *CGAL::QGLViewer::QGLViewerPool().begin();
   if(frame == viewerB->manipulatedFrame())
   {
     GLfloat f_matrix[16];
@@ -1437,7 +1633,7 @@ void Scene_edit_polyhedron_item_priv::draw_ROI_and_control_vertices(CGAL::Three:
     program->release();
     item->vaos[Axis]->release();
 
-    //QGLViewer::drawAxis(length_of_axis);
+    //CGAL::QGLViewer::drawAxis(length_of_axis);
     // draw bbox
     if(!ui_widget->ActivatePivotingCheckBox->isChecked())
     {
@@ -1481,7 +1677,7 @@ void Scene_edit_polyhedron_item_priv::draw_ROI_and_control_vertices(CGAL::Three:
 }
 void Scene_edit_polyhedron_item::draw_ROI_and_control_vertices(CGAL::Three::Viewer_interface* viewer) const {
 
-  CGAL::GL::Point_size point_size; point_size.set_point_size(5);
+  viewer->setGlPointSize(5);
 
   //Draw the points
   if(d->ui_widget->ShowROICheckBox->isChecked()) {
@@ -1539,7 +1735,7 @@ void Scene_edit_polyhedron_item::draw_ROI_and_control_vertices(CGAL::Three::View
       }
     }
 
-
+    viewer->setGlPointSize(1);
 }
 
 
@@ -1674,7 +1870,7 @@ void Scene_edit_polyhedron_item::setVisible(bool b) {
     d->sm_item->setVisible(b);
   Scene_item::setVisible(b);
   if(!b) {
-    (*QGLViewer::QGLViewerPool().begin())->setManipulatedFrame(NULL);
+    (*CGAL::QGLViewer::QGLViewerPool().begin())->setManipulatedFrame(NULL);
   }
 }
 void Scene_edit_polyhedron_item::setColor(QColor c) {
@@ -1740,8 +1936,8 @@ bool Scene_edit_polyhedron_item::keyPressEvent(QKeyEvent* e)
   {
     d->is_rot_free = !d->is_rot_free;
     d->rot_constraint.setRotationConstraintType( d->is_rot_free?
-        qglviewer::AxisPlaneConstraint::FREE:
-        qglviewer::AxisPlaneConstraint::AXIS);
+        CGAL::qglviewer::AxisPlaneConstraint::FREE:
+        CGAL::qglviewer::AxisPlaneConstraint::AXIS);
     return true;
   }
 
@@ -1967,8 +2163,8 @@ void Scene_edit_polyhedron_item::create_ctrl_vertices_group()
     }
   }
   // No empty group of control vertices
-  const qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first())->offset();
-  qglviewer::ManipulatedFrame* new_frame = new qglviewer::ManipulatedFrame();
+  const CGAL::qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(CGAL::QGLViewer::QGLViewerPool().first())->offset();
+  CGAL::qglviewer::ManipulatedFrame* new_frame = new CGAL::qglviewer::ManipulatedFrame();
   new_frame->setPosition(offset);
   new_frame->setRotationSensitivity(2.0f);
   connect(new_frame, SIGNAL(manipulated()), this, SLOT(change()));
@@ -2106,13 +2302,15 @@ void Scene_edit_polyhedron_item_priv::pivoting_end(Mesh* mesh)
   for(typename std::list<Control_vertices_data<Mesh> >::iterator it = fs.get_ctrl_vertex_frame_map(mesh).begin(); it != fs.get_ctrl_vertex_frame_map(mesh).end(); ++it)
   {
     //update constraint rotation vector, set only for the last group
-    it->rot_direction = it->frame->rotation().rotate( qglviewer::Vec(0.,0.,1.) );
+    it->rot_direction = it->frame->rotation().rotate( CGAL::qglviewer::Vec(0.,0.,1.) );
     //translate center of the frame
-    const qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first())->offset();
-    qglviewer::Vec vec= it->frame->position();
+    const CGAL::qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(CGAL::QGLViewer::QGLViewerPool().first())->offset();
+    CGAL::qglviewer::Vec vec= it->frame->position();
+    CGAL::qglviewer::Quaternion orientation = it->frame->orientation();
     it->refresh(mesh);
     it->frame_initial_center = vec-offset;
     it->frame->setPosition(vec);
+    it->frame->setOrientation(orientation);
     it->frame->blockSignals(false);
   }
 }
@@ -2121,8 +2319,8 @@ template<typename Mesh>
 void Scene_edit_polyhedron_item_priv::pivoting_begin(Mesh* mesh)
 {
   is_rot_free=true;
-  rot_constraint.setRotationConstraintType(qglviewer::AxisPlaneConstraint::FREE);
-  rot_constraint.setTranslationConstraintType(qglviewer::AxisPlaneConstraint::FREE);
+  rot_constraint.setRotationConstraintType(CGAL::qglviewer::AxisPlaneConstraint::FREE);
+  rot_constraint.setTranslationConstraintType(CGAL::qglviewer::AxisPlaneConstraint::FREE);
 
   // just block signals to prevent deformation
   Facegraph_selector fs(this);
@@ -2363,11 +2561,11 @@ bool Scene_edit_polyhedron_item::activate_closest_manipulated_frame(int x, int y
   }
   if(fs.get_ctrl_vertex_frame_map(mesh).empty()) { return false; }
 
-  d->rot_constraint.setRotationConstraintType(qglviewer::AxisPlaneConstraint::FREE);
-  d->rot_constraint.setTranslationConstraintType(qglviewer::AxisPlaneConstraint::FREE);
+  d->rot_constraint.setRotationConstraintType(CGAL::qglviewer::AxisPlaneConstraint::FREE);
+  d->rot_constraint.setTranslationConstraintType(CGAL::qglviewer::AxisPlaneConstraint::FREE);
 
-  QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin();
-  qglviewer::Camera* camera = viewer->camera();
+  CGAL::QGLViewer* viewer = *CGAL::QGLViewer::QGLViewerPool().begin();
+  CGAL::qglviewer::Camera* camera = viewer->camera();
 
   if(!d->state.ctrl_pressing)
   {
@@ -2379,12 +2577,12 @@ bool Scene_edit_polyhedron_item::activate_closest_manipulated_frame(int x, int y
 
   // now find closest frame and make it active manipulated frame
   typename std::list<Control_vertices_data<Mesh> >::iterator min_it = fs.get_ctrl_vertex_frame_map(mesh).begin();
-  const qglviewer::Vec& pos_it = camera->projectedCoordinatesOf(min_it->frame->position());
+  const CGAL::qglviewer::Vec& pos_it = camera->projectedCoordinatesOf(min_it->frame->position());
   float min_dist = std::pow(pos_it.x - x, 2) + std::pow(pos_it.y - y, 2);
 
   for(typename std::list<Control_vertices_data<Mesh> >::iterator it = fs.get_ctrl_vertex_frame_map(mesh).begin(); it != fs.get_ctrl_vertex_frame_map(mesh).end(); ++it)
   {
-    const qglviewer::Vec& pos_it = camera->projectedCoordinatesOf(it->frame->position());
+    const CGAL::qglviewer::Vec& pos_it = camera->projectedCoordinatesOf(it->frame->position());
     float dist = std::pow(pos_it.x - x, 2) + std::pow(pos_it.y - y, 2);
     if(dist < min_dist) {
       min_dist = dist;
@@ -2395,7 +2593,7 @@ bool Scene_edit_polyhedron_item::activate_closest_manipulated_frame(int x, int y
   //set rotation constraint for the manipulated frame
   if (!d->is_rot_free){
     d->rot_constraint.setRotationConstraintDirection(min_it->rot_direction);
-    d->rot_constraint.setRotationConstraintType(qglviewer::AxisPlaneConstraint::AXIS);
+    d->rot_constraint.setRotationConstraintType(CGAL::qglviewer::AxisPlaneConstraint::AXIS);
     min_it->frame->setConstraint(&d->rot_constraint);
   }
   else
@@ -2403,9 +2601,9 @@ bool Scene_edit_polyhedron_item::activate_closest_manipulated_frame(int x, int y
     if( d->ui_widget->ActivateFixedPlaneCheckBox->isChecked())
     {
       // the constraint is local to the frame
-      d->rot_constraint.setTranslationConstraint(qglviewer::AxisPlaneConstraint::PLANE,qglviewer::Vec(0,0,1));
+      d->rot_constraint.setTranslationConstraint(CGAL::qglviewer::AxisPlaneConstraint::PLANE,CGAL::qglviewer::Vec(0,0,1));
        if(!d->ui_widget->ActivatePivotingCheckBox->isChecked()){
-           d->rot_constraint.setRotationConstraintType(qglviewer::AxisPlaneConstraint::FORBIDDEN);
+           d->rot_constraint.setRotationConstraintType(CGAL::qglviewer::AxisPlaneConstraint::FORBIDDEN);
        }
        min_it->frame->setConstraint(&d->rot_constraint);
     }

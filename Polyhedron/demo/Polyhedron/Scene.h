@@ -16,7 +16,7 @@
 #include <QItemDelegate>
 #include <QPixmap>
 #include <QItemSelection>
-#include <QGLViewer/qglviewer.h>
+#include <CGAL/Qt/qglviewer.h>
 #include <QDebug>
 #include <iostream>
 #include <cmath>
@@ -24,7 +24,7 @@
 #include <CGAL/Three/Scene_group_item.h>
 class QEvent;
 class QMouseEvent;
-namespace GlSplat { class SplatRenderer; }
+class QOpenGLFramebufferObject;
 namespace CGAL { namespace Three{ class Viewer_interface;}}
 
 //! This class is not supposed to be used by Plugins, but sometimes you may need access to
@@ -78,14 +78,18 @@ public:
   QList<int> selectionIndices() const Q_DECL_OVERRIDE;
   int selectionAindex() const Q_DECL_OVERRIDE;
   int selectionBindex() const Q_DECL_OVERRIDE;
-  void initializeGL() Q_DECL_OVERRIDE;
+  void initializeGL(CGAL::Three::Viewer_interface*) Q_DECL_OVERRIDE;
   void setPickedPixel(const QPoint &p) Q_DECL_OVERRIDE {picked_pixel = p;}
   void draw(CGAL::Three::Viewer_interface*) Q_DECL_OVERRIDE;
   void drawWithNames(CGAL::Three::Viewer_interface*) Q_DECL_OVERRIDE;
   bool keyPressEvent(QKeyEvent* e) Q_DECL_OVERRIDE;
   void printPrimitiveId(QPoint point,
                         CGAL::Three::Viewer_interface*) Q_DECL_OVERRIDE;
-  void printPrimitiveIds(CGAL::Three::Viewer_interface*) Q_DECL_OVERRIDE;
+  void printVertexIds(CGAL::Three::Viewer_interface*) Q_DECL_OVERRIDE;
+  void printEdgeIds(CGAL::Three::Viewer_interface*) Q_DECL_OVERRIDE;
+  void printFaceIds(CGAL::Three::Viewer_interface*) Q_DECL_OVERRIDE;
+  void printAllIds(CGAL::Three::Viewer_interface*) Q_DECL_OVERRIDE;
+  //!Re-computes the primitiveIds for `item`
   void updatePrimitiveIds(Viewer_interface *, Scene_item *item) Q_DECL_OVERRIDE;
   bool testDisplayId(double x, double y, double z, CGAL::Three::Viewer_interface* viewer) Q_DECL_OVERRIDE;
   Bbox bbox() const Q_DECL_OVERRIDE;
@@ -187,8 +191,8 @@ public Q_SLOTS:
        if(group)
        {
          QList<int> list;
-         Q_FOREACH(CGAL::Three::Scene_item* child, group->getChildren())
-           list<<m_entries.indexOf(child);
+         Q_FOREACH(Item_id id, group->getChildrenForSelection())
+           list<<id;
          l << setSelectedItemsList(list);
        }
 
@@ -207,6 +211,8 @@ public Q_SLOTS:
 
 Q_SIGNALS:
   //generated automatically by moc
+  //!Is emitted when the ids of the items are changed.
+  void indexErased(Scene_interface::Item_id id);
   //! Emit this to mark `modelindex` as selected in the Geometric Objects view.
   void itemPicked(const QModelIndex& modelindex);
   //! Is emitted when a new item is added to the scene.
@@ -230,20 +236,33 @@ Q_SIGNALS:
   void drawFinished();
 private Q_SLOTS:
   // Casts a selection ray and calls the item function select.
+  void adjustIds(Scene_interface::Item_id removed_id);
   void setSelectionRay(double, double, double, double, double, double);
-  void callDraw(){  QGLViewer* viewer = *QGLViewer::QGLViewerPool().begin(); viewer->update();}
+  void callDraw(){  CGAL::QGLViewer* viewer = *CGAL::QGLViewer::QGLViewerPool().begin(); viewer->update();}
   void s_itemAboutToBeDestroyed(CGAL::Three::Scene_item *);
 private:
   /*! Calls the drawing functions of each visible item according
    * to its current renderingMode. If with_names is true, uses
    * the OpenGL mode GL_WITH_NAMES, essentially used for the picking.*/
   void draw_aux(bool with_names, CGAL::Three::Viewer_interface*);
+  bool has_alpha();
+  void renderScene(const QList<Scene_interface::Item_id > &items,
+                   CGAL::Three::Viewer_interface* viewer, QMap<float, int> &picked_item_IDs, bool with_names,
+                   int pass, bool writing_depth,
+                   QOpenGLFramebufferObject* fbo);
+  void renderWireScene(const QList<Scene_interface::Item_id> &items,
+                       Viewer_interface *viewer, QMap<float, int> &picked_item_IDs, bool with_names);
+  void renderPointScene(const QList<Scene_interface::Item_id> &items,
+                        Viewer_interface *viewer,
+                        QMap<float, int>& picked_item_IDs,
+                        bool with_names);
   // Re-draw the hierarchy of the view.
   void organize_items(CGAL::Three::Scene_item* item, QStandardItem *root, int loop);
   // List of Scene_items.
   typedef QList<CGAL::Three::Scene_item*> Entries;
   //List containing all the scene_items.
   Entries m_entries;
+  QList<Item_id> children;
   // Index of the currently selected item.
   int selected_item;
   //List of indices of the currently selected items.
@@ -255,12 +274,12 @@ private:
   bool picked;
   QPoint picked_pixel;
   bool gl_init;
-  static GlSplat::SplatRenderer* ms_splatting;
-  static int ms_splattingCounter;
   QMap<QModelIndex, int> index_map;
-
-public:
-  static GlSplat::SplatRenderer* splatting();
+  float points[18];
+  float uvs[12];
+  QOpenGLShaderProgram program;
+  QOpenGLVertexArrayObject* vao;
+  mutable QOpenGLBuffer vbo[2];
 
 }; // end class Scene
 
