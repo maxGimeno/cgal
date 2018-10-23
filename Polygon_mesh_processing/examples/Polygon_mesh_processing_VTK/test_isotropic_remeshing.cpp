@@ -1,6 +1,5 @@
 #include <vtkSmartPointer.h>
 #include <vtkXMLUnstructuredGridReader.h>
-#include <vtkXMLPolyDataReader.h>
 #include <vtkDataSetReader.h>
 #include <vtkDataSet.h>
 #include <vtkUnstructuredGrid.h>
@@ -28,8 +27,8 @@ int main (int argc, char *argv[])
   reader->GetOutput()->Register(reader);
   vtkIsotropicRemeshingFilter* filter =
     vtkIsotropicRemeshingFilter::New();
-  vtkSmartPointer<vtkDataSetReader> reader2 =
-    vtkSmartPointer<vtkDataSetReader>::New();
+  vtkSmartPointer<vtkXMLUnstructuredGridReader> reader2 =
+    vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
   reader2->SetFileName(filename2);
   reader2->Update();
   reader2->GetOutput()->Register(reader);
