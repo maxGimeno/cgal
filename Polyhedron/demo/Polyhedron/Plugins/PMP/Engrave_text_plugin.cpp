@@ -39,11 +39,20 @@
 
 #include <CGAL/Qt/GraphicsViewNavigation.h>
 
+#include <CGAL/Segment_2.h>
+#include <CGAL/box_intersection_d.h>
+#include <CGAL/Bbox_2.h>
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/Cartesian_converter.h>
+#include <CGAL/constructions_d.h>
+
+typedef CGAL::Box_intersection_d::Box_with_info_d<double, 2,std::size_t> Box;
 using namespace CGAL::Three;
 namespace SMP = CGAL::Surface_mesh_parameterization;
 typedef EPICK::Point_2                                   Point_2;
 typedef EPICK::Point_3                                   Point_3;
-
+typedef CGAL::Exact_predicates_exact_constructions_kernel EPECK;
+typedef CGAL::Cartesian_converter<EPECK, EPICK> Exact_to_double;
 typedef boost::graph_traits<SMesh>::
 edge_descriptor          edge_descriptor;
 typedef boost::graph_traits<SMesh>::
@@ -544,19 +553,39 @@ public Q_SLOTS:
           pymax = v.y();
       }
     }
+    
+    //Prepare refining of polylines
+    std::vector<EPECK::Segment_2> edges_2d;
+    std::vector<Box> boxes_2d;
+    SMesh::Property_map<SMesh::Vertex_index, EPICK::Point_2> uv_map =
+        sm->property_map<SMesh::Vertex_index, EPICK::Point_2>("v:uv").first;
+    Exact_to_double etd;
+    std::size_t i=0;
+    BOOST_FOREACH(edge_descriptor ed, edges(*sm))
+    {
+      EPECK::Segment_2 seg(
+            EPECK::Point_2(uv_map[source(ed, *sm)][0]
+          , uv_map[source(ed, *sm)][1]),
+          EPECK::Point_2(uv_map[target(ed, *sm)][0]
+          , uv_map[target(ed, *sm)][1]));
+          edges_2d.push_back(seg);
+          boxes_2d.push_back(Box(seg.bbox(), i++));
+    }
+    
+    // build AABB-tree for face location queries
+    Tree aabb_tree(faces(*sm).first, faces(*sm).second, *sm, uv_map_3);
+     
       Q_FOREACH(QPolygonF poly, polys){
         polylines.push_back(std::vector<EPICK::Point_2>());
         Q_FOREACH(QPointF pf, poly)
         {
-          EPICK::Point_2 v = EPICK::Point_2(pf.x(),-pf.y());
-          polylines.back().push_back(EPICK::Point_2(v.x()*(xmax-xmin)/(pxmax-pxmin) +xmin ,
-                                                    v.y()*(ymax-ymin)/(pymax-pymin)+ymin
-                                                    ));
+          Point_2 v = EPICK::Point_2(pf.x(),-pf.y());
+          Point_2 new_point(v.x()*(xmax-xmin)/(pxmax-pxmin) +xmin,
+                            v.y()*(ymax-ymin)/(pymax-pymin)+ymin
+                            );
+          polylines.back().push_back(new_point);
         }
       }
-    
-    // build AABB-tree for face location queries
-    Tree aabb_tree(faces(*sm).first, faces(*sm).second, *sm, uv_map_3);
     
     visu_item = new Scene_polylines_item;
     
@@ -574,15 +603,52 @@ public Q_SLOTS:
     BOOST_FOREACH(const std::vector<EPICK::Point_2>& polyline, polylines)
     {
       visu_item->polylines.push_back(std::vector<Point_3>());
+      EPICK::Point_2 last_point;
       BOOST_FOREACH(const EPICK::Point_2& p, polyline)
       {
+        std::vector<Point_2> to_insert;
         EPICK::Point_2 p_2 = transfo.transform(p);
-        
-        Face_location loc = Surface_mesh_shortest_path::locate(
-              Point_3(p_2.x(), p_2.y(), 0),
-              aabb_tree, *sm, uv_map_3);
-        visu_item->polylines.back().push_back(
-              Surface_mesh_shortest_path::point(loc.first, loc.second,  *sm, sm->points()));
+        if(visu_item->polylines.back().size() > 0)
+        {
+          EPECK::Segment_2 query(
+                EPECK::Point_2(last_point.x(),
+                               last_point.y()), EPECK::Point_2(p_2.x(), 
+                                                               p_2.y()));
+          Box query_box = Box(query.bbox(), -1);
+          std::vector<std::size_t> results;
+          CGAL::box_intersection_d(&query_box, &query_box+1,
+                                   boxes_2d.begin(),boxes_2d.end(),
+                                   [&results](const Box&, 
+                                   const Box& b)
+          {
+            results.push_back(b.info());
+          });
+          BOOST_FOREACH(std::size_t id, results)
+          {
+            //test intersection between query and segments_2d[id]:
+            typedef CGAL::cpp11::result_of<EPECK::Intersect_2(EPECK::Segment_2,
+                                                              EPECK::Segment_2)>::type result_type;
+            result_type result = CGAL::intersection(query, edges_2d[id]);
+            if(result)
+              if (const EPECK::Point_2* p = boost::get<EPECK::Point_2>(&*result)) {
+                to_insert.push_back(Point_2(etd(p->x()), etd(p->y())));
+              }
+          }
+          std::sort(to_insert.begin(), to_insert.end(),
+                    [last_point](const Point_2& a, const Point_2& b){
+            return CGAL::squared_distance(last_point, a) < CGAL::squared_distance(last_point, b);
+          });
+        }
+        to_insert.push_back(p_2);
+        last_point = p_2;
+        BOOST_FOREACH(const Point_2& p, to_insert)
+        {
+          Face_location loc = Surface_mesh_shortest_path::locate(
+                Point_3(p.x(), p.y(), 0),
+                aabb_tree, *sm, uv_map_3);
+          visu_item->polylines.back().push_back(
+                Surface_mesh_shortest_path::point(loc.first, loc.second,  *sm, sm->points()));
+        }
       }
     }
     visu_item->setName("Text");
@@ -605,8 +671,6 @@ public Q_SLOTS:
       uv = sm->add_property_map<halfedge_descriptor,std::pair<float, float> >(
             "h:uv",std::make_pair(0.0f,0.0f)).first;
       SMesh::Halfedge_iterator it;
-      SMesh::Property_map<SMesh::Vertex_index, EPICK::Point_2> uv_map =
-          sm->property_map<SMesh::Vertex_index, EPICK::Point_2>("v:uv").first;
       for(it = sm->halfedges_begin();
           it != sm->halfedges_end();
           ++it)
@@ -645,19 +709,75 @@ public Q_SLOTS:
       return;
     CDT cdt;
     //polylines is duplicated so the transformation is only performed once
-    std::vector<std::vector<EPICK::Point_2> > local_polylines
-        = polylines;
+    std::vector<std::vector<EPICK::Point_2> > local_polylines;
+    //Prepare refining of polylines
+    std::vector<EPECK::Segment_2> edges_2d;
+    std::vector<Box> boxes_2d;
+    SMesh::Property_map<SMesh::Vertex_index, EPICK::Point_2> uv_map =
+        sm->property_map<SMesh::Vertex_index, EPICK::Point_2>("v:uv").first;
+    Exact_to_double etd;
+    std::size_t i=0;
+    BOOST_FOREACH(edge_descriptor ed, edges(*sm))
+    {
+      EPECK::Segment_2 seg(
+            EPECK::Point_2(uv_map[source(ed, *sm)][0]
+          , uv_map[source(ed, *sm)][1]),
+          EPECK::Point_2(uv_map[target(ed, *sm)][0]
+          , uv_map[target(ed, *sm)][1]));
+          edges_2d.push_back(seg);
+          boxes_2d.push_back(Box(seg.bbox(), i++));
+    }
     try{
       for(std::size_t i = 0;
-          i < local_polylines.size(); ++i)
+          i < polylines.size(); ++i)
       {
-        std::vector<Point_2>& points = local_polylines[i];
-        for(std::size_t j = 0; j< points.size(); ++j)
+        std::vector<Point_2>points;
+        Point_2 last_point;
+        for(std::size_t j = 0; j< polylines[i].size(); ++j)
         {
-          Point_2 &p = points[j];
+          std::vector<Point_2> to_insert;
+          Point_2 p = polylines[i][j];
           p = transfo.transform(p);
+          if(points.size() > 0)
+          {
+            EPECK::Segment_2 query(
+                  EPECK::Point_2(last_point.x(),
+                                 last_point.y()), EPECK::Point_2(p.x(), 
+                                                                 p.y()));
+            Box query_box = Box(query.bbox(), -1);
+            std::vector<std::size_t> results;
+            CGAL::box_intersection_d(&query_box, &query_box+1,
+                                     boxes_2d.begin(),boxes_2d.end(),
+                                     [&results](const Box&, 
+                                     const Box& b)
+            {
+              results.push_back(b.info());
+            });
+            BOOST_FOREACH(std::size_t id, results)
+            {
+              //test intersection between query and segments_2d[id]:
+              typedef CGAL::cpp11::result_of<EPECK::Intersect_2(EPECK::Segment_2,
+                                                                EPECK::Segment_2)>::type result_type;
+              result_type result = CGAL::intersection(query, edges_2d[id]);
+              if(result)
+                if (const EPECK::Point_2* ep = boost::get<EPECK::Point_2>(&*result)) {
+                  to_insert.push_back(Point_2(etd(ep->x()), etd(ep->y())));
+                }
+            }
+            std::sort(to_insert.begin(), to_insert.end(),
+                      [last_point](const Point_2& a, const Point_2& b){
+              return CGAL::squared_distance(last_point, a) < CGAL::squared_distance(last_point, b);
+            });
+          }
+          last_point = p;
+          to_insert.push_back(p);
+          BOOST_FOREACH(const Point_2& ip, to_insert)
+          {
+            points.push_back(ip);
+          }
         }
         cdt.insert_constraint(points.begin(),points.end());
+        local_polylines.push_back(points);
       }
     }catch(std::runtime_error&)
     {
