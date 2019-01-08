@@ -727,6 +727,12 @@ public Q_SLOTS:
           edges_2d.push_back(seg);
           boxes_2d.push_back(Box(seg.bbox(), i++));
     }
+    typedef SMesh::Property_map<face_descriptor, EPICK::Vector_3> FPMAP;
+    FPMAP fnormals =
+        sm->add_property_map<face_descriptor,
+        EPICK::Vector_3 >("f:normal").first;
+    if(!dock_widget->letter_checkBox->isChecked())
+        CGAL::Polygon_mesh_processing::compute_face_normals(*sm, fnormals);
     try{
       for(std::size_t i = 0;
           i < polylines.size(); ++i)
@@ -761,11 +767,23 @@ public Q_SLOTS:
               result_type result = CGAL::intersection(query, edges_2d[id]);
               if(result)
                 if (const EPECK::Point_2* ep = boost::get<EPECK::Point_2>(&*result)) {
-                  to_insert.push_back(Point_2(etd(ep->x()), etd(ep->y())));
+                  Point_2 lepouaingue(etd(ep->x()), etd(ep->y()));
+                  if(!dock_widget->letter_checkBox->isChecked()){
+                    edge_descriptor ed = edge_descriptor(id);
+                    face_descriptor fa(sm->face(sm->halfedge(ed,0))),
+                        fb(sm->face(sm->halfedge(ed,1)));
+                    EPICK::Vector_3 fan = get(fnormals, fa), 
+                        fbn = get(fnormals, fb),
+                        normal = fan+fbn;
+                    normal/=CGAL::sqrt(normal.squared_length());
+                    p2_normal_map[lepouaingue] = normal;
+                  }
+                  to_insert.push_back(lepouaingue);
                 }
             }
             std::sort(to_insert.begin(), to_insert.end(),
-                      [last_point](const Point_2& a, const Point_2& b){
+                      [last_point](const Point_2& a,
+                      const Point_2& b){
               return CGAL::squared_distance(last_point, a) < CGAL::squared_distance(last_point, b);
             });
           }
@@ -800,19 +818,14 @@ public Q_SLOTS:
     mark_nested_domains(cdt);
     
     SMesh text_mesh_bottom;
-    cdt2_to_face_graph(cdt,
-                       text_mesh_bottom);
-    typedef boost::property_map<SMesh, CGAL::vertex_point_t>::type VPMap;
     typedef SMesh::Property_map<vertex_descriptor, EPICK::Vector_3> NPMAP;
     NPMAP vnormals =
         text_mesh_bottom.add_property_map<vertex_descriptor,
         EPICK::Vector_3 >("v:normal").first;
-    
-    if(!dock_widget->letter_checkBox->isChecked())
-    {
-      CGAL::Polygon_mesh_processing::compute_vertex_normals(text_mesh_bottom, vnormals);
-    }
-    else{
+    cdt2_to_face_graph(cdt,
+                       text_mesh_bottom);
+    typedef boost::property_map<SMesh, CGAL::vertex_point_t>::type VPMap;
+    if(dock_widget->letter_checkBox->isChecked()){
       // \todo Computing normals before the final 
       // mesh would be better.
       
@@ -965,13 +978,22 @@ private:
     }
   }
   
-  template <class CDT, class TriangleMesh>
+  template <class CDT>
   void cdt2_to_face_graph(const CDT& cdt,
-                          TriangleMesh& tm)
+                          SMesh& tm)
   {
+    //to fill the vertex_normal_map of tm, we use the normals of the faces of sm.
+    typedef SMesh::Property_map<vertex_descriptor, EPICK::Vector_3> NPMAP;
+    typedef SMesh::Property_map<face_descriptor, EPICK::Vector_3> FPMAP;
+    FPMAP fnormals =
+        sm->property_map<face_descriptor,
+        EPICK::Vector_3 >("f:normal").first;
+    NPMAP vnormals =
+        tm.property_map<vertex_descriptor,
+        EPICK::Vector_3 >("v:normal").first;
     
     Tree aabb_tree(faces(*sm).first, faces(*sm).second, *sm, uv_map_3);
-    typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor vertex_descriptor;
+    typedef typename boost::graph_traits<SMesh>::vertex_descriptor vertex_descriptor;
     
     typedef std::map<typename CDT::Vertex_handle, vertex_descriptor> Map;
     Map descriptors;
@@ -994,6 +1016,15 @@ private:
                 aabb_tree, *sm, uv_map_3);
           it->second = add_vertex(Surface_mesh_shortest_path::point(loc.first, loc.second,
                                                                     *sm, sm->points()), tm);
+          if(!dock_widget->letter_checkBox->isChecked()){
+            if(! p2_normal_map.contains(pt))
+            {
+              put(vnormals, it->second, get(fnormals, loc.first));
+            }
+            else{
+              put(vnormals, it->second, p2_normal_map[pt]);
+            }
+          }
         }
         vds[i]=it->second;
       }
@@ -1040,6 +1071,7 @@ private:
   std::vector<std::vector<EPICK::Point_2> > polylines;
   SMesh::Property_map<SMesh::Vertex_index, Point_3> uv_map_3;
   SMesh* sm;
+  QMap<EPICK::Point_2, EPICK::Vector_3> p2_normal_map;
   float xmin, xmax, ymin, ymax;
   int pointsize;
   bool locked;

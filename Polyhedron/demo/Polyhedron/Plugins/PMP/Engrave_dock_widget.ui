@@ -296,6 +296,9 @@
            <property name="text">
             <string>Uniform letter mode</string>
            </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
         </layout>
@@ -307,8 +310,6 @@
   </widget>
  </widget>
  <resources>
-  <include location="../../Polyhedron_3.qrc"/>
-  <include location="../../Polyhedron_3.qrc"/>
   <include location="../../Polyhedron_3.qrc"/>
   <include location="../../Polyhedron_3.qrc"/>
  </resources>
