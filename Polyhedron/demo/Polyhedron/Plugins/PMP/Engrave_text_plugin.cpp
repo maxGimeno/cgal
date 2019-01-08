@@ -530,12 +530,32 @@ public Q_SLOTS:
       locked = false;
     }
     //create Text Polyline
-    QPainterPath path;
     QFont font;
-    font.setPointSize(pointsize);
-    path.addText(QPoint(xmin,ymin), font, dock_widget->lineEdit->text());
-    QList<QPolygonF> polys = path.toSubpathPolygons();
+    QFontMetrics fm(font);
+    float last_x(0);
+    QString text = dock_widget->lineEdit->text();
     polylines.clear();
+    QList<QPolygonF> polys;
+    
+    
+    //Get the id of each letter for each polygon, so we can group up letters 
+    //that have several parts, like an `i`, in the uniform letters mode.
+    for(int letter_id = 0;
+        letter_id < text.length();
+        ++letter_id)
+    {
+      QPainterPath path;
+      font.setPointSize(pointsize);
+      path.addText(QPoint(xmin+last_x,ymin), font, text.at(letter_id));
+      last_x += fm.width(text.at(letter_id));
+      last_x += fm.width(" ");
+      
+      Q_FOREACH(QPolygonF paul, path.toSubpathPolygons())
+      {
+        polys.append(paul);
+        line_to_letter_ids.push_back(letter_id);
+      }
+    }    
     float pxmin(8000),pxmax(-8000),
         pymin(8000), pymax(-8000);
     
@@ -553,7 +573,6 @@ public Q_SLOTS:
           pymax = v.y();
       }
     }
-    
     //Prepare refining of polylines
     std::vector<EPECK::Segment_2> edges_2d;
     std::vector<Box> boxes_2d;
@@ -568,25 +587,24 @@ public Q_SLOTS:
           , uv_map[source(ed, *sm)][1]),
           EPECK::Point_2(uv_map[target(ed, *sm)][0]
           , uv_map[target(ed, *sm)][1]));
-          edges_2d.push_back(seg);
-          boxes_2d.push_back(Box(seg.bbox(), i++));
+      edges_2d.push_back(seg);
+      boxes_2d.push_back(Box(seg.bbox(), i++));
     }
     
     // build AABB-tree for face location queries
     Tree aabb_tree(faces(*sm).first, faces(*sm).second, *sm, uv_map_3);
-     
-      Q_FOREACH(QPolygonF poly, polys){
-        polylines.push_back(std::vector<EPICK::Point_2>());
-        Q_FOREACH(QPointF pf, poly)
-        {
-          Point_2 v = EPICK::Point_2(pf.x(),-pf.y());
-          Point_2 new_point(v.x()*(xmax-xmin)/(pxmax-pxmin) +xmin,
-                            v.y()*(ymax-ymin)/(pymax-pymin)+ymin
-                            );
-          polylines.back().push_back(new_point);
-        }
-      }
     
+    Q_FOREACH(QPolygonF poly, polys){
+      polylines.push_back(std::vector<EPICK::Point_2>());
+      Q_FOREACH(QPointF pf, poly)
+      {
+        Point_2 v = EPICK::Point_2(pf.x(),-pf.y());
+        Point_2 new_point(v.x()*(xmax-xmin)/(pxmax-pxmin) +xmin,
+                          v.y()*(ymax-ymin)/(pymax-pymin)+ymin
+                          );
+        polylines.back().push_back(new_point);
+      }
+    }
     visu_item = new Scene_polylines_item;
     
     
@@ -792,6 +810,7 @@ public Q_SLOTS:
           BOOST_FOREACH(const Point_2& ip, to_insert)
           {
             points.push_back(ip);
+            point_to_letter_map[ip] = line_to_letter_ids[i];
           }
         }
         cdt.insert_constraint(points.begin(),points.end());
@@ -985,12 +1004,16 @@ private:
     //to fill the vertex_normal_map of tm, we use the normals of the faces of sm.
     typedef SMesh::Property_map<vertex_descriptor, EPICK::Vector_3> NPMAP;
     typedef SMesh::Property_map<face_descriptor, EPICK::Vector_3> FPMAP;
+    typedef SMesh::Property_map<vertex_descriptor, std::size_t> LetterIdMap;
     FPMAP fnormals =
         sm->property_map<face_descriptor,
         EPICK::Vector_3 >("f:normal").first;
     NPMAP vnormals =
         tm.property_map<vertex_descriptor,
         EPICK::Vector_3 >("v:normal").first;
+    
+    LetterIdMap letter_id_map = tm.add_property_map<vertex_descriptor,
+        std::size_t>("v:letter_id").first;
     
     Tree aabb_tree(faces(*sm).first, faces(*sm).second, *sm, uv_map_3);
     typedef typename boost::graph_traits<SMesh>::vertex_descriptor vertex_descriptor;
@@ -1024,6 +1047,10 @@ private:
             else{
               put(vnormals, it->second, p2_normal_map[pt]);
             }
+          }
+          else
+          {
+            put(letter_id_map, it->second, point_to_letter_map[pt]);
           }
         }
         vds[i]=it->second;
@@ -1072,6 +1099,8 @@ private:
   SMesh::Property_map<SMesh::Vertex_index, Point_3> uv_map_3;
   SMesh* sm;
   QMap<EPICK::Point_2, EPICK::Vector_3> p2_normal_map;
+  std::vector<std::size_t> line_to_letter_ids;
+  QMap<Point_2, std::size_t> point_to_letter_map;
   float xmin, xmax, ymin, ymax;
   int pointsize;
   bool locked;
