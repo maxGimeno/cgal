@@ -251,6 +251,26 @@
          <string>Engraving Depth</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_3">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>Inside depth:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QCheckBox" name="letter_checkBox">
+           <property name="toolTip">
+            <string>All the vertices in a single letter use the same normal, which is the mean normal of the vertices of the letter.</string>
+           </property>
+           <property name="text">
+            <string>Uniform letter mode</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
          <item row="0" column="1">
           <widget class="QSlider" name="bot_slider">
            <property name="maximum">
@@ -261,43 +281,6 @@
            </property>
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QSlider" name="top_slider">
-           <property name="maximum">
-            <number>10000</number>
-           </property>
-           <property name="value">
-            <number>1000</number>
-           </property>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_3">
-           <property name="text">
-            <string>Inside depth:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label_6">
-           <property name="text">
-            <string>Outside depth:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QCheckBox" name="letter_checkBox">
-           <property name="text">
-            <string>Uniform letter mode</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
            </property>
           </widget>
          </item>

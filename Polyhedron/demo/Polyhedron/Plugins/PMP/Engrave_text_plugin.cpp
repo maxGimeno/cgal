@@ -376,12 +376,6 @@ public :
         generateTextItem();
     });
     
-    connect(dock_widget->top_slider, &QSlider::valueChanged,
-            this, [this](){
-      if(textMesh)
-        generateTextItem();
-    });
-    
     connect(dock_widget->reset_button, &QPushButton::clicked,
             this, [this](){
       cleanup();
@@ -467,6 +461,7 @@ public Q_SLOTS:
     
     if(!sm)
     {
+      line_to_letter_ids.clear();
       sm = new SMesh();
       sel_item->export_selected_facets_as_polyhedron(sm);
       SMesh::Halfedge_index hd =
@@ -531,6 +526,7 @@ public Q_SLOTS:
     }
     //create Text Polyline
     QFont font;
+    font.setPointSize(pointsize);
     QFontMetrics fm(font);
     float last_x(0);
     QString text = dock_widget->lineEdit->text();
@@ -545,7 +541,6 @@ public Q_SLOTS:
         ++letter_id)
     {
       QPainterPath path;
-      font.setPointSize(pointsize);
       path.addText(QPoint(xmin+last_x,ymin), font, text.at(letter_id));
       last_x += fm.width(text.at(letter_id));
       last_x += fm.width(" ");
@@ -555,7 +550,7 @@ public Q_SLOTS:
         polys.append(paul);
         line_to_letter_ids.push_back(letter_id);
       }
-    }    
+    }
     float pxmin(8000),pxmax(-8000),
         pymin(8000), pymax(-8000);
     
@@ -843,39 +838,37 @@ public Q_SLOTS:
         EPICK::Vector_3 >("v:normal").first;
     cdt2_to_face_graph(cdt,
                        text_mesh_bottom);
+    SMesh::Property_map<vertex_descriptor, std::size_t> 
+        letter_id_map = text_mesh_bottom.property_map<vertex_descriptor,
+        std::size_t>("v:letter_id").first;
     typedef boost::property_map<SMesh, CGAL::vertex_point_t>::type VPMap;
     if(dock_widget->letter_checkBox->isChecked()){
-      // \todo Computing normals before the final 
-      // mesh would be better.
-      
       //foreach CC
-      SMesh::Property_map<face_descriptor, int> fcmap = 
-          text_mesh_bottom.add_property_map<face_descriptor, int>("f:cc", 0).first;
-      std::size_t nb_cc = PMP::connected_components(text_mesh_bottom,
-                                                    fcmap);
-      for(std::size_t cc = 0; cc<nb_cc; ++cc)
+      std::vector<EPICK::Vector_3> letter_normals;
+      letter_normals.resize(line_to_letter_ids.back()+1);
+      CGAL::Polygon_mesh_processing::compute_vertex_normals(text_mesh_bottom, vnormals);
+      //compute the average normal for the cc give it to every vertex
+      
+      BOOST_FOREACH(vertex_descriptor vd, vertices(text_mesh_bottom))
       {
-        //compute the average normal for the cc give it to every vertex
-        EPICK::Vector_3 normal(0,0,0);
-        CGAL::Face_filtered_graph<SMesh> fmesh(text_mesh_bottom, 
-                                               static_cast<int>(cc),
-                                               fcmap);
-        BOOST_FOREACH(vertex_descriptor vd, vertices(fmesh))
-        {
-          normal += CGAL::Polygon_mesh_processing::compute_vertex_normal(vd, fmesh);
-        }
-        normal /= CGAL::sqrt(normal.squared_length());
-        BOOST_FOREACH(vertex_descriptor vd, vertices(fmesh))
-        {
-          put(vnormals, vd, normal);
-        }
+        //todo: could use not-uniform results for possibly better results ?
+        letter_normals[get(letter_id_map, vd)] += 
+            get(vnormals, vd);
+      }
+      BOOST_FOREACH(vertex_descriptor vd, vertices(text_mesh_bottom))
+      {
+        
+        EPICK::Vector_3 normal = letter_normals[get(letter_id_map, vd)];
+        put(vnormals, vd, normal /= CGAL::sqrt(normal.squared_length()));
       }
     }
     Bot<VPMap, NPMAP> bot(vnormals, dock_widget->bot_slider->value()/100000.0,
                           get(CGAL::vertex_point, text_mesh));
     Top<VPMap, NPMAP> top(vnormals, get(CGAL::vertex_point, text_mesh), 
-                          dock_widget->top_slider->value()/100000.0);
+                          0.001);
     PMP::extrude_mesh(text_mesh_bottom, text_mesh, bot, top);
+    p2_normal_map.clear();
+    point_to_letter_map.clear();
   }
   
   void engrave() {
@@ -1003,8 +996,8 @@ private:
   {
     //to fill the vertex_normal_map of tm, we use the normals of the faces of sm.
     typedef SMesh::Property_map<vertex_descriptor, EPICK::Vector_3> NPMAP;
-    typedef SMesh::Property_map<face_descriptor, EPICK::Vector_3> FPMAP;
     typedef SMesh::Property_map<vertex_descriptor, std::size_t> LetterIdMap;
+    typedef SMesh::Property_map<face_descriptor, EPICK::Vector_3> FPMAP;
     FPMAP fnormals =
         sm->property_map<face_descriptor,
         EPICK::Vector_3 >("f:normal").first;
