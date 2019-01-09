@@ -5,7 +5,6 @@
 #include "ui_Engrave_dock_widget.h"
 //Items
 #include "Scene_surface_mesh_item.h"
-#include "Scene_polyhedron_selection_item.h"
 #include "Scene_polylines_item.h"
 #include "Messages_interface.h"
 
@@ -45,6 +44,8 @@
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Cartesian_converter.h>
 #include <CGAL/constructions_d.h>
+#include "Selection_visualizer.h"
+#include <map>
 
 typedef CGAL::Box_intersection_d::Box_with_info_d<double, 2,std::size_t> Box;
 using namespace CGAL::Three;
@@ -59,9 +60,44 @@ typedef boost::graph_traits<SMesh>::
 halfedge_descriptor      halfedge_descriptor;
 typedef boost::graph_traits<SMesh>::
 vertex_descriptor        vertex_descriptor;
+typedef boost::graph_traits<SMesh>::
+face_descriptor        face_descriptor;
+typedef boost::graph_traits<SMesh>::
+face_iterator        face_iterator;
 
 typedef boost::unordered_set<boost::graph_traits<SMesh>::
 face_descriptor>                                         Component;
+
+namespace PMP=CGAL::Polygon_mesh_processing;
+
+struct Is_selected_edge_property_map{
+  typedef boost::property_map<SMesh,boost::edge_index_t>::type EImap;
+
+  std::vector<bool>* is_selected_ptr;
+  EImap* edge_index_map;
+  Is_selected_edge_property_map()
+    : is_selected_ptr(NULL), edge_index_map(NULL) {}
+  Is_selected_edge_property_map(std::vector<bool>& is_selected, EImap* map)
+    : is_selected_ptr( &is_selected), edge_index_map(map)
+  {}
+
+  std::size_t id(edge_descriptor ed) {
+    return get(*edge_index_map, ed);
+  }
+
+  friend bool get(Is_selected_edge_property_map map, edge_descriptor ed)
+  {
+    CGAL_assertion(map.is_selected_ptr!=NULL);
+    return (*map.is_selected_ptr)[map.id(ed)];
+  }
+
+  friend void put(Is_selected_edge_property_map map, edge_descriptor ed, bool b)
+  {
+    CGAL_assertion(map.is_selected_ptr!=NULL);
+    (*map.is_selected_ptr)[map.id(ed)]=b;
+  }
+};
+
 
 struct FaceInfo2
 {
@@ -319,7 +355,7 @@ public :
     this->scene = Three::scene();
     this->mw = Three::mainWindow();
     messages = m;
-    
+    is_selecting = false;
     //action
     QAction* actionFitText= new QAction("Fit Text", mw);
     connect(actionFitText, SIGNAL(triggered()),
@@ -340,9 +376,14 @@ public :
     
     //items
     visu_item = nullptr;
-    sel_item = nullptr;
+    input_item = nullptr;
+    input_mesh = nullptr;
     textMesh = nullptr;
     sm = nullptr;
+    //selection
+    visualizer = nullptr;
+    shift_pressing = false;
+    
     
     //transfo
     angle = 0.0;
@@ -354,19 +395,19 @@ public :
     connect(dock_widget->text_prec_slider, &QSlider::valueChanged,
             this, [this](){
       pointsize = dock_widget->text_prec_slider->value();
-      scene->setSelectedItem(scene->item_id(sel_item));
+      scene->setSelectedItem(scene->item_id(input_item));
       visualize();
     });
     connect(dock_widget->scalX_slider, &QSlider::valueChanged,
             this, [this](){
       scalX = dock_widget->scalX_slider->value()/1000.0;
-      scene->setSelectedItem(scene->item_id(sel_item));
+      scene->setSelectedItem(scene->item_id(input_item));
       visualize();
     });
     connect(dock_widget->scalY_slider, &QSlider::valueChanged,
             this, [this](){
       scalY = dock_widget->scalY_slider->value()/1000.0;
-      scene->setSelectedItem(scene->item_id(sel_item));
+      scene->setSelectedItem(scene->item_id(input_item));
       visualize();
     });
     
@@ -384,28 +425,28 @@ public :
     connect(dock_widget->t_up_pushButton, &QPushButton::clicked,
             this, [this](){
       translation += EPICK::Vector_2(0,0.005);
-      scene->setSelectedItem(scene->item_id(sel_item));
+      scene->setSelectedItem(scene->item_id(input_item));
       visualize();
     });
     
     connect(dock_widget->t_down_pushButton, &QPushButton::clicked,
             this, [this](){
       translation -= EPICK::Vector_2(0,0.005);
-      scene->setSelectedItem(scene->item_id(sel_item));
+      scene->setSelectedItem(scene->item_id(input_item));
       visualize();
     });
     
     connect(dock_widget->t_right_pushButton, &QPushButton::clicked,
             this, [this](){
       translation += EPICK::Vector_2(0.005,0);
-      scene->setSelectedItem(scene->item_id(sel_item));
+      scene->setSelectedItem(scene->item_id(input_item));
       visualize();
     });
     
     connect(dock_widget->t_left_pushButton, &QPushButton::clicked,
             this, [this](){
       translation -= EPICK::Vector_2(0.005,0);
-      scene->setSelectedItem(scene->item_id(sel_item));
+      scene->setSelectedItem(scene->item_id(input_item));
       visualize();
     });
     connect(dock_widget->rot_slider, &QSlider::valueChanged,
@@ -413,7 +454,7 @@ public :
       if(!locked)
       {
         angle = dock_widget->rot_slider->value() * CGAL_PI/180.0;
-        scene->setSelectedItem(scene->item_id(sel_item));
+        scene->setSelectedItem(scene->item_id(input_item));
         visualize();
       }
     });
@@ -423,10 +464,14 @@ public :
     navigation = new Navigation();
     dock_widget->graphicsView->installEventFilter(navigation);
     dock_widget->graphicsView->viewport()->installEventFilter(navigation);
+    
+    CGAL::QGLViewer* viewer = *CGAL::QGLViewer::QGLViewerPool().begin();
+    viewer->installEventFilter(this);
+    mw->installEventFilter(this);
   }
   bool applicable(QAction*) const Q_DECL_OVERRIDE
   {
-    return qobject_cast<Scene_polyhedron_selection_item*>
+    return qobject_cast<Scene_surface_mesh_item*>
         (scene->item(scene->mainSelectionIndex()));
   }
   QList<QAction*> actions() const Q_DECL_OVERRIDE{
@@ -436,21 +481,26 @@ public Q_SLOTS:
   void showWidget()
   {
     dock_widget->setVisible(!dock_widget->isVisible());
+    input_item =
+        qobject_cast<Scene_surface_mesh_item*>
+        (scene->item(scene->mainSelectionIndex()));
+    is_selecting = true;
   }
   
   void visualize() {
-    if(!sel_item)
-      sel_item =
-          qobject_cast<Scene_polyhedron_selection_item*>
+    if(!input_item)
+      input_item =
+          qobject_cast<Scene_surface_mesh_item*>
           (scene->item(scene->mainSelectionIndex()));
-    if(!sel_item)
+    if(!input_item)
       return;
-    if(sel_item->selected_facets.empty())
+    
+    if(!input_mesh)
     {
       cleanup();
       return;
     }
-    if(!CGAL::is_closed(*sel_item->polyhedron()))
+    if(!CGAL::is_closed(*input_item->polyhedron()))
     {
       cleanup();
       return;
@@ -461,9 +511,10 @@ public Q_SLOTS:
     
     if(!sm)
     {
-      line_to_letter_ids.clear();
       sm = new SMesh();
-      sel_item->export_selected_facets_as_polyhedron(sm);
+      CGAL::copy_face_graph(*input_mesh, *sm);
+      line_to_letter_ids.clear();
+      
       SMesh::Halfedge_index hd =
           CGAL::Polygon_mesh_processing::longest_border(*sm).first;
       SMesh::Property_map<SMesh::Vertex_index, EPICK::Point_2> uv_map =
@@ -714,11 +765,9 @@ public Q_SLOTS:
   {
     if(!visu_item)
       return;
-    if(!sel_item)
+    if(!input_item)
       return;
-    if(sel_item->selected_facets.empty())
-      return;
-    if(!CGAL::is_closed(*sel_item->polyhedron()))
+    if(!CGAL::is_closed(*input_item->polyhedron()))
       return;
     CDT cdt;
     //polylines is duplicated so the transformation is only performed once
@@ -882,7 +931,7 @@ public Q_SLOTS:
     }
     
     SMesh result;
-    CGAL::copy_face_graph(*sel_item->polyhedron(), result);
+    CGAL::copy_face_graph(*input_item->polyhedron(), result);
     bool OK = PMP::corefine_and_compute_difference(result, text_mesh_complete, result);
     
     if (!OK)
@@ -923,6 +972,7 @@ public Q_SLOTS:
       SMesh text_mesh;
       create_text_mesh(text_mesh);
       textMesh = new Scene_surface_mesh_item(text_mesh);
+      textMesh->setColor(QColor(Qt::green));
       connect(textMesh, &Scene_surface_mesh_item::aboutToBeDestroyed,
               this, [this](){
         textMesh = nullptr;});
@@ -1059,10 +1109,10 @@ private:
     translation = EPICK::Vector_2(0,0);
     uv_map_3.reset();
     graphics_scene->clear();
-    if(sel_item)
+    if(input_mesh)
     {
-      scene->erase(scene->item_id(sel_item));
-      sel_item =nullptr;
+      delete input_mesh;
+      input_mesh = nullptr;
     }
     if(sm)
     {
@@ -1074,12 +1124,200 @@ private:
       scene->erase(scene->item_id(visu_item));
       visu_item = nullptr;
     }
+    is_selecting = true;
+    shift_pressing = false;
+  }
+  
+  bool is_vertex_selected (CGAL::qglviewer::Vec& p)
+  {
+    return (visualizer->domain_rectangle.xmin () < p.x &&
+        p.x < visualizer->domain_rectangle.xmax () &&
+        visualizer->domain_rectangle.ymin () < p.y &&
+        p.y < visualizer->domain_rectangle.ymax ());
+  }
+  void select()
+  {
+    CGAL::QGLViewer* viewer = *CGAL::QGLViewer::QGLViewerPool().begin();
+    const CGAL::qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(viewer)->offset();
+    
+    CGAL::qglviewer::Camera* camera = viewer->camera();
+    const SMesh& poly = *input_item->polyhedron();
+    std::set<face_descriptor> face_sel;
+    boost::property_map<SMesh,CGAL::vertex_point_t>::const_type vpmap = get(boost::vertex_point, poly);
+    //select all faces if their screen projection is inside the rectangle
+    BOOST_FOREACH(face_descriptor f, faces(poly))
+    {
+      BOOST_FOREACH(vertex_descriptor v, CGAL::vertices_around_face(halfedge(f, poly), poly))
+      {
+        Point_3 p = get(vpmap, v);
+        CGAL::qglviewer::Vec vp(p.x(), p.y(), p.z());
+        CGAL::qglviewer::Vec vsp = camera->projectedCoordinatesOf(vp+offset);
+        if(is_vertex_selected(vsp))
+        {
+          face_sel.insert(f);
+          break;
+        }
+      }
+    }
+    //get border edges of the selected patches
+    std::vector<halfedge_descriptor> boundary_edges;
+    CGAL::Polygon_mesh_processing::border_halfedges(face_sel, poly, std::back_inserter(boundary_edges));
+    std::vector<bool> mark(edges(poly).size(), false);
+    boost::property_map<SMesh, boost::edge_index_t>::type edge_index
+        = get(boost::edge_index, poly);
+    Is_selected_edge_property_map spmap(mark, &edge_index);
+    BOOST_FOREACH(halfedge_descriptor h, boundary_edges)
+        put(spmap, edge(h, poly), true);
+    
+    boost::vector_property_map<int,
+        boost::property_map<SMesh, boost::face_index_t>::type>
+        fccmap;
+    
+    //get connected componant from the picked face
+    typedef boost::associative_property_map< std::map<face_descriptor,
+        SMesh::faces_size_type> > FCMap;
+    std::map<face_descriptor,
+        SMesh::faces_size_type> fc_map;
+    FCMap final_sel(fc_map);
+    //std::vector<Polyhedron::Face_handle> cc;
+    std::size_t nb_cc = CGAL::Polygon_mesh_processing::connected_components(poly
+                                                                            , fccmap
+                                                                            , CGAL::Polygon_mesh_processing::parameters::edge_is_constrained_map(spmap));
+    std::vector<bool> is_cc_done(nb_cc, false);
+    
+    BOOST_FOREACH(face_descriptor f, face_sel)
+    {
+      int cc_id = get(fccmap, f);
+      if(is_cc_done[cc_id])
+      {
+        continue;
+      }
+      CGAL::Halfedge_around_face_circulator<SMesh> hafc(halfedge(f, poly), poly);
+      CGAL::Halfedge_around_face_circulator<SMesh> end = hafc;
+      double x(0), y(0), z(0);
+      int total(0);
+      CGAL_For_all(hafc, end)
+      {
+        Point_3 p = get(vpmap, target(*hafc, poly));
+        x+=p.x(); y+=p.y(); z+=p.z();
+        total++;
+      }
+      if(total == 0)
+        continue;
+      CGAL::qglviewer::Vec center(x/(double)total, y/(double)total, z/(double)total);
+      CGAL::qglviewer::Vec orig;
+      CGAL::qglviewer::Vec dir;
+      if(camera->type() == CGAL::qglviewer::Camera::PERSPECTIVE)
+      {
+        orig = camera->position() - offset;
+        dir = center - orig;
+      }
+      else
+      {
+        dir = camera->viewDirection();
+        orig = CGAL::qglviewer::Vec(center.x - dir.x, 
+                                    center.y - dir.y,
+                                    center.z - dir.z);
+      }
+      if(input_item->intersect_face(orig.x,
+                                   orig.y,
+                                   orig.z,
+                                   dir.x,
+                                   dir.y,
+                                   dir.z,
+                                   f))
+      {
+        is_cc_done[cc_id] = true;
+      }
+    }
+    BOOST_FOREACH(face_descriptor f, faces(poly))
+    {
+      if(is_cc_done[get(fccmap, f)])
+        fc_map[f] = 1;
+      else
+        fc_map[f] = 0;
+    }
+    CGAL::Face_filtered_graph<SMesh> result(poly,
+                                      1,
+                                      final_sel,
+                                      CGAL::parameters::all_default());
+    input_mesh = new SMesh();
+    CGAL::copy_face_graph(result, *input_mesh);
+    qobject_cast<CGAL::Three::Viewer_interface*>(viewer)->set2DSelectionMode(false);
+  }
+  
+  bool eventFilter(QObject *, QEvent *event) {
+    static QImage background;
+    if (dock_widget->isHidden() || !(dock_widget->isActiveWindow()) || !is_selecting || !input_item)
+      return false;
+    if(event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease)
+    {
+      QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
+      Qt::KeyboardModifiers modifiers = keyEvent->modifiers();
+
+      shift_pressing = modifiers.testFlag(Qt::ShiftModifier);
+    }
+    if(shift_pressing && event->type() == QEvent::MouseButtonPress)
+    {
+      background = static_cast<CGAL::Three::Viewer_interface*>(*CGAL::QGLViewer::QGLViewerPool().begin())->grabFramebuffer();
+      QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+      // Start selection
+      if (mouseEvent->button() == Qt::LeftButton)
+      {
+        if (!visualizer)
+        {
+          QApplication::setOverrideCursor(Qt::CrossCursor);
+          CGAL::QGLViewer* viewer = *CGAL::QGLViewer::QGLViewerPool().begin();
+          if (viewer->camera()->frame()->isSpinning())
+            viewer->camera()->frame()->stopSpinning();
+          
+          visualizer = new Selection_visualizer(true,
+                                                input_item->bbox());
+          
+          visualizer->sample_mouse_path(background);
+          return true;
+        }
+      }
+      else if (mouseEvent->button() == Qt::RightButton)
+      {
+        if(visualizer)
+        {
+          delete visualizer;
+          visualizer = nullptr;
+          QApplication::restoreOverrideCursor();
+          static_cast<CGAL::Three::Viewer_interface*>(*CGAL::QGLViewer::QGLViewerPool().begin())->set2DSelectionMode(false);
+        }
+        shift_pressing = false;
+        return true;
+      }
+    }
+    // End selection
+    else if (event->type() == QEvent::MouseButtonRelease && visualizer)
+    {
+      visualizer->apply_path();
+      select();
+      delete visualizer;
+      visualizer = nullptr;
+      QApplication::restoreOverrideCursor();
+      static_cast<CGAL::Three::Viewer_interface*>(*CGAL::QGLViewer::QGLViewerPool().begin())->set2DSelectionMode(false);
+      visualize();
+      is_selecting = false;
+      return true;
+    }
+    // Update selection
+    else if (event->type() == QEvent::MouseMove && visualizer)
+    {
+      visualizer->sample_mouse_path(background);
+      return true;
+    }
+    return false;
   }
   
   QList<QAction*> _actions;
   EngraveWidget* dock_widget;
   Scene_polylines_item* visu_item;
-  Scene_polyhedron_selection_item* sel_item;
+  Scene_surface_mesh_item* input_item;
+  SMesh* input_mesh;
   Scene_surface_mesh_item* textMesh;
   double angle;
   double scalX;
@@ -1095,9 +1333,15 @@ private:
   float xmin, xmax, ymin, ymax;
   int pointsize;
   bool locked;
+  bool is_selecting;
   EPICK::Line_2 bf_line;
   QGraphicsScene *graphics_scene;
   Navigation* navigation;
+  //selection stuff {
+  Selection_visualizer* visualizer;
+  bool shift_pressing;
+  
+  //}
 };
 #include "Engrave_text_plugin.moc"
 
