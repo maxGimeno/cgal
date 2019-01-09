@@ -843,9 +843,7 @@ public Q_SLOTS:
         std::size_t>("v:letter_id").first;
     typedef boost::property_map<SMesh, CGAL::vertex_point_t>::type VPMap;
     if(dock_widget->letter_checkBox->isChecked()){
-      //foreach CC
-      std::vector<EPICK::Vector_3> letter_normals;
-      letter_normals.resize(line_to_letter_ids.back()+1);
+      std::vector<EPICK::Vector_3> letter_normals(line_to_letter_ids.back()+1, EPICK::Vector_3(0,0,0));
       CGAL::Polygon_mesh_processing::compute_vertex_normals(text_mesh_bottom, vnormals);
       //compute the average normal for the cc give it to every vertex
       
@@ -865,7 +863,7 @@ public Q_SLOTS:
     Bot<VPMap, NPMAP> bot(vnormals, dock_widget->bot_slider->value()/100000.0,
                           get(CGAL::vertex_point, text_mesh));
     Top<VPMap, NPMAP> top(vnormals, get(CGAL::vertex_point, text_mesh), 
-                          0.001);
+                          0.01);
     PMP::extrude_mesh(text_mesh_bottom, text_mesh, bot, top);
     p2_normal_map.clear();
     point_to_letter_map.clear();
