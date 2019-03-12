@@ -71,7 +71,7 @@ class Quick_multiscale_approximate_knn_distance<Kernel, typename Kernel::Point_3
   typedef typename Neighbor_search::iterator Iterator;
 
   template <typename ValueType, typename PointMap>
-  struct Pmap_unary_function : public CGAL::unary_function<ValueType, typename Kernel::Point_3>
+  struct Pmap_unary_function : public CGAL::cpp98::unary_function<ValueType, typename Kernel::Point_3>
   {
     PointMap point_map;
     Pmap_unary_function (PointMap point_map) : point_map (point_map) { }
@@ -236,7 +236,7 @@ class Quick_multiscale_approximate_knn_distance<Kernel, typename Kernel::Point_2
   typedef typename Point_set::Vertex_handle Vertex_handle;
 
   template <typename ValueType, typename PointMap>
-  struct Pmap_unary_function : public CGAL::unary_function<ValueType, typename Kernel::Point_2>
+  struct Pmap_unary_function : public CGAL::cpp98::unary_function<ValueType, typename Kernel::Point_2>
   {
     PointMap point_map;
     Pmap_unary_function (PointMap point_map) : point_map (point_map) { }
@@ -443,7 +443,7 @@ public:
 // ----------------------------------------------------------------------------
 
 /**  
-   \ingroup PkgPointSetProcessingAlgorithms
+   \ingroup PkgPointSetProcessing3Algorithms
 
    Estimates the local scale in a K nearest neighbors sense on a set
    of user-defined query points. The computed scales correspond to
@@ -535,7 +535,7 @@ estimate_local_k_neighbor_scales(
 /// \endcond
 
 /**  
-   \ingroup PkgPointSetProcessingAlgorithms
+   \ingroup PkgPointSetProcessing3Algorithms
 
    Estimates the global scale in a K nearest neighbors sense. The
    computed scale corresponds to the smallest scale such that the K
@@ -591,7 +591,7 @@ estimate_global_k_neighbor_scale(const PointRange& points)
 /// \endcond  
 
 /**  
-   \ingroup PkgPointSetProcessingAlgorithms
+   \ingroup PkgPointSetProcessing3Algorithms
 
    Estimates the local scale in a range sense on a set of
    user-defined query points. The computed scales correspond to the
@@ -683,7 +683,7 @@ estimate_local_range_scales(
 /// \endcond
 
 /**  
-   \ingroup PkgPointSetProcessingAlgorithms
+   \ingroup PkgPointSetProcessing3Algorithms
 
    Estimates the global scale in a range sense. The computed scale
    corresponds to the smallest scale such that the subsets of points

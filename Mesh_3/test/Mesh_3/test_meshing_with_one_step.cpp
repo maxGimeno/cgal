@@ -61,15 +61,17 @@ int main(int argc, char*argv[])
   
   // Mesh generation
   C3t3 c3t3;
-  CGAL::internal::Mesh_3::C3t3_initializer<C3t3,
+  CGAL::Mesh_3::internal::C3t3_initializer<C3t3,
                                            Mesh_domain,
                                            Mesh_criteria,
                                            false>()(c3t3, domain, criteria, false);
   Mesher mesher(c3t3, domain, criteria,CGAL::FACET_VERTICES_ON_SAME_SURFACE_PATCH);
   mesher.initialize();
+  mesher.display_number_of_bad_elements();
   while ( ! mesher.is_algorithm_done() ) mesher.one_step();
   assert(c3t3.triangulation().number_of_vertices() > 200);
   // Output
+  mesher.display_number_of_bad_elements();
   std::ofstream medit_file("out.mesh");
   c3t3.output_to_medit(medit_file);
   medit_file.close();

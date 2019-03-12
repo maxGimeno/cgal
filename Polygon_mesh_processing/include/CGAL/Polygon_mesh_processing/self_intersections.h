@@ -235,7 +235,7 @@ self_intersections( const FaceRange& face_range,
 /**
  * \ingroup PMP_intersection_grp
  * detects and records self-intersections of a triangulated surface mesh.
- * This function depends on the package \ref PkgBoxIntersectionDSummary
+ * This function depends on the package \ref PkgBoxIntersectionD
  * @pre `CGAL::is_triangle_mesh(tmesh)`
  *
  * @tparam TriangleMesh a model of `FaceListGraph`
@@ -253,7 +253,7 @@ self_intersections( const FaceRange& face_range,
  * \cgalNamedParamsBegin
  *    \cgalParamBegin{vertex_point_map} the property map with the points associated to the vertices of `pmesh`.
  *   If this parameter is omitted, an internal property map for
- *   `CGAL::vertex_point_t` should be available in `TriangleMesh`\cgalParamEnd
+ *   `CGAL::vertex_point_t` must be available in `TriangleMesh`\cgalParamEnd
  *    \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `PMPSelfIntersectionTraits` \cgalParamEnd
  * \cgalNamedParamsEnd
  *
@@ -312,7 +312,7 @@ self_intersections(const TriangleMesh& tmesh, OutputIterator out)
  * \cgalNamedParamsBegin
  *    \cgalParamBegin{vertex_point_map} the property map with the points associated to the vertices of `pmesh`.
  *   If this parameter is omitted, an internal property map for
- *   `CGAL::vertex_point_t` should be available in `TriangleMesh`\cgalParamEnd
+ *   `CGAL::vertex_point_t` must be available in `TriangleMesh`\cgalParamEnd
  *    \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `PMPSelfIntersectionTraits` \cgalParamEnd
  * \cgalNamedParamsEnd
 
@@ -391,7 +391,7 @@ OutputIterator self_intersections(const FaceRange& face_range,
 /**
  * \ingroup PMP_intersection_grp
  * tests if a triangulated surface mesh self-intersects.
- * This function depends on the package \ref PkgBoxIntersectionDSummary
+ * This function depends on the package \ref PkgBoxIntersectionD
  * @pre `CGAL::is_triangle_mesh(tmesh)`
  *
  * @tparam TriangleMesh a model of `FaceListGraph`
@@ -403,7 +403,7 @@ OutputIterator self_intersections(const FaceRange& face_range,
  * \cgalNamedParamsBegin
  *    \cgalParamBegin{vertex_point_map} the property map with the points associated to the vertices of `tmesh`.
  *   If this parameter is omitted, an internal property map for
- *   `CGAL::vertex_point_t` should be available in `TriangleMesh`\cgalParamEnd
+ *   `CGAL::vertex_point_t` must be available in `TriangleMesh`\cgalParamEnd
  *    \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `PMPSelfIntersectionTraits` \cgalParamEnd
  * \cgalNamedParamsEnd
  *
@@ -431,7 +431,7 @@ bool does_self_intersect(const TriangleMesh& tmesh
 /**
  * \ingroup PMP_intersection_grp
  * tests if a set of faces of a triangulated surface mesh self-intersects.
- * This function depends on the package \ref PkgBoxIntersectionDSummary
+ * This function depends on the package \ref PkgBoxIntersectionD
  * @pre `CGAL::is_triangle_mesh(tmesh)`
  *
  * @tparam FaceRange a range of `face_descriptor`
@@ -445,11 +445,11 @@ bool does_self_intersect(const TriangleMesh& tmesh
  * \cgalNamedParamsBegin
  *    \cgalParamBegin{vertex_point_map} the property map with the points associated to the vertices of `tmesh`.
  *   If this parameter is omitted, an internal property map for
- *   `CGAL::vertex_point_t` should be available in `TriangleMesh`\cgalParamEnd
+ *   `CGAL::vertex_point_t` must be available in `TriangleMesh`\cgalParamEnd
  *    \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `SelfIntersectionTraits` \cgalParamEnd
  * \cgalNamedParamsEnd
  *
- * @return true if the faces in `face_range` self-intersects
+ * @return true if the faces in `face_range` self-intersect
  */
 template <class FaceRange,
           class TriangleMesh,

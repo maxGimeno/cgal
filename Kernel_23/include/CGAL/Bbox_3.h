@@ -77,6 +77,9 @@ public:
   inline double min BOOST_PREVENT_MACRO_SUBSTITUTION (int i) const;
   inline double max BOOST_PREVENT_MACRO_SUBSTITUTION (int i) const;
 
+  inline double min_coord(int i) const { return (min)(i); }
+  inline double max_coord(int i) const { return (max)(i); }
+  
   Bbox_3  operator+(const Bbox_3& b) const;
   Bbox_3& operator+=(const Bbox_3& b);
 
@@ -184,12 +187,12 @@ void
 Bbox_3::dilate(int dist)
 {
   using boost::math::float_advance;
-  float_advance(rep[0],-dist);
-  float_advance(rep[1],-dist);
-  float_advance(rep[2],-dist);
-  float_advance(rep[3],dist);
-  float_advance(rep[4],dist);
-  float_advance(rep[5],dist);
+  rep[0] = float_advance(rep[0],-dist);
+  rep[1] = float_advance(rep[1],-dist);
+  rep[2] = float_advance(rep[2],-dist);
+  rep[3] = float_advance(rep[3],dist);
+  rep[4] = float_advance(rep[4],dist);
+  rep[5] = float_advance(rep[5],dist);
 }
 
 

@@ -55,7 +55,7 @@
 #else // CGAL_HEADER_ONLY
 
   #define CGAL_GLOBAL_STATE_VAR(TYPE, NAME, VALUE)  \
-    CGAL_EXPORT extern TYPE NAME;                   \
+    CGAL_CORE_EXPORT extern TYPE NAME;              \
     inline TYPE& get_static_##NAME()                \
     {                                               \
       return NAME;                                  \
@@ -322,7 +322,6 @@ inline bool setRationalReduceFlag(bool f) {
 inline void CORE_init(long d) {
   get_static_defAbsPrec() = CORE_posInfty;
   get_static_defOutputDigits() = d;
-  std::setprecision(get_static_defOutputDigits());
 }
 
 /// change to scientific output format

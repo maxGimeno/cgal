@@ -58,6 +58,10 @@ public:
 template < class T >
 class In_place_list_base {
 public:
+  In_place_list_base()
+    : next_link(NULL), prev_link(NULL)
+  {}
+
   T* next_link;        // forward pointer
   T* prev_link;        // backwards pointer
   //friend  class internal::In_place_list_iterator<T, Alloc>;
@@ -803,7 +807,7 @@ namespace std {
 
   template < class T, class Alloc >
   struct hash<CGAL::internal::In_place_list_iterator<T, Alloc> >
-    : public CGAL::unary_function<CGAL::internal::In_place_list_iterator<T, Alloc>, std::size_t>  {
+    : public CGAL::cpp98::unary_function<CGAL::internal::In_place_list_iterator<T, Alloc>, std::size_t>  {
 
     std::size_t operator()(const CGAL::internal::In_place_list_iterator<T, Alloc>& i) const
     {
@@ -814,7 +818,7 @@ namespace std {
 
   template < class T, class Alloc >
   struct hash<CGAL::internal::In_place_list_const_iterator<T, Alloc> >
-    : public CGAL::unary_function<CGAL::internal::In_place_list_const_iterator<T, Alloc>, std::size_t> {
+    : public CGAL::cpp98::unary_function<CGAL::internal::In_place_list_const_iterator<T, Alloc>, std::size_t> {
 
     std::size_t operator()(const CGAL::internal::In_place_list_const_iterator<T, Alloc>& i) const
     {

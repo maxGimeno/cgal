@@ -302,7 +302,13 @@ struct Mpzf {
     data()[-1] = mini;
   }
   void clear(){
-    while(*--data()==0); // in case we skipped final zeroes
+    // while(*--data()==0);
+    // This line gave a misscompilation by Intel Compiler 2019
+    // (19.0.0.117). I replaced it by the following two lines:
+    // -- Laurent Rineau, sept. 2018
+    --data();
+    while(*data()==0) { --data(); } // in case we skipped final zeroes
+
 #ifdef CGAL_MPZF_USE_CACHE
     if (data() == cache) return;
 #endif
@@ -1024,21 +1030,21 @@ std::istream& operator>> (std::istream& is, Mpzf& a)
       typedef Tag_false            Is_numerical_sensitive;
 
       struct Is_zero
-	: public CGAL::unary_function< Type, bool > {
+	: public CGAL::cpp98::unary_function< Type, bool > {
 	  bool operator()( const Type& x ) const {
 	    return x.is_zero();
 	  }
 	};
 
       struct Is_one
-	: public CGAL::unary_function< Type, bool > {
+	: public CGAL::cpp98::unary_function< Type, bool > {
 	  bool operator()( const Type& x ) const {
 	    return x.is_one();
 	  }
 	};
 
       struct Gcd
-	: public CGAL::binary_function< Type, Type, Type > {
+	: public CGAL::cpp98::binary_function< Type, Type, Type > {
 	  Type operator()(
 	      const Type& x,
 	      const Type& y ) const {
@@ -1047,14 +1053,14 @@ std::istream& operator>> (std::istream& is, Mpzf& a)
 	};
 
       struct Square
-	: public CGAL::unary_function< Type, Type > {
+	: public CGAL::cpp98::unary_function< Type, Type > {
 	  Type operator()( const Type& x ) const {
 	    return Mpzf_square(x);
 	  }
 	};
 
       struct Integral_division
-	: public CGAL::binary_function< Type, Type, Type > {
+	: public CGAL::cpp98::binary_function< Type, Type, Type > {
 	  Type operator()(
 	      const Type& x,
 	      const Type& y ) const {
@@ -1063,14 +1069,14 @@ std::istream& operator>> (std::istream& is, Mpzf& a)
 	};
 
       struct Sqrt
-	: public CGAL::unary_function< Type, Type > {
+	: public CGAL::cpp98::unary_function< Type, Type > {
 	  Type operator()( const Type& x) const {
 	    return Mpzf_sqrt(x);
 	  }
 	};
 
       struct Is_square
-	: public CGAL::binary_function< Type, Type&, bool > {
+	: public CGAL::cpp98::binary_function< Type, Type&, bool > {
 	  bool operator()( const Type& x, Type& y ) const {
 	    // TODO: avoid doing 2 calls.
 	    if (!Mpzf_is_square(x)) return false;
@@ -1086,21 +1092,21 @@ std::istream& operator>> (std::istream& is, Mpzf& a)
   template <> struct Real_embeddable_traits< Mpzf >
     : public INTERN_RET::Real_embeddable_traits_base< Mpzf , CGAL::Tag_true > {
       struct Sgn
-	: public CGAL::unary_function< Type, ::CGAL::Sign > {
+	: public CGAL::cpp98::unary_function< Type, ::CGAL::Sign > {
 	  ::CGAL::Sign operator()( const Type& x ) const {
 	    return x.sign();
 	  }
 	};
 
       struct To_double
-	: public CGAL::unary_function< Type, double > {
+	: public CGAL::cpp98::unary_function< Type, double > {
 	    double operator()( const Type& x ) const {
 	      return x.to_double();
 	    }
 	};
 
       struct Compare
-	: public CGAL::binary_function< Type, Type, Comparison_result > {
+	: public CGAL::cpp98::binary_function< Type, Type, Comparison_result > {
 	    Comparison_result operator()(
 		const Type& x,
 		const Type& y ) const {
@@ -1109,7 +1115,7 @@ std::istream& operator>> (std::istream& is, Mpzf& a)
 	};
 
       struct To_interval
-	: public CGAL::unary_function< Type, std::pair< double, double > > {
+	: public CGAL::cpp98::unary_function< Type, std::pair< double, double > > {
 	    std::pair<double, double> operator()( const Type& x ) const {
 	      return x.to_interval();
 	    }

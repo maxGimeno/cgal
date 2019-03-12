@@ -6,6 +6,7 @@
 #include <CGAL/Three/Viewer_config.h>
 #include <CGAL/Three/Scene_interface.h>
 #include <QOpenGLBuffer>
+#include <QOpenGLDebugMessage>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLShaderProgram>
 #include <CGAL/Three/Viewer_interface.h>
@@ -82,6 +83,8 @@ public:
   void set2DSelectionMode(bool) Q_DECL_OVERRIDE;
   void setStaticImage(QImage image) Q_DECL_OVERRIDE;
   const QImage& staticImage() const Q_DECL_OVERRIDE;
+  //!Set total number of depth peeling passes.
+   void setTotalPass(int);
 
 Q_SIGNALS:
   void sendMessage(QString);
@@ -91,7 +94,7 @@ public Q_SLOTS:
   //! If b is true, facets will be ligted from both internal and external sides.
   //! If b is false, only the side that is exposed to the light source will be lighted.
   void setTwoSides(bool b) Q_DECL_OVERRIDE;
-  void SetOrthoProjection( bool b);
+  void SetOrthoProjection( bool b) Q_DECL_OVERRIDE;
   //! If b is true, some items are displayed in a simplified version when moving the camera.
   //! If b is false, items display is never altered, even when moving.
   void setFastDrawing(bool b) Q_DECL_OVERRIDE;
@@ -111,11 +114,14 @@ public Q_SLOTS:
   {
     setMouseBinding(::Qt::ShiftModifier, ::Qt::LeftButton, CGAL::qglviewer::SELECT);
   }
-
   virtual void setNoBinding() Q_DECL_OVERRIDE
   {
     setMouseBinding(::Qt::ShiftModifier, ::Qt::LeftButton, CGAL::qglviewer::NO_CLICK_ACTION);
   }
+
+  void setLighting();
+
+  void messageLogged(QOpenGLDebugMessage);
 
 protected:
   void paintEvent(QPaintEvent *)Q_DECL_OVERRIDE;
@@ -138,8 +144,16 @@ protected:
   double prev_radius;
 
 public:
-  QOpenGLFunctions_4_3_Compatibility* openGL_4_3_functions() Q_DECL_OVERRIDE;
-
+  QOpenGLFunctions_4_3_Core* openGL_4_3_functions() Q_DECL_OVERRIDE;
+  void setCurrentPass(int pass) Q_DECL_OVERRIDE;
+   void setDepthWriting(bool writing_depth) Q_DECL_OVERRIDE;
+   void setDepthPeelingFbo(QOpenGLFramebufferObject *fbo) Q_DECL_OVERRIDE;
+   int currentPass()const Q_DECL_OVERRIDE;
+   bool isDepthWriting()const Q_DECL_OVERRIDE;
+   QOpenGLFramebufferObject* depthPeelingFbo()Q_DECL_OVERRIDE;
+   float total_pass()Q_DECL_OVERRIDE;
+   const GLfloat& getGlPointSize()const Q_DECL_OVERRIDE;
+   void setGlPointSize(const GLfloat& p) Q_DECL_OVERRIDE;
 }; // end class Viewer
 
 

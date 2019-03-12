@@ -1,10 +1,12 @@
 /*!
-\ingroup PkgSolverConcepts
+\ingroup PkgSolverInterfaceConcepts
 \cgalConcept
 
 Concept providing functions to extract eigenvectors and eigenvalues
 from covariance matrices represented by an array `a`, using symmetric
-diagonalization. For example, a matrix of dimension 3 is defined as
+diagonalization.
+
+For example, a matrix of dimension 3 is defined as
 follows:
 <center>
 \f$ \begin{bmatrix}
@@ -17,8 +19,6 @@ follows:
 \tparam FT Number type
 \tparam dim Dimension of the matrices and vectors
 
-\cgalHasModel `CGAL::Default_diagonalize_traits`
-\cgalHasModel `CGAL::Diagonalize_traits`
 \cgalHasModel `CGAL::Eigen_diagonalize_traits`
 */
 

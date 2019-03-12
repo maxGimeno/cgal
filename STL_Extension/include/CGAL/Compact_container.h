@@ -1027,6 +1027,10 @@ bool operator>=(const Compact_container<T, Allocator, Increment_policy, TimeStam
   return ! (lhs < rhs);
 }
 
+// forward-declare Concurrent_compact_container, for CC_iterator
+template < class T, class Allocator_ >
+class Concurrent_compact_container;
+
 namespace internal {
 
   template < class DSC, bool Const >
@@ -1095,12 +1099,13 @@ namespace internal {
       void        *vp;
     } m_ptr;
 
-    // Only Compact_container should access these constructors.
-    friend class Compact_container<value_type,
-                                   typename DSC::Al,
-                                   typename DSC::Ip,
-                                   typename DSC::Ts>;
+    // Only Compact_container and Concurrent_compact_container should
+    // access these constructors.
+    template <typename T, typename Al, typename Ip, typename Ts>
+    friend class CGAL::Compact_container;
 
+    friend class CGAL::Concurrent_compact_container<value_type,
+                                                    typename DSC::Al>;
 
     // For begin()
     CC_iterator(pointer ptr, int, int)
@@ -1314,7 +1319,7 @@ namespace std {
 
   template < class DSC, bool Const >
   struct hash<CGAL::internal::CC_iterator<DSC, Const> >
-    : public CGAL::unary_function<CGAL::internal::CC_iterator<DSC, Const>, std::size_t> {
+    : public CGAL::cpp98::unary_function<CGAL::internal::CC_iterator<DSC, Const>, std::size_t> {
 
     std::size_t operator()(const CGAL::internal::CC_iterator<DSC, Const>& i) const
     {

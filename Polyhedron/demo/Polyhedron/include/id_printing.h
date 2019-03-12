@@ -7,7 +7,7 @@
 #include <boost/foreach.hpp>
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
 #include <vector>
-
+#define POINT_SIZE 11
 template<class Mesh>
 struct VKRingPMAP{
   typedef typename boost::graph_traits<Mesh>::vertex_descriptor key_type;
@@ -120,10 +120,22 @@ bool find_primitive_id(const QPoint& point,
   const CGAL::qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(CGAL::QGLViewer::QGLViewerPool().first())->offset();
 
   //find clicked facet
-  CGAL::qglviewer::Vec dir = point_under - viewer->camera()->position();
-  const Point ray_origin(viewer->camera()->position().x - offset.x,
-                         viewer->camera()->position().y - offset.y,
-                         viewer->camera()->position().z - offset.z);
+  CGAL::qglviewer::Vec dir;
+  Point ray_origin;
+  if(viewer->camera()->type() == CGAL::qglviewer::Camera::PERSPECTIVE)
+  {
+    dir = point_under - viewer->camera()->position();
+    ray_origin = Point(viewer->camera()->position().x - offset.x,
+                       viewer->camera()->position().y - offset.y,
+                       viewer->camera()->position().z - offset.z);
+  }
+  else
+  {
+    dir = viewer->camera()->viewDirection();
+    ray_origin = Point(point_under.x - dir.x,
+                       point_under.y - dir.y,
+                       point_under.z - dir.z);
+  }
 
   const typename Traits::Vector_3 ray_dir(dir.x, dir.y, dir.z);
   const typename Traits::Ray_3 ray(ray_origin, ray_dir);
@@ -194,6 +206,7 @@ void compute_displayed_ids(Mesh& mesh,
 
   QFont font;
   font.setBold(true);
+  font.setPointSize(POINT_SIZE);
   std::vector<vertex_descriptor> displayed_vertices;
   std::vector<edge_descriptor> displayed_edges;
   std::vector<face_descriptor> displayed_faces;
@@ -215,9 +228,9 @@ void compute_displayed_ids(Mesh& mesh,
     }
   }
   QVector3D point(
-      get(ppmap, displayed_vertices[0]).x() + offset.x,
-      get(ppmap, displayed_vertices[0]).y() + offset.y,
-      get(ppmap, displayed_vertices[0]).z() + offset.z);
+      float(get(ppmap, displayed_vertices[0]).x() + offset.x),
+      float(get(ppmap, displayed_vertices[0]).y() + offset.y),
+      float(get(ppmap, displayed_vertices[0]).z() + offset.z));
 
   //test if we want to erase or not
   BOOST_FOREACH(TextItem* text_item, *targeted_ids)
@@ -342,7 +355,10 @@ void compute_displayed_ids(Mesh& mesh,
     Point pos=Point(get(ppmap, vh).x()+offset.x,
                     get(ppmap, vh).y()+offset.y,
                     get(ppmap, vh).z()+offset.z);
-    TextItem* text_item = new TextItem(pos.x(), pos.y(), pos.z(), QString("%1").arg(get(vidmap, vh)), true, font, Qt::red);
+    TextItem* text_item = new TextItem(float(pos.x()),
+                                       float(pos.y()),
+                                       float(pos.z()),
+                                       QString("%1").arg(get(vidmap, vh)), true, font, Qt::red);
     vitems->append(text_item);
     targeted_ids->push_back(text_item);
   }
@@ -354,7 +370,10 @@ void compute_displayed_ids(Mesh& mesh,
                 pos.y()+offset.y,
                 pos.z()+offset.z);
 
-    TextItem* text_item = new TextItem(pos.x(), pos.y(), pos.z(), QString("%1").arg(get(hidmap, h)/2), true, font, Qt::green);
+    TextItem* text_item = new TextItem(float(pos.x()),
+                                       float(pos.y()),
+                                       float(pos.z()),
+                                       QString("%1").arg(get(hidmap, h)/2), true, font, Qt::green);
     eitems->append(text_item);
   }
 
@@ -373,7 +392,10 @@ void compute_displayed_ids(Mesh& mesh,
     Point pos(x/total+offset.x,
               y/total+offset.y,
               z/total+offset.z);
-    TextItem* text_item = new TextItem(pos.x(), pos.y(), pos.z(), QString("%1").arg(get(fidmap,f)), true, font, Qt::blue);
+    TextItem* text_item = new TextItem(float(pos.x()),
+                                       float(pos.y()),
+                                       float(pos.z()),
+                                       QString("%1").arg(get(fidmap,f)), true, font, Qt::blue);
     fitems->append(text_item);
   }
 }
@@ -393,14 +415,15 @@ bool printVertexIds(const Mesh& mesh,
   const CGAL::qglviewer::Vec offset = viewer->offset();
   QFont font;
   font.setBold(true);
+  font.setPointSize(POINT_SIZE);
 
   //fills textItems
   BOOST_FOREACH(typename boost::graph_traits<Mesh>::vertex_descriptor vh, vertices(mesh))
   {
     const Point& p = get(ppmap, vh);
-    vitems->append(new TextItem((float)p.x() + offset.x,
-                                (float)p.y() + offset.y,
-                                (float)p.z() + offset.z,
+    vitems->append(new TextItem(float(p.x() + offset.x),
+                                float(p.y() + offset.y),
+                                float(p.z() + offset.z),
                                 QString("%1").arg(get(idmap, vh)), true, font, Qt::red));
 
   }
@@ -428,14 +451,15 @@ bool printEdgeIds(const Mesh& mesh,
   const CGAL::qglviewer::Vec offset = viewer->offset();
   QFont font;
   font.setBold(true);
-
+  font.setPointSize(POINT_SIZE);
+  
   BOOST_FOREACH(typename boost::graph_traits<Mesh>::edge_descriptor e, edges(mesh))
   {
     const Point& p1 = get(ppmap, source(e, mesh));
     const Point& p2 = get(ppmap, target(e, mesh));
-    eitems->append(new TextItem((float)(p1.x() + p2.x()) / 2 + offset.x,
-                                (float)(p1.y() + p2.y()) / 2 + offset.y,
-                                (float)(p1.z() + p2.z()) / 2 + offset.z,
+    eitems->append(new TextItem(float((p1.x() + p2.x()) / 2 + offset.x),
+                                float((p1.y() + p2.y()) / 2 + offset.y),
+                                float((p1.z() + p2.z()) / 2 + offset.z),
                                 QString("%1").arg(get(idmap, halfedge(e, mesh)) / 2), true, font, Qt::green));
   }
   //add the QList to the render's pool
@@ -461,6 +485,7 @@ bool printFaceIds(const Mesh& mesh,
   const CGAL::qglviewer::Vec offset = viewer->offset();
   QFont font;
   font.setBold(true);
+  font.setPointSize(POINT_SIZE);
   BOOST_FOREACH(typename boost::graph_traits<Mesh>::face_descriptor fh, faces(mesh))
   {
     double x(0), y(0), z(0);
@@ -473,9 +498,9 @@ bool printFaceIds(const Mesh& mesh,
       total += 1.f;
     }
 
-    fitems->append(new TextItem((float)x / total + offset.x,
-                                (float)y / total + offset.y,
-                                (float)z / total + offset.z,
+    fitems->append(new TextItem(float(x / total + offset.x),
+                                float(y / total + offset.y),
+                                float(z / total + offset.z),
                                 QString("%1").arg(get(idmap, fh)), true, font, Qt::blue));
   }
   //add the QList to the render's pool
@@ -602,10 +627,10 @@ int zoomToId(const Mesh& mesh,
   CGAL::qglviewer::Quaternion new_orientation(CGAL::qglviewer::Vec(0,0,-1),
                                         CGAL::qglviewer::Vec(-normal.x(), -normal.y(), -normal.z()));
   Point new_pos = p +
-      CGAL::qglviewer::Vec(
-        viewer->camera()->position().x - viewer->camera()->sceneCenter().x,
-        viewer->camera()->position().y - viewer->camera()->sceneCenter().y,
-        viewer->camera()->position().z - viewer->camera()->sceneCenter().z)
+      0.25*CGAL::qglviewer::Vec(
+        viewer->camera()->position().x - viewer->camera()->pivotPoint().x,
+        viewer->camera()->position().y - viewer->camera()->pivotPoint().y,
+        viewer->camera()->position().z - viewer->camera()->pivotPoint().z)
       .norm() * normal ;
 
   viewer->camera()->setPivotPoint(CGAL::qglviewer::Vec(p.x(),

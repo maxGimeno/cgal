@@ -1,13 +1,8 @@
 #ifndef SCENE_FACEGRAPH_ITEM_K_RING_SELECTION_H
 #define SCENE_FACEGRAPH_ITEM_K_RING_SELECTION_H
 #include "Scene_facegraph_item_k_ring_selection_config.h"
-#ifdef USE_SURFACE_MESH
 #include "Scene_surface_mesh_item.h"
 #include <CGAL/iterator.h>
-#else
-#include "Scene_polyhedron_item.h"
-#include "Polyhedron_type.h"
-#endif
 #include <set>
 #include <CGAL/Qt/qglviewer.h>
 #include <QKeyEvent>
@@ -26,13 +21,8 @@
 
 #include <CGAL/Polygon_2.h>
 
-#ifdef USE_SURFACE_MESH
 typedef Scene_surface_mesh_item Scene_facegraph_item;
 typedef EPICK FG_Traits;
-#else
-typedef Scene_polyhedron_item Scene_facegraph_item;
-typedef Kernel FG_Traits;
-#endif
 
 typedef Scene_facegraph_item::Face_graph FaceGraph;
 typedef boost::graph_traits<FaceGraph>::vertex_descriptor fg_vertex_descriptor;
@@ -126,10 +116,6 @@ public:
     is_ready_to_paint_select = true;
     is_lasso_active = false;
 
-#ifndef USE_SURFACE_MESH
-    poly_item->enable_facets_picking(true);
-    poly_item->set_color_vector_read_only(true);
-#endif
     CGAL::QGLViewer* viewer = *CGAL::QGLViewer::QGLViewerPool().begin();
     viewer->installEventFilter(this);
     mw->installEventFilter(this);
@@ -148,51 +134,45 @@ public Q_SLOTS:
   // slots are called by signals of polyhedron_item
   void vertex_has_been_selected(void* void_ptr) 
   {
+    if((*CGAL::QGLViewer::QGLViewerPool().begin())->property("performing_selection").toBool())
+      return;
     is_active=true;
     if(active_handle_type == Active_handle::VERTEX || active_handle_type == Active_handle::PATH)
     {
-#ifdef USE_SURFACE_MESH
       typedef boost::graph_traits<FaceGraph>::vertices_size_type size_type;
       size_type h = static_cast<size_type>(reinterpret_cast<std::size_t>(void_ptr));
       process_selection( static_cast<fg_vertex_descriptor>(h) );
-#else
-      process_selection( static_cast<Polyhedron::Vertex*>(void_ptr)->halfedge()->vertex() );
-#endif
     }
     updateIsTreated();
   }
   void facet_has_been_selected(void* void_ptr)
   {
+    if((*CGAL::QGLViewer::QGLViewerPool().begin())->property("performing_selection").toBool())
+      return;
     is_active=true;
     if (active_handle_type == Active_handle::FACET
       || active_handle_type == Active_handle::CONNECTED_COMPONENT)
     {
-#ifdef USE_SURFACE_MESH
       typedef boost::graph_traits<FaceGraph>::faces_size_type size_type;
       size_type h = static_cast<size_type>(reinterpret_cast<std::size_t>(void_ptr));
       process_selection( static_cast<fg_face_descriptor>(h) );
-#else
-      process_selection( static_cast<Polyhedron::Facet*>(void_ptr)->halfedge()->facet() );
-#endif
     }
     updateIsTreated();
   }
   void edge_has_been_selected(void* void_ptr) 
   {
+    if((*CGAL::QGLViewer::QGLViewerPool().begin())->property("performing_selection").toBool())
+      return;
     is_active=true;
     if(active_handle_type == Active_handle::EDGE)
     {
-#ifdef USE_SURFACE_MESH
       typedef boost::graph_traits<FaceGraph>::edges_size_type size_type;
       size_type h = static_cast<size_type>(reinterpret_cast<std::size_t>(void_ptr));
       process_selection( static_cast<fg_edge_descriptor>(h) );
-#else
-      process_selection( edge(static_cast<Polyhedron::Halfedge*>(void_ptr)->opposite()->opposite(), *poly_item->polyhedron()) );
-#endif
     }
     updateIsTreated();
   }
-
+  
   void paint_selection()
   {
     if(is_ready_to_paint_select)
@@ -206,8 +186,21 @@ public Q_SLOTS:
       const CGAL::qglviewer::Vec& point = camera->pointUnderPixel(paint_pos, found) - offset;
       if(found)
       {
-        const CGAL::qglviewer::Vec& orig = camera->position() - offset;
-        const CGAL::qglviewer::Vec& dir = point - orig;
+       CGAL::qglviewer::Vec orig; 
+       CGAL::qglviewer::Vec dir;
+       if(camera->type() == CGAL::qglviewer::Camera::PERSPECTIVE)
+       {
+         orig = camera->position() - offset;
+         dir = point - orig;
+       }
+       else
+       {
+         dir = camera->viewDirection();
+         orig = CGAL::qglviewer::Vec(point.x - dir.x, 
+                                     point.y - dir.y,
+                                     point.z - dir.z);
+         
+       }
         poly_item->select(orig.x, orig.y, orig.z, dir.x, dir.y, dir.z);
       }
       viewer->doneCurrent();
@@ -242,6 +235,7 @@ public Q_SLOTS:
     if(face_sel.empty())
     {
       contour_2d.clear();
+      qobject_cast<CGAL::Three::Viewer_interface*>(viewer)->set2DSelectionMode(false);
       return;
     }
     //get border edges of the selected patches
@@ -268,7 +262,6 @@ public Q_SLOTS:
 
     BOOST_FOREACH(fg_face_descriptor f, face_sel)
     {
-
       int cc_id = get(fccmap, f);
       if(is_cc_done[cc_id])
       {
@@ -287,14 +280,26 @@ public Q_SLOTS:
       if(total == 0)
         continue;
       CGAL::qglviewer::Vec center(x/(double)total, y/(double)total, z/(double)total);
-      const CGAL::qglviewer::Vec& orig = camera->position() - offset;
-      CGAL::qglviewer::Vec direction = center - orig;
+      CGAL::qglviewer::Vec orig;
+      CGAL::qglviewer::Vec dir;
+      if(camera->type() == CGAL::qglviewer::Camera::PERSPECTIVE)
+      {
+        orig = camera->position() - offset;
+        dir = center - orig;
+      }
+      else
+      {
+        dir = camera->viewDirection();
+        orig = CGAL::qglviewer::Vec(center.x - dir.x, 
+                                    center.y - dir.y,
+                                    center.z - dir.z);
+      }
       if(poly_item->intersect_face(orig.x,
                                    orig.y,
                                    orig.z,
-                                   direction.x,
-                                   direction.y,
-                                   direction.z,
+                                   dir.x,
+                                   dir.y,
+                                   dir.z,
                                    f))
       {
         is_cc_done[cc_id] = true;
@@ -351,6 +356,7 @@ public Q_SLOTS:
       break;
     }
     contour_2d.clear();
+    Q_EMIT endSelection();
     qobject_cast<CGAL::Three::Viewer_interface*>(viewer)->set2DSelectionMode(false);
   }
 
@@ -367,8 +373,21 @@ public Q_SLOTS:
       const CGAL::qglviewer::Vec& point = camera->pointUnderPixel(hl_pos, found) - offset;
       if(found)
       {
-        const CGAL::qglviewer::Vec& orig = camera->position() - offset;
-        const CGAL::qglviewer::Vec& dir = point - orig;
+        CGAL::qglviewer::Vec orig;
+        CGAL::qglviewer::Vec dir;
+        if(camera->type() == CGAL::qglviewer::Camera::PERSPECTIVE)
+        {
+          orig = camera->position() - offset;
+          dir = point - orig;
+        }
+        else
+        {
+          dir = camera->viewDirection();
+          orig = CGAL::qglviewer::Vec(point.x - dir.x, 
+                                      point.y - dir.y,
+                                      point.z - dir.z);
+          
+        }
         is_highlighting = true;
         poly_item->select(orig.x, orig.y, orig.z, dir.x, dir.y, dir.z);
         is_highlighting = false;
@@ -641,7 +660,10 @@ protected:
         if(!poly.empty())
           for(std::size_t j=0; j<poly.size()-1; ++j)
           {
-            painter->drawLine(poly[j].x(), poly[j].y(), poly[j+1].x(), poly[j+1].y());
+            painter->drawLine(int(poly[j].x()),
+                              int(poly[j].y()),
+                              int(poly[j+1].x()),
+                              int(poly[j+1].y()));
           }
       }
       painter->end();

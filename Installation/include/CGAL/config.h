@@ -195,8 +195,13 @@
 #if defined(BOOST_NO_0X_HDR_UNORDERED_SET) || \
     defined(BOOST_NO_0X_HDR_UNORDERED_MAP) || \
     defined(BOOST_NO_CXX11_HDR_UNORDERED_SET) || \
-    defined(BOOST_NO_CXX11_HDR_UNORDERED_MAP)
+    defined(BOOST_NO_CXX11_HDR_UNORDERED_MAP) || \
+   (defined(_MSC_VER) && (_MSC_VER == 1800)) // std::unordered_set is very bad in MSVC2013
 #define CGAL_CFG_NO_CPP0X_UNORDERED 1
+#endif
+#if defined( BOOST_NO_0X_HDR_THREAD) || \
+    defined( BOOST_NO_CXX11_HDR_THREAD)
+#define CGAL_CFG_NO_STD_THREAD 1
 #endif
 #if defined(BOOST_NO_DECLTYPE) || \
     defined(BOOST_NO_CXX11_DECLTYPE) || (BOOST_VERSION < 103600)
@@ -205,7 +210,8 @@
 #if defined(BOOST_NO_DELETED_FUNCTIONS) || \
     defined(BOOST_NO_DEFAULTED_FUNCTIONS) || \
     defined(BOOST_NO_CXX11_DELETED_FUNCTIONS) || \
-    defined(BOOST_NO_CXX11_DEFAULTED_FUNCTIONS) || (BOOST_VERSION < 103600)
+    defined(BOOST_NO_CXX11_DEFAULTED_FUNCTIONS) || (BOOST_VERSION < 103600) || \
+    (defined(_MSC_VER) && _MSC_VER < 1900) // MSVC 2013 has only partial support
 #define CGAL_CFG_NO_CPP0X_DELETED_AND_DEFAULT_FUNCTIONS 1
 #endif
 #if defined(BOOST_NO_FUNCTION_TEMPLATE_DEFAULT_ARGS) || \

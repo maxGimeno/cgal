@@ -2049,6 +2049,20 @@ namespace CommonKernelFunctors {
       CGAL_assertion(e_pt!=NULL);
       return *e_pt;
     }
+
+    Point
+    operator()(const Plane& plane,
+               const Point& l1, const Point& l2) const
+    {
+      Line line = construct_line( l1, l2 );
+
+      typename cpp11::result_of<typename K::Intersect_3(Plane,Line)>::type
+        res = typename K::Intersect_3()(plane,line);
+      CGAL_assertion(res!=boost::none);
+      const Point* e_pt = boost::get<Point>(&(*res));
+      CGAL_assertion(e_pt!=NULL);
+      return *e_pt;
+    }
   };
 
   template <typename K>
@@ -2937,7 +2951,7 @@ namespace CommonKernelFunctors {
     template <class T1, class T2>
     result_type
     operator()(const T1& t1, const T2& t2) const
-    { return internal::do_intersect(t1, t2, K()); }
+    { return Intersections::internal::do_intersect(t1, t2, K()); }
   };
 
   template <typename K>
@@ -2950,11 +2964,11 @@ namespace CommonKernelFunctors {
     template <class T1, class T2>
     result_type
     operator()(const T1& t1, const T2& t2) const
-    { return internal::do_intersect(t1, t2, K()); }
+    { return Intersections::internal::do_intersect(t1, t2, K()); }
 
     result_type
     operator()(const typename K::Plane_3& pl1, const typename K::Plane_3& pl2, const typename K::Plane_3& pl3) const
-    { return internal::do_intersect(pl1, pl2, pl3, K() ); }
+    { return Intersections::internal::do_intersect(pl1, pl2, pl3, K() ); }
 
   };
 
@@ -3482,7 +3496,7 @@ namespace CommonKernelFunctors {
     template <class T1, class T2>
     typename Intersection_traits<K, T1, T2>::result_type
     operator()(const T1& t1, const T2& t2) const
-    { return internal::intersection(t1, t2, K()); }
+    { return Intersections::internal::intersection(t1, t2, K()); }
   };
 
   template <typename K>
@@ -3515,7 +3529,7 @@ namespace CommonKernelFunctors {
     template <class T1, class T2>
     typename cpp11::result_of< Intersect_3(T1, T2) >::type
     operator()(const T1& t1, const T2& t2) const
-    { return internal::intersection(t1, t2, K() ); }
+    { return Intersections::internal::intersection(t1, t2, K() ); }
 
     #if CGAL_INTERSECTION_VERSION < 2
     CGAL::Object
@@ -3523,7 +3537,7 @@ namespace CommonKernelFunctors {
     typename boost::optional< boost::variant< typename K::Point_3, typename K::Line_3, typename K::Plane_3 > >
     #endif
     operator()(const Plane_3& pl1, const Plane_3& pl2, const Plane_3& pl3)const
-    { return internal::intersection(pl1, pl2, pl3, K() ); }
+    { return Intersections::internal::intersection(pl1, pl2, pl3, K() ); }
   };
 
   template <typename K>

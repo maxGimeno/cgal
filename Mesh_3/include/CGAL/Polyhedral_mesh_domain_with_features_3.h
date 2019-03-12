@@ -34,32 +34,35 @@
 
 #include <CGAL/Mesh_3/config.h>
 
-#include <CGAL/Random.h>
 #include <CGAL/Polyhedral_mesh_domain_3.h>
 #include <CGAL/Mesh_domain_with_polyline_features_3.h>
 #include <CGAL/Mesh_polyhedron_3.h>
-
 #include <CGAL/Mesh_3/Detect_polylines_in_polyhedra.h>
 #include <CGAL/Mesh_3/Polyline_with_context.h>
-#include <CGAL/Polygon_mesh_processing/detect_features.h>
 
-#include <CGAL/enum.h>
 #include <CGAL/IO/Polyhedron_iostream.h>
-#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
-#include <CGAL/boost/graph/helpers.h>
-#include <boost/graph/filtered_graph.hpp>
-#include <boost/graph/adjacency_list.hpp>
-#include <CGAL/boost/graph/split_graph_into_polylines.h>
-#include <CGAL/Default.h>
 #include <CGAL/internal/Mesh_3/helpers.h>
 
+#include <CGAL/boost/graph/split_graph_into_polylines.h>
 #include <CGAL/boost/iterator/transform_iterator.hpp>
+#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
+#include <CGAL/boost/graph/helpers.h>
+#include <CGAL/enum.h>
+#include <CGAL/Default.h>
+#include <CGAL/Polygon_mesh_processing/detect_features.h>
+#include <CGAL/Random.h>
+
 #include <boost/foreach.hpp>
+#include <boost/graph/filtered_graph.hpp>
+#include <boost/graph/adjacency_list.hpp>
 
-#include <string>
-#include <vector>
 #include <fstream>
-
+#include <iostream>
+#include <map>
+#include <string>
+#include <set>
+#include <vector>
+#include <utility>
 
 namespace CGAL {
 
@@ -134,6 +137,7 @@ public:
   {
     stored_polyhedra.resize(1);
     stored_polyhedra[0] = p;
+    get(face_patch_id_t<Patch_id>(), stored_polyhedra[0]);
     this->add_primitives(stored_polyhedra[0]);
     this->build();
   }
@@ -168,6 +172,8 @@ public:
     stored_polyhedra.resize(2);
     stored_polyhedra[0] = p;
     stored_polyhedra[1] = bounding_p;
+    get(face_patch_id_t<Patch_id>(), stored_polyhedra[0]);
+    get(face_patch_id_t<Patch_id>(), stored_polyhedra[1]);
     this->add_primitives(stored_polyhedra[0]);
     this->add_primitives(stored_polyhedra[1]);
     if(CGAL::is_empty(bounding_p)) {
@@ -186,6 +192,7 @@ public:
     stored_polyhedra.reserve(std::distance(begin, end));
     for (; begin != end; ++begin) {
       stored_polyhedra.push_back(**begin);
+      get(face_patch_id_t<Patch_id>(), stored_polyhedra.back());
       this->add_primitives(stored_polyhedra.back());
     }
     this->set_surface_only();
@@ -203,11 +210,13 @@ public:
     if(begin != end) {
       for (; begin != end; ++begin) {
         stored_polyhedra.push_back(**begin);
+        get(face_patch_id_t<Patch_id>(), stored_polyhedra.back());
         this->add_primitives(stored_polyhedra.back());
       }
-      stored_polyhedra.push_back(bounding_polyhedron);
-      this->add_primitives(stored_polyhedra.back());
     }
+    stored_polyhedra.push_back(bounding_polyhedron);
+    get(face_patch_id_t<Patch_id>(), stored_polyhedra.back());
+    this->add_primitives(stored_polyhedra.back());
     if(bounding_polyhedron.empty()) {
       this->set_surface_only();
     } else {
@@ -236,13 +245,14 @@ public:
   {
     return stored_polyhedra;
   }
-  
+
 private:
   void load_from_file(const char* filename) {
     // Create input polyhedron
     std::ifstream input(filename);
     stored_polyhedra.resize(1);
     input >> stored_polyhedra[0];
+    get(face_patch_id_t<Patch_id>(), stored_polyhedra[0]);
     this->add_primitives(stored_polyhedra[0]);
     this->build();
   }
@@ -349,7 +359,7 @@ detect_features(FT angle_in_degree, std::vector<Polyhedron>& poly)
     typedef typename boost::property_map<Polyhedron,CGAL::vertex_incident_patches_t<P_id> >::type VIPMap;
     typedef typename boost::property_map<Polyhedron, CGAL::edge_is_feature_t>::type EIFMap;
 
-    using internal::Mesh_3::Get_face_index_pmap;
+    using Mesh_3::internal::Get_face_index_pmap;
     Get_face_index_pmap<Polyhedron> get_face_index_pmap(p);
 
     PIDMap pid_map = get(face_patch_id_t<Tag_>(), p);
@@ -364,7 +374,7 @@ detect_features(FT angle_in_degree, std::vector<Polyhedron>& poly)
       .face_index_map(get_face_index_pmap(p))
       .vertex_incident_patches_map(vip_map));
 
-    internal::Mesh_3::Is_featured_edge<Polyhedron> is_featured_edge(p);
+    Mesh_3::internal::Is_featured_edge<Polyhedron> is_featured_edge(p);
 
     add_featured_edges_to_graph(p, is_featured_edge, g_copy, p2vmap);
   }
@@ -394,11 +404,11 @@ add_features_from_split_graph_into_polylines(Featured_edges_copy_graph& g_copy)
 {
   std::vector<Polyline_with_context> polylines;
 
-  internal::Mesh_3::Extract_polyline_with_context_visitor<
+  Mesh_3::internal::Extract_polyline_with_context_visitor<
     Polyline_with_context,
     Featured_edges_copy_graph
     > visitor(g_copy, polylines);
-  internal::Mesh_3::Angle_tester<GT_> angle_tester;
+  Mesh_3::internal::Angle_tester<GT_> angle_tester;
   split_graph_into_polylines(g_copy, visitor, angle_tester);
 
   this->add_features_with_context(polylines.begin(),
