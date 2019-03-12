@@ -6,9 +6,8 @@
 #include <QMainWindow>
 #include <QApplication>
 
+#include "SMesh_type.h"
 #include "Scene_surface_mesh_item.h"
-#include "Polyhedron_type.h"
-#include "Scene_polyhedron_item.h"
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 #include "Scene_polyhedron_selection_item.h"
 #include "Scene_points_with_normal_item.h"
@@ -17,11 +16,8 @@
 #include <CGAL/Optimal_bounding_box/obb.h>
 #include <CGAL/Eigen_linear_algebra_traits.h>
 
-//typedef Scene_surface_mesh_item Scene_facegraph_item;
-//typedef Scene_facegraph_item Scene_facegraph_item;
 
-typedef Scene_facegraph_item::Face_graph FaceGraph;
-typedef Polyhedron::Point_3 Point_3;
+typedef SMesh::Point Point_3;
 using namespace CGAL::Three;
 
 class Create_obb_mesh_plugin :
@@ -38,24 +34,14 @@ public:
 
   bool applicable(QAction*) const {
 
-    /*
+    
     if (scene->selectionIndices().size() == 1)
     {
-    return qobject_cast<Scene_facegraph_item*>(scene->item(scene->mainSelectionIndex()))
-    || qobject_cast<Scene_polyhedron_selection_item*>(scene->item(scene->mainSelectionIndex()));
+      return qobject_cast<Scene_surface_mesh_item*>(scene->item(scene->mainSelectionIndex()))
+          || qobject_cast<Scene_polyhedron_selection_item*>(scene->item(scene->mainSelectionIndex()))
+          || qobject_cast<Scene_points_with_normal_item*>(scene->item(scene->mainSelectionIndex()));
     }
-
-    Q_FOREACH(int index, scene->selectionIndices())
-    {
-      if (qobject_cast<Scene_facegraph_item*>(scene->item(index)))
-        return true;
-    }
-    return false;
-    */
-
-    if(scene->mainSelectionIndex() != -1
-       && scene->item(scene->mainSelectionIndex())->isFinite())
-      return true;
+    
   return false;
 
 }
@@ -98,8 +84,8 @@ void Create_obb_mesh_plugin::gather_mesh_points(std::vector<Point_3>& points)
 {
   const Scene_interface::Item_id index = scene->mainSelectionIndex();
 
-  Scene_facegraph_item* poly_item =
-    qobject_cast<Scene_facegraph_item*>(scene->item(index));
+  Scene_surface_mesh_item* poly_item =
+    qobject_cast<Scene_surface_mesh_item*>(scene->item(index));
 
   Scene_polyhedron_selection_item* selection_item =
     qobject_cast<Scene_polyhedron_selection_item*>(scene->item(index));
@@ -117,7 +103,7 @@ void Create_obb_mesh_plugin::gather_mesh_points(std::vector<Point_3>& points)
 
     if(poly_item != NULL)
     {
-      FaceGraph& pmesh = *poly_item->polyhedron();
+      SMesh& pmesh = *poly_item->polyhedron();
       selected_vertices.assign(vertices(pmesh).begin(), vertices(pmesh).end());
       PointPMap pmap = get(CGAL::vertex_point, pmesh);
       BOOST_FOREACH(vertex_descriptor v, selected_vertices)
@@ -154,7 +140,6 @@ void Create_obb_mesh_plugin::gather_mesh_points(std::vector<Point_3>& points)
       points.push_back(p);
     }
   }
-
 }
 
 void Create_obb_mesh_plugin::obb()
@@ -169,20 +154,10 @@ void Create_obb_mesh_plugin::obb()
   CGAL::Optimal_bounding_box::find_obb(points, obb_points, la_traits, true);
 
   Scene_item* item;
-  if(mw->property("is_polyhedorn_mode").toBool())
-  {
-    Polyhedron* p = new Polyhedron;
-    CGAL::make_hexahedron(obb_points[0], obb_points[1], obb_points[2], obb_points[3],
-                          obb_points[4], obb_points[5], obb_points[6], obb_points[7], *p);
-    item = new Scene_polyhedron_item(p);
-  }
-  else {
-    SMesh* p = new SMesh;
-    CGAL::make_hexahedron(obb_points[0], obb_points[1], obb_points[2], obb_points[3],
-                          obb_points[4], obb_points[5], obb_points[6], obb_points[7], *p);
-    item = new Scene_surface_mesh_item(p);
-  }
-
+  SMesh* p = new SMesh;
+  CGAL::make_hexahedron(obb_points[0], obb_points[1], obb_points[2], obb_points[3],
+      obb_points[4], obb_points[5], obb_points[6], obb_points[7], *p);
+  item = new Scene_surface_mesh_item(p);
   item->setName("Optimal bbox mesh");
   item->setRenderingMode(Wireframe);
   scene->addItem(item);
