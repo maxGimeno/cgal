@@ -95,7 +95,7 @@ function(cgal_add_compilation_test exe_name)
     return()
   endif()
   add_test(NAME "compilation_of__${exe_name}"
-    COMMAND ${TIME_COMMAND} "${CMAKE_COMMAND}" --build "${CMAKE_BINARY_DIR}" --target "${exe_name}")
+    COMMAND ${TIME_COMMAND} "${CMAKE_COMMAND}" --build "${CMAKE_BINARY_DIR}" --target "${exe_name}" --config "$<CONFIG>")
   set_property(TEST "compilation_of__${exe_name}"
     APPEND PROPERTY LABELS "${PROJECT_NAME}")
 endfunction(cgal_add_compilation_test)
