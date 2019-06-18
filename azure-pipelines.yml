@@ -294,6 +294,7 @@ steps:
 - powershell: |
     Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     Write-Host "##vso[task.prependpath]$env:CONDA\Library\bin"
+    Write-Host "##vso[task.prependpath]$env:$(BUILD_DIR)\bin\Release"
   displayName: Add conda to PATH
 - checkout: self
   fetchDepth: 1
