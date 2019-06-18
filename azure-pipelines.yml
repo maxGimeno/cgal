@@ -293,7 +293,7 @@ strategy:
 steps:
 - powershell: |
     Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
-    Write-Host "##vso[task.prependpath]$env::CONDA\Library\bin"
+    Write-Host "##vso[task.prependpath]$env:CONDA\Library\bin"
   displayName: Add conda to PATH
 - checkout: self
   fetchDepth: 1
@@ -304,7 +304,9 @@ steps:
 
 
 - bash: |
-    cd $BUILD_DIR && cmake  -G "Visual Studio 15 2017 Win64" -DBUILD_TESTING=ON -DWITH_tests=ON -DWITH_examples=ON -DCMAKE_CXX_FLAGS_RELEASE=-DCGAL_NDEBUG -DCMAKE_PREFIX_PATH="C:\Miniconda\Library" $SOURCE_DIR  && ctest --build-config "Release" -L $(PACKAGE) -VV
+    echo "${PATH}"
+    cd $BUILD_DIR && cmake  -G "Visual Studio 15 2017 Win64" -DBUILD_TESTING=ON -DWITH_tests=ON -DWITH_examples=ON -DCMAKE_CXX_FLAGS_RELEASE=-DCGAL_NDEBUG -DCMAKE_PREFIX_PATH="C:\Miniconda\Library" $SOURCE_DIR  
+     ctest --build-config "Release" -L $(PACKAGE) -VV
   displayName: Test
   env:
     name: Microsoft
