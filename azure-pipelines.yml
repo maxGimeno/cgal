@@ -293,6 +293,7 @@ strategy:
 steps:
 - powershell: |
     Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+Write-Host "##vso[task.prependpath]$env:CONDA\Library\bin"
   displayName: Add conda to PATH
 - checkout: self
   fetchDepth: 1
