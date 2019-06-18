@@ -304,6 +304,7 @@ steps:
 
 
 - bash: |
+    cmake --version
     echo "${PATH}"
     cd $BUILD_DIR && cmake  -G "Visual Studio 15 2017 Win64" -DBUILD_TESTING=ON -DWITH_tests=ON -DWITH_examples=ON -DCMAKE_CXX_FLAGS_RELEASE=-DCGAL_NDEBUG -DCMAKE_PREFIX_PATH="C:\Miniconda\Library" $SOURCE_DIR  
      ctest --build-config "Release" -L $(PACKAGE) -VV
