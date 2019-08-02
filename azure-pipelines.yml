@@ -3,6 +3,8 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
+pr:
+- master
 pool:
   vmImage: "vs2017-win2016"
 
@@ -136,7 +138,7 @@ strategy:
 #    Mesh_2  :
 #      PACKAGE: Mesh_2
     Mesh_3  :
-      PACKAGE: Mesh_3  
+      PACKAGE: Mesh_3
 #    Mesher_level  :
 #      PACKAGE: Mesher_level
 #    Minkowski_sum_2  :
@@ -280,7 +282,7 @@ strategy:
 #    Voronoi_diagram_2  :
 #      PACKAGE: Voronoi_diagram_2
 #    wininst  :
-#      PACKAGE: wininst+-
+#      PACKAGE: wininst
 
  
 
@@ -290,29 +292,20 @@ steps:
     Write-Host "##vso[task.prependpath]$env:CONDA\Library\bin"
     Write-Host "##vso[task.prependpath]$env:$(BUILD_DIR)\bin\Release"
   displayName: Add conda to PATH
-
 - checkout: self
   fetchDepth: 1
 
 - script: |
-   set VC_PATH="C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\"
-   %VC_PATH%\vcvars64.bat
-   bash.exe
-   export > /d/a/setup
+   conda install -y -c conda-forge cgal --only-deps
+  displayName: Install Dependencies
 
-
-#   conda install -y -c conda-forge cgal --only-deps
-#   set CL_PATH="C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\bin\Hostx64\x64"
-#   %CL_PATH%\cl.exe
-#  displayName: Install Dependencies
 
 - bash: |
-    source /d/a/setup
-#    cd $BUILD_DIR
-#    PATH=$PATH:"/c/Program Files (x86)/Microsoft Visual Studio/2017/Enterprise/VC/Tools/MSVC/14.16.27023/bin/Hostx64/x64/"
-#    cmake  -G "NMake Makefiles" -DBUILD_TESTING=ON -DWITH_tests=ON -DWITH_examples=ON -DCMAKE_CXX_FLAGS_RELEASE='-DMSC_USE_DLL -DCGAL_NDEBUG /O2' -DCMAKE_PREFIX_PATH="C:\Miniconda\Library" $SOURCE_DIR
-#    ctest -j2 -L $(PACKAGE) -E execution___of__ -VV
-#  displayName: Test
+    cd $BUILD_DIR
+    cmake  -G "Visual Studio 15 2017 Win64" -DBUILD_TESTING=ON -DWITH_tests=ON -DWITH_examples=ON -DCMAKE_CXX_FLAGS_RELEASE='-DMSC_USE_DLL -DCGAL_NDEBUG /O2' -DCMAKE_PREFIX_PATH="C:\Miniconda\Library" $SOURCE_DIR
+    ls $BUILD_DIR
+    ctest -j2 --build-config "Release" -L AABB_tree -E execution___of__ -VV --build-options "/p:TrackFileAccess=false"
+  displayName: Test
   env:
     name: Microsoft
     
