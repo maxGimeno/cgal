@@ -98,11 +98,16 @@ steps:
     source /d/a/setup
     cd $BUILD_DIR
     cmake  -G "NMake Makefiles" -DBUILD_TESTING=ON -DWITH_tests=ON -DWITH_examples=ON -DCMAKE_CXX_FLAGS_RELEASE='-DMSC_USE_DLL -DCGAL_NDEBUG /O2' -DCMAKE_PREFIX_PATH="C:\Miniconda\Library" $SOURCE_DIR
-    TO_TEST=""
-    for w in $(PACKAGE); do
-      TO_TEST="${TO_TEST}|$w"
+    INIT=""
+    for pkg in ${PACKAGE}; do
+      if [ -z "$INIT" ]; then
+        TO_TEST=$pkg
+        INIT="y"
+      else
+        TO_TEST="${TO_TEST}|$pkg"
+      fi
     done
-    ctest -j2 -L ${TO_TEST} -E execution___of__ -VV
+    ctest -j2 --build-config "Release" -L ${TO_TEST} -E execution___of__ -VV
   displayName: Test
   env:
     name: Microsoft
