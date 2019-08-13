@@ -104,11 +104,9 @@ steps:
 - bash: |
     #symlink jom.exe to avoid polluting the path with the CONDA root dir
     ln -s /c/Miniconda/jom.exe /usr/bin/jom.exe
-    ls /c/Miniconda/Library/bin:
-    echo "PATH = $PATH"
     source /d/a/setup
     cd $BUILD_DIR
-    cmake  -G "NMake Makefiles JOM" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DWITH_tests=ON -DWITH_examples=ON -DCMAKE_CXX_FLAGS='-DMSC_USE_DLL' -DCMAKE_CXX_FLAGS_RELEASE='-DCGAL_NDEBUG /O2 ' -DCMAKE_PREFIX_PATH="C:\Miniconda\Library" Boost_DEBUG=ON $SOURCE_DIR
+    cmake  -G "NMake Makefiles JOM" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DWITH_tests=ON -DWITH_examples=ON -DCMAKE_CXX_FLAGS_RELEASE='-DMSC_USE_DLL -DCGAL_NDEBUG /O2 ' -DCMAKE_PREFIX_PATH="C:\Miniconda\Library" $SOURCE_DIR
     INIT=""
     for pkg in ${PACKAGE}; do
       if [ -z "$INIT" ]; then
