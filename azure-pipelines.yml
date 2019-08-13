@@ -74,15 +74,14 @@ strategy:
   
 steps:
 
-- checkout: self
-  fetchDepth: 1
-  
 - powershell: |
     Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
-    Write-Host "##vso[task.prependpath]$env:CONDA"
     Write-Host "##vso[task.prependpath]$env:CONDA\Library\bin"
     Write-Host "##vso[task.prependpath]$env:$(BUILD_DIR)\bin\Release"
   displayName: Add conda to PATH
+
+- checkout: self
+  fetchDepth: 1
   
 - script: |
     conda install -y -c conda-forge cgal --only-deps
@@ -103,6 +102,8 @@ steps:
 
 
 - bash: |
+    #symlink jom.exe to avoid polluting the path with the CONDA root dir
+    ln -s /c/Miniconda/jom.exe /usr/bin/jom.exe
     source /d/a/setup
     cd $BUILD_DIR
     cmake  -G "NMake Makefiles JOM" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DWITH_tests=ON -DWITH_examples=ON -DCMAKE_CXX_FLAGS='-DMSC_USE_DLL' -DCMAKE_CXX_FLAGS_RELEASE='-DCGAL_NDEBUG /O2 ' -DCMAKE_PREFIX_PATH="C:\Miniconda\Library" $SOURCE_DIR
