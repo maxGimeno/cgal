@@ -71,21 +71,29 @@ strategy:
       PACKAGE: Periodic_3_mesh_3 Periodic_3_mesh_3Periodic_4_hyperbolic_triangulation_2
     Point_set :
       PACKAGE: Point_set
-
+  
 steps:
-- powershell: |
-    Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
-    Write-Host "##vso[task.prependpath]$env:CONDA\Library\bin"
-    Write-Host "##vso[task.prependpath]$env:$(BUILD_DIR)\bin\Release"
-  displayName: Add conda to PATH
 
 - checkout: self
   fetchDepth: 1
-
+  
+- powershell: |
+    Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+    Write-Host "##vso[task.prependpath]$env:CONDA\Library\bin"
+    Write-Host "##vso[task.prependpath]$env:CONDA"
+    Write-Host "##vso[task.prependpath]$env:$(BUILD_DIR)\bin\Release"
+  displayName: Add conda to PATH
+  
 - script: |
     conda install -y -c conda-forge cgal --only-deps
-  displayName: Install Dependencies
+    
+  displayName: Install CGAL Dependencies
 
+- script: |
+    conda install -y -c anaconda jom
+    
+  displayName: Install JOM
+  
 - script: |
     set VC_PATH="C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\"
     set BASH_PATH="C:\Program Files\Git\usr\bin"
@@ -97,7 +105,7 @@ steps:
 - bash: |
     source /d/a/setup
     cd $BUILD_DIR
-    cmake  -G "NMake Makefiles" -DBUILD_TESTING=ON -DWITH_tests=ON -DWITH_examples=ON -DCMAKE_CXX_FLAGS_RELEASE='-DMSC_USE_DLL -DCGAL_NDEBUG /O2' -DCMAKE_PREFIX_PATH="C:\Miniconda\Library" $SOURCE_DIR
+    cmake  -G "NMake Makefiles JOM" -DBUILD_TESTING=ON -DWITH_tests=ON -DWITH_examples=ON -DCMAKE_CXX_FLAGS_RELEASE='-DMSC_USE_DLL -DCGAL_NDEBUG /O2' -DCMAKE_PREFIX_PATH="C:\Miniconda\Library" $SOURCE_DIR
     INIT=""
     for pkg in ${PACKAGE}; do
       if [ -z "$INIT" ]; then
