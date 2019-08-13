@@ -108,7 +108,11 @@ steps:
     cd $BUILD_DIR
     cmake  -G "NMake Makefiles JOM" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DWITH_tests=ON -DWITH_examples=ON -DCMAKE_CXX_FLAGS_RELEASE='-DMSC_USE_DLL -DCGAL_NDEBUG /O2 ' -DCMAKE_PREFIX_PATH="C:\Miniconda\Library" $SOURCE_DIR
     INIT=""
+    NO_PARALLEL=""
     for pkg in ${PACKAGE}; do
+      if [ pkg == "Kernel_23" ]; then
+        NO_PARALLEL="true"
+      fi
       if [ -z "$INIT" ]; then
         TO_TEST=$pkg
         INIT="y"
@@ -116,7 +120,11 @@ steps:
         TO_TEST="${TO_TEST}|$pkg"
       fi
     done
-    ctest -j2 --build-config "Release" -L ${TO_TEST} -E execution___of__ -VV
+    if [ -z $NO_PARALLEL ]; then
+      ctest --build-config "Release" -L ${TO_TEST} -E execution___of__ -VV
+    else
+      ctest -j2 --build-config "Release" -L ${TO_TEST} -E execution___of__ -VV
+    fi
   displayName: Test
   env:
     name: Microsoft
