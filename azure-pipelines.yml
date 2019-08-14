@@ -106,7 +106,7 @@ steps:
     ln -s /c/Miniconda/jom.exe /usr/bin/jom.exe
     source /d/a/setup
     cd $BUILD_DIR
-    cmake  -G "NMake Makefiles JOM" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DWITH_tests=ON -DWITH_examples=ON -DCMAKE_CXX_FLAGS_RELEASE='-DMSC_USE_DLL -DCGAL_NDEBUG /O2 ' -DCMAKE_PREFIX_PATH="C:\Miniconda\Library" $SOURCE_DIR
+    cmake  -G "NMake Makefiles JOM" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DWITH_tests=ON -DWITH_examples=ON -DCMAKE_CXX_FLAGS_RELEASE='-DMSC_USE_DLL -DCGAL_NDEBUG /Od ' -DCMAKE_PREFIX_PATH="C:\Miniconda\Library" $SOURCE_DIR
     INIT=""
     NO_PARALLEL=""
     for pkg in ${PACKAGE}; do
