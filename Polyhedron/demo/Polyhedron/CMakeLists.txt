@@ -1,8 +1,8 @@
 # This is the CMake script for compiling the CGAL Polyhedron demo.
 
+cmake_minimum_required(VERSION 3.1...3.15)
 project( Polyhedron_Demo )
 
-cmake_minimum_required(VERSION 3.1)
 if(NOT POLICY CMP0070 AND POLICY CMP0053)
   # Only set CMP0053 to OLD with CMake<3.10, otherwise there is a warning.
   cmake_policy(SET CMP0053 OLD)
@@ -230,6 +230,7 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
       PUBLIC demo_framework ${CGAL_LIBRARIES}
       Qt5::OpenGL Qt5::Gui Qt5::Script Qt5::Widgets)
     cgal_add_compilation_test(${item_name})
+    add_to_cached_list( CGAL_EXECUTABLE_TARGETS ${item_name} )
   endmacro(add_item)
 
   add_item(scene_c3t3_item Scene_c3t3_item.cpp)
@@ -362,6 +363,11 @@ add_executable  ( CGAL_Classification Classification.cpp )
 add_dependencies(CGAL_Classification Classification)
 target_link_libraries( CGAL_Classification PRIVATE polyhedron_demo )
 add_to_cached_list( CGAL_EXECUTABLE_TARGETS CGAL_Classification )
+
+add_executable  ( CGAL_PMP PMP.cpp )
+add_dependencies(CGAL_PMP PMP)
+target_link_libraries( CGAL_PMP PRIVATE polyhedron_demo )
+add_to_cached_list( CGAL_EXECUTABLE_TARGETS CGAL_PMP )
 #
 # Exporting
 #
