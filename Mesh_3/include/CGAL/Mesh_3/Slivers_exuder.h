@@ -656,12 +656,11 @@ private:
    */
   double get_min_value(const Sliver_values& criterion_values) const
   {
-    using boost::make_transform_iterator;
     typedef details::Second_of<Sliver_values> Second_of;
 
     return *(std::min_element(
-      make_transform_iterator(criterion_values.begin(), Second_of()),
-      make_transform_iterator(criterion_values.end(), Second_of())));
+      boost::make_transform_iterator(criterion_values.begin(), Second_of()),
+      boost::make_transform_iterator(criterion_values.end(), Second_of())));
   }
 
   /**
