@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Sylvain Pion <Sylvain.Pion@sophia.inria.fr>
 //                 Manuel Caroli <Manuel.Caroli@sophia.inria.fr>
@@ -24,41 +16,41 @@
 
 #include <CGAL/license/Periodic_2_triangulation_2.h>
 
-
+#include <CGAL/internal/Static_filters/tools.h>
 #include <CGAL/Profile_counter.h>
 #include <CGAL/internal/Static_filters/Static_filter_error.h>
 #include <CGAL/internal/Static_filters/tools.h>
 
 #include <CGAL/Periodic_2_offset_2.h>
 
-namespace CGAL
-{
-namespace internal
-{
-namespace Static_filters_predicates
-{
+namespace CGAL {
+namespace internal {
+namespace Static_filters_predicates {
 
-template < typename K_base >
+template <class K_, class Side_of_oriented_circle_2_base_>
 class Periodic_2_side_of_oriented_circle_2
-  : public K_base::Side_of_oriented_circle_2
+  : public Side_of_oriented_circle_2_base_
 {
-  typedef typename K_base::Side_of_oriented_circle_2    Base;
-  typedef typename K_base::FT                           FT;
-  typedef typename K_base::Point_2                      Point_2;
-  typedef typename K_base::Iso_rectangle_2              Iso_rectangle_2;
-  typedef CGAL::Periodic_2_offset_2                     Offset;
+  typedef Side_of_oriented_circle_2_base_               Base;
 
 public:
+  typedef K_                                            Kernel;
+
+  typedef typename Kernel::FT                           FT;
+  typedef typename Kernel::Point_2                      Point_2;
+  typedef typename Kernel::Iso_rectangle_2              Iso_rectangle_2;
+  typedef typename Kernel::Periodic_2_offset_2          Offset;
+
+private:
   const Iso_rectangle_2 * _dom;
 
 public:
   typedef typename Base::result_type  result_type;
 
-  template <class EX, class AP>
   Periodic_2_side_of_oriented_circle_2(const Iso_rectangle_2 * dom,
-                                       const EX * dom_e,
-                                       const AP * dom_f)
-    : Base(dom_e, dom_f), _dom(dom) { }
+                                       const Base& socb)
+    : Base(socb), _dom(dom)
+  { }
 
   Oriented_side
   operator()(const Point_2 &p, const Point_2 &q, const Point_2 &r,

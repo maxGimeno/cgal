@@ -1,28 +1,17 @@
 // Copyright (c) 2007,2008,2009,2010,2011 Max-Planck-Institute Saarbruecken (Germany), 
 // and Tel-Aviv University (Israel).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Pavel Emeliyanenko <asm@mpi-sb.mpg.de> 
 
 #ifndef CGAL_CURVED_KERNEL_VIA_ANALYSIS_2_CURVE_INTERVAL_ARCNO_CACHE_H
 #define CGAL_CURVED_KERNEL_VIA_ANALYSIS_2_CURVE_INTERVAL_ARCNO_CACHE_H
-
-#include <CGAL/license/Arrangement_on_surface_2.h>
-
 
 /*!\file include/CGAL/Curved_kernel_via_analysis_2/Curve_interval_arcno_cache.h
  * \brief defines \c Curve_interval_arcno_cache functor
@@ -117,7 +106,7 @@ struct Curve_interval_arcno_cache {
         
         Curve_analysis_2 ca_2 = cv_line.curve_analysis_2();
         ///////////////////////////////// polynomial or curve id ?
-        int curve_id = ca_2.polynomial_2().id();
+        int curve_id = static_cast<int>(ca_2.polynomial_2().id());
         /////////////////////////////////
         if(_m_last_curve_id != curve_id) {
             typename Curve_to_interval_arcno_map::iterator it;

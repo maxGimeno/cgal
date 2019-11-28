@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Michael Seel  <seel@mpi-sb.mpg.de>
@@ -140,7 +132,7 @@ Sphere_segment(const Sphere_circle<R>& c1,
 that is part of the halfsphere left of the oriented circle |c2|.
 \precond |c1 != c2| as unoriented circles.}*/
 
-Sphere_segment(const Self& s) : Base(s) {}
+// Sphere_segment(const Self& s) : Base(s) {}
 
 /*{\Moperations 4 2}*/
 
@@ -193,13 +185,18 @@ void split_halfcircle(Sphere_segment<R>& s1,
 bool is_short() const 
 /*{\Mop a segment is short iff it is shorter than a halfcircle.}*/
 { 
-  return R().orientation_3_object()(Point_3(0,0,0), source(), target(),
-				    CGAL::ORIGIN + this->ptr()->c_.orthogonal_vector()) 
+  return R().orientation_3_object()(Point_3(0,0,0),
+                                    Point_3(source()),
+                                    Point_3(target()),
+				    CGAL::ORIGIN +
+                                    this->ptr()->c_.orthogonal_vector())
     == CGAL::POSITIVE; }
 
 bool is_long() const 
 /*{\Mop a segment is long iff it is longer than a halfcircle.}*/
-{ return R().orientation_3_object()(Point_3(0,0,0), source(), target(),
+{ return R().orientation_3_object()(Point_3(0,0,0),
+                                    Point_3(source()),
+                                    Point_3(target()),
 				    CGAL::ORIGIN + this->ptr()->c_.orthogonal_vector()) 
     == CGAL::NEGATIVE; }
 

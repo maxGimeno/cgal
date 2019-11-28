@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Ron Wein   <wein@post.tau.ac.il>
@@ -24,11 +16,13 @@
 
 #include <CGAL/license/Arrangement_on_surface_2.h>
 
+#include <CGAL/disable_warnings.h>
 
 /*! \file
  * The conic traits-class for the arrangement package.
  */
 
+#include <CGAL/atomic.h>
 #include <CGAL/tags.h>
 #include <CGAL/Arr_tags.h>
 #include <CGAL/Arr_geometry_traits/Conic_arc_2.h>
@@ -112,7 +106,11 @@ public:
   /*! Get the next conic index. */
   static unsigned int get_index ()
   {
-    static unsigned int index = 0;
+#ifdef CGAL_NO_ATOMIC
+    static unsigned int index;
+#else
+    static CGAL::cpp11::atomic<unsigned int> index;
+#endif
     return (++index);
   }
 
@@ -873,6 +871,8 @@ public:
   Trim_2 trim_2_object() const { return Trim_2(*this); }
   //@}
 };
+
+#include <CGAL/enable_warnings.h>
 
 } //namespace CGAL
 #endif

@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Sven Schoenherr 
@@ -30,7 +22,7 @@
 // includes
 #include <CGAL/QP_solver/QP_pricing_strategy.h>
 #include <CGAL/Random.h>
-#include <algorithm>
+#include <CGAL/algorithm.h>
 #include <vector>
 #include <cmath>
 
@@ -141,7 +133,7 @@ init( )
     for ( int i = 0; i < w; ++i) {
 	if ( ! this->solver().is_basic( i)) N.push_back( i);
     }
-    if ( permute) std::random_shuffle( N.begin(), N.end(), rand_src);
+    if ( permute) CGAL::cpp98::random_shuffle( N.begin(), N.end(), rand_src);
 
     // initialize size of active set
     int  n = this->solver().number_of_variables();

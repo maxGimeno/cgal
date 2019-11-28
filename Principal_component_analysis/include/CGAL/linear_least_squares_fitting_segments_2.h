@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s) : Pierre Alliez and Sylvain Pion and Ankit Gupta
 
@@ -75,7 +67,7 @@ linear_least_squares_fitting_2(InputIterator first,
 
   // assemble 2nd order moment about the origin.  
   FT temp[4] = {1.0, 0.5, 0.5, 1.0};
-  Matrix moment = (1.0/3.0) * init_matrix<K>(2,temp);
+  Matrix moment = (1.0/3.0) * init_matrix<FT>(2,temp);
 
   for(InputIterator it = first;
       it != beyond;
@@ -89,7 +81,7 @@ linear_least_squares_fitting_2(InputIterator first,
     // FT example = CGAL::to_double(t[0].x());
     FT delta[4] = {t[0].x(), t[1].x(), 
 		   t[0].y(), t[1].y()};
-    Matrix transformation = init_matrix<K>(2,delta);
+    Matrix transformation = init_matrix<FT>(2,delta);
     FT length = std::sqrt(t.squared_length());
     CGAL_assertion(length != 0.0);
 
@@ -164,7 +156,7 @@ linear_least_squares_fitting_2(InputIterator first,
     points.push_back(s[0]);
     points.push_back(s[1]);
   } 
-  return linear_least_squares_fitting_2(points.begin(),points.end(),line,c,k,(Point*)NULL,tag,
+  return linear_least_squares_fitting_2(points.begin(),points.end(),line,c,k,(Point*)nullptr,tag,
 					diagonalize_traits);
 
 } // end linear_least_squares_fitting_2 for segment set with 1D tag

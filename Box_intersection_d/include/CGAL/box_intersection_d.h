@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Lutz Kettner  <kettner@mpi-sb.mpg.de>
@@ -24,6 +16,7 @@
 
 #include <CGAL/license/Box_intersection_d.h>
 
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/Box_intersection_d/segment_tree.h>
 #include <CGAL/Box_intersection_d/Box_d.h>
@@ -179,13 +172,17 @@ template< class RandomAccessIter, class Callback, class BoxTraits >
 void box_self_intersection_d(
     RandomAccessIter begin, RandomAccessIter end,
     Callback callback,
-    BoxTraits box_traits)
+    BoxTraits box_traits,
+    std::ptrdiff_t cutoff,
+    Box_intersection_d::Topology topology)
 {
+    // Copying rather than calling 'box_intersection_d(begin, end, begin, end, ...'
+    // is necessary because the 'std::partition' and range splits on the first range
+    // would be messed up by sorts on the second range otherwise.
     typedef typename std::iterator_traits<RandomAccessIter>::value_type val_t;
     std::vector< val_t> i( begin, end);
     box_intersection_d( begin, end, i.begin(), i.end(),
-                        callback, box_traits, 10, 
-                        Box_intersection_d::CLOSED,
+                        callback, box_traits, cutoff, topology,
                         Box_intersection_d::COMPLETE);
 }
 
@@ -196,26 +193,17 @@ void box_self_intersection_d(
     BoxTraits box_traits,
     std::ptrdiff_t cutoff)
 {
-    typedef typename std::iterator_traits<RandomAccessIter>::value_type val_t;
-    std::vector< val_t> i( begin, end);
-    box_intersection_d( begin, end, i.begin(), i.end(),
-                        callback, box_traits, cutoff, 
-                        Box_intersection_d::CLOSED,
-                        Box_intersection_d::COMPLETE);
+    return box_self_intersection_d(begin, end, callback, box_traits, cutoff,
+                                   Box_intersection_d::CLOSED);
 }
 
 template< class RandomAccessIter, class Callback, class BoxTraits >
 void box_self_intersection_d(
     RandomAccessIter begin, RandomAccessIter end,
     Callback callback,
-    BoxTraits box_traits,
-    std::ptrdiff_t cutoff,
-    Box_intersection_d::Topology topology)
+    BoxTraits box_traits)
 {
-    typedef typename std::iterator_traits<RandomAccessIter>::value_type val_t;
-    std::vector< val_t> i( begin, end);
-    box_intersection_d( begin, end, i.begin(), i.end(),
-        callback, box_traits, cutoff, topology, Box_intersection_d::COMPLETE);
+    return box_self_intersection_d(begin, end, callback, box_traits, 10);
 }
 
 // Specialized call with default box traits, specialized for self-intersection.
@@ -227,20 +215,18 @@ void box_self_intersection_d(
 {
     typedef typename std::iterator_traits<RandomAccessIter>::value_type val_t;
     typedef Box_intersection_d::Box_traits_d< val_t>  Box_traits;
-    box_self_intersection_d(begin, end, callback,
-                            Box_traits(), 10, Box_intersection_d::CLOSED);
+    box_self_intersection_d(begin, end, callback, Box_traits());
 }
 
 template< class RandomAccessIter, class Callback >
 void box_self_intersection_d(
     RandomAccessIter begin, RandomAccessIter end,
     Callback callback,
-    std::ptrdiff_t)
+    std::ptrdiff_t cutoff)
 {
     typedef typename std::iterator_traits<RandomAccessIter>::value_type val_t;
     typedef Box_intersection_d::Box_traits_d< val_t>  Box_traits;
-    box_self_intersection_d(begin, end, callback,
-                            Box_traits(), 10, Box_intersection_d::CLOSED);
+    box_self_intersection_d(begin, end, callback, Box_traits(), cutoff);
 }
 
 template< class RandomAccessIter, class Callback >
@@ -396,5 +382,7 @@ void box_self_intersection_all_pairs_d(
 }
 
 } //namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif

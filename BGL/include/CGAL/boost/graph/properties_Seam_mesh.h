@@ -1,18 +1,10 @@
 // Copyright (c) 2015  GeometryFactory (France).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Andreas Fabri
@@ -131,13 +123,12 @@ get(vertex_point_t, const Seam_mesh<TM, SEM, SVM>& sm)
   return Seam_mesh_point_map<TM, SEM, SVM>(sm, get(vertex_point, sm.mesh()));
 }
 
-} // namespace CGAL
-
-namespace boost
-{
 template<class TM, class SEM, class SVM>
 struct graph_has_property<CGAL::Seam_mesh<TM, SEM, SVM>, CGAL::vertex_point_t>
   : CGAL::Tag_true {};
-} //boost
+} // namespace CGAL
+
+
+
 
 #endif // CGAL_PROPERTIES_SEAM_MESH_H

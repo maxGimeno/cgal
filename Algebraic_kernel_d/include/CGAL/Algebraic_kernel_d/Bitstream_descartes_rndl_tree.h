@@ -1,19 +1,11 @@
 // Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Arno Eigenwillig <arno@mpi-inf.mpg.de>
@@ -29,6 +21,8 @@
 
 #ifndef CGAL_ALGEBRAIC_KERNEL_D_BITSTREAM_DESCARTES_RNDL_TREE_H
 #define CGAL_ALGEBRAIC_KERNEL_D_BITSTREAM_DESCARTES_RNDL_TREE_H
+
+#include <CGAL/disable_warnings.h>
 
 #include <vector>
 #include <list>
@@ -563,8 +557,8 @@ private:
         log_eps_       = n.log_eps_;
         log_C_eps_     = n.log_C_eps_;
     }
-
-    // const Self& operator= (const Self&); // assignment is forbidden
+  
+    Self& operator= (const Self&)=delete;
 }; // struct Bitstream_descartes_rndl_node
 
 
@@ -928,9 +922,11 @@ public:
     Bitstream_descartes_rndl_tree() : Base(Rep()) { }
 
     //! copy constructor
+#ifdef DOXYGEN_RUNNING
     Bitstream_descartes_rndl_tree(const Self& p)
         : Base(static_cast<const Base&>(p))
     { }
+#endif
 
     //! Internal function called by constructor. Avoids code duplication
     void init_tree() {
@@ -1506,7 +1502,7 @@ long Fujiwara_root_bound_log(
     RandomAccessIterator first, RandomAccessIterator beyond,
     LowerBoundLog2Abs lblog2, UpperBoundLog2AbsApproximator ublog2apx
 ) {
-    int n = beyond - first - 1; // degree
+    std::ptrdiff_t n = beyond - first - 1; // degree
     if (n < 1) return 0;
     long lblog2_lcoeff = lblog2(*(beyond - 1));
 
@@ -1516,7 +1512,7 @@ long Fujiwara_root_bound_log(
     std::vector<QE*> heap(n);    // heap is built from pointers to them
     for (int i = 0; i < n; ++i) {
         QE& entry = entries[i];
-        entry.n_minus_i = n - i;
+        entry.n_minus_i = static_cast<int>(n - i);
         entry.is_tight = ublog2apx.initial_upper_bound(
                 *(first + i), entry.ub_log2_qi, entry.is_certainly_zero
         );
@@ -1530,7 +1526,7 @@ long Fujiwara_root_bound_log(
     while (!heap[0]->is_tight) {
         std::pop_heap(heap.begin(), heap.end(), less);
         QE& popped = **(heap.end() - 1);
-        int i = n - popped.n_minus_i;
+        std::ptrdiff_t i = n - popped.n_minus_i;
         CGAL_assertion(i >= 0 && i < n);
         CGAL_assertion(&popped == &(entries[i]));
         popped.is_tight = ublog2apx.improve_upper_bound(
@@ -1567,6 +1563,8 @@ long Fujiwara_root_bound_log(
 } // namespace internal
 
 } //namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_ALGEBRAIC_KERNEL_D_BITSTREAM_DESCARTES_RNDL_TREE_H
 

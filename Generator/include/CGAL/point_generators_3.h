@@ -5,19 +5,11 @@
 // Max-Planck-Institute Saarbruecken (Germany),
 // and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Lutz Kettner  <kettner@inf.ethz.ch>
@@ -27,6 +19,9 @@
 
 #ifndef CGAL_POINT_GENERATORS_3_H
 #define CGAL_POINT_GENERATORS_3_H 1
+
+#include <CGAL/disable_warnings.h>
+
 #include <CGAL/generators.h>
 #include <CGAL/point_generators_2.h>
 #include <CGAL/number_type_basic.h>
@@ -61,7 +56,7 @@ template < class P, class Creator >
 void
 Random_points_in_sphere_3<P,Creator>::
 generate_point() {
-  // A strip between z and z+dz has an area independant of z
+  // A strip between z and z+dz has an area independent of z
     typedef typename Creator::argument_type T;
     double alpha = this->_rnd.get_double() * 2.0 * CGAL_PI;
     double z     = 2 * this->_rnd.get_double() - 1.0;
@@ -100,7 +95,7 @@ template < class P, class Creator >
 void
 Random_points_on_sphere_3<P,Creator>::
 generate_point() {
-  // A strip between z and z+dz has an area independant of z
+  // A strip between z and z+dz has an area independent of z
     typedef typename Creator::argument_type T;
     double alpha = this->_rnd.get_double() * 2.0 * CGAL_PI;
     double z     = 2 * this->_rnd.get_double() - 1.0;
@@ -208,7 +203,7 @@ public:
 	typedef Random_points_in_triangle_3<P, Creator> This;
 	typedef typename Kernel_traits<P>::Kernel::Triangle_3 Triangle_3;
 	Random_points_in_triangle_3() {}
-	Random_points_in_triangle_3( const This& x,Random& rnd = get_default_random())
+	Random_points_in_triangle_3( const This& x,Random& rnd)
 	: Random_generator_base<P>( 1, rnd ),_p(x._p),_q(x._q),_r(x._r) {
 		generate_point();
 	}
@@ -325,7 +320,7 @@ public:
 	typedef Random_points_in_tetrahedron_3<P, Creator> This;
 	typedef typename Kernel_traits<P>::Kernel::Tetrahedron_3 Tetrahedron_3;
 	Random_points_in_tetrahedron_3() {}
-	Random_points_in_tetrahedron_3( const This& x,Random& rnd = get_default_random())
+	Random_points_in_tetrahedron_3( const This& x,Random& rnd)
 	: Random_generator_base<P>( 1, rnd ),_p(x._p),_q(x._q),_r(x._r),_s(x._s) {
 		generate_point();
 	}
@@ -695,6 +690,7 @@ struct Random_points_in_triangles_3
 
 } //namespace CGAL
 
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_POINT_GENERATORS_3_H //
 // EOF //

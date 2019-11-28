@@ -4,17 +4,6 @@
  * All rights reserved.
  *
  * This file is part of CGAL (www.cgal.org).
- * You can redistribute it and/or modify it under the terms of the GNU
- * Lesser General Public License as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * Licensees holding a valid commercial license may use this file in
- * accordance with the commercial license agreement provided with the
- * software.
- *
- * This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
- * WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- *
  *
  * File: ExprRep.h
  * Synopsis: Internal Representation of Expr.
@@ -34,6 +23,7 @@
  *
  * $URL$
  * $Id$
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  ***************************************************************************/
 
 #ifndef _CORE_EXPRREP_H_
@@ -159,15 +149,15 @@ struct NodeInfo {
 //  Members: private: int refCount,
 //            public:  NodeInfo* nodeInfo,
 //                     filteredFp ffVal.
-class ExprRep {
+class CGAL_CORE_EXPORT ExprRep {
 public:
   /// \name Constructor and Destructor
   //@{
   /// default constructor
-  CGAL_CORE_EXPORT ExprRep();
+  ExprRep();
   /// virtual destructor for this base class
   virtual ~ExprRep() {
-    if (nodeInfo != NULL) // This check is only for optimization.
+    if (nodeInfo != nullptr) // This check is only for optimization.
       delete nodeInfo;
   }
   //@}
@@ -196,8 +186,8 @@ public:
   /// \name Helper Functions
   //@{
   /// Get the approximate value
-  CGAL_CORE_EXPORT const Real & getAppValue(const extLong& relPrec = get_static_defRelPrec(),
-                                            const extLong& absPrec = get_static_defAbsPrec());
+  const Real & getAppValue(const extLong& relPrec = get_static_defRelPrec(),
+                           const extLong& absPrec = get_static_defAbsPrec());
   /// Get the sign.
   int getSign();
   int getExactSign();
@@ -432,23 +422,23 @@ public:
   /// compute the sign, uMSB, lMSB, etc.
   virtual void computeExactFlags() = 0;
   /// compute the minimal root bound
-  CGAL_CORE_EXPORT extLong computeBound();
+  extLong computeBound();
   /// driver function to approximate
-  CGAL_CORE_EXPORT void approx(const extLong& relPrec, const extLong& absPrec);
+  void approx(const extLong& relPrec, const extLong& absPrec);
   /// compute an approximate value satifying the specified precisions
   virtual void computeApproxValue(const extLong&, const extLong&) = 0;
   /// Test whether the current approx. value satisfies [relPrec, absPrec]
-  CGAL_CORE_EXPORT bool withinKnownPrecision(const extLong&, const extLong&);
+  bool withinKnownPrecision(const extLong&, const extLong&);
   //@}
 
   /// \name Misc Functions
   //@{
   /// reduce current node
-  CGAL_CORE_EXPORT void reduceToBigRat(const BigRat&);
+  void reduceToBigRat(const BigRat&);
   /// reduce current node
-  CGAL_CORE_EXPORT void reduceTo(const ExprRep*);
+  void reduceTo(const ExprRep*);
   /// reduce current node to zero
-  CGAL_CORE_EXPORT void reduceToZero();
+  void reduceToZero();
   /// return operator string
   virtual const std::string op() const {
     return "UNKNOWN";
@@ -458,7 +448,7 @@ public:
   /// \name Degree Bound Functions
   //@{
   /// compute "d_e" based on # of sqrts
-  CGAL_CORE_EXPORT extLong degreeBound();
+  extLong degreeBound();
   /// count actually computes the degree bound of current node.
   virtual extLong count() = 0;
   /// reset the flag "visited"
@@ -472,7 +462,7 @@ public:
 
 /// \class ConstRep
 /// \brief constant node
-class ConstRep : public ExprRep {
+class CGAL_CORE_EXPORT ConstRep : public ExprRep {
 public:
   /// \name Constructors and Destructor
   //@{
@@ -485,20 +475,20 @@ public:
   /// \name Debug Functions
   //@{
   /// print debug information in list mode
-  CGAL_CORE_EXPORT void debugList(int level, int depthLimit) const;
+  void debugList(int level, int depthLimit) const;
   /// print debug information in tree mode
-  CGAL_CORE_EXPORT void debugTree(int level, int indent, int depthLimit) const;
+  void debugTree(int level, int indent, int depthLimit) const;
   //@}
 protected:
   /// initialize nodeInfo
-  CGAL_CORE_EXPORT virtual void initNodeInfo();
+  virtual void initNodeInfo();
   /// return operator in string
   const std::string op() const {
     return "C";
   }
   /// count returns the degree of current node
   //extLong count() { return d_e(); }
-  CGAL_CORE_EXPORT extLong count();
+  extLong count();
   /// clear visited flag
   void clearFlag() {
     visited() = false;

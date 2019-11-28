@@ -2,7 +2,7 @@
 #include <CGAL/Point_with_normal_3.h>
 #include <CGAL/property_map.h>
 
-#include <CGAL/Shape_detection_3.h>
+#include <CGAL/Shape_detection/Efficient_RANSAC.h>
 #include <CGAL/structure_point_set.h>
 
 #include <CGAL/Random.h>
@@ -19,11 +19,11 @@ typedef std::vector<Point_with_normal>                       Pwn_vector;
 typedef CGAL::First_of_pair_property_map<Point_with_normal>  Point_map;
 typedef CGAL::Second_of_pair_property_map<Point_with_normal> Normal_map;
 
-typedef CGAL::Shape_detection_3::Efficient_RANSAC_traits
-  <Kernel, Pwn_vector, Point_map, Normal_map>                Traits;
-typedef CGAL::Shape_detection_3::Efficient_RANSAC<Traits>    Efficient_ransac;
+typedef CGAL::Shape_detection::Efficient_RANSAC_traits
+  <Kernel, Pwn_vector, Point_map, Normal_map>              Traits;
+typedef CGAL::Shape_detection::Efficient_RANSAC<Traits>    Efficient_ransac;
 
-typedef CGAL::Point_set_with_structure<Traits>               Points_with_structure;
+typedef CGAL::Point_set_with_structure<Kernel>             Points_with_structure;
 
 template <typename OutputIterator>
 void generate_random_points (const Point& origin, const Vector& base1, const Vector& base2,
@@ -50,7 +50,7 @@ int main()
          vz (0., 0., 1.);
   
   Efficient_ransac ransac;
-  ransac.add_shape_factory<CGAL::Shape_detection_3::Plane<Traits> >();
+  ransac.add_shape_factory<CGAL::Shape_detection::Plane<Traits> >();
   
   const std::size_t nb_pts = 1000;
   
@@ -79,14 +79,27 @@ int main()
 
   ransac.set_input(points);
   ransac.detect(op);
+  Efficient_ransac::Plane_range planes = ransac.planes();
+  
+  Points_with_structure pss (points, 
+                             planes,
+                             op.cluster_epsilon,
+                             CGAL::parameters::point_map(Point_map()).
+                             normal_map (Normal_map()).
+                             plane_map (CGAL::Shape_detection::Plane_map<Traits>()).
+                             plane_index_map (CGAL::Shape_detection::Point_to_shape_index_map<Traits>(points, planes)));
 
-  Points_with_structure pss (points.begin(), points.end(), ransac, op.cluster_epsilon);
+
 
   std::vector<Point> vertices;
 
   for (std::size_t i = 0; i < pss.size(); ++ i)
-    if (pss.adjacency (i).size () == 3)
+  {
+    std::vector<Plane> planes;
+    pss.adjacency (i, std::back_inserter (planes));
+    if (planes.size () == 3)
       vertices.push_back (pss.point (i));
+  }
 
   if (vertices.size () != 8)
     {

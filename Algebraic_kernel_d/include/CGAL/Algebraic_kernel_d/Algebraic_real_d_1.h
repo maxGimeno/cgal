@@ -1,19 +1,11 @@
 // Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     :  Michael Hemmer <hemmer@mpi-inf.mpg.de> 
@@ -113,9 +105,6 @@ public:
   //! Default constructor
   Algebraic_real_d_1() : Base(static_cast<const Base&>(get_default_instance())) {}
 
-  //! copy constructor: copy existing Algebraic_real_d_1 (shares rep)
-  Algebraic_real_d_1(const Self& p) : Base(static_cast<const Base&>(p)) {}
-  
   //! creates the algebraic real from \a i.
   Algebraic_real_d_1(int i ) : Base(Algebraic_real_rep_d_1(i)) { }
 
@@ -384,7 +373,7 @@ public:
   typedef internal::Algebraic_real_d_1< Coefficient, Rational, HandlePolicy, RepClass > Type;
 
   class Compare
-    : public std::binary_function< Type, Type, CGAL::Comparison_result > {
+    : public CGAL::cpp98::binary_function< Type, Type, CGAL::Comparison_result > {
   public:
     CGAL::Comparison_result operator()( const Type& a, const Type& b ) const
     { return a.compare( b ); }
@@ -413,7 +402,7 @@ public:
   };
 
   class Sgn
-    : public std::unary_function< Type, CGAL::Sign > {
+    : public CGAL::cpp98::unary_function< Type, CGAL::Sign > {
   public:
     CGAL::Sign operator()( const Type& a ) const {
       return a.compare( Rational(0) );
@@ -421,7 +410,7 @@ public:
   };
 
   class To_double
-    : public std::unary_function< Type, double > {
+    : public CGAL::cpp98::unary_function< Type, double > {
   public:
     double operator()(const Type& a) const {
       return a.to_double();
@@ -429,7 +418,7 @@ public:
   };
 
   class To_interval
-    : public std::unary_function< Type, std::pair<double, double> > {
+    : public CGAL::cpp98::unary_function< Type, std::pair<double, double> > {
   public:
     typename std::pair<double, double> operator()(const Type& a) const {
       return a.to_interval();

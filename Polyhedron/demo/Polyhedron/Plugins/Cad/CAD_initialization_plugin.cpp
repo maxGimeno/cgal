@@ -236,10 +236,7 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
         // TODO : What to do for degenerated surfaces ?
         // ///////////////////////////////////////////////////////////////////
     }
-    dtkContinuousGeometryPrimitives::AABB_3 aabb(0., 0., 0., 0., 0., 0.);
-    brep->aabb(aabb.data());
-
-    Mesh_domain* cgal_brep_mesh_domain = new Mesh_domain(intersects, aabb);
+    Mesh_domain* cgal_brep_mesh_domain = new Mesh_domain(*brep);
     ///////////////////////////////////////////////////////////////////
     // Recovers the trims not to protect
     ///////////////////////////////////////////////////////////////////

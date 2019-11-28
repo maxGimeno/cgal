@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Manuel Caroli
@@ -305,20 +297,19 @@ _test_cls_periodic_3_delaunay_3(const Periodic_3Triangulation_3 &,
   std::cout << "Queries" << std::endl;
   std::cout << "Side of sphere" << std::endl;
 
-  ch = PT.locate(Point(-1,-1,1));
-  assert(PT.side_of_sphere(ch,Point(-1,-1,1)) == CGAL::ON_BOUNDED_SIDE);
-  assert(PT.side_of_sphere(ch,Point(-1,-1,1),Offset(3,3,0))
-	  == CGAL::ON_BOUNDED_SIDE);
-  assert(PT.side_of_sphere(ch,Point(-1,-1,1),Offset(0,0,2))
-	  == CGAL::ON_UNBOUNDED_SIDE);
+  ch = PT.locate(Point(-1,-1,-1));
+  assert(PT.side_of_sphere(ch,Point(-1,-1,-1)) == CGAL::ON_BOUNDED_SIDE);
+  assert(PT.side_of_sphere(ch,Point(-1,-1,-1),Offset(3,3,3)) == CGAL::ON_BOUNDED_SIDE);
+  assert(PT.side_of_sphere(ch,Point(-1,-1,1),Offset(0,0,5)) == CGAL::ON_UNBOUNDED_SIDE);
   Periodic_point pp = PT.periodic_point(ch,0);
   assert(PT.side_of_sphere(ch,pp.first,pp.second) == CGAL::ON_BOUNDARY);
 
   std::cout << "  Nearest vertex"<< std::endl;
   vh = PT.nearest_vertex(Point(0,0,0));
   assert(Segment(vh->point(),Point(0,0,0)).squared_length() < FT(0.25));
-  assert(PT.nearest_vertex(Point( 1, 1, 1))
-      == PT.nearest_vertex(Point( 1,-1,-1)));
+  FT eps = 1e-10;
+  assert(PT.nearest_vertex(Point( 1 - eps, 1 - eps, 1 - eps))
+         == PT.nearest_vertex(Point( -1,-1,-1)));
   vh = PT.nearest_vertex_in_cell(vh->cell(),Point(0,0,0),
       PT.get_offset(vh->cell(),vh->cell()->index(vh)));
   assert(PT.construct_segment(vh->point(),Point(0,0,0),

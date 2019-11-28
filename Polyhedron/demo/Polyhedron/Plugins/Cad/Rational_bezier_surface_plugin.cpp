@@ -51,8 +51,8 @@ public:
   //IO PLUGIN PART
   QString name() const { return "Rational_bezier_surface_plugin"; }
   QString nameFilters() const { return "None"; }
-  bool canLoad() const { return true; }
-  CGAL::Three::Scene_item* load(QFileInfo fileinfo) {
+  bool canLoad(QFileInfo) const { return true; }
+  QList<CGAL::Three::Scene_item*> load(QFileInfo fileinfo, bool& ok, bool add_to_scene=true){
       dtkContinuousGeometrySettings settings;
       settings.beginGroup("continuous-geometry");
       dtkLogger::instance().attachConsole();
@@ -62,7 +62,9 @@ public:
       settings.endGroup();
       dtkAbstractRationalBezierSurfaceData *bezier_surface_data = dtkContinuousGeometry::abstractRationalBezierSurfaceData::pluginFactory().create("dtkRationalBezierSurfaceDataOn");
       if(bezier_surface_data == nullptr) {
+          ok = false;
           dtkFatal() << "The openNURBS plugin of dtkAbstractRationalBezierSurfaceData could not be loaded.";
+          return QList<CGAL::Three::Scene_item*>();
       }
       bezier_surface_data->create(fileinfo.absoluteFilePath().toStdString());
       dtkRationalBezierSurface *bezier_surface = new dtkRationalBezierSurface(bezier_surface_data);
@@ -71,14 +73,15 @@ public:
       item->setName(fileinfo.baseName());
       item->setFlatMode();
       scene->setSelectedItem(scene->item_id(item));
-      return item;
+      ok = true;
+      return QList<CGAL::Three::Scene_item*>()<<item;
   }
 
   bool canSave(const CGAL::Three::Scene_item*) {
       return false;
   }
 
-  bool save(const CGAL::Three::Scene_item*, QFileInfo) {
+  bool save(QFileInfo, QList<CGAL::Three::Scene_item*>& ){
     return false;
   }
 

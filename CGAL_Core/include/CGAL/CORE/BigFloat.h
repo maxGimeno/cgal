@@ -4,17 +4,6 @@
  * All rights reserved.
  *
  * This file is part of CGAL (www.cgal.org);
- * You can redistribute it and/or modify it under the terms of the GNU
- * Lesser General Public License as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * Licensees holding a valid commercial license may use this file in
- * accordance with the commercial license agreement provided with the
- * software.
- *
- * This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
- * WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- *
  *
  * File: BigFloat.h
  * Synopsis: 
@@ -30,10 +19,13 @@
  *
  * $URL$
  * $Id$
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  ***************************************************************************/
 
 #ifndef _CORE_BIGFLOAT_H_
 #define _CORE_BIGFLOAT_H_
+
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/CORE/BigFloatRep.h>
 #include <CGAL/assertions.h>
@@ -58,6 +50,8 @@ public:
   BigFloat(float i) : RCBigFloat(new BigFloatRep(i)) {}
   /// constructor for <tt>int</tt>
   BigFloat(int i) : RCBigFloat(new BigFloatRep(i)) {}
+  /// constructor for <tt>unsigned int</tt>
+  BigFloat(unsigned int i) : RCBigFloat(new BigFloatRep(i)) {}
   /// constructor for <tt>long</tt>
   BigFloat(long l) : RCBigFloat(new BigFloatRep(l)) {}
   /// constructor for <tt>double</tt>
@@ -631,5 +625,7 @@ inline BigRat::BigRat(const BigFloat& f) : RCBigRat(new BigRatRep()){
 #include <CGAL/CORE/BigFloat_impl.h>
 #include <CGAL/CORE/CoreIO_impl.h>
 #endif // CGAL_HEADER_ONLY
+
+#include <CGAL/enable_warnings.h>
 
 #endif // _CORE_BIGFLOAT_H_

@@ -1,7 +1,6 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 #include <CGAL/Point_set_3.h>
-#include <CGAL/Point_set_3/Point_set_processing_3.h>
 #include <CGAL/Point_set_3/IO.h>
 #include <CGAL/grid_simplify_point_set.h>
 
@@ -14,7 +13,7 @@ typedef Kernel::Point_3 Point;
 typedef Kernel::Vector_3 Vector;
 
 typedef CGAL::Point_set_3<Point> Point_set;
-typedef CGAL::cpp11::array<unsigned char, 3> Color;
+typedef std::array<unsigned char, 3> Color;
 
 std::size_t nb_test = 0;
 std::size_t nb_success = 0;
@@ -43,9 +42,7 @@ int main (int, char**)
   f.close ();
 
   Point_set::iterator
-    first_to_remove = CGAL::grid_simplify_point_set (point_set.begin(),
-                                                     point_set.end(),
-                                                     point_set.point_map(),
+    first_to_remove = CGAL::grid_simplify_point_set (point_set,
                                                      0.1);
 
   std::size_t size = point_set.size ();

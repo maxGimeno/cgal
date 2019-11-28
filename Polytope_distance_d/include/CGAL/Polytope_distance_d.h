@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Sven Schoenherr <sven@inf.ethz.ch>
@@ -72,7 +64,7 @@ namespace PD_detail {
 
   // functor for a fixed column of A
   template <class NT, class Iterator>
-  class A_column : public std::unary_function <int, NT>
+  class A_column : public CGAL::cpp98::unary_function <int, NT>
   {
   public:
     typedef NT result_type;
@@ -120,7 +112,7 @@ namespace PD_detail {
   // functor for matrix A
   template <class NT, class Access_coordinate_begin_d,
 	    class Point_iterator >
-  class A_matrix : public std::unary_function
+  class A_matrix : public CGAL::cpp98::unary_function
   <int, boost::transform_iterator <A_column
     <NT, typename Access_coordinate_begin_d::Coordinate_iterator>, 
 				   boost::counting_iterator<int> > >
@@ -176,7 +168,7 @@ namespace PD_detail {
   // 1  (row d+1)
 
   template <class NT>
-  class B_vector : public std::unary_function<int, NT>
+  class B_vector : public CGAL::cpp98::unary_function<int, NT>
   {
   public:
     typedef NT result_type;
@@ -213,7 +205,7 @@ namespace PD_detail {
   // functor for a fixed row of D; note that we have to return 2D in
   // order to please the QP_solver
   template <class NT> 
-  class D_row : public std::unary_function <int, NT> 
+  class D_row : public CGAL::cpp98::unary_function <int, NT> 
   {
   public:
     typedef NT result_type;
@@ -255,7 +247,7 @@ namespace PD_detail {
 
   // functor for matrix D
   template <class NT>
-  class D_matrix : public std::unary_function
+  class D_matrix : public CGAL::cpp98::unary_function
   <int, boost::transform_iterator<D_row<NT>,
 				  boost::counting_iterator<int> > >
   { 

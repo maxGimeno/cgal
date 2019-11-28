@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Miguel Granados <granados@mpi-sb.mpg.de>
@@ -588,7 +580,7 @@ else {
       
 inline 
 const Node* get_child_by_side( const Node* node, Oriented_side side) {
-  CGAL_assertion( node != NULL);
+  CGAL_assertion( node != nullptr);
   CGAL_assertion( side != ON_ORIENTED_BOUNDARY);
   if( side == ON_NEGATIVE_SIDE) {
     return node->left();
@@ -755,7 +747,7 @@ class Objects_around_box {
       
     inline 
     const Node* get_child_by_side( const Node* node, Oriented_side side) {
-      CGAL_assertion( node != NULL);
+      CGAL_assertion( node != nullptr);
       CGAL_assertion( side != ON_ORIENTED_BOUNDARY);
       if( side == ON_NEGATIVE_SIDE) {
 	return node->left();
@@ -786,7 +778,7 @@ public:
     typedef typename SNC_structure::Halfedge_iterator Halfedge_iterator;
     typedef typename SNC_structure::Halffacet_iterator Halffacet_iterator;
 
-    CGAL_assertion( W != NULL);
+    CGAL_assertion( W != nullptr);
     Object_list objects;
     Vertex_iterator v;
     Halfedge_iterator e;
@@ -1170,7 +1162,6 @@ Node* build_kdtree(Object_list& O, Object_iterator v_end,
     CGAL_NEF_TRACEN("build_kdtree: splitting plane not found");
     //    if(depth > max_depth)
     return new Node( parent, 0, 0, Plane_3(), O);
-    non_efective_split = true;
   } else {
     CGAL_NEF_TRACEN("Sizes " << O1.size() << ", " << O2.size() << ", " << O.size());
     CGAL_assertion( O1.size() <= O.size() && O2.size() <= O.size());
