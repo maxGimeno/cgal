@@ -2,7 +2,7 @@
 #include <CGAL/Mesh_complex_3_in_triangulation_3.h>
 #include <CGAL/Mesh_criteria_3.h>
 
-
+#include <CGAL/Polyhedron_3.h>
 #include <CGAL/Polyhedral_mesh_domain_3.h>
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/refine_mesh_3.h>
@@ -55,7 +55,7 @@ int main()
   // Create the generator, input is the C3t3 c3t3
   Random_points_in_tetrahedral_mesh_boundary_3<C3t3> g(c3t3);
   // Get 100 random points in cdt
-  CGAL::cpp11::copy_n( g, 100, std::back_inserter(points));
+  std::copy_n( g, 100, std::back_inserter(points));
 
   // Check that we have really created 100 points.
   assert( points.size() == 100);

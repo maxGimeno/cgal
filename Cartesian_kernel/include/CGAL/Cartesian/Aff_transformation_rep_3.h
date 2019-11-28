@@ -5,19 +5,11 @@
 // Max-Planck-Institute Saarbruecken (Germany),
 // and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Herve Bronnimann
@@ -161,28 +153,28 @@ public:
               case 0: return t11;
               case 1: return t12;
               case 2: return t13;
-              case 3: return t14;
+              default: return t14;
             }
     case 1: switch (j)
             {
               case 0: return t21;
               case 1: return t22;
               case 2: return t23;
-              case 3: return t24;
+              default: return t24;
             }
     case 2: switch (j)
             {
               case 0: return t31;
               case 1: return t32;
               case 2: return t33;
-              case 3: return t34;
+              default: return t34;
             }
     case 3: switch (j)
             {
               case 0: return FT(0);
               case 1: return FT(0);
               case 2: return FT(0);
-              case 3: return FT(1);
+              default: return FT(1);
             }
     }
   return FT(0);

@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
 //
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL:  $
-// $Id:  $
-//
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Clement Jamin
 
@@ -23,14 +14,15 @@
 
 #include <CGAL/license/Mesh_3.h>
 
+#include <CGAL/Hash_handles_with_or_without_timestamps.h>
+#include <CGAL/utility.h>
+
+#include <boost/unordered_map.hpp>
 
 #include <iostream>
-#include <map>
-#include <set>
 #include <vector>
 #include <string>
 #include <sstream>
-#include <CGAL/utility.h>
 
 namespace CGAL {
 
@@ -51,6 +43,8 @@ output_to_maya(std::ostream& os,
   typedef typename Tr::Finite_vertices_iterator Finite_vertices_iterator;
   typedef typename Tr::Vertex_handle Vertex_handle;
   typedef typename Tr::Weighted_point Weighted_point;
+
+  typedef CGAL::Hash_handles_with_or_without_timestamps Hash_fct;
 
 #ifdef CGAL_MESH_3_IO_VERBOSE
   std::cerr << "Output to maya:\n";
@@ -106,7 +100,7 @@ output_to_maya(std::ostream& os,
   // Vertices
   //------------------------------------------------------
   
-  std::map<Vertex_handle, int> V;
+  boost::unordered_map<Vertex_handle, int, Hash_fct> V;
   std::stringstream vertices_sstr;
   int num_vertices = 0;
   for( Finite_vertices_iterator vit = tr.finite_vertices_begin();
@@ -117,7 +111,7 @@ output_to_maya(std::ostream& os,
       || !surfaceOnly)
     {
       V[vit] = num_vertices++;
-      Weighted_point p = vit->point();
+      Weighted_point p = tr.point(vit);
       vertices_sstr << "    " << CGAL::to_double(p.x()) << " " << CGAL::to_double(p.y()) << " " << CGAL::to_double(p.z()) << std::endl;
     }
   }
@@ -172,7 +166,7 @@ output_to_maya(std::ostream& os,
       {
         const Vertex_handle& vh = fit->first->vertex(i);
         indices[j] = V[vh];
-        //points[j] = vh->point();
+        //points[j] = tr.point(fit->first, i);
       }
     
       // Reverse triangle orientation?
@@ -231,7 +225,7 @@ output_to_maya(std::ostream& os,
         {
           const Vertex_handle& vh = cit->vertex(i);
           indices[j] = V[vh];
-          //points[j] = vh->point();
+          //points[j] = tr.point(cit, i);
         }
     
         // Reverse triangle orientation?

@@ -1,19 +1,11 @@
 // Copyright (c) 2010  INRIA Sophia-Antipolis (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Olivier Devillers
 
@@ -21,9 +13,13 @@
 
 #ifndef CGAL_POINT_GENERATORS_D_H
 #define CGAL_POINT_GENERATORS_D_H 1
+
+#include <CGAL/disable_warnings.h>
+
 #include <CGAL/generators.h>
 #include <CGAL/number_type_basic.h>
 #include <cmath>
+#include <vector>
 
 namespace CGAL {
 
@@ -147,6 +143,7 @@ void
 Random_points_in_cube_d<P>::
 generate_point() {
     typedef typename Kernel_traits<P>::Kernel::RT RT;
+    CGAL_assume(dimension>0);
     std::vector<RT> coord(dimension);
     for(int i=0; i<dimension; ++i)
       coord[i]=RT(this->d_range * ( 2 * this->_rnd.get_double() - 1.0));
@@ -206,6 +203,8 @@ points_on_cube_grid_d( int dimension, double a,
 
 
 } //namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_POINT_GENERATORS_D_H //
 // EOF //

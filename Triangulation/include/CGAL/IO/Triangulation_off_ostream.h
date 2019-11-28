@@ -1,27 +1,17 @@
 // Copyright (c) 2014  INRIA Sophia-Antipolis (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
+// This file is part of CGAL (www.cgal.org)
 //
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL:  $
-// $Id:  $
+// $URL$
+// $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Clement Jamin
 
 
 #ifndef CGAL_TRIANGULATION_IO_H
 #define CGAL_TRIANGULATION_IO_H
-
-#include <CGAL/license/Triangulation.h>
 
 #include <CGAL/Epick_d.h>
 #include <CGAL/Triangulation.h>
@@ -118,88 +108,6 @@ input_point(std::istream & is, const Traits &traits, P & p)
 ///////////////////////////////////////////////////////////////
 // TODO: replace these operator>> by an "input_point" function
 ///////////////////////////////////////////////////////////////
-
-// TODO: test if the stream is binary or text?
-template<typename K>
-std::istream &
-operator>>(std::istream &is, typename Wrap::Point_d<K> & p)
-{
-  typedef typename Wrap::Point_d<K> P;
-  typedef typename K::FT FT;
-  std::vector<FT> coords;
-
-  std::string line;
-  for(;;)
-  {
-    if (!std::getline(is, line))
-      return is;
-    if (line != "")
-      break;
-  }
-  std::stringstream line_sstr(line);
-  FT temp;
-  while (line_sstr >> temp)
-    coords.push_back(temp);
-
-  p = P(coords.begin(), coords.end());
-  return is;
-}
-
-// TODO: test if the stream is binary or text?
-template<typename K>
-std::istream &
-operator>>(std::istream &is, typename Wrap::Weighted_point_d<K> & wp)
-{
-  typedef typename Wrap::Point_d<K>           P;
-  typedef typename Wrap::Weighted_point_d<K>  WP;
-  typedef typename K::FT FT;
-
-  std::string line;
-  for(;;)
-  {
-    if (!std::getline(is, line))
-      return is;
-    if (line != "")
-      break;
-  }
-  std::stringstream line_sstr(line);
-  FT temp;
-  std::vector<FT> coords;
-  while (line_sstr >> temp)
-    coords.push_back(temp);
-  
-  typename std::vector<FT>::iterator last = coords.end() - 1;
-  P p = P(coords.begin(), last);
-  wp = WP(p, *last);
-
-  return is;
-}
-
-// TODO: test if the stream is binary or text?
-template<typename K>
-std::istream &
-operator>>(std::istream &is, typename Wrap::Vector_d<K> & v)
-{
-  typedef typename Wrap::Vector_d<K> V;
-  typedef typename K::FT FT;
-  std::vector<FT> coords;
-
-  std::string line;
-  for (;;)
-  {
-    if (!std::getline(is, line))
-      return is;
-    if (line != "")
-      break;
-  }
-  std::stringstream line_sstr(line);
-  FT temp;
-  while (line_sstr >> temp)
-    coords.push_back(temp);
-
-  v = V(coords.begin(), coords.end());
-  return is;
-}
 
 template < class GT, class TDS >
 std::ostream &

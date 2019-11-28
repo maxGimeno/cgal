@@ -8,8 +8,12 @@
 #include <dtkContinuousGeometryUtils>
 #include <algorithm>
 #include <QMenu>
+#include <CGAL/Three/Triangle_container.h>
+#include <CGAL/Three/Three.h>
 
-typedef Scene_rational_bezier_surface_item_priv D;
+using namespace CGAL::Three;
+typedef Triangle_container Tc;
+typedef Viewer_interface Vi;
 //Vertex source code
 struct Scene_rational_bezier_surface_item_priv{
 
@@ -83,36 +87,15 @@ struct Scene_rational_bezier_surface_item_priv{
         m_elements[cntr + 5] = i * (v_sampling + 1) + j + (v_sampling + 1);
       }
     }
+
+    item->getTriangleContainer(0)->allocate(Tc::Vertex_indices, m_elements.data(),
+                                            static_cast<int>(m_nb_elements*sizeof(unsigned int)));
+    item->getTriangleContainer(0)->allocate(Tc::Smooth_vertices, vertices.data(),
+                                            static_cast<int>(m_nb_vertices*sizeof(float)));
+    item->getTriangleContainer(0)->allocate(Tc::VColors, 0, 0);
+
   }
 
-  void initializeBuffers(CGAL::Three::Viewer_interface *viewer)const
-  {
-    dtkDebug() << "Initializing buffer...";
-
-    // ///////////////////////////////////////////////////////////////////
-    // Creates VBO EBO and VAO
-    // ///////////////////////////////////////////////////////////////////
-    m_program = item->getShaderProgram(Scene_rational_bezier_surface_item::PROGRAM_WITH_LIGHT, viewer);
-    m_program->bind();
-    item->vaos[FACES]->bind();
-    item->buffers[FACES_BUFFER].bind();
-
-    item->buffers[FACES_BUFFER].allocate(vertices.data(), static_cast<int>(m_nb_vertices * 6 * sizeof(float)));
-    m_program->enableAttributeArray("vertex");
-    m_program->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 6 * sizeof(float));
-    m_program->enableAttributeArray("normals");
-    m_program->setAttributeBuffer("normals", GL_FLOAT, 3 * sizeof(float), 3, 6 * sizeof(float));
-    m_program->disableAttributeArray("colors");
-
-    item->buffers[FACES_BUFFER].release();
-    item->vaos[FACES]->release();
-
-    m_program->release();
-
-    initialized = true;
-
-    dtkDebug() << "Buffers initialized...";
-  }
   const dtkRationalBezierSurface& m_rational_bezier_surface;
 
   enum Vao
@@ -139,9 +122,12 @@ struct Scene_rational_bezier_surface_item_priv{
 };
 
 Scene_rational_bezier_surface_item::Scene_rational_bezier_surface_item(const dtkRationalBezierSurface& dtk_rational_bezier_surface)
-  :CGAL::Three::Scene_item(D::NumberOfBuffers, D::NumberOfVaos)
 {
   d = new Scene_rational_bezier_surface_item_priv(dtk_rational_bezier_surface, this);
+
+  setTriangleContainer(0,
+                    new Tc(Vi::PROGRAM_WITHOUT_LIGHT, true));
+  invalidateOpenGLBuffers();
 }
 
 Scene_rational_bezier_surface_item::~Scene_rational_bezier_surface_item() { if(d) delete d; }
@@ -155,26 +141,28 @@ QString Scene_rational_bezier_surface_item::toolTip() const {
         .arg(property("toolTip").toString());
 }
 
-void Scene_rational_bezier_surface_item::draw(CGAL::Three::Viewer_interface* viewer)const
+void Scene_rational_bezier_surface_item::initializeBuffers(Viewer_interface *viewer) const
 {
-  if(!d->initialized)
-    d->initializeBuffers(viewer);
+  getTriangleContainer(0)->initializeBuffers(viewer);
+  getTriangleContainer(0)->setIdxSize(d->m_nb_elements);
 
-  attribBuffers(viewer, PROGRAM_WITH_LIGHT);
-  d->m_program = getShaderProgram(PROGRAM_WITH_LIGHT, viewer);
-  d->m_program->bind();
-
-  vaos[D::FACES]->bind();
-  d->m_program->setAttributeValue("colors", this->color());
-  viewer->glDrawElements(GL_TRIANGLES, static_cast<GLuint>(d->m_elements.size()), GL_UNSIGNED_INT, d->m_elements.data());
-  vaos[D::FACES]->release();
-  d->m_program->release();
-
+  d->vertices.resize(0);
+  d->vertices.shrink_to_fit();
 }
 
-void Scene_rational_bezier_surface_item::drawEdges(CGAL::Three::Viewer_interface * viewer) const
+
+void Scene_rational_bezier_surface_item::draw(CGAL::Three::Viewer_interface* viewer)const
 {
-    //Does nothing
+  if(!isInit(viewer) && viewer->context()->isValid())
+    initGL(viewer);
+  if (getBuffersFilled() )
+    if(!getBuffersInit(viewer))
+    {
+      initializeBuffers(viewer);
+      setBuffersInit(viewer, true);
+    }
+  getTriangleContainer(0)->setColor(color());
+  getTriangleContainer(0)->draw( viewer,true);
 }
 
 void Scene_rational_bezier_surface_item::compute_bbox() const

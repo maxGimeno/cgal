@@ -3,18 +3,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Steve OUDOT, Laurent RINEAU
@@ -28,6 +20,7 @@
 #include <CGAL/Surface_mesher/Null_oracle_visitor.h>
 #include <CGAL/point_generators_3.h>
 #include <CGAL/Surface_mesher/Sphere_oracle_3.h>
+#include <CGAL/Surface_mesher/Implicit_surface_oracle_3.h>
 #include <CGAL/Real_embeddable_traits.h>
 #include <CGAL/squared_distance_3.h>
 
@@ -50,12 +43,6 @@
 // NB: this oracle requires that the user provide a function that can
 // compute the value of the potential in any point of space
 namespace CGAL {
-
-#ifdef  BOOST_MPL_CFG_NO_HAS_XXX
-#  error "BOOST_MPL_HAS_XXX_TRAIT_DEF is needed!"
-#else
-   BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(has_set_on_surface, Set_on_surface_tag, true)
-#endif
 
   namespace Surface_mesher {
 
@@ -99,19 +86,7 @@ namespace CGAL {
 )
     */
 
-  namespace {
-    
-  template <typename T>
-  struct Return_min : std::binary_function<T, T, T>
-  {
-    T operator()(const T& a, const T& b) const
-    {
-      return (std::min)(a, b);
-    }
-  };
-
-  } // end anonymous namespace
-
+ 
   template <
     class GT,
     class Surface,

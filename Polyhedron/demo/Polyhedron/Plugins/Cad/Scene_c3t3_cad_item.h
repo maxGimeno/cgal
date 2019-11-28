@@ -3,6 +3,7 @@
 #ifndef SCENE_C3T3_CAD_ITEM_H
 #define SCENE_C3T3_CAD_ITEM_H
 
+
 #include "Scene_c3t3_cad_item_config.h"
 #include "C3t3_cad_type.h"
 
@@ -13,16 +14,14 @@
 #include <set>
 
 #include <QtCore/qglobal.h>
-#include <CGAL/gl.h>
-#include <QGLViewer/manipulatedFrame.h>
-#include <QGLViewer/qglviewer.h>
+#include <CGAL/Qt/manipulatedFrame.h>
+#include <CGAL/Qt/qglviewer.h>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLBuffer>
 #include <QOpenGLShaderProgram>
 
 #include <CGAL/Three/Viewer_interface.h>
 #include <CGAL/Three/Scene_group_item.h>
-#include <Scene_polyhedron_item.h>
 #include <Scene_polygon_soup_item.h>
 #include <CGAL/IO/File_binary_mesh_3.h>
 #include <CGAL/Three/Scene_item_with_properties.h>
@@ -31,21 +30,22 @@ struct Scene_c3t3_cad_item_priv;
 class Scene_spheres_item;
 class Scene_intersection_item;
 using namespace CGAL::Three;
-class SCENE_C3T3_CAD_ITEM_EXPORT Scene_c3t3_cad_item
+  class SCENE_C3T3_CAD_ITEM_EXPORT Scene_c3t3_cad_item
   : public Scene_group_item, public Scene_item_with_properties
 {
   Q_OBJECT
 public:
-  typedef qglviewer::ManipulatedFrame ManipulatedFrame;
+  typedef CGAL::qglviewer::ManipulatedFrame ManipulatedFrame;
 
   Scene_c3t3_cad_item();
   Scene_c3t3_cad_item(const C3t3& c3t3, const Mesh_domain& md);
   ~Scene_c3t3_cad_item();
 
+  void common_constructor();
   bool has_stats()const  Q_DECL_OVERRIDE {return true;}
   QString computeStats(int type)  Q_DECL_OVERRIDE;
   CGAL::Three::Scene_item::Header_data header() const Q_DECL_OVERRIDE;
-
+  const Mesh_domain& meshDomain() const;
 
   void setColor(QColor c) Q_DECL_OVERRIDE;
   bool save_binary(std::ostream& os) const
@@ -70,8 +70,6 @@ public:
   const C3t3& c3t3() const;
   C3t3& c3t3();
 
-  const Mesh_domain& meshDomain() const;
-
   bool manipulatable() const  Q_DECL_OVERRIDE{
     return true;
   }
@@ -81,13 +79,16 @@ public:
   bool has_cnc() const;
   bool has_tets() const;
   bool is_valid() const;//true if the c3t3 is correct, false if it was made from a .mesh, for example
+  float alpha() const Q_DECL_OVERRIDE;
+  void setAlpha(int alpha) Q_DECL_OVERRIDE;
+  QSlider* alphaSlider();
   ManipulatedFrame* manipulatedFrame() Q_DECL_OVERRIDE;
 
   void setPosition(float x, float y, float z) ;
 
   void setNormal(float x, float y, float z) ;
 
-  Geom_traits::Plane_3 plane(qglviewer::Vec offset = qglviewer::Vec(0,0,0)) const;
+  Geom_traits::Plane_3 plane(CGAL::qglviewer::Vec offset = CGAL::qglviewer::Vec(0,0,0)) const;
 
   bool isFinite() const Q_DECL_OVERRIDE { return true; }
   bool isEmpty() const Q_DECL_OVERRIDE {
@@ -117,17 +118,20 @@ public:
 
   // Indicate if rendering mode is supported
   bool supportsRenderingMode(RenderingMode m) const  Q_DECL_OVERRIDE{
-    return (m != Gouraud && m != PointsPlusNormals && m != Splatting && m != Points && m != ShadedPoints);
+    return (m != Gouraud && m != PointsPlusNormals && m != Points && m != ShadedPoints);
   }
 
   void draw(CGAL::Three::Viewer_interface* viewer) const Q_DECL_OVERRIDE;
   void drawEdges(CGAL::Three::Viewer_interface* viewer) const Q_DECL_OVERRIDE;
   void drawPoints(CGAL::Three::Viewer_interface * viewer) const Q_DECL_OVERRIDE;
+   //When selecting a c3t3 item, we don't want to select its children, so we can still apply Operations to it
+  QList<Scene_interface::Item_id> getChildrenForSelection() const Q_DECL_OVERRIDE { return QList<Scene_interface::Item_id>(); }
   public:
     QMenu* contextMenu() Q_DECL_OVERRIDE;
     void copyProperties(Scene_item *) Q_DECL_OVERRIDE;
     float getShrinkFactor() const;
     bool keyPressEvent(QKeyEvent *) Q_DECL_OVERRIDE;
+    bool eventFilter(QObject *, QEvent *) Q_DECL_OVERRIDE;
   public Q_SLOTS:
 
   void on_spheres_color_changed();
@@ -157,9 +161,24 @@ public:
 
   void itemAboutToBeDestroyed(Scene_item *) Q_DECL_OVERRIDE;
 
+  void initializeBuffers(Viewer_interface *) const Q_DECL_OVERRIDE;
+  void computeElements() const Q_DECL_OVERRIDE;
+  void newViewer(Viewer_interface *viewer) Q_DECL_OVERRIDE;
+
   protected:
     friend struct Scene_c3t3_cad_item_priv;
     Scene_c3t3_cad_item_priv* d;
+    enum Face_Containers{
+      C3t3_faces = 0
+    };
+    enum Edge_Containers{
+      C3t3_edges = 0,
+      Grid_edges,
+      CNC
+    };
+    enum Point_Container{
+      C3t3_points = 0
+    };
 
 };
 

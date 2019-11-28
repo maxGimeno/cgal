@@ -1,19 +1,11 @@
 // Copyright (c) 2015  INRIA Sophia-Antipolis (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Olivier Devillers
 //               : Pedro Machado Manhaes de Castro
@@ -41,7 +33,7 @@ void hilbert_sort_on_sphere (RandomAccessIterator begin,
   typedef typename ITraits::difference_type Diff_t;
   boost::rand48 random;
   boost::random_number_generator<boost::rand48, Diff_t> rng(random);
-  std::random_shuffle(begin,end, rng);
+  CGAL::cpp98::random_shuffle(begin,end, rng);
   (Hilbert_sort_on_sphere_3<Kernel, Policy> (k,sq_r,p))(begin, end);
 }
 

@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Christophe Delage (Christophe.Delage@sophia.inria.fr)
@@ -342,10 +334,10 @@ int main(int argc, char **argv)
     boost::int32_t seed0 = 42, seed1 = 43, seed2 = 42, seed3 = 42;
 
     // You can also pass seeds on the command line.
-    if (argc > 1) std::sscanf (argv[1], "%d", &seed0);
-    if (argc > 2) std::sscanf (argv[2], "%d", &seed1);
-    if (argc > 3) std::sscanf (argv[3], "%d", &seed2);
-    if (argc > 4) std::sscanf (argv[4], "%d", &seed3);
+    if (argc > 1) { std::istringstream iss(argv[1]); iss >>seed0; }
+    if (argc > 2) { std::istringstream iss(argv[2]); iss >>seed1; }
+    if (argc > 3) { std::istringstream iss(argv[3]); iss >>seed2; }
+    if (argc > 4) { std::istringstream iss(argv[4]); iss >>seed3; }
     
     Cls T;
     point_set points;

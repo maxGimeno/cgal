@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Ron Wein          <wein@post.tau.ac.il>
@@ -22,6 +14,8 @@
 #define CGAL_CORE_ALGEBRAIC_NUMBER_TRAITS_2_H
 
 #include <CGAL/license/Arrangement_on_surface_2.h>
+
+#include <CGAL/disable_warnings.h>
 
 
 /*! \file
@@ -587,7 +581,7 @@ public:
                                   poly.getCoeff(1),
                                   poly.getCoeff(0),
                                   buffer);
-      unsigned int  num_of_roots = std::distance(&buffer[0], end_buffer);
+      unsigned int num_of_roots = static_cast<unsigned int>(std::distance(&buffer[0], end_buffer));
 
       for (i = 0; i < num_of_roots; ++i)
       {
@@ -619,5 +613,7 @@ public:
 };
 
 } //namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif

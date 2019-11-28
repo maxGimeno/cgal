@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Michael Hoffmann <hoffmann@inf.ethz.ch>
@@ -894,7 +886,8 @@ rectangular_3_center_2_type2(
   // lower bound for the diameter (2 * radius)
   // also store the corresponding positions of q_t and q_r
   FT rho_max = 0, rho_min = -1, q_t_q_r_cover_at_rho_min = 0;
-  Point q_t_at_rho_max, q_r_at_rho_max, q_t_at_rho_min, q_r_at_rho_min;
+  Point q_t_at_rho_max(CGAL::ORIGIN), q_r_at_rho_max(CGAL::ORIGIN),
+        q_t_at_rho_min(CGAL::ORIGIN), q_r_at_rho_min(CGAL::ORIGIN);
   RandomAccessIterator s_at_rho_min = s, e_at_rho_min = s;
 
 #ifndef CGAL_3COVER_NO_CHECK_OPTIMUM_FIRST

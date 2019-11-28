@@ -1,19 +1,11 @@
 // Copyright (c) 2010-2011 CNRS and LIRIS' Establishments (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 //
@@ -1132,6 +1124,48 @@ bool test3D()
   if ( !map.is_isomorphic_to(map2, false) )
   {
     std::cout<<"Error: map and map2 are not isomorphic (after insertion/removal).\n";
+    assert(false);
+    return false;
+  }
+
+  if (CGAL::degree<Map, 0>(map2, d1)!=4)
+  {
+    std::cout<<"Error: 0-degree is wrong: "<<CGAL::degree<Map, 0>(map2, d1)<<" instead of 4."<<std::endl;
+    assert(false);
+    return false;
+  }
+  
+  if (CGAL::degree<Map, 1>(map2, d1)!=3)
+  {
+    std::cout<<"Error: 1-degree is wrong: "<<CGAL::degree<Map, 1>(map2, d1)<<" instead of 3."<<std::endl;
+    assert(false);
+    return false;
+  }
+  
+  if (CGAL::degree<Map, 2>(map2, d1)!=2)
+  {
+    std::cout<<"Error: 2-degree is wrong: "<<CGAL::degree<Map, 2>(map2, d1)<<" instead of 2."<<std::endl;
+    assert(false);
+    return false;
+  }
+  
+  if (CGAL::codegree<Map, 1>(map2, d1)!=2)
+  {
+    std::cout<<"Error: 1-codegree is wrong: "<<CGAL::codegree<Map, 1>(map2, d1)<<" instead of 2."<<std::endl;
+    assert(false);
+    return false;
+  }
+  
+  if (CGAL::codegree<Map, 2>(map2, d1)!=4)
+  {
+    std::cout<<"Error: 2-codegree is wrong: "<<CGAL::codegree<Map, 2>(map2, d1)<<" instead of 4."<<std::endl;
+    assert(false);
+    return false;
+  }
+  
+  if (CGAL::codegree<Map, 3>(map2, d1)!=6)
+  {
+    std::cout<<"Error: 3-codegree is wrong: "<<CGAL::codegree<Map, 3>(map2, d1)<<" instead of 6."<<std::endl;
     assert(false);
     return false;
   }

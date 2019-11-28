@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Michael Hoffmann <hoffmann@inf.ethz.ch> and
@@ -128,7 +120,7 @@ public:
 
   // new predicates
   struct Area_less_rectangle_2
-  : public std::binary_function< Rectangle_2, Rectangle_2, bool >
+  : public CGAL::cpp98::binary_function< Rectangle_2, Rectangle_2, bool >
   {
     RT
     area_numerator(const Rectangle_2& r, Cartesian_tag) const
@@ -169,7 +161,7 @@ public:
     }
   };
   struct Area_less_parallelogram_2
-  : public std::binary_function< Parallelogram_2,
+  : public CGAL::cpp98::binary_function< Parallelogram_2,
                                       Parallelogram_2,
                                       bool >
   {
@@ -214,7 +206,7 @@ public:
     }
   };
   struct Width_less_strip_2
-  : public std::binary_function< Strip_2, Strip_2, bool >
+  : public CGAL::cpp98::binary_function< Strip_2, Strip_2, bool >
   {
     RT
     width_numerator(const Strip_2& r, Cartesian_tag) const
@@ -256,7 +248,7 @@ public:
 
   // new constructions
   struct Construct_vector_from_direction_2
-  : public std::unary_function<Direction_2,Vector_2>
+  : public CGAL::cpp98::unary_function<Direction_2,Vector_2>
   {
     Vector_2 operator()(const Direction_2& d) const { return d.vector(); }
   };

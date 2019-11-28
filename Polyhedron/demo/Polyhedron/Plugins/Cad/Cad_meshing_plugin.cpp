@@ -4,6 +4,8 @@
 
 //because dtk uses qt's foreach keyword, which we do not allow
 #define foreach Q_FOREACH
+#define signals Q_SIGNALS
+#define slots Q_SLOTS
 
 #include <dtkCore>
 #include <dtkContinuousGeometry>
@@ -53,9 +55,12 @@ public:
   //IO PLUGIN PART
   QString name() const { return "Cad_meshing_plugin"; }
   QString nameFilters() const { return "Cad Files (*.3dm)"; }
-  bool canLoad() const { return true; }
-  CGAL::Three::Scene_item* load(QFileInfo fileinfo) {
-      if(fileinfo.suffix().toLower() != "3dm") return 0;
+  bool canLoad(QFileInfo) const { return true; }
+  QList<CGAL::Three::Scene_item*> load(QFileInfo fileinfo, bool& ok, bool add_to_scene=true){
+      if(fileinfo.suffix().toLower() != "3dm"){
+        ok = false;
+        return QList<CGAL::Three::Scene_item*>();
+      }
 
       dtkContinuousGeometrySettings settings;
       settings.beginGroup("continuous-geometry");
@@ -65,8 +70,9 @@ public:
       settings.endGroup();
       dtkBRepReader* brep_reader = dtkContinuousGeometry::bRepReader::pluginFactory().create("openNURBSBRepReader");
       if(brep_reader == NULL) {
-        messageInterface->error("ERROR in initialization");
-        return NULL;
+        messageInterface->message_error("ERROR in initialization");
+        ok = false;
+        return QList<CGAL::Three::Scene_item*>();
       }
       brep_reader->setInputBRepFilePath(fileinfo.absoluteFilePath());
       brep_reader->run();
@@ -75,21 +81,25 @@ public:
       item->setName(fileinfo.baseName());
       item->setFlatMode();
       QList<int> children_ids;
-      Q_FOREACH(CGAL::Three::Scene_item* child, item->getChildren())
+      for( CGAL::Three::Scene_interface::Item_id id : item->getChildren())
       {
+        CGAL::Three::Scene_item* child =scene->item(id);
         children_ids.append(scene->item_id(child));
       }
       static_cast<Scene*>(scene)->setSelectedItemsList(children_ids);
       static_cast<MainWindow*>(this->mw)->colorItems();
       scene->setSelectedItem(scene->item_id(item));
-      return item;
+      if(add_to_scene)
+        CGAL::Three::Three::scene()->addItem(item);
+      ok = true;
+      return QList<CGAL::Three::Scene_item*>()<<item;
   }
 
   bool canSave(const CGAL::Three::Scene_item*) {
       return false;
   }
 
-  bool save(const CGAL::Three::Scene_item*, QFileInfo) {
+  bool save(QFileInfo, QList<CGAL::Three::Scene_item*>& ){
     return false;
   }
 

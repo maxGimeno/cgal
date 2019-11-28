@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Jane Tournois
@@ -109,7 +101,7 @@ private:
                  std::vector<face_descriptor>& new_faces,
                  double alpha)
   {
-    BOOST_FOREACH(face_descriptor fd, faces)
+    for(face_descriptor fd : faces)
     {
       CGAL_assertion(fd  != boost::graph_traits<PolygonMesh>::null_face());
 
@@ -169,18 +161,18 @@ private:
     collect_interior_edges(faces, border_edges, interior_edges, included_map);
     collect_interior_edges(new_faces, border_edges, interior_edges, included_map);
 
-    #ifndef CGAL_PMP_REFINE_DEBUG
+    #ifdef CGAL_PMP_REFINE_DEBUG
     std::cerr << "Test " << interior_edges.size() << " edges " << std::endl;
     #endif
     //do not just use std::set (included_map) for iteration, the order effects the output (we like to make it deterministic)
-    BOOST_FOREACH(halfedge_descriptor h, interior_edges)
+    for(halfedge_descriptor h : interior_edges)
     {
       if (relax(h)) {
         ++flips;
       }
     }
 
-    #ifndef CGAL_PMP_REFINE_DEBUG
+    #ifdef CGAL_PMP_REFINE_DEBUG
     std::cerr  << "|flips| = " << flips << std::endl;
     #endif
     return flips > 0;
@@ -192,7 +184,7 @@ private:
         std::list<halfedge_descriptor>& interior_edges,
         std::set<halfedge_descriptor>& included_map)
   {
-    BOOST_FOREACH(face_descriptor fd, faces)
+    for(face_descriptor fd : faces)
     {
       Halfedge_around_face_circulator<PolygonMesh> circ(halfedge(fd, pmesh), pmesh), done(circ);
       do {
@@ -241,7 +233,7 @@ private:
                                  std::map<vertex_descriptor, double>& scale_attribute,
                                  bool accept_internal_facets) 
   {
-    BOOST_FOREACH(face_descriptor fd, faces)
+    for(face_descriptor fd : faces)
     {
       Halfedge_around_face_circulator<PolygonMesh> circ(halfedge(fd,pmesh),pmesh), done(circ);
       do {
@@ -258,7 +250,7 @@ private:
   bool contain_internal_facets(const FaceRange& faces,
                                const std::set<face_descriptor>& interior_map) const
   {
-    BOOST_FOREACH(face_descriptor fd, faces)
+    for(face_descriptor fd : faces)
     {
       Halfedge_around_face_circulator<PolygonMesh> circ(halfedge(fd,pmesh),pmesh), done(circ);
       do {
@@ -297,7 +289,7 @@ public:
 
     // store boundary edges - to be used in relax 
     std::set<halfedge_descriptor> border_edges;
-    BOOST_FOREACH(face_descriptor f, faces)
+    for(face_descriptor f : faces)
     {
       Halfedge_around_face_circulator<PolygonMesh> circ(halfedge(f,pmesh),pmesh), done(circ);
       do {

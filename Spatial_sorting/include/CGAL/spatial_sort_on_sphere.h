@@ -1,19 +1,11 @@
 // Copyright (c) 2015  INRIA Sophia-Antipolis (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Olivier Devillers
 //               : Pedro Machado Manhaes de Castro
@@ -47,7 +39,7 @@ void spatial_sort_on_sphere (
 
     boost::rand48 random;
     boost::random_number_generator<boost::rand48, Diff_t> rng(random);
-    std::random_shuffle(begin,end, rng);
+    CGAL::cpp98::random_shuffle(begin,end, rng);
 
             if (threshold_hilbert==0) threshold_hilbert=4;
             if (threshold_multiscale==0) threshold_multiscale=16;

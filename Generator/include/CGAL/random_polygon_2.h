@@ -5,19 +5,11 @@
 // Max-Planck-Institute Saarbruecken (Germany),
 // and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Susan Hert <hert@mpi-sb.mpg.de>
 
@@ -27,6 +19,7 @@
 #include <list>
 #include <set>
 #include <vector>
+#include <CGAL/algorithm.h>
 #include <CGAL/Random_polygon_2_sweep.h>
 #include <CGAL/Kernel_traits.h>
 
@@ -54,7 +47,7 @@ OutputIterator random_polygon_2(std::size_t n,  OutputIterator result,
    CGAL_assertion(!duplicate_points(vertices.begin(), vertices.end(), traits));
 
 #ifndef CGAL_DONT_SHUFFLE_IN_RANDOM_POLYGON_2
-   std::random_shuffle(vertices.begin(), vertices.end());
+   CGAL::cpp98::random_shuffle(vertices.begin(), vertices.end());
 #endif
 
    make_simple_polygon(vertices.begin(), vertices.end(), traits);

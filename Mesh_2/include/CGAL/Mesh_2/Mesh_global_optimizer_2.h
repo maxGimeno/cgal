@@ -3,18 +3,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 // Author(s) : Jane Tournois, Raul Gallegos, Pierre Alliez, Stéphane Tayeb
 //
@@ -145,7 +137,7 @@ public:
                                             moving_vertices.size()/100);
     big_moves_.resize(big_moves_size, FT(0));
 
-    std::size_t nb_vertices_moved = -1;
+    std::size_t nb_vertices_moved = (std::numeric_limits<std::size_t>::max)();
     bool convergence_stop = false;
 
     // Iterate
@@ -307,7 +299,7 @@ private:
     // Find the minimum value
     do
     {
-      if(face->is_in_domain())
+      if (!cdt_.is_infinite(face))
         min_sqr = (std::min)(min_sqr, sq_circumradius(face));
       face++;
     }

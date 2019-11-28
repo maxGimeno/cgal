@@ -1,19 +1,11 @@
 // Copyright (c) 2001-2007  INRIA Sophia-Antipolis (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Sylvain Pion
@@ -21,6 +13,7 @@
 #ifndef CGAL_MP_FLOAT_H
 #define CGAL_MP_FLOAT_H
 
+#include <CGAL/disable_warnings.h>
 #include <CGAL/number_type_basic.h>
 #include <CGAL/Algebraic_structure_traits.h>
 #include <CGAL/Real_embeddable_traits.h>
@@ -416,7 +409,7 @@ template <> class Algebraic_structure_traits< MP_Float >
     typedef Tag_true            Is_numerical_sensitive;
 
     struct Unit_part
-      : public std::unary_function< Type , Type >
+      : public CGAL::cpp98::unary_function< Type , Type >
     {
       Type operator()(const Type &x) const {
         return x.unit_part();
@@ -424,7 +417,7 @@ template <> class Algebraic_structure_traits< MP_Float >
     };
 
     struct Integral_division
-        : public std::binary_function< Type,
+        : public CGAL::cpp98::binary_function< Type,
                                  Type,
                                  Type > {
     public:
@@ -440,7 +433,7 @@ template <> class Algebraic_structure_traits< MP_Float >
 
 
     class Square
-      : public std::unary_function< Type, Type > {
+      : public CGAL::cpp98::unary_function< Type, Type > {
       public:
         Type operator()( const Type& x ) const {
           return INTERN_MP_FLOAT::square(x);
@@ -448,7 +441,7 @@ template <> class Algebraic_structure_traits< MP_Float >
     };
 
     class Gcd
-      : public std::binary_function< Type, Type,
+      : public CGAL::cpp98::binary_function< Type, Type,
                                 Type > {
       public:
         Type operator()( const Type& x,
@@ -458,7 +451,7 @@ template <> class Algebraic_structure_traits< MP_Float >
     };
 
     class Div
-      : public std::binary_function< Type, Type,
+      : public CGAL::cpp98::binary_function< Type, Type,
                                 Type > {
       public:
         Type operator()( const Type& x,
@@ -471,7 +464,7 @@ template <> class Algebraic_structure_traits< MP_Float >
 // Default implementation of Divides functor for unique factorization domains
   // x divides y if gcd(y,x) equals x up to inverses 
   class Divides 
-    : public std::binary_function<Type,Type,bool>{ 
+    : public CGAL::cpp98::binary_function<Type,Type,bool>{
   public:
     bool operator()( const Type& x,  const Type& y) const {  
       return internal::division(y,x).second == 0 ;
@@ -493,7 +486,7 @@ template <> class Real_embeddable_traits< MP_Float >
   public:
 
     class Sgn
-      : public std::unary_function< Type, ::CGAL::Sign > {
+      : public CGAL::cpp98::unary_function< Type, ::CGAL::Sign > {
       public:
         ::CGAL::Sign operator()( const Type& x ) const {
           return x.sign();
@@ -501,7 +494,7 @@ template <> class Real_embeddable_traits< MP_Float >
     };
 
     class Compare
-      : public std::binary_function< Type, Type,
+      : public CGAL::cpp98::binary_function< Type, Type,
                                 Comparison_result > {
       public:
         Comparison_result operator()( const Type& x,
@@ -511,7 +504,7 @@ template <> class Real_embeddable_traits< MP_Float >
     };
 
     class To_double
-      : public std::unary_function< Type, double > {
+      : public CGAL::cpp98::unary_function< Type, double > {
       public:
         double operator()( const Type& x ) const {
           return INTERN_MP_FLOAT::to_double( x );
@@ -519,7 +512,7 @@ template <> class Real_embeddable_traits< MP_Float >
     };
 
     class To_interval
-      : public std::unary_function< Type, std::pair< double, double > > {
+      : public CGAL::cpp98::unary_function< Type, std::pair< double, double > > {
       public:
         std::pair<double, double> operator()( const Type& x ) const {
           return INTERN_MP_FLOAT::to_interval( x );
@@ -851,14 +844,14 @@ class Real_embeddable_traits< Quotient<MP_Float> >
     : public INTERN_QUOTIENT::Real_embeddable_traits_quotient_base<
 Quotient<MP_Float> >{
 public:
-    struct To_double: public std::unary_function<Quotient<MP_Float>, double>{
+    struct To_double: public CGAL::cpp98::unary_function<Quotient<MP_Float>, double>{
          inline
          double operator()(const Quotient<MP_Float>& q) const {
             return INTERN_MP_FLOAT::to_double(q);
         }
     };
     struct To_interval
-        : public std::unary_function<Quotient<MP_Float>, std::pair<double,double> > {
+        : public CGAL::cpp98::unary_function<Quotient<MP_Float>, std::pair<double,double> > {
         inline
         std::pair<double,double> operator()(const Quotient<MP_Float>& q) const {
             return INTERN_MP_FLOAT::to_interval(q);
@@ -877,6 +870,8 @@ inline MP_Float max BOOST_PREVENT_MACRO_SUBSTITUTION(const MP_Float& x,const MP_
 // Coercion_traits
 CGAL_DEFINE_COERCION_TRAITS_FOR_SELF(MP_Float)
 CGAL_DEFINE_COERCION_TRAITS_FROM_TO(int, MP_Float)
+CGAL_DEFINE_COERCION_TRAITS_FROM_TO(float, MP_Float)
+CGAL_DEFINE_COERCION_TRAITS_FROM_TO(double, MP_Float)
 
 
 } //namespace CGAL
@@ -910,4 +905,5 @@ namespace Eigen {
 //specialization for Get_arithmetic_kernel
 #include <CGAL/MP_Float_arithmetic_kernel.h>
 
+#include <CGAL/enable_warnings.h>
 #endif // CGAL_MP_FLOAT_H

@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Panagiotis Cheilaris, Sandeep Kumar Dey, Evanthia Papadopoulou
@@ -24,6 +16,7 @@
 
 #include <CGAL/license/Segment_Delaunay_graph_Linf_2.h>
 
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/Segment_Delaunay_graph_Linf_2/basic.h>
 
@@ -219,7 +212,7 @@ template<class CK,
 #ifdef CGAL_USE_GMP
 	 class EK      = Simple_cartesian< Gmpq >,
 #else
-	 class EK      = Simple_cartesian< MP_Float >,
+	 class EK      = Simple_cartesian< CGAL::Quotient<MP_Float> >,
 #endif
 	 class EK_MTag = Integral_domain_without_division_tag,
 	 class FK      = Simple_cartesian< Interval_nt<false> >,
@@ -244,5 +237,7 @@ struct Segment_Delaunay_graph_Linf_filtered_traits_without_intersections_2
 #undef SDG2_INS
 
 } //namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_SEGMENT_DELAUNAY_GRAPH_LINF_FILTERED_TRAITS_2_H

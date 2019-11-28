@@ -3,18 +3,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Laurent Rineau
@@ -29,7 +21,7 @@
 #include <CGAL/Unique_hash_map.h>
 
 #include <utility>
-#include <boost/iterator/transform_iterator.hpp>
+#include <CGAL/boost/iterator/transform_iterator.hpp>
 
 namespace CGAL {
 
@@ -117,8 +109,8 @@ private:
   typedef typename Cluster_map::value_type Cluster_map_value_type;
 
   template <class Pair>
-  struct Pair_get_first: public std::unary_function<Pair,
-                                                    typename Pair::first_type>
+  struct Pair_get_first
+    : public CGAL::cpp98::unary_function<Pair, typename Pair::first_type>
   {
     typedef typename Pair::first_type result;
     const result& operator()(const Pair& p) const
@@ -325,6 +317,16 @@ update_cluster(Cluster& c, iterator it, Vertex_handle va,
   c.vertices.erase(vb);
   c.vertices[vm] = reduction;
 
+  if(false == reduction) {
+    for(typename Cluster::Vertices_map::iterator
+          it = c.vertices.begin(),
+          end = c.vertices.end();
+        it != end; ++it)
+    {
+      it->second = false;
+    }
+  }
+
   if(vb==c.smallest_angle.first)
     c.smallest_angle.first = vm;
   if(vb==c.smallest_angle.second)
@@ -347,6 +349,13 @@ update_cluster(Cluster& c, iterator it, Vertex_handle va,
     c.rmin = squared_distance(c.smallest_angle.first->point(),
                               c.smallest_angle.second->point())/FT(4);
   cluster_map.insert(Cluster_map_value_type(va,c));
+#ifdef CGAL_MESH_2_DEBUG_CLUSTERS
+  std::cerr << "Cluster at " << va->point() << " is updated.  "
+            << "\n  vm: " << vm->point()
+            << "\n  reduction: " << reduction
+            << "\n  min_sq_len: " << c.minimum_squared_length
+            << "\n";
+#endif // CGAL_MESH_2_DEBUG_CLUSTERS
 }
 
 template <typename Tr>

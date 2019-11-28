@@ -1,5 +1,6 @@
 #include <CGAL/Mesh_3/io_signature.h>
 #include "Scene_c3t3_cad_item.h"
+#include "Kernel_type.h"
 #include <CGAL/Mesh_3/tet_soup_to_c3t3.h>
 #include <CGAL/Three/Polyhedron_demo_io_plugin_interface.h>
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
@@ -20,45 +21,42 @@ class Polyhedron_demo_c3t3_binary_io_plugin :
     Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
 
 public:
-  void init(QMainWindow*, CGAL::Three::Scene_interface* sc, Messages_interface*)
+  void init(QMainWindow*, CGAL::Three::Scene_interface* sc, Messages_interface*) override
   {
     this->scene = sc;
   }
-  QString name() const { return "Cad_c3t3_io_plugin"; }
-  QString nameFilters() const { return "cad binary files (*.cgal)"; }
-  QString saveNameFilters() const { return "cad binary files (*.cgal)"; }
-  QString loadNameFilters() const { return "cad binary files (*.cgal)"; }
-  QList<QAction*> actions() const
+  QString name() const override { return "Cad_c3t3_io_plugin"; }
+  QString nameFilters() const override { return "cad binary files (*.cgal)"; }
+  QString saveNameFilters() const override { return "cad binary files (*.cgal)"; }
+  QString loadNameFilters() const override { return "cad binary files (*.cgal)"; }
+  QList<QAction*> actions() const override
   {
     return QList<QAction*>();
   }
-  bool applicable(QAction*) const
+  bool applicable(QAction*) const override
   {
     return false;
   }
-  bool canLoad() const;
-  CGAL::Three::Scene_item* load(QFileInfo fileinfo);
+  bool canLoad(QFileInfo) const override {return false; }
+  QList<CGAL::Three::Scene_item*> load(QFileInfo , bool&, bool) override {
+    return {};
+  }
 
-  bool canSave(const CGAL::Three::Scene_item*);
+  bool canSave(const CGAL::Three::Scene_item*) override;
   bool save(const CGAL::Three::Scene_item*, QFileInfo fileinfo);
-
+  bool save(QFileInfo fileinfo,QList<CGAL::Three::Scene_item*>& items) override{
+    Scene_item* item = items.front();
+    if(save(item, fileinfo)) {
+      items.pop_front();
+      return true;
+    } else {
+      return false;
+    }
+  };
+  
 private:
-  bool try_load_other_binary_format(std::istream& in, C3t3& c3t3);
-  bool try_load_a_cdt_3(std::istream& in, C3t3& c3t3);
   CGAL::Three::Scene_interface* scene;
 };
-
-
-bool Polyhedron_demo_c3t3_binary_io_plugin::canLoad() const {
-  return false;
-}
-
-
-CGAL::Three::Scene_item*
-Polyhedron_demo_c3t3_binary_io_plugin::load(QFileInfo ) {
-
-    return NULL;
-}
 
 bool Polyhedron_demo_c3t3_binary_io_plugin::canSave(const CGAL::Three::Scene_item* item)
 {
@@ -271,94 +269,6 @@ struct Update_cell {
 
 #include <CGAL/Triangulation_file_input.h>
 
-template <typename Tr1, typename Tr2>
-struct Update_vertex_from_CDT_3 {
-  // Tr1 and Tr2's point types might be different
-
-  typedef typename Tr1::Vertex          V1;
-  typedef typename Tr2::Vertex          V2;
-  typedef typename Tr2::Point           Point;
-
-  bool operator()(const V1& v1, V2& v2)
-  {
-    v2.set_point(Point(v1.point()));
-    v2.set_dimension(2);
-    v2.set_special(false);
-    return true;
-  }
-}; // end struct Update_vertex
-
-struct Update_cell_from_CDT_3 {
-  typedef Fake_mesh_domain::Surface_patch_index Sp_index;
-  template <typename C1, typename C2>
-  bool operator()(const C1& c1, C2& c2) {
-    c2.set_subdomain_index(1);
-    for(int i = 0; i < 4; ++i) {
-      c2.set_surface_patch_index(i, std::make_pair(c1.constrained_facet[i],0));
-    }
-    return true;
-  }
-}; // end struct Update_cell
-
-bool
-Polyhedron_demo_c3t3_binary_io_plugin::
-try_load_a_cdt_3(std::istream& is, C3t3& c3t3)
-{
-  std::cerr << "Try load a CDT_3...";
-  CGAL::set_binary_mode(is);
-  if(CGAL::file_input<
-       Fake_CDT_3,
-       C3t3::Triangulation,
-       Update_vertex_from_CDT_3<Fake_CDT_3, C3t3::Triangulation>,
-       Update_cell_from_CDT_3>(is, c3t3.triangulation()))
-  {
-    c3t3.rescan_after_load_of_triangulation();
-    std::cerr << "Try load a CDT_3... DONE";
-    return true;
-  }
-  else {
-    return false;
-  }
-}
-//Generates a compilation error.
-bool
-Polyhedron_demo_c3t3_binary_io_plugin::
-try_load_other_binary_format(std::istream& is, C3t3& c3t3)
-{
-  CGAL::set_ascii_mode(is);
-  std::string s;
-  if(!(is >> s)) return false;
-  bool binary = false;
-  if(s == "binary") {
-    binary = true;
-    if(!(is >> s)) return false;
-  }
-  if( s != "CGAL" ||
-      !(is >> s) ||
-      s != "c3t3")
-  {
-    return false;
-  }
-  std::getline(is, s);
-  if(s != "") {
-    if(s != std::string(" ") + CGAL::Get_io_signature<Fake_c3t3>()()) {
-      std::cerr << "Polyhedron_demo_c3t3_binary_io_plugin::try_load_other_binary_format:"
-                << "\n  expected format: " << CGAL::Get_io_signature<Fake_c3t3>()()
-                << "\n       got format:" << s << std::endl;
-      return false;
-    }
-  }
-  if(binary) CGAL::set_binary_mode(is);
-  else CGAL::set_ascii_mode(is);
-  std::istream& f_is = CGAL::file_input<
-                         Fake_c3t3::Triangulation,
-                         C3t3::Triangulation,
-                         Update_vertex<Fake_c3t3::Triangulation, C3t3::Triangulation>,
-                         Update_cell>(is, c3t3.triangulation());
-
-  c3t3.rescan_after_load_of_triangulation();
-  return f_is.good();
-}
 
 #include <QtPlugin>
 #include "Cad_c3t3_io_plugin.moc"

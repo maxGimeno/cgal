@@ -1,19 +1,11 @@
 // Copyright (c) 2006-2008 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Michael Hemmer   <hemmer@mpi-inf.mpg.de>
@@ -36,7 +28,7 @@ public:
     typedef Tag_true            Is_exact;
 
     struct Is_zero
-        : public std::unary_function< Type, bool > {
+        : public CGAL::cpp98::unary_function< Type, bool > {
     public:
         bool operator()( const Type& x ) const {
             return x.is_zero();
@@ -44,7 +36,7 @@ public:
     };
 
     struct Integral_division
-        : public std::binary_function< Type,
+        : public CGAL::cpp98::binary_function< Type,
                                 Type,
                                 Type > {
     public:
@@ -56,7 +48,7 @@ public:
     };
 
     struct Gcd
-        : public std::binary_function< Type,
+        : public CGAL::cpp98::binary_function< Type,
                                 Type,
                                 Type > {
     public:
@@ -69,7 +61,7 @@ public:
     };
 
     class Div
-        : public std::binary_function< Type, Type, Type > {
+        : public CGAL::cpp98::binary_function< Type, Type, Type > {
     public:
         Type operator()( const Type& x, const Type& y ) const {
             return Type(x).div( y );
@@ -79,7 +71,7 @@ public:
     typedef INTERN_AST::Mod_per_operator< Type > Mod;
   
   class Is_square
-    : public std::binary_function< Type, Type&, bool > {
+    : public CGAL::cpp98::binary_function< Type, Type&, bool > {
   public:      
     bool operator()( const Type& x, Type& y ) const {
       y = CGAL::approximate_sqrt(x);
@@ -103,7 +95,7 @@ public:
   typedef AST::Is_zero Is_zero;
   
     struct Sgn
-        : public std::unary_function< Type, ::CGAL::Sign > {
+        : public CGAL::cpp98::unary_function< Type, ::CGAL::Sign > {
     public:
         ::CGAL::Sign operator()( const Type& x ) const {
             return x.sign();
@@ -111,7 +103,7 @@ public:
     };
 
     struct Compare
-        : public std::binary_function< Type,
+        : public CGAL::cpp98::binary_function< Type,
                                   Type,
                                   Comparison_result > {
     public:
@@ -123,7 +115,7 @@ public:
     };
 
     struct To_double
-        : public std::unary_function< Type, double > {
+        : public CGAL::cpp98::unary_function< Type, double > {
     public:
         double operator()( const Type& x ) const {
             return x.to_double();
@@ -131,7 +123,7 @@ public:
     };
 
     struct To_interval
-        : public std::unary_function< Type, std::pair< double, double > > {
+        : public CGAL::cpp98::unary_function< Type, std::pair< double, double > > {
     public:
         std::pair<double, double> operator()( const Type& x ) const {
 	    return x.to_interval();
@@ -146,7 +138,7 @@ class Real_embeddable_traits< Quotient<Gmpzf> >
 INTERN_QUOTIENT::Real_embeddable_traits_quotient_base< Quotient<Gmpzf> >
 {
 public:
-    struct To_double: public std::unary_function<Quotient<Gmpzf>, double>{
+    struct To_double: public CGAL::cpp98::unary_function<Quotient<Gmpzf>, double>{
         inline
         double operator()(const Quotient<Gmpzf>& q) const {
 	  std::pair<double, long> n = q.numerator().to_double_exp();
@@ -157,7 +149,7 @@ public:
 	}
     };
     struct To_interval
-        : public std::unary_function<Quotient<Gmpzf>, std::pair<double,double> >{
+        : public CGAL::cpp98::unary_function<Quotient<Gmpzf>, std::pair<double,double> >{
         inline
         std::pair<double,double> operator()(const Quotient<Gmpzf>& q) const {
 	  // do here as MP_Float does

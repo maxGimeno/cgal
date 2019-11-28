@@ -1,18 +1,10 @@
 // Copyright (c) 2006  GeometryFactory (France). All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
 //
@@ -85,9 +77,9 @@ bool handle_exists ( Iterator begin, Iterator end, Handle h )
  return false ;
 }
 
-template <class ECM>
+template <class TM>
 struct No_constrained_edge_map{
-  typedef typename boost::graph_traits<ECM>::edge_descriptor key_type;
+  typedef typename boost::graph_traits<TM>::edge_descriptor key_type;
   typedef bool value_type;
   typedef value_type reference;
   typedef boost::readable_property_map_tag category;
@@ -129,44 +121,44 @@ inline std::string optional_to_string( boost::optional<T> const& o )
 
 #if   defined(CGAL_SURFACE_SIMPLIFICATION_ENABLE_TRACE)    \
    || defined(CGAL_SURFACE_SIMPLIFICATION_ENABLE_LT_TRACE) 
-#define CGAL_ECMS_ENABLE_TRACE
+#define CGAL_SMS_ENABLE_TRACE
 #endif
 
-#ifdef CGAL_ECMS_ENABLE_TRACE
+#ifdef CGAL_SMS_ENABLE_TRACE
 
 #  include<string>
 #  include<iostream>
 #  include<sstream>
-namespace internal { namespace  { bool cgal_enable_ecms_trace = true ; } }
-#  define CGAL_ECMS_TRACE_IMPL(m) \
-     if ( ::internal::cgal_enable_ecms_trace ) { \
+namespace internal { namespace  { bool cgal_enable_sms_trace = true ; } }
+#  define CGAL_SMS_TRACE_IMPL(m) \
+     if ( ::internal::cgal_enable_sms_trace ) { \
        std::ostringstream ss ; ss << m ; std::string s = ss.str(); \
        /*Surface_simplification_external_trace(s)*/ std::cerr << s << std::endl; \
      }
      
-#  define CGAL_ECMS_DEBUG_CODE(code) code     
+#  define CGAL_SMS_DEBUG_CODE(code) code     
 
 #else
 
-#  define CGAL_ECMS_DEBUG_CODE(code)
+#  define CGAL_SMS_DEBUG_CODE(code)
 
 #endif
 
 #ifdef CGAL_SURFACE_SIMPLIFICATION_ENABLE_LT_TRACE
-#  define CGAL_ECMS_LT_TRACE(l,m) if ( (l) <= CGAL_SURFACE_SIMPLIFICATION_ENABLE_LT_TRACE ) CGAL_ECMS_TRACE_IMPL(m)
+#  define CGAL_SMS_LT_TRACE(l,m) if ( (l) <= CGAL_SURFACE_SIMPLIFICATION_ENABLE_LT_TRACE ) CGAL_SMS_TRACE_IMPL(m)
 #else
-#  define CGAL_ECMS_LT_TRACE(l,m)
+#  define CGAL_SMS_LT_TRACE(l,m)
 #endif
 
 #ifdef CGAL_SURFACE_SIMPLIFICATION_ENABLE_TRACE
-#  define CGAL_ECMS_TRACE_IF(c,l,m) if ( (c) && ( (l) <= CGAL_SURFACE_SIMPLIFICATION_ENABLE_TRACE) ) CGAL_ECMS_TRACE_IMPL(m)
-#  define CGAL_ECMS_TRACE(l,m)      if ( (l) <= CGAL_SURFACE_SIMPLIFICATION_ENABLE_TRACE ) CGAL_ECMS_TRACE_IMPL(m)
+#  define CGAL_SMS_TRACE_IF(c,l,m) if ( (c) && ( (l) <= CGAL_SURFACE_SIMPLIFICATION_ENABLE_TRACE) ) CGAL_SMS_TRACE_IMPL(m)
+#  define CGAL_SMS_TRACE(l,m)      if ( (l) <= CGAL_SURFACE_SIMPLIFICATION_ENABLE_TRACE ) CGAL_SMS_TRACE_IMPL(m)
 #else
-#  define CGAL_ECMS_TRACE_IF(c,l,m)
-#  define CGAL_ECMS_TRACE(l,m)
+#  define CGAL_SMS_TRACE_IF(c,l,m)
+#  define CGAL_SMS_TRACE(l,m)
 #endif
 
-#undef CGAL_ECMS_ENABLE_TRACE
+#undef CGAL_SMS_ENABLE_TRACE
 
 #ifdef CGAL_TESTING_SURFACE_MESH_SIMPLIFICATION
 #  define CGAL_SURF_SIMPL_TEST_assertion(EX)         CGAL_assertion(EX)

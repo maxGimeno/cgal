@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Ron Wein         <wein@post.tau.ac.il>
@@ -25,6 +17,7 @@
 
 #include <CGAL/license/Arrangement_on_surface_2.h>
 
+#include <CGAL/disable_warnings.h>
 
 /*! \file
  * The header file for the Arrangement_on_surface_with_history_2 class.
@@ -586,6 +579,7 @@ public:
    * \return true iff e1 and e2 are mergeable.
    */
   bool are_mergeable (Halfedge_const_handle e1, Halfedge_const_handle e2) const;
+  //@}
 
 protected:
 
@@ -621,8 +615,7 @@ protected:
     // Allocate an extended curve (with an initially empty set of edges)
     // and store it in the curves' list.
     Curve_halfedges   *p_cv = m_curves_alloc.allocate (1);
-    
-    m_curves_alloc.construct (p_cv, cv);
+    std::allocator_traits<Curves_alloc>::construct(m_curves_alloc, p_cv, cv);
     m_curves.push_back (*p_cv);
 
     // Create a data-traits Curve_2 object, which is comprised of cv and
@@ -651,7 +644,7 @@ protected:
     // and store it in the curves' list.
     Curve_halfedges   *p_cv = m_curves_alloc.allocate (1);
     
-    m_curves_alloc.construct (p_cv, cv);
+    std::allocator_traits<Curves_alloc>::construct(m_curves_alloc, p_cv, cv);
     m_curves.push_back (*p_cv);
 
     // Create a data-traits Curve_2 object, which is comprised of cv and
@@ -682,7 +675,7 @@ protected:
     while (begin != end) {
       Curve_halfedges   *p_cv = m_curves_alloc.allocate (1);
     
-      m_curves_alloc.construct (p_cv, *begin);
+      std::allocator_traits<Curves_alloc>::construct(m_curves_alloc, p_cv, *begin);
       m_curves.push_back (*p_cv);
 
       data_curves.push_back (Data_curve_2 (*begin, p_cv));
@@ -730,7 +723,8 @@ protected:
 
     // Remove the extended curve object from the list and de-allocate it.
     m_curves.erase (p_cv);
-    m_curves_alloc.destroy (p_cv);
+
+    std::allocator_traits<Curves_alloc>::destroy(m_curves_alloc, p_cv);
     m_curves_alloc.deallocate (p_cv, 1);
 
     return (n_removed);
@@ -792,7 +786,8 @@ public:
       dup_c = m_curves_alloc.allocate (1);
     
       p_cv = &(*ocit1);
-      m_curves_alloc.construct (dup_c, *p_cv);
+      
+      std::allocator_traits<Curves_alloc>::construct(m_curves_alloc, dup_c, *p_cv);
       m_curves.push_back (*dup_c);
 
       // Assign a map entry.
@@ -807,7 +802,7 @@ public:
       dup_c = m_curves_alloc.allocate (1);
     
       p_cv = &(*ocit2);
-      m_curves_alloc.construct (dup_c, *p_cv);
+      std::allocator_traits<Curves_alloc>::construct(m_curves_alloc, dup_c, *p_cv);
       m_curves.push_back (*dup_c);
 
       // Assign a map entry.
@@ -993,5 +988,7 @@ overlay (const Arrangement_on_surface_with_history_2<GeomTraits, TopTraits1>&
 
 // The function definitions can be found under:
 #include <CGAL/Arrangement_2/Arr_on_surface_with_history_2_impl.h>
+
+#include <CGAL/enable_warnings.h>
 
 #endif
