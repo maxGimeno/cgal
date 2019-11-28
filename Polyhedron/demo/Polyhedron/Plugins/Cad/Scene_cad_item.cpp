@@ -10,10 +10,17 @@
 #include <dtkTrim>
 #include <dtkContinuousGeometryUtils>
 
+#include <CGAL/Three/Edge_container.h>
+#include <CGAL/Three/Three.h>
+
 #include "Scene_cad_item.h"
 #include "Scene_nurbs_item.h"
 #include <QDebug>
 #include <QMenu>
+
+
+typedef CGAL::Three::Edge_container Ec;
+typedef CGAL::Three::Viewer_interface Vi;
 
 struct Scene_cad_item_priv{
   Scene_cad_item_priv(dtkBRep* brep, CGAL::Three::Scene_interface* scene, Scene_cad_item* parent)
@@ -84,35 +91,6 @@ struct Scene_cad_item_priv{
         }
   }
 
-  void initializeBuffers(CGAL::Three::Viewer_interface *viewer)const
-  {
-    // ///////////////////////////////////////////////////////////////////
-    // Creates VBO EBO and VAO
-    // ///////////////////////////////////////////////////////////////////
-    m_program = item->getShaderProgram(Scene_nurbs_item::PROGRAM_NO_SELECTION, viewer);
-    m_program->bind();
-    item->vaos[INTERSECTION]->bind();
-
-    item->buffers[B_INTERSECTION].bind();
-    item->buffers[B_INTERSECTION].allocate(intersection.data(), static_cast<int>(intersection.size() * sizeof(float)));
-
-    m_program->enableAttributeArray("vertex");
-    m_program->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
-
-    item->buffers[B_INTERSECTION].release();
-
-    item->buffers[B_INTERSECTION_COLORS].bind();
-    item->buffers[B_INTERSECTION_COLORS].allocate(intersection_colors.data(), static_cast<int>(intersection_colors.size() * sizeof(float)));
-
-    m_program->enableAttributeArray("colors");
-    m_program->setAttributeBuffer("colors", GL_FLOAT, 0, 3, 0);
-
-    item->buffers[B_INTERSECTION_COLORS].release();
-
-    item->vaos[INTERSECTION]->release();
-
-    m_program->release();
-  }
 
     dtkBRep* m_brep;
 
@@ -143,10 +121,13 @@ struct Scene_cad_item_priv{
         };
 };
 
-typedef Scene_cad_item_priv D;
+
 Scene_cad_item::Scene_cad_item(dtkBRep* brep, CGAL::Three::Scene_interface* scene)
   :CGAL::Three::Scene_group_item("unnamed")
 {
+  setEdgeContainer(0,
+                   new Ec( Vi::PROGRAM_NO_SELECTION
+                           ,false));
   d = new Scene_cad_item_priv(brep, scene, this);
   d->current_index = 0;
   d->current_next_index = 0;
@@ -154,6 +135,12 @@ Scene_cad_item::Scene_cad_item(dtkBRep* brep, CGAL::Three::Scene_interface* scen
 
 void Scene_cad_item::computeElements()const
 {
+  getEdgeContainer(0)->allocate(Ec::Vertices, d->intersection.data(),
+                                          static_cast<int>(d->intersection.size() *
+                                                           sizeof(float)));
+  getEdgeContainer(0)->allocate(Ec::Colors, d->intersection_colors.data(),
+                                          static_cast<int>(d->intersection_colors.size() *
+                                                           sizeof(float)));
 
 }
 
@@ -161,30 +148,25 @@ void Scene_cad_item::computeElements()const
 void Scene_cad_item::draw(CGAL::Three::Viewer_interface* viewer) const
 {
   CGAL::Three::Scene_group_item::draw(viewer);
-  if(!are_buffers_filled) {
-      d->initializeBuffers(viewer);
-      are_buffers_filled = true;
+  if(!isInit(viewer))
+    initGL(viewer);
+  if ( getBuffersFilled() &&
+       ! getBuffersInit(viewer))
+  {
+    initializeBuffers(viewer);
+    setBuffersInit(viewer, true);
+  }
+  if(!getBuffersFilled())
+  {
+    initializeBuffers(viewer);
+    setBuffersFilled(true);
+    setBuffersInit(viewer, true);
   }
 
   if(d->intersections_shown)
   {
-    attribBuffers(viewer, PROGRAM_NO_SELECTION);
-
-    d->m_program = getShaderProgram(PROGRAM_NO_SELECTION, viewer);
-    d->m_program->bind();
-
-    vaos[D::INTERSECTION]->bind();
-
-    buffers[D::B_INTERSECTION_COLORS].bind();
-    d->m_program->setAttributeBuffer("colors", GL_FLOAT, 0, 3);
-
-    viewer->glDrawArrays(GL_LINES, 0, d->intersection.size() / 3);
-
-    buffers[D::B_INTERSECTION_COLORS].release();
-
-    vaos[D::INTERSECTION]->release();
-
-    d->m_program->release();
+    getEdgeContainer(0)->setColor(QColor(Qt::red));
+    getEdgeContainer(0)->draw(viewer, false);
   }
 }
 
@@ -326,16 +308,9 @@ void Scene_cad_item::clearHighlight(void)
     if(d->current_next_index !=0) {
         std::vector<float> old_intersection_colors((d->current_next_index - d->current_index) * 3, 0.);
 
-        d->m_program->bind();
-
-        vaos[D::INTERSECTION]->bind();
-
-        buffers[D::B_INTERSECTION_COLORS].bind();
-        buffers[D::B_INTERSECTION_COLORS].write(d->current_index * 3 * sizeof(float), old_intersection_colors.data(), 3 * (d->current_next_index - d->current_index) * sizeof(float));
-        buffers[D::B_INTERSECTION_COLORS].release();
-
-        vaos[D::INTERSECTION]->release();
-        d->m_program->release();
+        getEdgeContainer(0)->getVbo(Ec::Colors)->bind();
+        getEdgeContainer(0)->getVbo(Ec::Colors)->vbo.write(d->current_index * 3 * sizeof(float), old_intersection_colors.data(), 3 * (d->current_next_index - d->current_index) * sizeof(float));
+        getEdgeContainer(0)->getVbo(Ec::Colors)->release();
     }
 
     d->current_index = 0;
@@ -351,17 +326,10 @@ void Scene_cad_item::highlight(const dtkTopoTrim *topo_trim)
     // ///////////////////////////////////////////////////////////////////
     if(d->current_next_index !=0) {
         std::vector<float> old_intersection_colors((d->current_next_index - d->current_index) * 3, 0.);
+         getEdgeContainer(0)->getVbo(Ec::Colors)->bind();
+         getEdgeContainer(0)->getVbo(Ec::Colors)->vbo.write(d->current_index * 3 * sizeof(float), old_intersection_colors.data(), 3 * (d->current_next_index - d->current_index) * sizeof(float));
+         getEdgeContainer(0)->getVbo(Ec::Colors)->release();
 
-         d->m_program->bind();
-
-         vaos[D::INTERSECTION]->bind();
-
-         buffers[D::B_INTERSECTION_COLORS].bind();
-         buffers[D::B_INTERSECTION_COLORS].write(d->current_index * 3 * sizeof(float), old_intersection_colors.data(), 3 * (d->current_next_index - d->current_index) * sizeof(float));
-         buffers[D::B_INTERSECTION_COLORS].release();
-
-         vaos[D::INTERSECTION]->release();
-         d->m_program->release();
     }
 
     // ///////////////////////////////////////////////////////////////////
@@ -394,20 +362,24 @@ void Scene_cad_item::highlight(const dtkTopoTrim *topo_trim)
         new_intersection_colors[3 * i + 2] = (float)0;
     }
 
-    d->m_program->bind();
+    getEdgeContainer(0)->getVbo(Ec::Colors)->bind();
+    getEdgeContainer(0)->getVbo(Ec::Colors)->vbo.write(index * 3 * sizeof(float), new_intersection_colors.data(), 3 * (next_index - index) * sizeof(float));
+    getEdgeContainer(0)->getVbo(Ec::Colors)->release();
 
-    vaos[D::INTERSECTION]->bind();
-
-    buffers[D::B_INTERSECTION_COLORS].bind();
-    buffers[D::B_INTERSECTION_COLORS].write(index * 3 * sizeof(float), new_intersection_colors.data(), 3 * (next_index - index) * sizeof(float));
-    buffers[D::B_INTERSECTION_COLORS].release();
-
-    vaos[D::INTERSECTION]->release();
-    d->m_program->release();
 
     d->current_index = index;
     d->current_next_index = next_index;
     itemChanged();
     Q_EMIT highlighted(topo_trim);
     Q_EMIT updated();
+}
+
+void Scene_cad_item::initializeBuffers(Viewer_interface *viewer) const
+{
+
+  getEdgeContainer(0)->initializeBuffers(viewer);
+  getEdgeContainer(0)->setFlatDataSize(d->intersection.size()/3);
+
+  d->intersection.clear();
+  d->intersection.shrink_to_fit();
 }

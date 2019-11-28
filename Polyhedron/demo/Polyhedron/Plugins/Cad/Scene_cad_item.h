@@ -33,7 +33,7 @@ public :
   void draw(CGAL::Three::Viewer_interface* viewer) const Q_DECL_OVERRIDE;
   void drawEdges(Viewer_interface *) const Q_DECL_OVERRIDE;
   void invalidateOpenGLBuffers() Q_DECL_OVERRIDE {}
-
+  void initializeBuffers(Viewer_interface *) const Q_DECL_OVERRIDE;
  public:
   void computeElements() const;
   Scene_item* clone() const Q_DECL_OVERRIDE {return 0;}

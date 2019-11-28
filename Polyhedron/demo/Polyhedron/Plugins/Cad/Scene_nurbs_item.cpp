@@ -302,39 +302,6 @@ struct Scene_nurbs_item_priv{
        item->deleteLater();
    }
   }
-  void computeElements() const
-  {
-    item->getTriangleContainer(1)->allocate(Tc::Smooth_vertices, untrimmed_vertices.data(),
-                                      static_cast<int>(m_nb_untrimmed_vertices * 6 *
-                                                       sizeof(float)));
-    item->getTriangleContainer(1)->setOffset(Tc::Smooth_vertices, 0);
-    item->getTriangleContainer(1)->setTupleSize(3);
-    item->getTriangleContainer(1)->setStride(Tc::Smooth_vertices, 6*sizeof(float));
-
-    item->getTriangleContainer(1)->allocate(Tc::Smooth_normals, untrimmed_vertices.data(),
-                                            static_cast<int>(m_nb_untrimmed_vertices * 6 *
-                                                             sizeof(float)));
-    item->getTriangleContainer(1)->setOffset(Tc::Smooth_normals, 3 * sizeof(float));
-    item->getTriangleContainer(1)->setStride(Tc::Smooth_normals, 6 * sizeof(float));
-
-    item->getTriangleContainer(0)->allocate(Tc::Smooth_vertices, trimmed_vertices.data(),
-                                      static_cast<int>(m_nb_trimmed_vertices * 6 *
-                                                       sizeof(float)));
-    item->getTriangleContainer(0)->setOffset(Tc::Smooth_vertices, 0);
-    item->getTriangleContainer(0)->setTupleSize(3);
-    item->getTriangleContainer(0)->setStride(Tc::Smooth_vertices, 6*sizeof(float));
-
-    item->getTriangleContainer(0)->allocate(Tc::Smooth_normals, trimmed_vertices.data(),
-                                            static_cast<int>(m_nb_trimmed_vertices * 6 *
-                                                             sizeof(float)));
-    item->getTriangleContainer(0)->setOffset(Tc::Smooth_normals, 3 * sizeof(float));
-    item->getTriangleContainer(0)->setStride(Tc::Smooth_normals, 6 * sizeof(float));
-
-    item->getEdgeContainer(0)->allocate(Ec::Vertices, intersection.data(),
-                                            static_cast<int>(intersection.size() *
-                                                             sizeof(float)));
-  }
-
 
   const dtkNurbsSurface& m_nurbs_surface;
 
@@ -425,6 +392,7 @@ void Scene_nurbs_item::draw(CGAL::Three::Viewer_interface* viewer)const
   }
   if(!getBuffersFilled())
   {
+    computeElements();
     initializeBuffers(viewer);
     setBuffersFilled(true);
     setBuffersInit(viewer, true);
@@ -439,8 +407,8 @@ void Scene_nurbs_item::draw(CGAL::Three::Viewer_interface* viewer)const
   {
     getTriangleContainer(1)->setColor(this->color());
     getTriangleContainer(1)->draw(viewer, true);
-    Scene_group_item::draw(viewer);
   }
+  Scene_group_item::draw(viewer);
 }
 
 void Scene_nurbs_item::drawEdges(CGAL::Three::Viewer_interface * viewer) const
@@ -455,6 +423,7 @@ void Scene_nurbs_item::drawEdges(CGAL::Three::Viewer_interface * viewer) const
   }
   if(!getBuffersFilled())
   {
+    computeElements();
     initializeBuffers(viewer);
     setBuffersFilled(true);
     setBuffersInit(viewer, true);
@@ -616,8 +585,8 @@ void Scene_nurbs_item::initializeBuffers(Viewer_interface * viewer) const
   getTriangleContainer(0)->initializeBuffers(viewer);
   getTriangleContainer(0)->setIdxSize(d->m_nb_trimmed_elements);
 
-  getTriangleContainer(0)->initializeBuffers(viewer);
-  getTriangleContainer(0)->setIdxSize(d->m_nb_untrimmed_elements);
+  getTriangleContainer(1)->initializeBuffers(viewer);
+  getTriangleContainer(1)->setIdxSize(d->m_nb_untrimmed_elements);
 
 
   d->trimmed_vertices.clear();
@@ -630,4 +599,37 @@ void Scene_nurbs_item::initializeBuffers(Viewer_interface * viewer) const
 
   d->intersection.clear();
   d->intersection.shrink_to_fit();
+}
+
+void Scene_nurbs_item::computeElements() const
+{
+  getTriangleContainer(1)->allocate(Tc::Smooth_vertices, d->untrimmed_vertices.data(),
+                                    static_cast<int>(d->m_nb_untrimmed_vertices * 6 *
+                                                     sizeof(float)));
+  getTriangleContainer(1)->setOffset(Tc::Smooth_vertices, 0);
+  getTriangleContainer(1)->setTupleSize(3);
+  getTriangleContainer(1)->setStride(Tc::Smooth_vertices, 6*sizeof(float));
+
+  getTriangleContainer(1)->allocate(Tc::Smooth_normals, d->untrimmed_vertices.data(),
+                                    static_cast<int>(d->m_nb_untrimmed_vertices * 6 *
+                                                     sizeof(float)));
+  getTriangleContainer(1)->setOffset(Tc::Smooth_normals, 3 * sizeof(float));
+  getTriangleContainer(1)->setStride(Tc::Smooth_normals, 6 * sizeof(float));
+
+  getTriangleContainer(0)->allocate(Tc::Smooth_vertices, d->trimmed_vertices.data(),
+                              static_cast<int>(d->m_nb_trimmed_vertices * 6 *
+                                               sizeof(float)));
+  getTriangleContainer(0)->setOffset(Tc::Smooth_vertices, 0);
+  getTriangleContainer(0)->setTupleSize(3);
+  getTriangleContainer(0)->setStride(Tc::Smooth_vertices, 6*sizeof(float));
+
+  getTriangleContainer(0)->allocate(Tc::Smooth_normals, d->trimmed_vertices.data(),
+                                    static_cast<int>(d->m_nb_trimmed_vertices * 6 *
+                                                     sizeof(float)));
+  getTriangleContainer(0)->setOffset(Tc::Smooth_normals, 3 * sizeof(float));
+  getTriangleContainer(0)->setStride(Tc::Smooth_normals, 6 * sizeof(float));
+
+  getEdgeContainer(0)->allocate(Ec::Vertices, d->intersection.data(),
+                                    static_cast<int>(d->intersection.size() *
+                                                     sizeof(float)));
 }

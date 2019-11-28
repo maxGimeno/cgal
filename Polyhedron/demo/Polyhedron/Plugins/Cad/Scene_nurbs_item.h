@@ -31,8 +31,9 @@ public:
   QString toolTip() const Q_DECL_OVERRIDE;
     void compute_bbox() const Q_DECL_OVERRIDE;
   QMenu* contextMenu() Q_DECL_OVERRIDE;
-  bool supportsRenderingMode(RenderingMode m) const Q_DECL_OVERRIDE { return (m == Gouraud || m == GouraudPlusEdges || m == Wireframe); }
+  bool supportsRenderingMode(RenderingMode m) const Q_DECL_OVERRIDE { return (m == Flat || m == FlatPlusEdges || m == Wireframe); }
   void initializeBuffers(Viewer_interface *) const;
+  void computeElements() const;
 
   Bbox bbox() const
   {
