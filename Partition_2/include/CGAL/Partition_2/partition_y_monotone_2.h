@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Susan Hert <hert@mpi-sb.mpg.de>
@@ -44,8 +36,6 @@
 
 #include <CGAL/Partition_2/Indirect_not_less_yx_2.h>
 #include <CGAL/Partition_2/Indirect_edge_compare.h>
-#include <CGAL/Segment_2_Ray_2_intersection.h>
-#include <CGAL/Object.h>
 #include <CGAL/Partition_2/Partitioned_polygon_2.h>
 #include <CGAL/ch_selected_extreme_points_2.h> 
 #include <CGAL/IO/Tee_for_output_iterator.h>
@@ -72,6 +62,7 @@ Partition_y_mono_vertex_type partition_y_mono_vertex_type(
                                 BidirectionalCirculator c, 
                                 const Traits& traits)
 {
+  typedef typename Traits::Point_2 Point_2;
    BidirectionalCirculator previous = c;
    previous--;
    BidirectionalCirculator next = c;
@@ -82,17 +73,17 @@ Partition_y_mono_vertex_type partition_y_mono_vertex_type(
 #endif
    typename Traits::Compare_y_2 compare_y_2 = traits.compare_y_2_object();
 
-   if (compare_y_2(*previous, *c) == EQUAL &&
-       compare_y_2(*next, *c) == EQUAL)
+   if (compare_y_2(Point_2(*previous), Point_2(*c)) == EQUAL &&
+       compare_y_2(Point_2(*next), Point_2(*c)) == EQUAL)
       return PARTITION_Y_MONO_COLLINEAR_VERTEX;
 
    typename Traits::Less_yx_2   less_yx = traits.less_yx_2_object();
    typename Traits::Left_turn_2  left_turn = traits.left_turn_2_object();
 
-   if (less_yx(*previous, *c)) 
+   if(less_yx(Point_2(*previous), Point_2(*c))) 
    {
-      if (less_yx(*next, *c))                // previous and next both less_yx
-         if (left_turn(*previous, *c, *next)) // interior angle less than pi
+     if(less_yx(Point_2(*next), Point_2(*c)))                // previous and next both less_yx
+       if(left_turn(Point_2(*previous), Point_2(*c), Point_2(*next))) // interior angle less than pi
              return PARTITION_Y_MONO_START_VERTEX;
          else                                // interior angle greater than pi
              return PARTITION_Y_MONO_SPLIT_VERTEX;
@@ -101,8 +92,8 @@ Partition_y_mono_vertex_type partition_y_mono_vertex_type(
    }
    else 
    {
-      if (less_yx(*c, *next))           // previous and next both not less_yx
-        if (left_turn(*previous, *c, *next)) // interior angle less than pi
+     if(less_yx(Point_2(*c), Point_2(*next)))           // previous and next both not less_yx
+       if(left_turn(Point_2(*previous), Point_2(*c), Point_2(*next))) // interior angle less than pi
            return PARTITION_Y_MONO_END_VERTEX; 
         else                                // interior angle greater than pi
            return PARTITION_Y_MONO_MERGE_VERTEX;
@@ -299,16 +290,17 @@ template <class BidirectionalCirculator, class Traits>
 bool partition_y_mono_interior_to_right(BidirectionalCirculator c,
                                         const Traits& traits)
 {
+  typedef typename Traits::Point_2 Point_2;
    typename Traits::Compare_y_2 compare_y_2 = traits.compare_y_2_object();
-
+ 
    BidirectionalCirculator previous = c; previous--;
 
-   Comparison_result cmp_y = compare_y_2(*previous, *c);
+   Comparison_result cmp_y = compare_y_2(Point_2(*previous), Point_2(*c));
    if (cmp_y == LARGER) return true;
 
    BidirectionalCirculator next = c; next++;
 
-   if (cmp_y == EQUAL && compare_y_2(*next, *c) == SMALLER) return true;
+   if (cmp_y == EQUAL && compare_y_2(Point_2(*next), Point_2(*c)) == SMALLER) return true;
 
    return false;
 }
@@ -433,7 +425,7 @@ OutputIterator partition_y_monotone_2(InputIterator first,
    Tee_for_output_iterator<OutputIterator, Polygon_2>      res(result);
 #endif // no postcondition
 
-   P_Polygon_2 polygon(first, beyond);
+   P_Polygon_2 polygon(first, beyond, traits);
    CGAL_partition_precondition(
     orientation_2(polygon.begin(), polygon.end(), traits) == COUNTERCLOCKWISE);
 
@@ -454,9 +446,10 @@ OutputIterator partition_y_monotone_2(InputIterator first,
    std::cout << std::endl;
 #endif
 
-   typedef std::map<Circulator, Circulator, 
-                    Indirect_edge_compare<Circulator, Traits> > Tree;
-   Tree tree;
+   typedef Indirect_edge_compare<Circulator, Traits> Cmp;
+   typedef std::map<Circulator, Circulator, Cmp> Tree;
+   Cmp cmp(traits);
+   Tree tree(cmp);
 
    typename std::vector<Circulator>::iterator it = circulators.begin();
    for (; it != circulators.end(); it++) {

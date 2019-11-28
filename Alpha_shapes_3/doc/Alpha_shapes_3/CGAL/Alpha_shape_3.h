@@ -2,7 +2,7 @@
 namespace CGAL {
 
 /*!
-\ingroup PkgAlphaShapes3
+\ingroup PkgAlphaShapes3Ref
 
 The class `Alpha_shape_3` represents the family of 
 alpha shapes of points in the 3D space for <I>all</I> real 
@@ -32,7 +32,9 @@ overhead. Note that the tag `ExactAlphaComparisonTag` is currently ignored (mean
 if `Dt::Geom_traits::FT` is not a floating point number type as this strategy
 does not make sense if the traits class already provides exact constructions.
 
-\warning When the tag `ExactAlphaComparisonTag` is set to \link Tag_true `Tag_true`\endlink,
+\warning
+<ul>
+<li>When the tag `ExactAlphaComparisonTag` is set to \link Tag_true `Tag_true`\endlink,
 the class `Cartesian_converter` is used internally to switch between the traits class
 and the %CGAL kernel `CGAL::Simple_cartesian<NT>`, where `NT` can be either `CGAL::Interval_nt` or
 `CGAL::Exact_rational`. `Cartesian_converter` must thus offer the necessary functors
@@ -42,9 +44,19 @@ the basic `Cartesian_converter`, for example when a custom point is used.
 In this case, a partial specialization of `Cartesian_converter`
 must be provided by the user. An example of such specialization is given in the
 two-dimensional Alpha Shapes example \ref Alpha_shapes_2/ex_alpha_projection_traits.cpp "ex_alpha_projection_traits.cpp".
+<li>The tag `ExactAlphaComparisonTag` cannot be used in conjonction with periodic triangulations.
+When the tag `ExactAlphaComparisonTag` is set to \link Tag_true `Tag_true`\endlink,
+the evaluations of predicates such as `Side_of_oriented_sphere_3` are done lazily.
+Consequently, the predicates store pointers to the geometrical positions of the
+points passed as arguments of the predicates. It is thus important that
+these points are not temporary objects. Points of the triangulation are accessed
+using the function `point(Cell_handle, int)` of the underlying triangulation.
+In the case of periodic triangulations, the `point(Cell_handle, int)` function
+is actually a construction that returns a temporary, which thus cannot be used
+along with a lazy predicate evaluation.
+</ul>
 
 \cgalHeading{I/O}
-
 The I/O operators are defined for `iostream`, and for 
 the window stream provided by \cgal. The format for the iostream 
 is an internal format. 
@@ -92,8 +104,11 @@ resorting to exact arithmetic). Access to the interval containing the exact valu
 `FT::Approximate_nt approx() const` where `FT::Approximate_nt` is `Interval_nt<Protected>` 
 with `Protected=true`. Access to the exact value is provided through the function 
 `FT::Exact_nt exact() const` where `FT::Exact_nt` depends on the configuration of %CGAL 
-(it is `Gmpq` if `gmp` is available and `Quotient<CGAL::MP_Float>` otherwise).
-An overload for the function `double to_double(FT)` is also available.
+(it may be `mpq_class`, `Gmpq`, `Quotient<CGAL::MP_Float>`, etc).
+An overload for the function `double to_double(FT)` is also available. Its
+precision is controlled through `FT::set_relative_precision_of_to_double()` in
+exactly the same way as with `Lazy_exact_nt<NT>`, so a call to `to_double` may
+trigger an exact evaluation.
 It must be noted that an object of type `FT` is valid as long as the alpha shapes class that creates 
 it is valid and has not been modified. 
 For convenience, classical comparison operators are provided for the type `FT`. 
@@ -104,8 +119,8 @@ typedef unspecified_type FT;
 /*!
 The point type.
 
-For basic alpha shapes, `Point` will be equal to `Gt::Point_2`. For weighted alpha
-shapes, `Point` will be equal to `Gt::Weighted_point_2`.
+For basic alpha shapes, `Point` will be equal to `Gt::Point_3`. For weighted alpha
+shapes, `Point` will be equal to `Gt::Weighted_point_3`.
 */
 typedef Dt::Point Point;
 
@@ -462,7 +477,7 @@ Defined in `CGAL/IO/io.h`
 \pre The insert operator must be defined for `Point`. 
 \relates Alpha_shape_3 
 */ 
-  ostream& operator<<(std::ostream& os, 
+std::ostream& operator<<(std::ostream& os, 
 const Alpha_shape_3<Dt,ExactAlphaComparisonTag>& A); 
 
 /*!

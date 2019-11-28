@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Laurent RINEAU
@@ -33,7 +25,7 @@
 #include <utility>
 #include <iterator>
 #include <boost/iterator/filter_iterator.hpp>
-#include <boost/iterator/transform_iterator.hpp>
+#include <CGAL/boost/iterator/transform_iterator.hpp>
 
 namespace CGAL {
 
@@ -69,7 +61,7 @@ namespace Mesh_2 {
         typedef typename Tr::Edge Result_type;
 
         /** \param tr_ points to the triangulation. */
-        explicit Is_a_constrained_edge(const Tr& tr_) : tr(tr_) {}
+        explicit Is_a_constrained_edge(const Tr& tr_) : tr(tr_), i(-1) {}
 
         bool operator()(const Constrained_edge& ce)
         {
@@ -634,7 +626,7 @@ protected:
 
 private: /** \name DEBUGGING TYPES AND DATAS */
   class From_pair_of_vertex_to_edge 
-    : public std::unary_function<Constrained_edge, Edge>
+    : public CGAL::cpp98::unary_function<Constrained_edge, Edge>
   {
     Tr& tr;
   public:

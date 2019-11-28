@@ -4,15 +4,10 @@
 // Copyright (C) 2014 GeometryFactory
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
 //
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 
 
@@ -21,6 +16,7 @@
 
 #include <CGAL/license/Surface_mesh.h>
 
+#ifndef DOXYGEN_RUNNING
 
 #include <vector>
 #include <string>
@@ -61,7 +57,11 @@ public:
     /// Extend the number of elements by one.
     virtual void push_back() = 0;
 
+    /// Reset element to default value
+    virtual void reset(size_t idx) = 0;
+
     virtual bool transfer(const Base_property_array& other) = 0;
+    virtual bool transfer(const Base_property_array& other, std::size_t from, std::size_t to) = 0;
 
     /// Let two elements swap their storage place.
     virtual void swap(size_t i0, size_t i1) = 0;
@@ -69,12 +69,19 @@ public:
     /// Return a deep copy of self.
     virtual Base_property_array* clone () const = 0;
 
+    /// Return a empty copy of self.
+    virtual Base_property_array* empty_clone () const = 0;
+
     /// Return the type_info of the property
-    virtual const std::type_info& type() = 0;
+    virtual const std::type_info& type() const = 0;
 
     /// Return the name of the property
     const std::string& name() const { return name_; }
 
+    bool is_same (const Base_property_array& other)
+    {
+      return (name() == other.name() && type() == other.type());
+    }
 
 protected:
 
@@ -119,13 +126,30 @@ public: // virtual interface of Base_property_array
         data_.push_back(value_);
     }
 
+    virtual void reset(size_t idx)
+    {
+        data_[idx] = value_;
+    }
+
     bool transfer(const Base_property_array& other)
     {
       const Property_array<T>* pa = dynamic_cast<const Property_array*>(&other);
-      if(pa != NULL){
+      if(pa != nullptr){
         std::copy((*pa).data_.begin(), (*pa).data_.end(), data_.end()-(*pa).data_.size());
         return true;
       } 
+      return false;
+    }
+
+    bool transfer(const Base_property_array& other, std::size_t from, std::size_t to)
+    {
+      const Property_array<T>* pa = dynamic_cast<const Property_array*>(&other);
+      if (pa != nullptr)
+      {
+        data_[to] = (*pa)[from];
+        return true;
+      }
+
       return false;
     }
 
@@ -148,7 +172,13 @@ public: // virtual interface of Base_property_array
         return p;
     }
 
-    virtual const std::type_info& type() { return typeid(T); }
+    virtual Base_property_array* empty_clone() const
+    {
+        Property_array<T>* p = new Property_array<T>(this->name_, this->value_);
+        return p;
+    }
+
+    virtual const std::type_info& type() const { return typeid(T); }
 
 
 public:
@@ -232,12 +262,44 @@ public:
     {
       for(std::size_t i=0; i<parrays_.size(); ++i){
         for (std::size_t j=0; j<_rhs.parrays_.size(); ++j){
-          if(parrays_[i]->name() ==  _rhs.parrays_[j]->name()){
+          if(parrays_[i]->is_same (*(_rhs.parrays_[j]))){
             parrays_[i]->transfer(* _rhs.parrays_[j]);
             break;
           }
         }
       }
+    }
+
+    // Copy properties that don't already exist from another container
+    void copy_properties (const Property_container& _rhs)
+    {
+      for (std::size_t i = 0; i < _rhs.parrays_.size(); ++ i)
+      {
+        bool property_already_exists = false;
+        for (std::size_t j = 0; j < parrays_.size(); ++ j)
+          if (_rhs.parrays_[i]->is_same (*(parrays_[j])))
+          {
+            property_already_exists = true;
+            break;
+          }
+
+        if (property_already_exists)
+          continue;
+
+        parrays_.push_back (_rhs.parrays_[i]->empty_clone());
+        parrays_.back()->resize(size_);
+      }
+    }
+  
+    // Transfer one element with all properties
+    // WARNING: properties must be the same in the two containers
+    bool transfer(const Property_container& _rhs, std::size_t from, std::size_t to)
+    {
+      bool out = true;
+      for(std::size_t i=0; i<parrays_.size(); ++i)
+        if (!(parrays_[i]->transfer(* _rhs.parrays_[i], from, to)))
+          out = false;
+      return out;
     }
 
     // returns the current size of the property arrays
@@ -397,6 +459,13 @@ public:
         ++size_;
     }
 
+    // reset element to its default property values
+    void reset(size_t idx)
+    {
+        for (std::size_t i=0; i<parrays_.size(); ++i)
+            parrays_[i]->reset(idx);
+    }
+
     // swap elements i0 and i1 in all arrays
     void swap(size_t i0, size_t i1) const
     {
@@ -464,11 +533,11 @@ public:
 
 public:
 /// @cond CGAL_DOCUMENT_INTERNALS
-    Property_map_base(Property_array<T>* p=NULL) : parray_(p) {}
+    Property_map_base(Property_array<T>* p=nullptr) : parray_(p) {}
 
     void reset()
     {
-        parray_ = NULL;
+        parray_ = nullptr;
     }
   /// @endcond 
 
@@ -481,21 +550,21 @@ public:
   operator bool () const;
 #else
     operator bool_type() const {
-        return parray_ != NULL ?
+        return parray_ != nullptr ?
             &Property_map_base::this_type_does_not_support_comparisons : 0;
     }
 #endif
     /// Access the property associated with the key \c i.
     reference operator[](const I& i)
     {
-      CGAL_assertion(parray_ != NULL);
+      CGAL_assertion(parray_ != nullptr);
       return (*parray_)[i];
     }
 
     /// Access the property associated with the key \c i.
     reference operator[](const I& i) const
     {
-      CGAL_assertion(parray_ != NULL);
+      CGAL_assertion(parray_ != nullptr);
       return (*parray_)[i];
     }
 
@@ -509,6 +578,11 @@ public:
       return parray_->transfer(*(other.parray_));
     }
 
+    bool transfer (const Property_map_base& other, std::size_t from, std::size_t to)
+    {
+      return parray_->transfer(*(other.parray_), from, to);
+    }
+
     /// Allows access to the underlying storage of the property. This
     /// is useful when the key associated with the properties is
     /// unimportant and only the properties are of interest
@@ -517,7 +591,7 @@ public:
     /// \returns a pointer to the underlying storage of the property.
     const T* data() const
     {
-      CGAL_assertion(parray_ != NULL);
+      CGAL_assertion(parray_ != nullptr);
       return parray_->data();
     }
 
@@ -526,13 +600,13 @@ private:
 
     Property_array<T>& array()
     {
-        CGAL_assertion(parray_ != NULL);
+        CGAL_assertion(parray_ != nullptr);
         return *parray_;
     }
 
     const Property_array<T>& array() const
     {
-        CGAL_assertion(parray_ != NULL);
+        CGAL_assertion(parray_ != nullptr);
         return *parray_;
     }
 
@@ -546,6 +620,8 @@ private:
 } // Properties
 
 } // CGAL
+
+#endif // DOXYGEN_RUNNING
 
 //=============================================================================
 #endif // CGAL_SURFACE_MESH_PROPERTY_H

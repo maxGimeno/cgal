@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Marc Pouget and Frédéric Cazals
 #ifndef CGAL_UMBILIC_H_
@@ -88,7 +80,7 @@ operator<<(std::ostream& out_stream, const Umbilic<TriangleMesh>& umbilic)
     case CGAL::NON_GENERIC_UMBILIC: out_stream << "non generic" << std::endl; break;
     case CGAL::ELLIPTIC_UMBILIC: out_stream << "elliptic" << std::endl; break;
     case CGAL::HYPERBOLIC_UMBILIC: out_stream << "hyperbolic" << std::endl; break;
-    default : out_stream << "Something wrong occured for sure..." << std::endl; break;
+    default : out_stream << "Something wrong occurred for sure..." << std::endl; break;
     }
   return out_stream;
 }
@@ -193,7 +185,7 @@ compute(OutputIterator umbilics_it, FT size)
   boost::tie(itb,ite) = vertices(P);
   for (;itb != ite; itb++) {
     vertex_descriptor vh = *itb;
-    umbilicEstimatorVertex = cgal_abs(k1[vh]-k2[vh]);
+    umbilicEstimatorVertex = cgal_abs(get(k1,vh)-get(k2,vh));
     //reset vector, list and bool
     vces.clear();
     contour.clear();
@@ -217,7 +209,7 @@ compute(OutputIterator umbilics_it, FT size)
       itev = vces.end();
     itbv++;
     for (; itbv != itev; itbv++)
-      {	umbilicEstimatorNeigh = cgal_abs( k1[*itbv] - k2[*itbv] );
+      {	umbilicEstimatorNeigh = cgal_abs( get(k1,*itbv) - get(k2,*itbv) );
 	if ( umbilicEstimatorNeigh < umbilicEstimatorVertex ) 
 	  {is_umbilic = false; break;}
       }
@@ -244,14 +236,14 @@ compute_type(Umbilic& umb)
     itlast = --umb.contour_list().end();
   v = target(*itb, P);
 
-  dir = d1[v];
-  normal = CGAL::cross_product(d1[v], d2[v]);
+  dir = get(d1,v);
+  normal = CGAL::cross_product(get(d1,v), get(d2,v));
 
   //sum angles along the contour
   do{
     itb++;
     v = target(*itb, P);
-    dirnext = d1[v];
+    dirnext = get(d1,v);
     cosinus = To_double(dir*dirnext);
     if (cosinus < 0) {dirnext = dirnext*(-1); cosinus *= -1;}
     if (cosinus>1) cosinus = 1;
@@ -260,13 +252,13 @@ compute_type(Umbilic& umb)
     else angle = -acos(cosinus);
     angleSum += angle;
     dir = dirnext;
-    normal = CGAL::cross_product(d1[v], d2[v]);
+    normal = CGAL::cross_product(get(d1,v), get(d2,v));
   }
   while (itb != (itlast));
   
   //angle (v_last, v_0)
   v = target(*umb.contour_list().begin(), P);
-   dirnext = d1[v];
+   dirnext = get(d1,v);
    cosinus = To_double(dir*dirnext);
   if (cosinus < 0) {dirnext = dirnext*(-1); cosinus *= -1;}
   if (cosinus>1) cosinus = 1;

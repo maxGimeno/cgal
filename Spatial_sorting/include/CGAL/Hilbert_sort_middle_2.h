@@ -1,19 +1,11 @@
 // Copyright (c) 2011  INRIA Sophia-Antipolis (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     :  Olivier Devillers
 
@@ -33,8 +25,8 @@ namespace internal {
 
     template <class K, int x>
     struct Fixed_hilbert_cmp_2<K,x,true>
-        : public std::binary_function<typename K::Point_2,
-                                      typename K::Point_2, bool>
+        : public CGAL::cpp98::binary_function<typename K::Point_2,
+                                              typename K::Point_2, bool>
     {
         typedef typename K::Point_2 Point;
         K k;
@@ -48,8 +40,8 @@ namespace internal {
     
     template <class K>
     struct Fixed_hilbert_cmp_2<K,0,false>
-        : public std::binary_function<typename K::Point_2,
-                                      typename K::Point_2, bool>
+        : public CGAL::cpp98::binary_function<typename K::Point_2,
+                                              typename K::Point_2, bool>
     {
         typedef typename K::Point_2 Point;
         K k;
@@ -63,8 +55,8 @@ namespace internal {
     
     template <class K>
     struct Fixed_hilbert_cmp_2<K,1,false>
-        : public std::binary_function<typename K::Point_2,
-                                      typename K::Point_2, bool>
+        : public CGAL::cpp98::binary_function<typename K::Point_2,
+                                              typename K::Point_2, bool>
     {
         typedef typename K::Point_2 Point;
         K k;

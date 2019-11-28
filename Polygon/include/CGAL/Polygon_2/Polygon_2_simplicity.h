@@ -1,29 +1,23 @@
-// Copyright (c) 2001  
+// Copyright (c) 2001
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
 // and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// 
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+//
 //
 // Author(s)     : Geert-Jan Giezeman <geert@cs.uu.nl>
 
 #ifndef CGAL_POLYGON_2_SIMPLICITY_H
 #define CGAL_POLYGON_2_SIMPLICITY_H
+
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/enum.h>
 #include <CGAL/Polygon_2/polygon_assertions.h>
@@ -98,10 +92,10 @@ template <class VertexData>
 class Less_segments {
     typedef VertexData         Vertex_data;
     Vertex_data *m_vertex_data;
-    bool less_than_in_tree(Vertex_index i, Vertex_index j);
+    bool less_than_in_tree(Vertex_index i, Vertex_index j) const;
   public:
     Less_segments(Vertex_data *vertex_data) : m_vertex_data(vertex_data) {}
-    bool operator()(Vertex_index i, Vertex_index j);
+    bool operator()(Vertex_index i, Vertex_index j) const;
 };
 
 // The data in Edge_data is attached to an edge when it is (about to be)
@@ -196,7 +190,7 @@ class Less_vertex_data {
 public:
     Less_vertex_data(VertexData *vd)
     : m_vertex_data(vd) {}
-    bool operator()(Vertex_index i, Vertex_index j);
+    bool operator()(Vertex_index i, Vertex_index j) const;
 };
 
 } // end of namespace i_polygon
@@ -206,9 +200,14 @@ public:
 namespace i_polygon {
 template <class VertexData>
 bool Less_segments<VertexData>::
-operator()(Vertex_index i, Vertex_index j)
+operator()(Vertex_index i, Vertex_index j) const
 {
-    if (m_vertex_data->edges[j.as_int()].is_in_tree) {
+   if (i.as_int() == j.as_int()) {
+        // Some STL implementations may call comparator(x, x)
+        // to verify irreflexivity.  Don't violate less_than_in_tree's
+        // preconditions in such an environment.
+        return false;
+    } else if (m_vertex_data->edges[j.as_int()].is_in_tree) {
         return less_than_in_tree(i,j);
     } else {
         return !less_than_in_tree(j,i);
@@ -217,7 +216,7 @@ operator()(Vertex_index i, Vertex_index j)
 
 template <class VertexData>
 bool Less_segments<VertexData>::
-less_than_in_tree(Vertex_index new_edge, Vertex_index tree_edge)
+less_than_in_tree(Vertex_index new_edge, Vertex_index tree_edge) const
 {
     CGAL_polygon_precondition(
        m_vertex_data->edges[tree_edge.as_int()].is_in_tree);
@@ -241,7 +240,7 @@ less_than_in_tree(Vertex_index new_edge, Vertex_index tree_edge)
 
 template <class VertexData>
 bool Less_vertex_data<VertexData>::
-operator()(Vertex_index i, Vertex_index j)
+operator()(Vertex_index i, Vertex_index j) const
 {
     return m_vertex_data->less_xy_2(
             m_vertex_data->point(i), m_vertex_data->point(j));
@@ -499,5 +498,7 @@ bool is_simple_polygon(Iterator points_begin, Iterator points_end,
 }
 
 } // end of namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif

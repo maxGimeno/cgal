@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Fernando de Goes, Pierre Alliez, Ivo Vigan, Clément Jamin
 
@@ -41,7 +33,7 @@
 #include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/identity.hpp>
-#include <boost/iterator/transform_iterator.hpp>
+#include <CGAL/boost/iterator/transform_iterator.hpp>
 #include <boost/type_traits/is_float.hpp>
 
 namespace CGAL {
@@ -78,11 +70,11 @@ Furthermore, we can relocate the vertices by calling `relocate_all_points()`.
 \tparam Traits a model of the concept `OptimalTransportationReconstructionTraits_2`.
 
 \tparam PointPMap a model of `ReadablePropertyMap` with value type `Traits::Point_2`.
-        Defaults to <a href="http://www.boost.org/doc/libs/release/libs/property_map/doc/identity_property_map.html">`boost::typed_identity_property_map<Traits::Point_2>`</a> 
+        Defaults to <a href="https://www.boost.org/doc/libs/release/libs/property_map/doc/identity_property_map.html">`boost::typed_identity_property_map<Traits::Point_2>`</a> 
         (for the case the input is points without mass).
 
 \tparam MassPMap a model of `ReadablePropertyMap` with value type `Traits::FT`
-        Defaults to <a href="http://www.boost.org/doc/libs/release/libs/property_map/doc/static_property_map.html">`boost::static_property_map<Traits::FT>`</a> 
+        Defaults to <a href="https://www.boost.org/doc/libs/release/libs/property_map/doc/static_property_map.html">`boost::static_property_map<Traits::FT>`</a> 
         (for the case the input is points without mass).
 
  */
@@ -176,6 +168,7 @@ protected:
   FT m_alpha; // [0, 1]
   FT m_ghost; // ghost vs solid
   unsigned int m_relocation; // # relocations
+  FT m_tolerance;
 
   PointPMap point_pmap;
   MassPMap  mass_pmap;
@@ -229,6 +222,7 @@ public:
     m_alpha(0.5),
     m_ghost(1.0),
     m_relocation(relocation),
+    m_tolerance (FT(-1.)),
     point_pmap(point_map),
     mass_pmap(mass_map)
   {
@@ -317,6 +311,8 @@ public:
   FT ghost() {
     return m_ghost;
   }
+
+  FT tolerance() const { return m_tolerance; }
 
   /// @}
 
@@ -601,18 +597,33 @@ public:
       ok = copy.make_collapsible(copy_edge, copy_hull.begin(),
           copy_hull.end(), m_verbose);
       if (!ok) {
-        // std::cerr << "simulation: failed (make collapsible)" << std::endl;
+        if (m_verbose > 1)
+          std::cerr << "simulation: failed (make collapsible)" << std::endl;
+        return false;
+      }
+      ok = copy.check_validity_test();
+      if (!ok) {
+        if (m_verbose > 1)
+          std::cerr << "simulation: failed (validity test)" << std::endl;
         return false;
       }
     }
 
     ok = copy.check_kernel_test(copy_edge);
     if (!ok) {
-      std::cerr << "simulation: failed (kernel test)" << std::endl;
+      if (m_verbose > 1)
+        std::cerr << "simulation: failed (kernel test)" << std::endl;
       return false;
     }
 
     copy.collapse(copy_edge, m_verbose);
+
+    ok = copy.check_validity_test();
+    if (!ok) {
+      if (m_verbose > 1)
+        std::cerr << "simulation: failed (validity test)" << std::endl;
+      return false;
+    }
 
     Sample_vector samples;
     m_dt.collect_samples_from_vertex(s, samples, false);
@@ -621,6 +632,7 @@ public:
     copy.assign_samples_brute_force(samples.begin(), samples.end());
     copy.reset_all_costs();
     cost = copy.compute_total_cost();
+    cost.set_total_weight (samples);
     restore_samples(samples.begin(), samples.end());
 
     if (m_verbose > 1) {
@@ -661,6 +673,14 @@ public:
     return true;
   }
 
+  bool is_above_tolerance (const Rec_edge_2& pedge)
+  {
+    if (m_tolerance == (FT)(-1.))
+      return false;
+    FT cost = CGAL::approximate_sqrt (FT(pedge.after() / pedge.total_weight()));
+    return cost > m_tolerance;
+  }
+
   bool create_pedge(const Edge& edge, Rec_edge_2& pedge) {
     Cost_ after_cost;
     bool ok = simulate_collapse(edge, after_cost);
@@ -672,7 +692,11 @@ public:
 
     FT before = before_cost.finalize(m_alpha);
     FT after = after_cost.finalize(m_alpha);
-    pedge = Rec_edge_2(edge, before, after);
+    pedge = Rec_edge_2(edge, before, after, after_cost.total_weight());
+
+    if (is_above_tolerance (pedge))
+      return false;
+    
     return true;
   }
 
@@ -821,7 +845,7 @@ public:
 
 
   bool random_pedge(Rec_edge_2& pedge) {
-    for (unsigned i = 0; i < 10; ++i) {
+    for (unsigned int i = 0; i < 10; ++i) {
       Edge edge = m_dt.random_finite_edge();
       if (m_dt.is_pinned(edge))
         continue;
@@ -908,6 +932,9 @@ public:
 
   // edge must not be pinned or have cyclic target
   Edge copy_star(const Edge& edge, Triangulation& copy) {
+    copy.tds().clear();
+    Vertex_handle vinf = copy.tds().create_vertex();
+    copy.set_infinite_vertex (vinf);
     copy.tds().set_dimension(2);
     copy.infinite_vertex()->pinned() = true;
 
@@ -926,10 +953,9 @@ public:
     {
       Vertex_handle v = vcirc;
       CGAL_assertion(v!=m_dt.infinite_vertex());
-      if (cvmap.find(v) == cvmap.end()) {
-        Vertex_handle cv = copy.tds().create_vertex();
-        cvmap[v] = copy_vertex(v, cv);
-      }
+      CGAL_assertion (cvmap.find(v) == cvmap.end());
+      Vertex_handle cv = copy.tds().create_vertex();
+      cvmap[v] = copy_vertex(v, cv);
     }
 
     // copy faces
@@ -974,9 +1000,11 @@ public:
   Face_handle copy_face(
     Face_handle f0, Face_handle f1, Vertex_handle_map& vmap) const 
   {
-    for (unsigned i = 0; i < 3; ++i) {
+    for (unsigned int i = 0; i < 3; ++i) {
       Vertex_handle v0i = f0->vertex(i);
+      CGAL_assertion (vmap.find(v0i) != vmap.end());
       Vertex_handle v1i = vmap[v0i];
+      CGAL_assertion (v1i != Vertex_handle());
       f1->set_vertex(i, v1i);
       v1i->set_face(f1);
     }
@@ -996,7 +1024,7 @@ public:
       cf->set_neighbor(i, cfi);
     }
 
-    for (unsigned j = 0; j < 2; ++j) {
+    for (unsigned int j = 0; j < 2; ++j) {
       i = (i + 1) % 3;
       Face_handle fi = f->neighbor(i);
       Face_handle cfi = fmap[fi];
@@ -1031,8 +1059,8 @@ public:
       outer_faces.push_back(outer);
     }
 
-    for (unsigned i = 0; i < outer_faces.size(); ++i) {
-      unsigned j = (i + 1) % outer_faces.size();
+    for (unsigned int i = 0; i < outer_faces.size(); ++i) {
+      unsigned int j = (i + 1) % outer_faces.size();
       outer_faces[i]->set_neighbor(2, outer_faces[j]);
       outer_faces[j]->set_neighbor(1, outer_faces[i]);
     }
@@ -1061,7 +1089,7 @@ public:
       m_dt.collect_samples_from_edge(twin, samples);
       copy_twin.first->samples(copy_twin.second) = samples;
     }
-    copy_vertex->set_sample(NULL);
+    copy_vertex->set_sample(nullptr);
   }
 
   Edge get_copy_edge(
@@ -1484,6 +1512,7 @@ public:
     collapse was possible.
    */
   bool run_until(std::size_t np) {
+    m_tolerance = (FT)(-1.);
     CGAL::Real_timer timer;
     if (m_verbose > 0)
       std::cerr << "reconstruct until " << np << " V";
@@ -1515,14 +1544,15 @@ public:
     `false` if the algorithm was prematurely ended because no more
     edge collapse was possible.
    */
-  bool run(const unsigned steps) {
+  bool run(const unsigned int steps) {
+    m_tolerance = (FT)(-1.);
     CGAL::Real_timer timer;
     if (m_verbose > 0)
       std::cerr << "reconstruct " << steps;
 
     timer.start();
-    unsigned performed = 0;
-    for (unsigned i = 0; i < steps; ++i) {
+    unsigned int performed = 0;
+    for (unsigned int i = 0; i < steps; ++i) {
       bool ok = decimate();
       if (!ok)
         break;
@@ -1535,6 +1565,39 @@ public:
                 << " V, " << timer.time() << " s)"
                 << std::endl;
     return (performed == steps);
+  }
+
+
+  /*!
+    Computes a shape, reconstructing the input, by performing edge
+    collapse operators on the output simplex until the user-defined
+    tolerance is reached.
+
+    \note The tolerance is given in the sense of the Wasserstein
+    distance. It is _not_ a Hausdorff tolerance: it does not mean that
+    the distance between the input samples and the output polyline is
+    guaranteed to be less than `tolerance`. It means that the square
+    root of transport cost per mass (homogeneous to a distance) is at
+    most `tolerance`.
+    
+    \param tolerance Tolerance on the Wasserstein distance.
+   */
+  void run_under_wasserstein_tolerance (const FT tolerance) {
+    m_tolerance = tolerance;
+    CGAL::Real_timer timer;
+    if (m_verbose > 0)
+      std::cerr << "reconstruct under tolerance " << tolerance;
+
+    timer.start();
+    unsigned int performed = 0;
+    while (decimate ())
+      performed++;
+
+    if (m_verbose > 0)
+      std::cerr << " done" << " (" << performed 
+                << " iters, " << m_dt.number_of_vertices() - 4
+                << " V, " << timer.time() << " s)"
+                << std::endl;
   }
 
 
@@ -1606,7 +1669,7 @@ public:
     typename PointOutputIterator,
     typename IndexOutputIterator,
     typename IndexPairOutputIterator>
-  CGAL::cpp11::tuple<
+  std::tuple<
     PointOutputIterator, 
     IndexOutputIterator,
     IndexPairOutputIterator>
@@ -1664,7 +1727,7 @@ public:
       *segments++ = std::make_pair(pos_a, pos_b);
     }
 
-    return CGAL::cpp11::make_tuple(points, isolated_points, segments);
+    return std::make_tuple(points, isolated_points, segments);
   }
 
   /*!
@@ -1726,6 +1789,8 @@ public:
 
 
   /// \cond SKIP_IN_MANUAL
+  const Triangulation& tds() const { return m_dt; }
+  
   void extract_tds_output(Triangulation& rt2) const {
     rt2 = m_dt;
     //mark vertices

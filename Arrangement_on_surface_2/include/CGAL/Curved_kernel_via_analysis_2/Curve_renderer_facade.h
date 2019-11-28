@@ -1,19 +1,11 @@
 // Copyright (c) 2008,2009,2010,2011 Max-Planck-Institute Saarbruecken (Germany). 
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
 //
@@ -28,9 +20,6 @@
 
 #ifndef CGAL_CKVA_CURVE_RENDERER_FACADE_H
 #define CGAL_CKVA_CURVE_RENDERER_FACADE_H
-
-#include <CGAL/license/Arrangement_on_surface_2.h>
-
 
 // do not compile curve renderer code (for fast debugging)
 //#define CGAL_CKVA_DUMMY_RENDERER
@@ -69,11 +58,13 @@
 #define STILL_ALIVE std::cout << __LINE__ << "\n";
 
 #include <CGAL/basic.h>
+#include <CGAL/tss.h>
 #include <CGAL/Bbox_2.h>
 #include <CGAL/Arithmetic_kernel.h>
 
 #include <boost/array.hpp>
 #include <CGAL/Curved_kernel_via_analysis_2/gfx/Curve_renderer_2.h>
+
 
 namespace CGAL {
 
@@ -100,7 +91,7 @@ public:
              Interval_double > Curve_renderer;
 
     static Curve_renderer& instance() {
-        static Curve_renderer _this;
+        CGAL_STATIC_THREAD_LOCAL_VARIABLE_0(Curve_renderer, _this);
         return _this;
     }
 
@@ -179,20 +170,20 @@ public:
 #ifdef CGAL_CKVA_USE_STATIC_RENDERER
     static Default_renderer_2& renderer()
     {
-        static Default_renderer_2 rend;
+        CGAL_STATIC_THREAD_LOCAL_VARIABLE_0(Default_renderer_2, rend);
         return rend;
     }
 #ifdef CGAL_CKVA_USE_MULTIPREC_ARITHMETIC
     static Bigfloat_renderer_2& bigfloat_renderer()
     {
-        static Bigfloat_renderer_2 rend;
+        CGAL_STATIC_THREAD_LOCAL_VARIABLE_0(Bigfloat_renderer_2, rend);
         return rend;
     }
 #endif
 #ifdef CGAL_CKVA_USE_RATIONAL_ARITHMETIC
     static Exact_renderer_2& exact_renderer()
     {
-        static Exact_renderer_2 rend;
+        CGAL_STATIC_THREAD_LOCAL_VARIABLE_0(Exact_renderer_2, rend);
         return rend;
     }
 #endif
@@ -262,8 +253,8 @@ public:
         class Allocator >
     inline void draw(const Arc_2& arc, 
             Container< std::vector< Coord_2 >, Allocator >& pts,
-            boost::optional< Coord_2 > *end_pt1 = NULL, 
-            boost::optional< Coord_2 > *end_pt2 = NULL) {
+            boost::optional< Coord_2 > *end_pt1 = nullptr, 
+            boost::optional< Coord_2 > *end_pt2 = nullptr) {
 
 #ifndef CGAL_CKVA_DUMMY_RENDERER
         Bbox_2 bbox;

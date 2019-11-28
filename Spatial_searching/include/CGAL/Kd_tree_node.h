@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Authors       : Hans Tangelder (<hanst@cs.uu.nl>)
@@ -243,23 +235,14 @@ namespace CGAL {
 	// after splitting b denotes the lower part of b
 	Kd_tree_rectangle<FT,D> b_upper(b);
 	node->split_bbox(b, b_upper);
-                             
-	if (q.outer_range_contains(b)){ 	
-          result = node->lower()->any_tree_item();
-	}else{
-	  if (q.inner_range_intersects(b)){ 
-	    result = node->lower()->search_any_point(q,b);
-          }
-        }
-        if(result){
-          return result;
-        }
-	if  (q.outer_range_contains(b_upper)){     
-	  result = node->upper()->any_tree_item();
-	}else{
-	  if (q.inner_range_intersects(b_upper)) 
-	    result = node->upper()->search_any_point(q,b_upper);
-        }
+
+	if (q.inner_range_intersects(b)) {
+	  result = node->lower()->search_any_point(q,b);
+	  if(result)
+	    return result;
+	}
+	if (q.inner_range_intersects(b_upper))
+	  result = node->upper()->search_any_point(q,b_upper);
       }
       return result;				
     }
@@ -561,7 +544,7 @@ namespace CGAL {
 
     inline
     void set_separator(Separator& sep){
-      cut_dim = sep.cutting_dimension();
+      cut_dim = static_cast<boost::uint8_t>(sep.cutting_dimension());
       cut_val = sep.cutting_value();
     }
   	

@@ -1,18 +1,10 @@
 // Copyright (c) 2016  GeometryFactory (France).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Andreas Fabri, Mael Rouxel-Labbé
@@ -20,13 +12,14 @@
 #ifndef CGAL_SEAM_MESH_H
 #define CGAL_SEAM_MESH_H
 
+#include <CGAL/disable_warnings.h>
+
 #include <CGAL/boost/graph/iterator.h>
 #include <CGAL/boost/graph/graph_traits_Seam_mesh.h>
 
 #include <CGAL/circulator.h>
 #include <CGAL/Unique_hash_map.h>
 
-#include <boost/foreach.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/unordered_set.hpp>
 
@@ -50,10 +43,6 @@ public:
 
   Seam_mesh_halfedge_descriptor()
     : tmhd(), seam(false)
-  { }
-
-  Seam_mesh_halfedge_descriptor(const Seam_mesh_halfedge_descriptor& other)
-    : tmhd(other.tmhd), seam(other.seam)
   { }
 
   Seam_mesh_halfedge_descriptor(TM_halfedge_descriptor tmhd, bool seam = false)
@@ -238,7 +227,7 @@ public:
     bool seam;
     const Self* mesh_;
 
-    halfedge_iterator() : hd(), end(), seam(false), mesh_(NULL) { }
+    halfedge_iterator() : hd(), end(), seam(false), mesh_(nullptr) { }
 
     halfedge_iterator(const Iterator_range<TM_halfedge_iterator>& ir, const Self* m)
       : hd(ir.first), end(ir.second), seam(false), mesh_(m)
@@ -300,10 +289,6 @@ public:
       : hd(h)
     { }
 
-    vertex_descriptor(const vertex_descriptor& other)
-      : hd(other.hd)
-    { }
-
     bool operator==(const vertex_descriptor& other) const
     {
       return (hd == other.hd);
@@ -355,7 +340,7 @@ public:
 
   public:
     /// Constructors
-    vertex_iterator() : hd(), end(), mesh_(NULL) { }
+    vertex_iterator() : hd(), end(), mesh_(nullptr) { }
 
     vertex_iterator(const Iterator_range<TM_halfedge_iterator>& ir, const Self* m)
       : hd(ir.first), end(ir.second), mesh_(m)
@@ -438,7 +423,7 @@ public:
 #endif
 
     edge_descriptor()
-      : mesh_(NULL)
+      : mesh_(nullptr)
     {}
 
     edge_descriptor(const halfedge_descriptor& hd, const Self* m)
@@ -475,7 +460,7 @@ public:
     const Self* mesh_;
 
   public:
-    edge_iterator() : hd(), end(), seam(false), mesh_(NULL) { }
+    edge_iterator() : hd(), end(), seam(false), mesh_(nullptr) { }
 
     edge_iterator(const Iterator_range<TM_halfedge_iterator>& ir, const Self* m)
       : hd(ir.first), end(ir.second), seam(false), mesh_(m)
@@ -1014,7 +999,7 @@ public:
   /// of a vertex of the underlying mesh is given by its position
   /// in the container `tm_vds`.
   ///
-  /// \tparam VdContainer must be a model of <a href="http://en.cppreference.com/w/cpp/concept/SequenceContainer"><tt>SequenceContainer</tt></a> (that is, provide
+  /// \tparam VdContainer must be a model of `SequenceContainer` (that is, provide
   ///         the functions: `operator[]` and `at()`).
   ///
   /// \returns one of the halfedges of the seam mesh that is on a seam.
@@ -1059,11 +1044,11 @@ public:
   ///
   /// \returns one of the halfedges of the seam mesh that is on a seam.
   ///
-  /// \tparam VdContainer must be a model of <a href="http://en.cppreference.com/w/cpp/concept/SequenceContainer"><tt>SequenceContainer</tt></a> (that is, provide
+  /// \tparam VdContainer must be a model of `SequenceContainer` (that is, provide
   ///         the functions: `operator[]` and `at()`).
   ///
-  /// \pre filename should be the name of a CGAL selection file: edges are
-  ///      described by pairs of integers, on the third line of the file.
+  /// \pre filename should be the name of a \cgal selection file with file extension "*.selection.txt":
+  ///      edges are described by pairs of integers, on the third line of the file.
   template<typename VdContainer>
   TM_halfedge_descriptor add_seams(const char* filename,
                                    const VdContainer& tm_vds)
@@ -1072,7 +1057,7 @@ public:
 
     // Check the file type
     std::string str = filename;
-    if(str.substr(str.length() - 14) != ".selection.txt") {
+    if( (str.length()) < 14 || (str.substr(str.length() - 14) != ".selection.txt") ) {
       std::cerr << "Error: seams must be given by a *.selection.txt file" << std::endl;
       return tmhd;
     }
@@ -1104,8 +1089,8 @@ public:
   ///
   /// \returns one of the halfedges of the seam mesh that is on a seam.
   ///
-  /// \pre filename should be the name of a CGAL selection file: edges are
-  ///      described by pairs of integers, on the third line of the file.
+  /// \pre filename should be the name of a \cgal selection file with file extension "*.selection.txt":
+  ///      edges are described by pairs of integers, on the third line of the file.
   TM_halfedge_descriptor add_seams(const char* filename)
   {
     std::vector<TM_vertex_descriptor> tm_vds;
@@ -1124,10 +1109,12 @@ public:
   Seam_mesh(const TM& tm, const SEM& sem, const SVM svm)
     : tm(tm),
       sem(sem), svm(svm),
-      number_of_seams(0), number_of_vertices(-1)
+      number_of_seams(0), number_of_vertices(static_cast<vertices_size_type>(-1))
   { }
 };
 
 } // namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif //CGAL_SEAM_MESH_H

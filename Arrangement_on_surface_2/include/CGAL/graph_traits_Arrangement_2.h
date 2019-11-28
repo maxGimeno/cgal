@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Ron Wein <wein@post.tau.ac.il>
@@ -24,16 +16,18 @@
 
 #include <CGAL/license/Arrangement_on_surface_2.h>
 
+#include <CGAL/disable_warnings.h>
+
 
 /*! \file
  * Definition of the specialized boost::graph_traits<Arrangement_2> class.
  */
 
 // include this to avoid a VC15 warning
-#include <CGAL/boost/graph/named_function_params.h>
+#include <CGAL/boost/graph/Named_function_parameters.h>
 
 #include <boost/graph/graph_concepts.hpp>
-#include <boost/iterator/counting_iterator.hpp>
+#include <CGAL/boost/iterator/counting_iterator.hpp>
 #include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Arrangement_2.h>
 #include <CGAL/Arr_accessor.h>
@@ -246,6 +240,9 @@ public:
     arr_access (const_cast<Arrangement_on_surface_2&> (arr))
   {}
 
+  /*! Nulls */
+  static vertex_descriptor null_vertex() { return vertex_descriptor(); }
+
   /*! Traverse the vertices. */
   vertices_size_type number_of_vertices()
   {
@@ -308,7 +305,7 @@ public:
     if (v->is_isolated())
       return out_edge_iterator ();
 
-    const int  deg = static_cast<int>(v->degree());
+    const int deg = static_cast<int>(v->degree());
     return out_edge_iterator (v->incident_halfedges(), true, deg, deg);
   }
 
@@ -318,7 +315,8 @@ public:
     if (v->is_isolated())
       return in_edge_iterator();
 
-    return in_edge_iterator (v->incident_halfedges(), false, 0, v->degree());
+    const int deg = static_cast<int>(v->degree());
+    return in_edge_iterator (v->incident_halfedges(), false, 0, deg);
   }
 
   in_edge_iterator in_edges_end (vertex_descriptor v)
@@ -326,7 +324,7 @@ public:
     if (v->is_isolated())
       return in_edge_iterator ();
 
-    const int  deg = v->degree();
+    const int deg = static_cast<int>(v->degree());
     return in_edge_iterator (v->incident_halfedges(), false, deg, deg);
   }
 };
@@ -608,5 +606,7 @@ edges (const CGAL::Arrangement_on_surface_2<GeomTraits, TopTraits>& arr)
 }
 
 } //namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif

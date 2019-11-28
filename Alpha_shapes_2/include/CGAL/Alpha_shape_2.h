@@ -2,20 +2,11 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
 //
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // $URL$
 // $Id$
-// 
-//
 // Author(s)     : Tran Kai Frank DA
 //                 Andreas Fabri <Andreas.Fabri@geometryfactory.com>
 
@@ -24,31 +15,30 @@
 
 #include <CGAL/license/Alpha_shapes_2.h>
 
-
-#include <CGAL/basic.h>
-
-#include <list>
-#include <set>
-#include <map>
-#include <vector>
-#include <algorithm>
-#include <utility>
-#include <iostream>
-
-#include <CGAL/utility.h>
-#include <CGAL/Unique_hash_map.h>
-#include <CGAL/Triangulation_vertex_base_2.h>
-#include <CGAL/Triangulation_face_base_2.h>
-#include <CGAL/Alpha_shape_vertex_base_2.h>
-#include <CGAL/Alpha_shape_face_base_2.h>
 #include <CGAL/internal/Lazy_alpha_nt_2.h>
 
+// for convenience only
+#include <CGAL/Alpha_shape_vertex_base_2.h>
+#include <CGAL/Alpha_shape_face_base_2.h>
 
+#include <CGAL/assertions.h>
+#include <CGAL/basic.h>
+#include <CGAL/triangulation_assertions.h>
+#include <CGAL/Unique_hash_map.h>
+#include <CGAL/utility.h>
+
+#include <algorithm>
+#include <iostream>
+#include <list>
+#include <map>
+#include <set>
+#include <utility>
+#include <vector>
 
 namespace CGAL {
 
 template < class Dt,class ExactAlphaComparisonTag = Tag_false>
-class Alpha_shape_2 : public Dt 
+class Alpha_shape_2 : public Dt
 {
   // DEFINITION The class Alpha_shape_2<Dt> represents the family
   // of alpha-shapes of points in a plane for all positive alpha. It
@@ -68,6 +58,14 @@ public:
   typedef typename Dt::Geom_traits Gt;
   typedef typename Dt::Triangulation_data_structure Tds;
 
+  // The Exact Comparison Tag cannot be used in conjonction with periodic triangulations
+  // because the periodic triangulations' point() function returns a temporary
+  // value while the lazy predicate evaluations that are used when the Exact tag
+  // is set to true rely on a permanent and safe access to the points.
+  CGAL_static_assertion(
+   (boost::is_same<ExactAlphaComparisonTag, Tag_false>::value) ||
+   (boost::is_same<typename Dt::Periodic_tag, Tag_false>::value));
+
   typedef typename internal::Alpha_nt_selector_2<
     Gt, ExactAlphaComparisonTag, typename Dt::Weighted_tag>::Type_of_alpha  Type_of_alpha;
   typedef typename internal::Alpha_nt_selector_2<
@@ -78,7 +76,7 @@ public:
   typedef Type_of_alpha               NT;
   typedef Type_of_alpha               FT;
 
-  //check simplices are correctly instantiated
+  // check that simplices are correctly instantiated
   CGAL_static_assertion( (boost::is_same<NT, typename Dt::Face::NT>::value) );
   CGAL_static_assertion( (boost::is_same<NT, typename Dt::Vertex::NT>::value) );
 
@@ -103,6 +101,8 @@ public:
   typedef typename Dt::Locate_type Locate_type;
   typedef typename Dt::size_type size_type;
 
+  using Dt::cw;
+  using Dt::ccw;
   using Dt::finite_vertices_begin;
   using Dt::finite_vertices_end;
   using Dt::faces_begin;
@@ -110,15 +110,16 @@ public:
   using Dt::edges_begin;
   using Dt::edges_end;
   using Dt::number_of_vertices;
-  using Dt::cw;
-  using Dt::ccw;
+  using Dt::is_infinite;
+  using Dt::locate;
+  using Dt::point;
+
   using Dt::VERTEX;
   using Dt::EDGE;
   using Dt::FACE;
   using Dt::OUTSIDE_CONVEX_HULL;
   using Dt::OUTSIDE_AFFINE_HULL;
   using Dt::dimension;
-  using Dt::is_infinite;
 
   // for backward compatibility
   typedef Finite_vertices_iterator Vertex_iterator;
@@ -309,7 +310,7 @@ public:
       return n;
     }
 
-private :
+protected :
 
   //--------------------- INITIALIZATION OF PRIVATE MEMBERS -----------
 
@@ -602,7 +603,7 @@ public:
       // Classifies a point `p' with respect to `A'.
       Locate_type type;
       int i;
-      Face_handle pFace = this->locate(p, type, i);
+      Face_handle pFace = locate(p, type, i);
       switch (type) 
 	{
 	case VERTEX            : return classify(pFace->vertex(i), alpha);
@@ -678,13 +679,13 @@ public:
 				const Type_of_alpha& alpha) const;
 
   //--------------------- NB COMPONENTS ---------------------------------
-  int
+  size_type
   number_solid_components() const
     {
       return number_of_solid_components(get_alpha());
     }
 
-  int
+  size_type
   number_of_solid_components() const
     {
       return number_of_solid_components(get_alpha());
@@ -713,8 +714,6 @@ public:
 
   Alpha_iterator find_optimal_alpha(size_type nb_components);  	
 
-private:
-
   Type_of_alpha find_alpha_solid() const;
 
   //---------------------- PREDICATES ------------------------------------
@@ -723,26 +722,24 @@ private:
 
   bool is_attached(const Face_handle& f, int i) const
   {
-    Bounded_side b = Side_of_bounded_circle_2()(*this)(f->vertex(cw(i))->point(),
-                                                       f->vertex(ccw(i))->point(),
-                                                       f->vertex(i)->point());
+    Bounded_side b = Side_of_bounded_circle_2()(*this)(point(f, cw(i)),
+                                                       point(f, ccw(i)),
+                                                       point(f, i));
 
-    return (b == ON_BOUNDED_SIDE) ? true : false;
+    return (b == ON_BOUNDED_SIDE);
   }
 
   //-------------------- GEOMETRIC PRIMITIVES ----------------------------
 
   Type_of_alpha squared_radius(const Face_handle& f) const
   {
-    return Compute_squared_radius_2()(*this)(f->vertex(0)->point(),
-                                             f->vertex(1)->point(),
-                                             f->vertex(2)->point());
+    return Compute_squared_radius_2()(*this)(point(f, 0), point(f, 1), point(f, 2));
   }
 
   Type_of_alpha squared_radius(const Face_handle& f, int i) const
   {
-    return Compute_squared_radius_2()(*this)(f->vertex(ccw(i))->point(),
-                                             f->vertex(cw(i))->point());
+    return Compute_squared_radius_2()(*this)(point(f, ccw(i)),
+                                             point(f, cw(i)));
   }
 
   //---------------------------------------------------------------------
@@ -1327,7 +1324,7 @@ Alpha_shape_2<Dt,EACT>::number_of_solid_components(const Type_of_alpha& alpha) c
        ++face_it) 
     {
       Face_handle pFace = face_it;
-      CGAL_triangulation_postcondition( pFace != NULL);
+      CGAL_triangulation_postcondition( pFace != nullptr);
       
       if (classify(pFace, alpha) == INTERIOR){
 	Data& data = marked_face_set[pFace];
@@ -1361,7 +1358,7 @@ Alpha_shape_2<Dt,EACT>::traverse(const Face_handle& pFace,
     for (int i=0; i<3; i++)
       {
 	pNeighbor = fh->neighbor(i);
-	 CGAL_triangulation_assertion(pNeighbor != NULL);
+	 CGAL_triangulation_assertion(pNeighbor != nullptr);
 	if (classify(pNeighbor, alpha) == INTERIOR){
 	  Data& data = marked_face_set[pNeighbor];
 	  if(data == false){
@@ -1831,8 +1828,8 @@ void Alpha_shape_2<Dt,EACT>::print_edge_map()
        iemapit != _interval_edge_map.end(); ++iemapit) {
     Interval3 interval = (*iemapit).first;
     Edge edge = (*iemapit).second;
-    Point p1 = edge.first->vertex(cw(edge.second))->point();
-    Point p2 = edge.first->vertex(ccw(edge.second))->point();
+    Point p1 = point(edge.first, cw(edge.second));
+    Point p2 = point(edge.first, ccw(edge.second));
     std::cout << "[ (" <<	p1 << ") - (" << p2 << ") ] :            "
               << interval.first << " "
               << interval.second << " " << interval.third << std::endl;

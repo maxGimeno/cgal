@@ -2,19 +2,11 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// 
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+//
 //
 // Author(s)     : Laurent RINEAU
 
@@ -23,6 +15,7 @@
 
 #include <CGAL/license/Mesh_2.h>
 
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/Mesh_2/Refine_edges_with_clusters.h>
 #include <CGAL/Mesh_2/Refine_edges_visitor.h>
@@ -83,6 +76,7 @@ public:
       edges_level(tr, clusters_, null_level),
       faces_level(tr, criteria, edges_level),
       visitor(faces_level, edges_level, null_visitor),
+      seeds_mark(false),
       initialized(false)
   {
   }
@@ -97,6 +91,7 @@ public:
       edges_level(edges_level_),
       faces_level(tr, criteria, edges_level),
       visitor(faces_level, null_visitor),
+      seeds_mark(false),
       initialized(false)
   {
   }
@@ -171,7 +166,7 @@ public:
         for(Seeds_it sit=begin; sit!=end; ++sit)
           {
             Face_handle fh=tr.locate(*sit);
-            if(fh!=NULL)
+            if(fh!=nullptr)
               propagate_marks(fh, mark);
           }
 	propagate_marks(tr.infinite_face(), false);
@@ -373,5 +368,7 @@ refine_Delaunay_mesh_2(Tr& t,
 }
 
 } // end namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_DELAUNAY_MESHER_2_H

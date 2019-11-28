@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Laurent RINEAU, Maxime Gimeno
@@ -24,16 +16,19 @@
 #include <CGAL/license/Three.h>
 
 #include <QMap>
-#include <QGLViewer/qglviewer.h>
+#include <CGAL/Qt/qglviewer.h>
 #include <QWidget>
 #include <QPoint>
-#include <QOpenGLFunctions_2_1>
+#include <QOpenGLFunctions>
+#include <QOpenGLFunctions_4_3_Core>
 #include <CGAL/Qt/CreateOpenGLContext.h>
 // forward declarations
 class QWidget;
+class QImage;
 class QMouseEvent;
 class QKeyEvent;
 class QOpenGLShaderProgram;
+class QOpenGLFramebufferObject;
 class TextRenderer;
 class TextListItem;
 
@@ -44,7 +39,7 @@ namespace Three{
 class Scene_draw_interface;
 class Scene_item;
 //! Base class to interact with the viewer from the plugins, the items and the scene.
-class VIEWER_EXPORT Viewer_interface : public QGLViewer, public QOpenGLFunctions_2_1 {
+class VIEWER_EXPORT Viewer_interface : public CGAL::QGLViewer{
 
   Q_OBJECT
 
@@ -70,8 +65,12 @@ public:
    PROGRAM_C3T3_EDGES,          //! Used to render the edges of a c3t3_item. It discards any fragment on a side of a plane, meaning that nothing is displayed on this side of the plane. Not affected by light.
    PROGRAM_CUTPLANE_SPHERES,    //! Used to render the spheres of an item with a cut plane.
    PROGRAM_SPHERES,             //! Used to render one or several spheres.
-   PROGRAM_C3T3_TETS,           //! Used to render the tetrahedra of the intersection of a c3t3_item.
-   PROGRAM_FLAT,                //! Used to render flat shading without pre computing normals
+   PROGRAM_DARK_SPHERES,        //! Used to render one or several spheres without light (for picking for example).
+   PROGRAM_FLAT,                /** Used to render flat shading without pre computing normals*/
+   PROGRAM_OLD_FLAT,            /** Used to render flat shading without pre computing normals without geometry shader*/
+   PROGRAM_SOLID_WIREFRAME,     //! Used to render edges with width superior to 1.
+   PROGRAM_NO_INTERPOLATION,   //! Used to render faces without interpolating their color.
+   PROGRAM_HEAT_INTENSITY,      //! Used to render special item in Display_property_plugin
    NB_OF_PROGRAMS               //! Holds the number of different programs in this enum.
   };
 
@@ -80,7 +79,7 @@ public:
  //! The painter is the element that draws everything on screen,
  //! but you should only need this if you want to draw 2D things
  //! on top of the scene, like a selection rectangle.
- //! See <a href="http://doc.qt.io/qt-5/qpainter.html">QPainter's documentation </a> for details.
+ //! See <a href="https://doc.qt.io/qt-5/qpainter.html">QPainter's documentation </a> for details.
  virtual QPainter *getPainter() =0;
 
 
@@ -99,9 +98,18 @@ public:
   virtual bool hasText() const { return false; }
   //! \brief Constructor
   //!
-  //! Creates a valid context for OpenGL 2.1.
+  //! Creates a valid context for OpenGL ES 2.0.
   //! \param parent the parent widget. It usually is the MainWindow.
-  Viewer_interface(QWidget* parent) : QGLViewer(CGAL::Qt::createOpenGLContext(), parent) {}
+  Viewer_interface(QWidget* parent) : CGAL::QGLViewer(parent) {}
+  //!
+  //! \brief Constructor for the secondary viewers.
+  //!
+  //! \param parent the parent widget. It usually is the MainWindow.
+  //! \param shared_widget the main viewer of the Application. This will share the
+  //!  context and allow synchronized rendering of multiple views.
+  //!
+  Viewer_interface(QWidget* parent, QOpenGLWidget* shared_widget) 
+    : QGLViewer(shared_widget->context(),parent){}
   virtual ~Viewer_interface() {}
 
   //! \brief Sets the scene for the viewer.
@@ -120,12 +128,12 @@ public:
   //! \param frame is the frame that will be moved
   //! @returns true if it worked.
   //! @see moveCameraToCoordinates()
-  static bool readFrame(QString s, qglviewer::Frame& frame);
+  static bool readFrame(QString s, CGAL::qglviewer::Frame& frame);
   //! \brief Gives information about a frame.
   //! @see readFrame
   //! @see dumpCameraCoordinates()
   //!@returns a QString containing the position and orientation of a frame.
-  static QString dumpFrame(const qglviewer::Frame&);
+  static QString dumpFrame(const CGAL::qglviewer::Frame&);
   //! \brief The fastDrawing state.
   //!
   //! In fast drawing mode, some items will be simplified while the camera is moving
@@ -146,6 +154,17 @@ public:
   //! @see OpenGL_program_IDs
   //!
   virtual void attribBuffers(int program_name) const = 0;
+  /*! Enables the clipping box. Each Vector4 of `box` contains the equation of a plane of the clipping box.
+   * Everything that is located on the positive side of one of those planes will not be displayed.
+   * @see disableCLippingBox()
+   */
+  virtual void enableClippingBox(QVector4D box[6])=0;
+
+  /*!
+   * Disables the clipping box. The six clipping planes will be ignored.
+   * @see enableClippingBox()
+   */
+  virtual void disableClippingBox()= 0;
 
   //! \brief Returns a program according to name.
   //!
@@ -159,11 +178,11 @@ public:
   //! The textRenderer uses the painter to display 2D text over the 3D Scene.
   //! \returns the viewer's TextRender
   virtual TextRenderer* textRenderer() = 0;
-  //!Allows OpenGL 2.1 context to get access to glDrawArraysInstanced.
+  //!Allows OpenGL ES 2.0 context to get access to glDrawArraysInstanced.
   typedef void (APIENTRYP PFNGLDRAWARRAYSINSTANCEDARBPROC) (GLenum mode, GLint first, GLsizei count, GLsizei primcount);
-  //!Allows OpenGL 2.1 context to get access to glVertexAttribDivisor.
+  //!Allows OpenGL ES 2.0 context to get access to glVertexAttribDivisor.
   typedef void (APIENTRYP PFNGLVERTEXATTRIBDIVISORARBPROC) (GLuint index, GLuint divisor);
-  //!Allows OpenGL 2.1 context to get access to glVertexAttribDivisor.
+  //!Allows OpenGL ES 2.0 context to get access to glVertexAttribDivisor.
   typedef void (APIENTRYP PFNGLFRAMEBUFFERTEXTURE2DEXTPROC) (GLuint target, GLuint attachment, GLuint textarget, GLuint texture, GLint level);
 
   PFNGLDRAWARRAYSINSTANCEDARBPROC glDrawArraysInstanced;
@@ -173,8 +192,6 @@ public:
   //! \brief Used by the items to avoid SEGFAULT.
   //!@returns true if glVertexAttribDivisor, and glDrawArraysInstanced are found.
   virtual bool isExtensionFound() = 0;
-  //!Returns the scene's offset
-  virtual qglviewer::Vec offset()const = 0;
   //!\brief Allows to perform picking from the keyboard and mouse
   //!
   //! Sets the combination SHIFT+LEFT CLICK to perform a selection on the screen.
@@ -186,6 +203,24 @@ public:
   //! avoid conflicts in the selection_tool, for example.
   virtual void setNoBinding() = 0 ;
 
+  //!
+  //! If this mode is ON, the viewer will display the content of `staticImage()` instead
+  //! of drawing the cene. This is used when drawing 2D lines over the viewer.
+  //! @see `staticImage()`
+  //! @see `setStaticImage()`
+  virtual void set2DSelectionMode(bool) = 0;
+
+  //!
+  //! Setter for the image to be displayed in 2D selection mode.
+  //!
+  virtual void setStaticImage(QImage image)=0;
+
+  //! Returns the static image to be displayed in 2D selection mode.
+  virtual const QImage& staticImage() const = 0;
+
+  //!The number of passes that are performed for the scene transparency.
+  //! Customizable from the MainWindow or the SubViewer menu.
+  virtual float total_pass() = 0;
 Q_SIGNALS:
   //!Emit this to signal that the `id`th item has been picked.
   void selected(int id);
@@ -221,8 +256,33 @@ public Q_SLOTS:
 //! \param animation_duration is the duration of the animation of the movement.
   virtual bool moveCameraToCoordinates(QString target,
                                        float animation_duration = 0.5f) = 0;
-  virtual void displayMessage(const QString &_message, int delay) = 0;
 
+  //!
+  //! Setter for the orthogonal projection of the viewer.
+  //!
+  virtual void SetOrthoProjection( bool b) =0;
+public:
+  
+  //! Gives acces to recent openGL(4.3) features, allowing use of things like
+  //! Geometry Shaders or Depth Textures.
+  //! @returns a pointer to an initialized  QOpenGLFunctions_4_3_Core if `isOpenGL_4_3()` is `true`
+  //! @returns nullptr if `isOpenGL_4_3()` is `false`
+  virtual QOpenGLFunctions_4_3_Core* openGL_4_3_functions() = 0;
+  //! getter for point size under old openGL context;
+  virtual const GLfloat& getGlPointSize()const = 0;
+  //! setter for point size under old openGL context;
+  virtual void setGlPointSize(const GLfloat& p) = 0;
+  virtual void setCurrentPass(int pass) = 0;
+  virtual void setDepthWriting(bool writing_depth) = 0;
+  virtual void setDepthPeelingFbo(QOpenGLFramebufferObject* fbo) = 0;
+  
+  virtual int currentPass()const = 0;
+  virtual bool isDepthWriting()const = 0;
+  virtual QOpenGLFramebufferObject* depthPeelingFbo() = 0;
+  virtual void makeCurrent() = 0;
+  virtual QVector4D* clipBox() const =0;
+  virtual bool isClipping() const = 0;
+>>>>>>> cgal/master
 }; // end class Viewer_interface
 }
 }

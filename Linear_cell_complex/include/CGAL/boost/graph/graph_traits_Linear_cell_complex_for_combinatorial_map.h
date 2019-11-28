@@ -1,19 +1,11 @@
 // Copyright (c) 2017 CNRS and LIRIS' Establishments (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 //
@@ -32,7 +24,7 @@
 
 #include <CGAL/Linear_cell_complex_for_bgl_combinatorial_map_helper.h>
 #include <CGAL/Linear_cell_complex_for_combinatorial_map.h>
-#include <CGAL/boost/graph/cgal_bgl_graph_io.h> // TODO update path when small feature generic load off will be accepted
+#include <CGAL/boost/graph/io.h>
 #include <CGAL/Dart_iterators.h>
 
 #include <CGAL/boost/graph/helpers.h>
@@ -65,7 +57,7 @@ namespace internal
 template <typename Dart_handle>
 struct EdgeHandle : Dart_handle
 {
-  EdgeHandle() : Dart_handle(NULL){}
+  EdgeHandle() : Dart_handle(nullptr){}
   explicit EdgeHandle(Dart_handle h): Dart_handle(h)
   {}
 
@@ -74,14 +66,14 @@ struct EdgeHandle : Dart_handle
 
   Dart_handle second_halfedge() const
   {
-    assert(*this!=NULL);
+    assert(*this!=nullptr);
     return (*this)->get_f(2);
   }
   
   bool operator==(const EdgeHandle& h) const
   {
     return first_halfedge()==h.first_halfedge() ||
-        (h.first_halfedge()!=NULL &&
+        (h.first_halfedge()!=nullptr &&
         first_halfedge()==h.second_halfedge());
   }
 
@@ -105,7 +97,7 @@ struct EdgeHandle : Dart_handle
 
   friend std::size_t hash_value(const EdgeHandle& i)
   {
-    if (i.first_halfedge()==NULL) return 0;
+    if (i.first_halfedge()==nullptr) return 0;
     return hash_value(i.first_halfedge()<i.second_halfedge()?
                       i.first_halfedge():i.second_halfedge());
   }
@@ -214,9 +206,9 @@ public :
   typedef CGAL::Out_edge_iterator<CMap> out_edge_iterator;
 
   // nulls
-  static vertex_descriptor   null_vertex()   { return NULL; }
-  static face_descriptor     null_face()     { return NULL; }
-  static halfedge_descriptor null_halfedge() { return NULL; }
+  static vertex_descriptor   null_vertex()   { return nullptr; }
+  static face_descriptor     null_face()     { return nullptr; }
+  static halfedge_descriptor null_halfedge() { return nullptr; }
 };
 
 } //namespace CGAL
@@ -283,6 +275,21 @@ typename boost::graph_traits<CGAL_LCC_TYPE >::degree_size_type
 in_degree(typename boost::graph_traits<CGAL_LCC_TYPE >::vertex_descriptor v,
           const CGAL_LCC_TYPE& lcc)
 { return degree(v, lcc); }
+
+CGAL_LCC_TEMPLATE_ARGS
+typename boost::graph_traits<CGAL_LCC_TYPE >::degree_size_type
+degree(typename boost::graph_traits<CGAL_LCC_TYPE >::face_descriptor f,
+       const CGAL_LCC_TYPE& lcc)
+
+{
+  typename boost::graph_traits<CGAL_LCC_TYPE >::degree_size_type degree=0;
+  for (typename CGAL_LCC_TYPE::template Dart_of_cell_range<2>::const_iterator
+         it=lcc.template darts_of_cell<2>(f->dart()).begin(),
+         itend=lcc.template darts_of_cell<2>(f->dart()).end();
+       it!=itend; ++it)
+  { ++degree; }
+  return degree;
+}
 
 CGAL_LCC_TEMPLATE_ARGS
 typename boost::graph_traits<CGAL_LCC_TYPE >::vertex_descriptor 
@@ -405,7 +412,7 @@ typename boost::graph_traits<CGAL_LCC_TYPE>::halfedge_descriptor
 halfedge(typename boost::graph_traits<CGAL_LCC_TYPE>::vertex_descriptor v,
          const CGAL_LCC_TYPE& lcc)
 {
-  if (v->dart()==NULL) return NULL;
+  if (v->dart()==nullptr) return nullptr;
   return const_cast<CGAL_LCC_TYPE&>(lcc).template beta<2>(v->dart());
 }
 
@@ -472,7 +479,7 @@ void set_halfedge(typename boost::graph_traits<CGAL_LCC_TYPE>::vertex_descriptor
                   typename boost::graph_traits<CGAL_LCC_TYPE>::halfedge_descriptor h,
                   CGAL_LCC_TYPE& lcc)
 {
-  if (h!=NULL)
+  if (h!=nullptr)
     lcc.template set_dart_of_attribute<0>(v, lcc.template beta<2>(h));
   else
     lcc.template set_dart_of_attribute<0>(v, h);

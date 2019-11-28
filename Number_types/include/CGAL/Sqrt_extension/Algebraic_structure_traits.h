@@ -1,19 +1,11 @@
 // Copyright (c) 2006-2008 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Michael Hemmer   <hemmer@mpi-inf.mpg.de>
@@ -41,7 +33,7 @@ class Sqrt_extension_algebraic_structure_traits_base< Type,
     typedef CGAL::Integral_domain_without_division_tag Algebraic_category;
 
     class Simplify
-      : public std::unary_function< Type&, void > {
+      : public CGAL::cpp98::unary_function< Type&, void > {
       public:
         typedef void result_type;
         typedef Type& argument_type;
@@ -61,7 +53,7 @@ public:
     typedef CGAL::Integral_domain_tag Algebraic_category;
     
     class Integral_division
-      : public std::binary_function< Type, Type, Type > {
+      : public CGAL::cpp98::binary_function< Type, Type, Type > {
     public:
       Type operator()( const Type& x,const Type& y ) const {
         return x/y;
@@ -77,7 +69,7 @@ private:
   typedef typename AST_COEFF::Divides Divides_coeff;   
 public:
   class Divides 
-    : public std::binary_function<Type,Type,typename Divides_coeff::result_type>{ 
+    : public CGAL::cpp98::binary_function<Type,Type,typename Divides_coeff::result_type>{
     typedef typename Divides_coeff::result_type BOOL;
   public:
     BOOL operator()( const Type& x, const Type& y) const {  
@@ -159,14 +151,14 @@ class Sqrt_extension_algebraic_structure_traits_base< Type,
     typedef Field_tag Algebraic_category;
 
     class Unit_part
-      : public std::unary_function< Type, Type > {
+      : public CGAL::cpp98::unary_function< Type, Type > {
       public:
         Type operator()( const Type& x ) const {
           return( x == Type(0) ? Type(1) : x );
         }
     };
   class Inverse
-    : public std::unary_function< Type, Type > {
+    : public CGAL::cpp98::unary_function< Type, Type > {
   public:
     Type operator()( const Type& x ) const {
       return Type(1)/x ;

@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Ron Wein     <wein@post.tau.ac.il>
@@ -60,7 +52,7 @@ bisect_control_polygon_2(InputIterator ctrl_pts_begin,
   typedef typename _Kernel::Construct_midpoint_2    _Construct_midpoint_2;
 
   // Grab a local copy of the control points.
-  const unsigned int    n_pts = std::distance(ctrl_pts_begin, ctrl_pts_end);
+  const unsigned int    n_pts = static_cast<unsigned int>(std::distance(ctrl_pts_begin, ctrl_pts_end));
   CGAL_precondition(n_pts != 0);
 
   std::vector<_Point_2>  vec(n_pts);
@@ -124,7 +116,7 @@ typename InputIterator::value_type point_on_Bezier_curve_2
   typedef typename _Kernel::FT                      _NT;
 
   // Grab a local copy of the control points.
-  const unsigned int     n_pts = std::distance(ctrl_pts_begin, ctrl_pts_end);
+  const unsigned int     n_pts = static_cast<unsigned int>(std::distance(ctrl_pts_begin, ctrl_pts_end));
   CGAL_precondition(n_pts != 0);
 
   std::vector<_Point_2>  vec(n_pts);
@@ -181,7 +173,7 @@ typename InputIterator::value_type de_Casteljau_2
   typedef typename _Kernel::FT                      _NT;
 
   // Grab a local copy of the control points.
-  const unsigned int     n_pts = std::distance(ctrl_pts_begin, ctrl_pts_end);
+  const unsigned int     n_pts = static_cast<unsigned int>(std::distance(ctrl_pts_begin, ctrl_pts_end));
   CGAL_precondition(n_pts != 0);
 
   std::vector<_Point_2>  vec(n_pts);

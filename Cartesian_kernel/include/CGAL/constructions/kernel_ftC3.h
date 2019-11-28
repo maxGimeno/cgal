@@ -5,19 +5,11 @@
 // Max-Planck-Institute Saarbruecken (Germany),
 // and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Herve Bronnimann, Mariette Yvinec
@@ -264,9 +256,20 @@ point_on_planeC3(const FT &pa, const FT &pb, const FT &pc, const FT &pd,
                  FT &x, FT &y, FT &z)
 {
   x = y = z = 0;
-  if (! CGAL_NTS is_zero(pa))      x = -pd/pa;
-  else if (! CGAL_NTS is_zero(pb)) y = -pd/pb;
-  else                             z = -pd/pc;
+  
+  FT abs_pa = CGAL::abs(pa);
+  FT abs_pb = CGAL::abs(pb);
+  FT abs_pc = CGAL::abs(pc);
+  
+  // to avoid badly defined point with an overly large coordinate when
+  //  the plane is almost orthogonal to one axis, we use the largest
+  //  scalar coordinate instead of always using the first non-null
+  if (abs_pa >= abs_pb && abs_pa >= abs_pc)
+    x = -pd/pa;
+  else if (abs_pb >= abs_pa && abs_pb >= abs_pc)
+    y = -pd/pb;
+  else
+    z = -pd/pc;
 }
 
 template <class FT>

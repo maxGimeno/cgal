@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Sebastien Loriot and Ilker O. Yaz
@@ -24,6 +16,7 @@
 
 #include <CGAL/license/Polygon_mesh_processing/miscellaneous.h>
 
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/Polygon_mesh_processing/internal/Side_of_triangle_mesh/Point_inside_vertical_ray_cast.h>
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
@@ -35,7 +28,7 @@
 namespace CGAL {
 
 /** 
- * \ingroup PkgPolygonMeshProcessing
+ * \ingroup PkgPolygonMeshProcessingRef
  * This class provides an efficient point location functionality with respect to a domain bounded
  * by one or several disjoint closed triangle meshes.
  *
@@ -53,7 +46,7 @@ namespace CGAL {
  * will return in turns `CGAL::ON_BOUNDED_SIDE` and `CGAL::ON_UNBOUNDED_SIDE`,
  * following the aforementioned parity criterion.
  *
- * This class depends on the package \ref PkgAABB_treeSummary.
+ * This class depends on the package \ref PkgAABBTree.
  *
  * @tparam TriangleMesh a triangulated surface mesh, model of `FaceListGraph`
  * @tparam GeomTraits a geometric traits class, model of `Kernel`
@@ -73,13 +66,28 @@ namespace CGAL {
  */
 template <class TriangleMesh,
           class GeomTraits,
-          class VertexPointMap = Default >
+          class VertexPointMap = Default
+#ifndef DOXYGEN_RUNNING
+          , class AABBTree = Default
+#endif
+          >
 class Side_of_triangle_mesh
 {
   // typedefs
-  typedef CGAL::AABB_face_graph_triangle_primitive<TriangleMesh, VertexPointMap> Primitive;
-  typedef CGAL::AABB_traits<GeomTraits, Primitive> Traits;
-  typedef CGAL::AABB_tree<Traits> AABB_tree_;
+  template <typename TriangleMesh_,
+            typename GeomTraits_,
+            typename VertexPointMap_>
+  struct AABB_tree_default {
+    typedef CGAL::AABB_face_graph_triangle_primitive<TriangleMesh_,
+                                                     VertexPointMap_> Primitive;
+    typedef CGAL::AABB_traits<GeomTraits_, Primitive> Traits;
+    typedef CGAL::AABB_tree<Traits> type;
+  };
+  typedef typename Default::Lazy_get<AABBTree,
+                                     AABB_tree_default<TriangleMesh,
+                                                       GeomTraits,
+                                                       VertexPointMap>
+                                     >::type AABB_tree_;
   typedef typename GeomTraits::Point_3 Point;
 
   //members
@@ -185,5 +193,7 @@ public:
 };
 
 } // namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif //CGAL_SIDE_OF_TRIANGLE_MESH_H
