@@ -27,6 +27,7 @@ typedef cgalBrepMeshDomainData< K > Mesh_domain;
 typedef Mesh_domain::Index Index;
 typedef Mesh_domain::Construct_initial_points Construct_initial_points;
 
+
 // Triangulation
 typedef CGAL::Compact_mesh_cell_base_3<K, Mesh_domain>    Cell_base;
 typedef CGAL::Triangulation_cell_base_with_info_3<int, K, Cell_base> Cell_base_with_info;

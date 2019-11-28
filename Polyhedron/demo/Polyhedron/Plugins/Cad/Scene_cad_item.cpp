@@ -20,9 +20,8 @@ struct Scene_cad_item_priv{
     const std::vector < dtkNurbsSurface* > nurbs_surfaces = m_brep->nurbsSurfaces();
 
     for (auto it = nurbs_surfaces.begin(); it != nurbs_surfaces.end(); ++it) {
-      Scene_nurbs_item* nurbs_item =  new Scene_nurbs_item(*(*it), scene);
+      Scene_nurbs_item* nurbs_item =  new Scene_nurbs_item(*(*it));
       nurbs_item->setFlatMode();
-      nurbs_item->setScene(scene);
       nurbs_item->setName(QString("Nurbs #%1").arg(i));
       scene->addItem(nurbs_item);
       item->addChild(nurbs_item);
@@ -142,7 +141,7 @@ struct Scene_cad_item_priv{
 
 typedef Scene_cad_item_priv D;
 Scene_cad_item::Scene_cad_item(dtkBRep* brep, CGAL::Three::Scene_interface* scene)
-  :CGAL::Three::Scene_group_item("unnamed", D::NumberOfBuffers, D::NumberOfVaos)
+  :CGAL::Three::Scene_group_item("unnamed")
 {
   d = new Scene_cad_item_priv(brep, scene, this);
   d->current_index = 0;
@@ -198,8 +197,9 @@ Scene_cad_item::~Scene_cad_item()
 Scene_cad_item::Bbox Scene_cad_item::bbox() const
 {
   Bbox box = Bbox(0,0,0,0,0,0);
-  Q_FOREACH(Scene_item* item, getChildren())
+  for(CGAL::Three::Scene_interface::Item_id id: getChildren())
   {
+    Scene_item* item = scene->item(id);
     box += item->bbox();
   }
   return box;
@@ -207,8 +207,9 @@ Scene_cad_item::Bbox Scene_cad_item::bbox() const
 
 void Scene_cad_item::show_trimmed(bool b)
 {
-  Q_FOREACH(Scene_item* item, getChildren())
+  for(CGAL::Three::Scene_interface::Item_id id: getChildren())
   {
+    Scene_item* item = scene->item(id);
     Scene_nurbs_item* nurbs = qobject_cast<Scene_nurbs_item*>(item);
     if(!nurbs)
       continue;
@@ -219,8 +220,9 @@ void Scene_cad_item::show_trimmed(bool b)
 
 void Scene_cad_item::show_control_points(bool b)
 {
-  Q_FOREACH(Scene_item* item, getChildren())
+  for(CGAL::Three::Scene_interface::Item_id id: getChildren())
   {
+    Scene_item* item = scene->item(id);
     Scene_nurbs_item* nurbs = qobject_cast<Scene_nurbs_item*>(item);
     if(!nurbs)
       continue;

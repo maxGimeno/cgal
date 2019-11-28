@@ -1448,15 +1448,7 @@ void Viewer::paintGL()
   doneCurrent();
 }
 
-void Viewer::displayMessage(const QString &_message, int delay)
-{
-          d->message = _message;
-          d->_displayMessage = true;
-          // Was set to single shot in defaultConstructor.
-          d->messageTimer.start(delay);
-          if (textIsEnabled())
-                  update();
-}
+
 void Viewer::hideMessage()
 {
         d->_displayMessage = false;

@@ -282,7 +282,6 @@ public:
   virtual void makeCurrent() = 0;
   virtual QVector4D* clipBox() const =0;
   virtual bool isClipping() const = 0;
->>>>>>> cgal/master
 }; // end class Viewer_interface
 }
 }

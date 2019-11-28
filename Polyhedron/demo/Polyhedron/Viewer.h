@@ -114,8 +114,6 @@ public Q_SLOTS:
                                float animation_duration = 0.5f) Q_DECL_OVERRIDE;
   //!Makes the Viewer display a message
   void printMessage(QString message, int ms_delay );
-  void displayMessage(const QString &_message, int delay)Q_DECL_OVERRIDE;
-  void displayMessage(const QString &_message){displayMessage(_message, 2000);}
   void hideMessage();
   void setBindingSelect() Q_DECL_OVERRIDE
   {

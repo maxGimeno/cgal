@@ -312,16 +312,16 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
     include_directories(${dtkContinuousGeometry_INCLUDE_DIRS})
 
     add_item(scene_nurbs_item Plugins/Cad/Scene_nurbs_item.cpp)
-    target_link_libraries(scene_nurbs_item dtkCore dtkContinuousGeometryCore scene_basic_objects)
+    target_link_libraries(scene_nurbs_item PUBLIC dtkCore dtkContinuousGeometryCore scene_basic_objects)
 
 #    add_item(scene_rational_bezier_curve_item Plugins/Cad/Scene_rational_bezier_curve_item.cpp)
 #    target_link_libraries(scene_rational_bezier_curve_item dtkCore dtkContinuousGeometryCore)
 
     add_item(scene_rational_bezier_surface_item Plugins/Cad/Scene_rational_bezier_surface_item.cpp)
-    target_link_libraries(scene_rational_bezier_surface_item dtkCore dtkContinuousGeometryCore)
+    target_link_libraries(scene_rational_bezier_surface_item PUBLIC dtkCore dtkContinuousGeometryCore)
 
     add_item(scene_cad_item Plugins/Cad/Scene_cad_item.cpp)
-    target_link_libraries(scene_cad_item dtkCore dtkContinuousGeometryCore scene_nurbs_item)
+    target_link_libraries(scene_cad_item PUBLIC dtkCore dtkContinuousGeometryCore scene_nurbs_item)
   endif()#dtk_FOUND etc.
 
   add_item(scene_polylines_item Scene_polylines_item.cpp)

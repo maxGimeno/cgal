@@ -7,7 +7,7 @@ qt5_wrap_cpp( VOLUME_MOC_OUTFILES ${CMAKE_CURRENT_SOURCE_DIR}/Volume_plane_inter
 qt5_wrap_ui( meshingUI_FILES  Meshing_dialog.ui Smoother_dialog.ui Local_optimizers_dialog.ui )
 polyhedron_demo_plugin(mesh_3_plugin Mesh_3_plugin
   Mesh_3_plugin_cgal_code.cpp Meshing_thread.cpp split_polylines.cpp
-  ${meshingUI_FILES} KEYWORDS Mesh_3)
+  ${meshingUI_FILES} KEYWORDS Mesh_3 NURBS)
 target_link_libraries(mesh_3_plugin PUBLIC scene_polygon_soup_item scene_polylines_item scene_implicit_function_item scene_image_item
   scene_surface_mesh_item scene_c3t3_item ${OPENGL_gl_LIBRARY} )
 
