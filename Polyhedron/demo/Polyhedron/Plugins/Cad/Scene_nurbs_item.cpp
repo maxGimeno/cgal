@@ -26,76 +26,75 @@ public:
   Scene_control_net_item(Scene_group_item* parent, std::size_t max_index = 0, bool planed = false)
     :Scene_spheres_item(parent, max_index, planed)
   {
-    vao_lines = new QOpenGLVertexArrayObject();
-    vao_lines->create();
-    vbo_lines = new QOpenGLBuffer();
-    vbo_lines->create();
-    is_initialized = false;
+    setEdgeContainer(1,
+                     new Ec(Three::mainViewer()->isOpenGL_4_3() ? Vi::PROGRAM_SOLID_WIREFRAME
+                                                                : Vi::PROGRAM_NO_SELECTION
+                                                                  , false));
   }
   ~Scene_control_net_item()
   {
-    vao_lines->destroy();
-    delete vao_lines;
-    vbo_lines->destroy();
-    delete vbo_lines;
   }
+
+  void computeElements() const
+  {
+    getEdgeContainer(1)->allocate(
+          Ec::Vertices, control_net.data(),
+          static_cast<int>(control_net.size() * sizeof(float)));
+    Scene_spheres_item::computeElements();
+  }
+
   void initializeBuffers(Viewer_interface* viewer)const
   {
-    QOpenGLShaderProgram* program = getShaderProgram(Scene_nurbs_item::PROGRAM_NO_SELECTION, viewer);
-    program->bind();
-    vao_lines->bind();
-    vbo_lines->bind();
+    getEdgeContainer(1)->initializeBuffers(viewer);
+    getEdgeContainer(1)->setFlatDataSize(control_net.size());
+    Scene_spheres_item::initializeBuffers(viewer);
 
-    vbo_lines->allocate(control_net.data(), static_cast<int>(control_net.size() * sizeof(float)));
-    program->enableAttributeArray("vertex");
-    program->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
-    program->disableAttributeArray("colors");
-
-    vbo_lines->release();
-    vao_lines->release();
-    program->release();
-    is_initialized = true;
   }
   void draw_control_edges(Viewer_interface *viewer) const
   {
-    if(!is_initialized)
+    if(!isInit(viewer))
+      initGL(viewer);
+    if ( getBuffersFilled() &&
+         ! getBuffersInit(viewer))
+    {
       initializeBuffers(viewer);
-    viewer->glEnable(GL_LINE_STIPPLE);
-    attribBuffers(viewer, PROGRAM_NO_SELECTION);
-    QOpenGLShaderProgram* program = getShaderProgram(PROGRAM_NO_SELECTION, viewer);
-    program->bind();
-    vao_lines->bind();
-    program->setAttributeValue("colors", QColor(Qt::black));
-    getEdgeContainer(0)->setWidth(5);
-    viewer->glDrawArrays(GL_LINES, 0, control_net.size()/3);
+      setBuffersInit(viewer, true);
+    }
+    if(!getBuffersFilled())
+    {
+      computeElements();
+      initializeBuffers(viewer);
+    }
+    getEdgeContainer(1)->setColor(QColor(Qt::black));
+    if(viewer->isOpenGL_4_3())
+    {
+      QVector2D vp(viewer->width(), viewer->height());
+      getEdgeContainer(1)->setViewport(vp);
+      getEdgeContainer(1)->setWidth(5);
+    }
+    getEdgeContainer(1)->draw(viewer,true);
 
-    vao_lines->release();
-    program->release();
-    viewer->glDisable(GL_LINE_STIPPLE);
   }
 
   void draw(Viewer_interface *viewer) const
   {
     Scene_spheres_item::draw(viewer);
-    draw_control_edges(viewer);
+    if(visible())
+      draw_control_edges(viewer);
 
   }
   void drawEdges(Viewer_interface *viewer) const
   {
     Scene_spheres_item::drawEdges(viewer);
-    if(renderingMode() == Wireframe)
+    if(visible() && renderingMode() == Wireframe)
       draw_control_edges(viewer);
   }
   void set_control_edges(const std::vector<float>& edges)
   {
     control_net = edges;
-    is_initialized = false;
   }
 private:
   mutable std::vector<float> control_net;
-  QOpenGLVertexArrayObject *vao_lines;
-  QOpenGLBuffer* vbo_lines;
-  mutable bool is_initialized;
 
 
 };
@@ -267,6 +266,7 @@ struct Scene_nurbs_item_priv{
                                                     dtk_point[1],
                                        dtk_point[2]), item->diagonalBbox()/280.0f);
         spheres_item->add_sphere(sphere,i*m_nurbs_surface.vNbCps()+j, CGAL::Color(120,120,25));
+        std::cerr<<i*m_nurbs_surface.vNbCps()+j<<std::endl;
       }
     }
     for(std::size_t i = 0; i < m_nurbs_surface.uNbCps(); ++i) {
@@ -382,56 +382,61 @@ QString Scene_nurbs_item::toolTip() const {
 
 void Scene_nurbs_item::draw(CGAL::Three::Viewer_interface* viewer)const
 {
-  if(!isInit(viewer))
-    initGL(viewer);
-  if ( getBuffersFilled() &&
-       ! getBuffersInit(viewer))
+  if(visible())
   {
-    initializeBuffers(viewer);
-    setBuffersInit(viewer, true);
-  }
-  if(!getBuffersFilled())
-  {
-    computeElements();
-    initializeBuffers(viewer);
-    setBuffersFilled(true);
-    setBuffersInit(viewer, true);
-  }
+    if(!isInit(viewer))
+      initGL(viewer);
+    if ( getBuffersFilled() &&
+         ! getBuffersInit(viewer))
+    {
+      initializeBuffers(viewer);
+      setBuffersInit(viewer, true);
+    }
+    if(!getBuffersFilled())
+    {
+      computeElements();
+      initializeBuffers(viewer);
+      setBuffersFilled(true);
+      setBuffersInit(viewer, true);
+    }
 
-  if(d->trimmed_shown)
-  {
-    getTriangleContainer(0)->setColor(this->color());
-    getTriangleContainer(0)->draw(viewer, true);
-  }
-  else
-  {
-    getTriangleContainer(1)->setColor(this->color());
-    getTriangleContainer(1)->draw(viewer, true);
+    if(d->trimmed_shown)
+    {
+      getTriangleContainer(0)->setColor(this->color());
+      getTriangleContainer(0)->draw(viewer, true);
+    }
+    else
+    {
+      getTriangleContainer(1)->setColor(this->color());
+      getTriangleContainer(1)->draw(viewer, true);
+    }
   }
   Scene_group_item::draw(viewer);
 }
 
 void Scene_nurbs_item::drawEdges(CGAL::Three::Viewer_interface * viewer) const
 {
-  if(!isInit(viewer))
-    initGL(viewer);
-  if ( getBuffersFilled() &&
-       ! getBuffersInit(viewer))
+  if(visible())
   {
-    initializeBuffers(viewer);
-    setBuffersInit(viewer, true);
-  }
-  if(!getBuffersFilled())
-  {
-    computeElements();
-    initializeBuffers(viewer);
-    setBuffersFilled(true);
-    setBuffersInit(viewer, true);
-  }
+    if(!isInit(viewer))
+      initGL(viewer);
+    if ( getBuffersFilled() &&
+         ! getBuffersInit(viewer))
+    {
+      initializeBuffers(viewer);
+      setBuffersInit(viewer, true);
+    }
+    if(!getBuffersFilled())
+    {
+      computeElements();
+      initializeBuffers(viewer);
+      setBuffersFilled(true);
+      setBuffersInit(viewer, true);
+    }
 
     getEdgeContainer(0)->setColor(QColor(Qt::red));
     getEdgeContainer(0)->draw(viewer, true);
-  
+  }
   Scene_group_item::drawEdges(viewer);
 }
 
