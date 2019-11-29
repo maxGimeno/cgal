@@ -548,6 +548,7 @@ QMenu* Scene_nurbs_item::contextMenu()
   if (!menuChanged) {
     QAction* actionShowTrimmed=
       menu->addAction(tr("Show Trimmed"));
+    actionShowTrimmed->setProperty("is_groupable", true);
     actionShowTrimmed->setCheckable(true);
     actionShowTrimmed->setChecked(false);
     actionShowTrimmed->setObjectName("actionShowTrimmed");
@@ -555,6 +556,7 @@ QMenu* Scene_nurbs_item::contextMenu()
             this, SLOT(show_trimmed(bool)));
     QAction* actionShowCPs=
       menu->addAction(tr("Show Control Points"));
+    actionShowCPs->setProperty("is_groupable", true);
     actionShowCPs->setCheckable(true);
     actionShowCPs->setChecked(false);
     actionShowCPs->setObjectName("actionShowCPs");
@@ -562,6 +564,7 @@ QMenu* Scene_nurbs_item::contextMenu()
             this, SLOT(show_control_points(bool)));
     QAction* actionShowBeziers=
         menu->addAction(tr("Show Bezier Surfaces"));
+    actionShowBeziers->setProperty("is_groupable", true);
     actionShowBeziers->setCheckable(true);
     actionShowBeziers->setChecked(false);
     actionShowBeziers->setObjectName("actionShowBeziers");
@@ -583,10 +586,10 @@ void Scene_nurbs_item::highlight(const dtkTopoTrim *)
 void Scene_nurbs_item::initializeBuffers(Viewer_interface * viewer) const
 {
   getTriangleContainer(0)->initializeBuffers(viewer);
-  getTriangleContainer(0)->setIdxSize(d->m_nb_trimmed_elements);
+  getTriangleContainer(0)->setIdxSize(d->m_nb_trimmed_elements*3);
 
   getTriangleContainer(1)->initializeBuffers(viewer);
-  getTriangleContainer(1)->setIdxSize(d->m_nb_untrimmed_elements);
+  getTriangleContainer(1)->setIdxSize(d->m_nb_untrimmed_elements*3);
 
 
   d->trimmed_vertices.clear();
@@ -603,12 +606,14 @@ void Scene_nurbs_item::initializeBuffers(Viewer_interface * viewer) const
 
 void Scene_nurbs_item::computeElements() const
 {
+  getTriangleContainer(1)->allocate(Tc::Vertex_indices, d->m_untrimmed_elements.data(),
+                                    static_cast<int>(d->m_untrimmed_elements.size() *3*
+                                                     sizeof(unsigned int)));
   getTriangleContainer(1)->allocate(Tc::Smooth_vertices, d->untrimmed_vertices.data(),
                                     static_cast<int>(d->m_nb_untrimmed_vertices * 6 *
                                                      sizeof(float)));
   getTriangleContainer(1)->setOffset(Tc::Smooth_vertices, 0);
-  getTriangleContainer(1)->setTupleSize(3);
-  getTriangleContainer(1)->setStride(Tc::Smooth_vertices, 6*sizeof(float));
+    getTriangleContainer(1)->setStride(Tc::Smooth_vertices, 6*sizeof(float));
 
   getTriangleContainer(1)->allocate(Tc::Smooth_normals, d->untrimmed_vertices.data(),
                                     static_cast<int>(d->m_nb_untrimmed_vertices * 6 *
@@ -616,11 +621,14 @@ void Scene_nurbs_item::computeElements() const
   getTriangleContainer(1)->setOffset(Tc::Smooth_normals, 3 * sizeof(float));
   getTriangleContainer(1)->setStride(Tc::Smooth_normals, 6 * sizeof(float));
 
+  getTriangleContainer(0)->allocate(Tc::Vertex_indices, d->m_trimmed_elements.data(),
+                                    static_cast<int>(d->m_trimmed_elements.size() *
+                                                     sizeof(unsigned int)));
   getTriangleContainer(0)->allocate(Tc::Smooth_vertices, d->trimmed_vertices.data(),
                               static_cast<int>(d->m_nb_trimmed_vertices * 6 *
                                                sizeof(float)));
   getTriangleContainer(0)->setOffset(Tc::Smooth_vertices, 0);
-  getTriangleContainer(0)->setTupleSize(3);
+
   getTriangleContainer(0)->setStride(Tc::Smooth_vertices, 6*sizeof(float));
 
   getTriangleContainer(0)->allocate(Tc::Smooth_normals, d->trimmed_vertices.data(),
