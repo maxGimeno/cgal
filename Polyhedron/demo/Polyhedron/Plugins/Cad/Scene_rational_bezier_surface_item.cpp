@@ -29,7 +29,6 @@ struct Scene_rational_bezier_surface_item_priv{
     float max_box[3];
     std::fill_n(min_box, 3, std::numeric_limits<float>::infinity());
     std::fill_n(max_box, 3, -std::numeric_limits<float>::infinity());
-    initialized = false;
     // ///////////////////////////////////////////////////////////////////
     // Sampling corresponds to the number of triangles edges along a RATIONAL_BEZIER_SURFACE edge
     // ///////////////////////////////////////////////////////////////////
@@ -87,35 +86,15 @@ struct Scene_rational_bezier_surface_item_priv{
         m_elements[cntr + 5] = i * (v_sampling + 1) + j + (v_sampling + 1);
       }
     }
-
-    item->getTriangleContainer(0)->allocate(Tc::Vertex_indices, m_elements.data(),
-                                            static_cast<int>(m_nb_elements*sizeof(unsigned int)));
-    item->getTriangleContainer(0)->allocate(Tc::Smooth_vertices, vertices.data(),
-                                            static_cast<int>(m_nb_vertices*sizeof(float)));
-    item->getTriangleContainer(0)->allocate(Tc::VColors, 0, 0);
-
   }
 
   const dtkRationalBezierSurface& m_rational_bezier_surface;
-
-  enum Vao
-  {
-    FACES=0,
-    NumberOfVaos
-  };
-
-  enum Buffer
-  {
-    FACES_BUFFER=0,
-    NumberOfBuffers
-  };
 
   mutable QOpenGLShaderProgram* m_program;
   mutable std::vector<GLuint> m_elements;
   mutable std::vector<float> vertices;
   mutable std::size_t m_nb_vertices;
   mutable std::size_t m_nb_elements;
-  mutable bool initialized;
   mutable bool trimmed_shown;
   CGAL::Three::Scene_item::Bbox bbox;
   Scene_rational_bezier_surface_item* item;
@@ -123,10 +102,10 @@ struct Scene_rational_bezier_surface_item_priv{
 
 Scene_rational_bezier_surface_item::Scene_rational_bezier_surface_item(const dtkRationalBezierSurface& dtk_rational_bezier_surface)
 {
-  d = new Scene_rational_bezier_surface_item_priv(dtk_rational_bezier_surface, this);
 
   setTriangleContainer(0,
-                    new Tc(Vi::PROGRAM_WITHOUT_LIGHT, true));
+                    new Tc(Vi::PROGRAM_WITH_LIGHT, true));
+  d = new Scene_rational_bezier_surface_item_priv(dtk_rational_bezier_surface, this);
   invalidateOpenGLBuffers();
 }
 
@@ -144,23 +123,25 @@ QString Scene_rational_bezier_surface_item::toolTip() const {
 void Scene_rational_bezier_surface_item::initializeBuffers(Viewer_interface *viewer) const
 {
   getTriangleContainer(0)->initializeBuffers(viewer);
-  getTriangleContainer(0)->setIdxSize(d->m_nb_elements);
-
-  d->vertices.resize(0);
-  d->vertices.shrink_to_fit();
+  getTriangleContainer(0)->setIdxSize(d->m_nb_elements*3);
 }
 
 
 void Scene_rational_bezier_surface_item::draw(CGAL::Three::Viewer_interface* viewer)const
 {
-  if(!isInit(viewer) && viewer->context()->isValid())
+  if(!isInit(viewer))
     initGL(viewer);
-  if (getBuffersFilled() )
-    if(!getBuffersInit(viewer))
-    {
-      initializeBuffers(viewer);
-      setBuffersInit(viewer, true);
-    }
+  if ( getBuffersFilled() &&
+       ! getBuffersInit(viewer))
+  {
+    initializeBuffers(viewer);
+    setBuffersInit(viewer, true);
+  }
+  if(!getBuffersFilled())
+  {
+    computeElements();
+    initializeBuffers(viewer);
+  }
   getTriangleContainer(0)->setColor(color());
   getTriangleContainer(0)->draw( viewer,true);
 }
@@ -181,12 +162,31 @@ QMenu* Scene_rational_bezier_surface_item::contextMenu()
 
   QMenu* menu = Scene_item::contextMenu();
 
-  // Use dynamic properties:
-  // http://doc.qt.io/qt-5/qobject.html#property
   bool menuChanged = menu->property(prop_name).toBool();
 
   if (!menuChanged) {
     menu->setProperty(prop_name, true);
   }
   return menu;
+}
+
+void Scene_rational_bezier_surface_item::computeElements() const
+{
+
+  getTriangleContainer(0)->allocate(Tc::Vertex_indices, d->m_elements.data(),
+                                    static_cast<int>(d->m_elements.size() *
+                                                     sizeof(unsigned int)));
+  getTriangleContainer(0)->allocate(Tc::Smooth_vertices, d->vertices.data(),
+                              static_cast<int>(d->m_nb_vertices * 6 *
+                                               sizeof(float)));
+  getTriangleContainer(0)->setOffset(Tc::Smooth_vertices, 0);
+
+  getTriangleContainer(0)->setStride(Tc::Smooth_vertices, 6*sizeof(float));
+
+  getTriangleContainer(0)->allocate(Tc::Smooth_normals, d->vertices.data(),
+                                    static_cast<int>(d->m_nb_vertices * 6 *
+                                                     sizeof(float)));
+  getTriangleContainer(0)->setOffset(Tc::Smooth_normals, 3 * sizeof(float));
+  getTriangleContainer(0)->setStride(Tc::Smooth_normals, 6 * sizeof(float));
+
 }

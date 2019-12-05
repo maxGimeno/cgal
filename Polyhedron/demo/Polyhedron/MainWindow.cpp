@@ -1723,6 +1723,11 @@ void MainWindow::showSceneContextMenu(const QPoint& p) {
           else
           {
             QAction* action = menu.addAction(name);
+            if(menu_actions[name]->isCheckable())
+            {
+              action->setCheckable(true);
+              action->setChecked(menu_actions[name]->isChecked());
+            }
             connect(action, &QAction::triggered, this, &MainWindow::propagate_action);
           }
         }
@@ -2766,6 +2771,10 @@ void MainWindow::propagate_action()
   Q_FOREACH(Scene::Item_id id, scene->selectionIndices())
   {
     Scene_item* item = scene->item(id);
+    if(!item)
+    {
+      continue;
+    }
     Q_FOREACH(QAction* action, item->contextMenu()->actions())
     {
       if(action->text() == name)

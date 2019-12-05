@@ -29,6 +29,7 @@ public:
   bool supportsRenderingMode(RenderingMode m) const Q_DECL_OVERRIDE { return (m == Flat || m == FlatPlusEdges); }
   void compute_bbox() const Q_DECL_OVERRIDE;
   QMenu* contextMenu() Q_DECL_OVERRIDE;
+  void computeElements() const Q_DECL_OVERRIDE;
 
 protected:
   friend struct Scene_rational_bezier_surface_item_priv;

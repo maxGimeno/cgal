@@ -9,13 +9,13 @@
 #endif
 
 #include <CGAL/Three/Viewer_interface.h>
-#include <CGAL/Three/Scene_item.h>
+#include <CGAL/Three/Scene_item_rendering_helper.h>
 
 class dtkRationalBezierCurve;
 struct Scene_rational_bezier_curve_item_priv;
 
 class SCENE_RATIONAL_BEZIER_CURVE_ITEM_EXPORT Scene_rational_bezier_curve_item
-    :public CGAL::Three::Scene_item
+    :public CGAL::Three::Scene_item_rendering_helper
 {
    Q_OBJECT
 public:
@@ -27,6 +27,9 @@ public:
   QString toolTip() const {return QString();}
   bool supportsRenderingMode(RenderingMode m) const { return (m == Flat || m == FlatPlusEdges || m == Wireframe); }
   QMenu* contextMenu();
+  void initializeBuffers(Viewer_interface *) const;
+  void computeElements() const;
+
 
 protected:
   friend struct Scene_rational_bezier_curve_item_priv;

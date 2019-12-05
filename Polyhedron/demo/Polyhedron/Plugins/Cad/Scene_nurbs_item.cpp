@@ -266,7 +266,6 @@ struct Scene_nurbs_item_priv{
                                                     dtk_point[1],
                                        dtk_point[2]), item->diagonalBbox()/280.0f);
         spheres_item->add_sphere(sphere,i*m_nurbs_surface.vNbCps()+j, CGAL::Color(120,120,25));
-        std::cerr<<i*m_nurbs_surface.vNbCps()+j<<std::endl;
       }
     }
     for(std::size_t i = 0; i < m_nurbs_surface.uNbCps(); ++i) {
