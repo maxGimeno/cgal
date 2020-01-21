@@ -40,7 +40,7 @@ public:
     if(!is_bbox_computed)
       compute_bbox();
     return _bbox;
-  };
+  }
 public Q_SLOTS:
   void show_trimmed(bool b);
   void show_control_points(bool b);

@@ -199,8 +199,12 @@ void Scene_cad_item::show_trimmed(bool b)
     Scene_nurbs_item* nurbs = qobject_cast<Scene_nurbs_item*>(item);
     if(!nurbs)
       continue;
-
-    nurbs->show_trimmed(b);
+    QAction* actionShowTrimmed = nurbs->contextMenu()->findChild<QAction*>("actionShowTrimmed");
+    if(!actionShowTrimmed){
+      continue;
+    }
+    actionShowTrimmed->toggled(!b);
+    //nurbs->show_trimmed(b);
   }
 }
 
@@ -212,8 +216,11 @@ void Scene_cad_item::show_control_points(bool b)
     Scene_nurbs_item* nurbs = qobject_cast<Scene_nurbs_item*>(item);
     if(!nurbs)
       continue;
-
-    nurbs->show_control_points(b);
+    QAction* actionShowCPs= nurbs->contextMenu()->findChild<QAction*>("actionShowCPs");
+    if(!actionShowCPs){
+      continue;
+    }
+    actionShowCPs->toggled(!b);
   }
 }
 
@@ -225,9 +232,12 @@ void Scene_cad_item::show_bezier_surfaces(bool b)
     Scene_nurbs_item* nurbs = qobject_cast<Scene_nurbs_item*>(item);
     if(!nurbs)
       continue;
-
+    QAction* actionShowBeziers = nurbs->contextMenu()->findChild<QAction*>("actionShowBeziers");
+    if(!actionShowBeziers){
+      continue;
+    }
+    actionShowBeziers->toggled(!b);
     nurbs->setVisible(!b);
-    nurbs->show_bezier_surfaces(b);
   }
 }
 
@@ -253,6 +263,7 @@ QMenu* Scene_cad_item::contextMenu()
     actionShowTrimmed->setCheckable(true);
     actionShowTrimmed->setChecked(false);
     actionShowTrimmed->setObjectName("actionShowTrimmed");
+    actionShowTrimmed->setProperty("is_groupable", true);
     connect(actionShowTrimmed, SIGNAL(toggled(bool)),
             this, SLOT(show_trimmed(bool)));
 
@@ -260,6 +271,7 @@ QMenu* Scene_cad_item::contextMenu()
         menu->addAction(tr("Show Control Points"));
     actionShowCPs->setCheckable(true);
     actionShowCPs->setChecked(false);
+    actionShowCPs->setProperty("is_groupable", true);
     actionShowCPs->setObjectName("actionShowCPs");
     connect(actionShowCPs, SIGNAL(toggled(bool)),
             this, SLOT(show_control_points(bool)));
@@ -268,6 +280,7 @@ QMenu* Scene_cad_item::contextMenu()
         menu->addAction(tr("Show Bezier Surfaces"));
     actionShowBezierSurfaces->setCheckable(true);
     actionShowBezierSurfaces->setChecked(false);
+    actionShowBezierSurfaces->setProperty("is_groupable", true);
     actionShowBezierSurfaces->setObjectName("actionShowBezierSurfaces");
     connect(actionShowBezierSurfaces, SIGNAL(toggled(bool)),
             this, SLOT(show_bezier_surfaces(bool)));
@@ -277,6 +290,7 @@ QMenu* Scene_cad_item::contextMenu()
     actionShowIntersections->setCheckable(true);
     actionShowIntersections->setChecked(false);
     actionShowIntersections->setObjectName("actionShowIntersections");
+    actionShowIntersections->setProperty("is_groupable", true);
     connect(actionShowIntersections, SIGNAL(toggled(bool)),
             this, SLOT(show_intersections(bool)));
 
