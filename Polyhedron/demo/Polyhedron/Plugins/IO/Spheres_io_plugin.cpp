@@ -1,4 +1,5 @@
 #include <CGAL/Three/Polyhedron_demo_io_plugin_interface.h>
+#include <CGAL/Three/Three.h>
 #include "Scene_spheres_item.h"
 #include <fstream>
 #include <string>
@@ -59,6 +60,11 @@ class Spheres_io_plugin :
     }
     item->setName(fileinfo.baseName());
     item->setRenderingMode(Gouraud);
+    if(add_to_scene)
+    {
+      CGAL::Three::Three::scene()->addItem(item);
+    }
+    ok = true;
     return QList<CGAL::Three::Scene_item*>()<< item;
   }
 
@@ -70,6 +76,7 @@ class Spheres_io_plugin :
   bool save(QFileInfo fileinfo,QList<CGAL::Three::Scene_item*>& items)
   {
     Scene_item* scene_item = items.front();
+    items.pop_front();
     const Scene_spheres_item* spheres_item = qobject_cast<const Scene_spheres_item*>(scene_item);
     if(!spheres_item)
       return false;

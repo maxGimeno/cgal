@@ -370,7 +370,7 @@ void Scene_spheres_item::compute_bbox() const
       box += pair.first.bbox();
     }
   }
-  _bbox = box;
+  setBbox(box);
 }
 
 bool Scene_spheres_item::save(const std::string& file_name)const
