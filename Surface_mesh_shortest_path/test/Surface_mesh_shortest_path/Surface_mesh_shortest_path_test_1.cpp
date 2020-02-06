@@ -9,9 +9,7 @@
 
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/Polyhedron_items_with_id_3.h>
-#include <CGAL/IO/Polyhedron_iostream.h>
 
-#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
 #include <CGAL/boost/graph/iterator.h>
 
 #include <CGAL/Surface_mesh_shortest_path/Surface_mesh_shortest_path_traits.h>
@@ -215,7 +213,7 @@ void test_simple_saddle_vertex_mesh()
   // Now test an internal face location sequence
   halfedge_descriptor firstCrossing = CGAL::halfedge(vertexHandles[4], vertexHandles[7], P).first;
 
-  size_t edgeIndex = CGAL::internal::edge_index(firstCrossing, P);
+  size_t edgeIndex = CGAL::Surface_mesh_shortest_paths_3::internal::edge_index(firstCrossing, P);
 
   Barycentric_coordinates location = construct_barycentric_coordinates(0.25, 0.5, 0.25);
 
@@ -291,6 +289,7 @@ void test_simple_saddle_vertex_mesh()
 
     CHECK_CLOSE(result.first, expectedDistances2[i], Kernel::FT(0.0001));
     assert(result.second == expectedSources2[i]);
+    CGAL_USE(expectedSources2);
     ++currentVertex;
   }
 

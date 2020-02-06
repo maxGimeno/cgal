@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Laurent Saboret, Pierre Alliez
 
@@ -22,6 +14,7 @@
 
 #include <CGAL/license/Poisson_surface_reconstruction_3.h>
 
+#include <CGAL/disable_warnings.h>
 
 #ifndef CGAL_DIV_NORMALIZED
 #  ifndef CGAL_DIV_NON_NORMALIZED
@@ -35,7 +28,7 @@
 #include <cmath>
 #include <iterator>
 
-#include <CGAL/trace.h>
+#include <CGAL/IO/trace.h>
 #include <CGAL/Reconstruction_triangulation_3.h>
 #include <CGAL/spatial_sort.h>
 #ifdef CGAL_EIGEN3_ENABLED
@@ -147,7 +140,7 @@ struct Special_wrapper_of_two_functions_keep_pointers {
 
 
 /*!
-\ingroup PkgPoissonSurfaceReconstruction
+\ingroup PkgPoissonSurfaceReconstruction3Ref
 
 \brief Implementation of the Poisson Surface Reconstruction method.
   
@@ -303,7 +296,9 @@ public:
     NormalPMap normal_pmap ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
   )
     : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > )
-    , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(first, beyond, point_pmap, 6))
+    , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>
+                      (CGAL::make_range(first, beyond), 6,
+                       CGAL::parameters::point_map(point_pmap)))
   {
     forward_constructor(first, beyond, point_pmap, normal_pmap, Poisson_visitor());
   }
@@ -321,7 +316,8 @@ public:
     NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
     Visitor visitor)
     : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > )
-    , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(first, beyond, point_pmap, 6))
+    , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(CGAL::make_range(first, beyond), 6,
+                                                                          CGAL::parameters::point_map(point_pmap)))
   {
     forward_constructor(first, beyond, point_pmap, normal_pmap, visitor);
   }
@@ -339,7 +335,7 @@ public:
     >::type* = 0
   )
   : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > )
-  , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(first, beyond, 6))
+  , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(CGAL::make_range(first, beyond), 6))
   {
     forward_constructor(first, beyond, 
       make_identity_property_map(
@@ -436,7 +432,7 @@ public:
                                                      m_tr->input_points_begin()),
                                 Some_points_iterator(m_tr->input_points_end(),
                                                      skip),
-                                Normal_of_point_with_normal_pmap<Geom_traits>() );
+                                Normal_of_point_with_normal_map<Geom_traits>() );
       coarse_poisson_function.compute_implicit_function(solver, Poisson_visitor(),
                                                         0.);
       internal::Poisson::Constant_sizing_field<Triangulation> 
@@ -1217,5 +1213,7 @@ private:
 
 
 } //namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_POISSON_RECONSTRUCTION_FUNCTION_H

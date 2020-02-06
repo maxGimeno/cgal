@@ -1,19 +1,11 @@
 // Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Michael Kerber  <mkerber@mpi-inf.mpg.de>
@@ -24,6 +16,8 @@
 
 namespace CGAL {
 
+#include <CGAL/disable_warnings.h>
+  
 #include <CGAL/basic.h>
 
 #include <CGAL/Arithmetic_kernel.h>
@@ -105,9 +99,11 @@ public:
 
     Bitstream_coefficient_kernel_at_alpha() : Base(Rep()) {}
 
+#ifdef DOXYGEN_RUNNING  
     Bitstream_coefficient_kernel_at_alpha(const Self& traits)
       : Base(static_cast<const Base&>(traits)) {}
-
+#endif
+  
     Bitstream_coefficient_kernel_at_alpha(Algebraic_kernel_d_1* kernel,
                                           Algebraic_real_1 alpha) 
       : Base(kernel,alpha) {}
@@ -117,7 +113,7 @@ public:
     //! \name Functors
     //! @{
 
-    struct Is_zero : public std::unary_function<Coefficient,bool> {
+    struct Is_zero : public CGAL::cpp98::unary_function<Coefficient,bool> {
         
         Is_zero(Algebraic_kernel_d_1* kernel,Algebraic_real_1 alpha) 
             : _m_kernel(kernel),_m_alpha(alpha) {}
@@ -137,7 +133,7 @@ public:
     }
 
     struct Convert_to_bfi 
-        : public std::unary_function<Coefficient,Bigfloat_interval> {
+        : public CGAL::cpp98::unary_function<Coefficient,Bigfloat_interval> {
         
         Convert_to_bfi(Algebraic_kernel_d_1* kernel,
 		       Algebraic_real_1 alpha) 
@@ -225,5 +221,6 @@ public:
 
 } //namespace CGAL
 
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_BITSTREAM_COEFFICIENT_KERNEL_AT_ALPHA_H

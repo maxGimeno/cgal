@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s) : Pierre Alliez and Sylvain Pion and Ankit Gupta
 
@@ -78,7 +70,7 @@ linear_least_squares_fitting_2(InputIterator first,
   // assemble 2nd order moment about the origin.  
   FT temp[4] = {0.25, 0.0,
 		0.0, 0.25};
-  Matrix moment = init_matrix<K>(2,temp);
+  Matrix moment = init_matrix<FT>(2,temp);
   //  Matrix moment = Matrix(2,true,PI);
 
   for(InputIterator it = first;
@@ -94,7 +86,7 @@ linear_least_squares_fitting_2(InputIterator first,
     FT radius = std::sqrt(t.squared_radius());
     FT delta[4] = {radius, 0.0, 
 		   0.0, radius};
-    Matrix transformation = init_matrix<K>(2,delta);
+    Matrix transformation = init_matrix<FT>(2,delta);
     FT area = t.squared_radius();
     CGAL_assertion(area != 0.0);
 
@@ -183,7 +175,7 @@ linear_least_squares_fitting_2(InputIterator first,
   // assemble 2nd order moment about the origin.  
   FT temp[4] = {1.0, 0.0,
 		0.0, 1.0};
-  Matrix moment = init_matrix<K>(2,temp);
+  Matrix moment = init_matrix<FT>(2,temp);
 
   for(InputIterator it = first;
       it != beyond;
@@ -198,7 +190,7 @@ linear_least_squares_fitting_2(InputIterator first,
     FT radius = std::sqrt(t.squared_radius());
     FT delta[4] = {radius, 0.0, 
 		   0.0, radius};
-    Matrix transformation = init_matrix<K>(2,delta);
+    Matrix transformation = init_matrix<FT>(2,delta);
     FT length = 2 * radius;
     CGAL_assertion(length != 0.0);
 

@@ -1,8 +1,10 @@
+#undef QT_NO_KEYWORDS
 #include "Scene_nurbs_item.h"
 #include "Scene_spheres_item.h"
 #include "Scene_rational_bezier_surface_item.h"
-
-#define foreach Q_FOREACH
+#include <CGAL/Three/Triangle_container.h>
+#include <CGAL/Three/Edge_container.h>
+#include <CGAL/Three/Three.h>
 
 #include <random>
 
@@ -15,83 +17,84 @@
 #include <algorithm>
 #include <QMenu>
 
-typedef Scene_nurbs_item_priv D;
+typedef CGAL::Three::Triangle_container Tc;
+typedef CGAL::Three::Edge_container Ec;
+typedef CGAL::Three::Viewer_interface Vi;
 class Scene_control_net_item : public Scene_spheres_item
 {
 public:
   Scene_control_net_item(Scene_group_item* parent, std::size_t max_index = 0, bool planed = false)
     :Scene_spheres_item(parent, max_index, planed)
   {
-    vao_lines = new QOpenGLVertexArrayObject();
-    vao_lines->create();
-    vbo_lines = new QOpenGLBuffer();
-    vbo_lines->create();
-    is_initialized = false;
+    setEdgeContainer(1,
+                     new Ec(Three::mainViewer()->isOpenGL_4_3() ? Vi::PROGRAM_SOLID_WIREFRAME
+                                                                : Vi::PROGRAM_NO_SELECTION
+                                                                  , false));
   }
   ~Scene_control_net_item()
   {
-    vao_lines->destroy();
-    delete vao_lines;
-    vbo_lines->destroy();
-    delete vbo_lines;
   }
+
+  void computeElements() const
+  {
+    getEdgeContainer(1)->allocate(
+          Ec::Vertices, control_net.data(),
+          static_cast<int>(control_net.size() * sizeof(float)));
+    Scene_spheres_item::computeElements();
+  }
+
   void initializeBuffers(Viewer_interface* viewer)const
   {
-    QOpenGLShaderProgram* program = getShaderProgram(Scene_nurbs_item::PROGRAM_NO_SELECTION, viewer);
-    program->bind();
-    vao_lines->bind();
-    vbo_lines->bind();
+    getEdgeContainer(1)->initializeBuffers(viewer);
+    getEdgeContainer(1)->setFlatDataSize(control_net.size());
+    Scene_spheres_item::initializeBuffers(viewer);
 
-    vbo_lines->allocate(control_net.data(), static_cast<int>(control_net.size() * sizeof(float)));
-    program->enableAttributeArray("vertex");
-    program->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
-    program->disableAttributeArray("colors");
-
-    vbo_lines->release();
-    vao_lines->release();
-    program->release();
-    is_initialized = true;
   }
   void draw_control_edges(Viewer_interface *viewer) const
   {
-    if(!is_initialized)
+    if(!isInit(viewer))
+      initGL(viewer);
+    if ( getBuffersFilled() &&
+         ! getBuffersInit(viewer))
+    {
       initializeBuffers(viewer);
-    viewer->glEnable(GL_LINE_STIPPLE);
-    attribBuffers(viewer, PROGRAM_NO_SELECTION);
-    QOpenGLShaderProgram* program = getShaderProgram(PROGRAM_NO_SELECTION, viewer);
-    program->bind();
-    vao_lines->bind();
-    program->setAttributeValue("colors", QColor(Qt::black));
-    viewer->glLineStipple(1, 0xAAAA);
-    viewer->glDrawArrays(GL_LINES, 0, control_net.size()/3);
+      setBuffersInit(viewer, true);
+    }
+    if(!getBuffersFilled())
+    {
+      computeElements();
+      initializeBuffers(viewer);
+    }
+    getEdgeContainer(1)->setColor(QColor(Qt::black));
+    if(viewer->isOpenGL_4_3())
+    {
+      QVector2D vp(viewer->width(), viewer->height());
+      getEdgeContainer(1)->setViewport(vp);
+      getEdgeContainer(1)->setWidth(5);
+    }
+    getEdgeContainer(1)->draw(viewer,true);
 
-    vao_lines->release();
-    program->release();
-    viewer->glDisable(GL_LINE_STIPPLE);
   }
 
   void draw(Viewer_interface *viewer) const
   {
     Scene_spheres_item::draw(viewer);
-    draw_control_edges(viewer);
+    if(visible())
+      draw_control_edges(viewer);
 
   }
   void drawEdges(Viewer_interface *viewer) const
   {
     Scene_spheres_item::drawEdges(viewer);
-    if(renderingMode() == Wireframe)
+    if(visible() && renderingMode() == Wireframe)
       draw_control_edges(viewer);
   }
   void set_control_edges(const std::vector<float>& edges)
   {
     control_net = edges;
-    is_initialized = false;
   }
 private:
   mutable std::vector<float> control_net;
-  QOpenGLVertexArrayObject *vao_lines;
-  QOpenGLBuffer* vbo_lines;
-  mutable bool is_initialized;
 
 
 };
@@ -112,7 +115,6 @@ struct Scene_nurbs_item_priv{
     float max_box[3];
     std::fill_n(min_box, 3, std::numeric_limits<float>::infinity());
     std::fill_n(max_box, 3, -std::numeric_limits<float>::infinity());
-    initialized = false;
     // ///////////////////////////////////////////////////////////////////
     // Sampling corresponds to the number of triangles edges along a NURBS edge
     // ///////////////////////////////////////////////////////////////////
@@ -247,6 +249,7 @@ struct Scene_nurbs_item_priv{
       }
     }
     dtkDebug() << "Intersection lines generated...";
+
   }
 
   void compute_spheres()
@@ -298,74 +301,7 @@ struct Scene_nurbs_item_priv{
        item->deleteLater();
    }
   }
-  void computeElements() const
-  {
-  }
 
-  void initializeBuffers(CGAL::Three::Viewer_interface *viewer)const
-  {
-    dtkDebug() << "Initializing buffer...";
-    // ///////////////////////////////////////////////////////////////////
-    // Creates VBO EBO and VAO
-    // ///////////////////////////////////////////////////////////////////
-    m_program = item->getShaderProgram(Scene_nurbs_item::PROGRAM_WITH_LIGHT, viewer);
-    m_program->bind();
-    item->vaos[UNTRIMMED_FACES]->bind();
-    item->buffers[UNTRIMMED_FACES_BUFFER].bind();
-
-    item->buffers[UNTRIMMED_FACES_BUFFER].allocate(untrimmed_vertices.data(), static_cast<int>(m_nb_untrimmed_vertices * 6 * sizeof(float)));
-    m_program->enableAttributeArray("vertex");
-    m_program->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 6 * sizeof(float));
-    m_program->enableAttributeArray("normals");
-    m_program->setAttributeBuffer("normals", GL_FLOAT, 3 * sizeof(float), 3, 6 * sizeof(float));
-    m_program->disableAttributeArray("colors");
-
-    item->buffers[UNTRIMMED_FACES_BUFFER].release();
-    item->vaos[UNTRIMMED_FACES]->release();
-
-    item->vaos[TRIMMED_FACES]->bind();
-    item->buffers[TRIMMED_FACES_BUFFER].bind();
-
-    item->buffers[TRIMMED_FACES_BUFFER].allocate(trimmed_vertices.data(), static_cast<int>(m_nb_trimmed_vertices * 6 * sizeof(float)));
-    m_program->enableAttributeArray("vertex");
-    m_program->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 6 * sizeof(float));
-    m_program->enableAttributeArray("normals");
-    m_program->setAttributeBuffer("normals", GL_FLOAT, 3 * sizeof(float), 3, 6 * sizeof(float));
-    m_program->disableAttributeArray("colors");
-
-    item->buffers[TRIMMED_FACES_BUFFER].release();
-    item->vaos[TRIMMED_FACES]->release();
-
-    m_program->release();
-
-    m_program = item->getShaderProgram(Scene_nurbs_item::PROGRAM_NO_SELECTION, viewer);
-    m_program->bind();
-    item->vaos[INTERSECTIONS]->bind();
-    item->buffers[B_INTERSECTIONS].bind();
-
-    item->buffers[B_INTERSECTIONS].allocate(intersection.data(), static_cast<int>(intersection.size() * sizeof(float)));
-    m_program->enableAttributeArray("vertex");
-    m_program->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
-    m_program->disableAttributeArray("colors");
-
-    item->buffers[B_INTERSECTIONS].release();
-    item->vaos[INTERSECTIONS]->release();
-
-    item->vaos[CONTROL_NET]->bind();
-    item->buffers[B_CONTROL_NET].bind();
-
-    item->buffers[B_CONTROL_NET].allocate(control_net.data(), static_cast<int>(control_net.size() * sizeof(float)));
-    m_program->enableAttributeArray("vertex");
-    m_program->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
-    m_program->disableAttributeArray("colors");
-
-    item->buffers[B_CONTROL_NET].release();
-    item->vaos[CONTROL_NET]->release();
-    m_program->release();
-
-    initialized = true;
-    dtkDebug() << "Buffers initialized...";
-  }
   const dtkNurbsSurface& m_nurbs_surface;
 
   enum Vao
@@ -399,7 +335,7 @@ struct Scene_nurbs_item_priv{
   mutable std::size_t m_nb_trimmed_elements;
   mutable std::size_t m_nb_untrimmed_vertices;
   mutable std::size_t m_nb_untrimmed_elements;
-  mutable bool initialized;
+
   mutable bool trimmed_shown;
   mutable bool cp_shown;
   mutable bool bezier_shown;
@@ -409,11 +345,22 @@ struct Scene_nurbs_item_priv{
   std::vector< Scene_rational_bezier_surface_item * > beziers_item;
 };
 
-Scene_nurbs_item::Scene_nurbs_item(const dtkNurbsSurface& dtk_nurbs_surface,
-                                   CGAL::Three::Scene_interface* scene)
-  :CGAL::Three::Scene_group_item(QString("nurbs"),D::NumberOfBuffers, D::NumberOfVaos)
+Scene_nurbs_item::Scene_nurbs_item(const dtkNurbsSurface& dtk_nurbs_surface)
+  :CGAL::Three::Scene_group_item(QString("nurbs"))
 {
-  this->scene = scene;
+  this->scene = CGAL::Three::Three::scene();
+
+  setTriangleContainer(1,
+                       new Tc(Vi::PROGRAM_WITH_LIGHT
+                              ,true));
+
+  setTriangleContainer(0,
+                       new Tc(Vi::PROGRAM_WITH_LIGHT
+                              ,true));
+
+  setEdgeContainer(0,
+                   new Ec( Vi::PROGRAM_NO_SELECTION
+                           ,false));
   d = new Scene_nurbs_item_priv(dtk_nurbs_surface, this);
 }
 
@@ -434,45 +381,61 @@ QString Scene_nurbs_item::toolTip() const {
 
 void Scene_nurbs_item::draw(CGAL::Three::Viewer_interface* viewer)const
 {
-  if(!d->initialized)
-    d->initializeBuffers(viewer);
+  if(visible())
+  {
+    if(!isInit(viewer))
+      initGL(viewer);
+    if ( getBuffersFilled() &&
+         ! getBuffersInit(viewer))
+    {
+      initializeBuffers(viewer);
+      setBuffersInit(viewer, true);
+    }
+    if(!getBuffersFilled())
+    {
+      computeElements();
+      initializeBuffers(viewer);
+      setBuffersFilled(true);
+      setBuffersInit(viewer, true);
+    }
 
-  attribBuffers(viewer, PROGRAM_WITH_LIGHT);
-  d->m_program = getShaderProgram(PROGRAM_WITH_LIGHT, viewer);
-  d->m_program->bind();
-  if(d->trimmed_shown)
-  {
-    vaos[D::TRIMMED_FACES]->bind();
-    d->m_program->setAttributeValue("colors", this->color());
-    viewer->glDrawElements(GL_TRIANGLES, static_cast<GLuint>(d->m_trimmed_elements.size()), GL_UNSIGNED_INT, d->m_trimmed_elements.data());
-    vaos[D::TRIMMED_FACES]->release();
-    d->m_program->release();
-  }
-  else
-  {
-    vaos[D::UNTRIMMED_FACES]->bind();
-    d->m_program->setAttributeValue("colors", this->color());
-    viewer->glDrawElements(GL_TRIANGLES, static_cast<GLuint>(d->m_untrimmed_elements.size()), GL_UNSIGNED_INT, d->m_untrimmed_elements.data());
-    vaos[D::UNTRIMMED_FACES]->release();
-    d->m_program->release();
+    if(d->trimmed_shown)
+    {
+      getTriangleContainer(0)->setColor(this->color());
+      getTriangleContainer(0)->draw(viewer, true);
+    }
+    else
+    {
+      getTriangleContainer(1)->setColor(this->color());
+      getTriangleContainer(1)->draw(viewer, true);
+    }
   }
   Scene_group_item::draw(viewer);
 }
 
 void Scene_nurbs_item::drawEdges(CGAL::Three::Viewer_interface * viewer) const
 {
-  if(!d->initialized)
-    d->initializeBuffers(viewer);
+  if(visible())
+  {
+    if(!isInit(viewer))
+      initGL(viewer);
+    if ( getBuffersFilled() &&
+         ! getBuffersInit(viewer))
+    {
+      initializeBuffers(viewer);
+      setBuffersInit(viewer, true);
+    }
+    if(!getBuffersFilled())
+    {
+      computeElements();
+      initializeBuffers(viewer);
+      setBuffersFilled(true);
+      setBuffersInit(viewer, true);
+    }
 
-  attribBuffers(viewer, PROGRAM_NO_SELECTION);
-  d->m_program = getShaderProgram(PROGRAM_NO_SELECTION, viewer);
-  d->m_program->bind();
-  vaos[D::INTERSECTIONS]->bind();
-  d->m_program->setAttributeValue("colors", QColor(Qt::red));
-  viewer->glDrawArrays(GL_LINES, 0, d->intersection.size()/3);
-  vaos[D::INTERSECTIONS]->release();
-  d->m_program->release();
-
+    getEdgeContainer(0)->setColor(QColor(Qt::red));
+    getEdgeContainer(0)->draw(viewer, true);
+  }
   Scene_group_item::drawEdges(viewer);
 }
 
@@ -541,7 +504,6 @@ void Scene_nurbs_item::show_bezier_surfaces(bool b)
   if(!actionShowBeziers)
     return;
   actionShowBeziers->setChecked(b);
-  d->initialized = false;
   itemChanged();
 }
 
@@ -574,7 +536,6 @@ void Scene_nurbs_item::show_control_points(bool b)
   if(!actionShowCPs)
     return;
   actionShowCPs->setChecked(b);
-  d->initialized = false;
   itemChanged();
 }
 
@@ -591,6 +552,7 @@ QMenu* Scene_nurbs_item::contextMenu()
   if (!menuChanged) {
     QAction* actionShowTrimmed=
       menu->addAction(tr("Show Trimmed"));
+    actionShowTrimmed->setProperty("is_groupable", true);
     actionShowTrimmed->setCheckable(true);
     actionShowTrimmed->setChecked(false);
     actionShowTrimmed->setObjectName("actionShowTrimmed");
@@ -598,6 +560,7 @@ QMenu* Scene_nurbs_item::contextMenu()
             this, SLOT(show_trimmed(bool)));
     QAction* actionShowCPs=
       menu->addAction(tr("Show Control Points"));
+    actionShowCPs->setProperty("is_groupable", true);
     actionShowCPs->setCheckable(true);
     actionShowCPs->setChecked(false);
     actionShowCPs->setObjectName("actionShowCPs");
@@ -605,6 +568,7 @@ QMenu* Scene_nurbs_item::contextMenu()
             this, SLOT(show_control_points(bool)));
     QAction* actionShowBeziers=
         menu->addAction(tr("Show Bezier Surfaces"));
+    actionShowBeziers->setProperty("is_groupable", true);
     actionShowBeziers->setCheckable(true);
     actionShowBeziers->setChecked(false);
     actionShowBeziers->setObjectName("actionShowBeziers");
@@ -621,4 +585,63 @@ void Scene_nurbs_item::highlight(const dtkTopoTrim *)
     // Removes old colors
     // ///////////////////////////////////////////////////////////////////
 
+}
+
+void Scene_nurbs_item::initializeBuffers(Viewer_interface * viewer) const
+{
+  getTriangleContainer(0)->initializeBuffers(viewer);
+  getTriangleContainer(0)->setIdxSize(d->m_nb_trimmed_elements*3);
+
+  getTriangleContainer(1)->initializeBuffers(viewer);
+  getTriangleContainer(1)->setIdxSize(d->m_nb_untrimmed_elements*3);
+
+
+  d->trimmed_vertices.clear();
+  d->trimmed_vertices.shrink_to_fit();
+  d->untrimmed_vertices.clear();
+  d->untrimmed_vertices.shrink_to_fit();
+
+  getEdgeContainer(0)->initializeBuffers(viewer);
+  getEdgeContainer(0)->setIdxSize(d->intersection.size()/3);
+
+  d->intersection.clear();
+  d->intersection.shrink_to_fit();
+}
+
+void Scene_nurbs_item::computeElements() const
+{
+  getTriangleContainer(1)->allocate(Tc::Vertex_indices, d->m_untrimmed_elements.data(),
+                                    static_cast<int>(d->m_untrimmed_elements.size() *3*
+                                                     sizeof(unsigned int)));
+  getTriangleContainer(1)->allocate(Tc::Smooth_vertices, d->untrimmed_vertices.data(),
+                                    static_cast<int>(d->m_nb_untrimmed_vertices * 6 *
+                                                     sizeof(float)));
+  getTriangleContainer(1)->setOffset(Tc::Smooth_vertices, 0);
+    getTriangleContainer(1)->setStride(Tc::Smooth_vertices, 6*sizeof(float));
+
+  getTriangleContainer(1)->allocate(Tc::Smooth_normals, d->untrimmed_vertices.data(),
+                                    static_cast<int>(d->m_nb_untrimmed_vertices * 6 *
+                                                     sizeof(float)));
+  getTriangleContainer(1)->setOffset(Tc::Smooth_normals, 3 * sizeof(float));
+  getTriangleContainer(1)->setStride(Tc::Smooth_normals, 6 * sizeof(float));
+
+  getTriangleContainer(0)->allocate(Tc::Vertex_indices, d->m_trimmed_elements.data(),
+                                    static_cast<int>(d->m_trimmed_elements.size() *
+                                                     sizeof(unsigned int)));
+  getTriangleContainer(0)->allocate(Tc::Smooth_vertices, d->trimmed_vertices.data(),
+                              static_cast<int>(d->m_nb_trimmed_vertices * 6 *
+                                               sizeof(float)));
+  getTriangleContainer(0)->setOffset(Tc::Smooth_vertices, 0);
+
+  getTriangleContainer(0)->setStride(Tc::Smooth_vertices, 6*sizeof(float));
+
+  getTriangleContainer(0)->allocate(Tc::Smooth_normals, d->trimmed_vertices.data(),
+                                    static_cast<int>(d->m_nb_trimmed_vertices * 6 *
+                                                     sizeof(float)));
+  getTriangleContainer(0)->setOffset(Tc::Smooth_normals, 3 * sizeof(float));
+  getTriangleContainer(0)->setStride(Tc::Smooth_normals, 6 * sizeof(float));
+
+  getEdgeContainer(0)->allocate(Ec::Vertices, d->intersection.data(),
+                                    static_cast<int>(d->intersection.size() *
+                                                     sizeof(float)));
 }

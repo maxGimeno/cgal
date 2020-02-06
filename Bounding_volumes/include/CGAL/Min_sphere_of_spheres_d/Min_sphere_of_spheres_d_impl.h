@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Kaspar Fischer
@@ -258,11 +250,11 @@ namespace CGAL_MINIBALL_NAMESPACE {
     // check size of support set:
     if (e > static_cast<int>(l.size()) || e > (D+1)) {
       cerr << "BUG: Min_sphere_of_spheres_d: support set too large." << endl
-           << "Refer to the bug-reporting instructions at http://www.cgal.org/bug_report.html" << endl;
+           << "Refer to the bug-reporting instructions at https://www.cgal.org/bug_report.html" << endl;
       return false;
     } else if (l.size() > 0 && e<=0) {
       cerr << "BUG: Min_sphere_of_spheres_d: support set too small." << endl
-           << "Refer to the bug-reporting instructions at http://www.cgal.org/bug_report.html" << endl;
+           << "Refer to the bug-reporting instructions at https://www.cgal.org/bug_report.html" << endl;
       return false;
     }
   
@@ -270,7 +262,7 @@ namespace CGAL_MINIBALL_NAMESPACE {
     if (l.size() <= 0) {
       if (!is_empty()) {
         cerr << "BUG: Min_sphere_of_spheres_d: miniball of {} non-empty." << endl
-             << "Refer to the bug-reporting instructions at http://www.cgal.org/bug_report.html" << endl;
+             << "Refer to the bug-reporting instructions at https://www.cgal.org/bug_report.html" << endl;
         return false;
       } else
         return true;
@@ -309,7 +301,7 @@ namespace CGAL_MINIBALL_NAMESPACE {
     }
     if (!isSupporting) {
       cerr << "BUG: Min_sphere_of_spheres_d: support not on boundary." << endl
-           << "Refer to the bug-reporting instructions at http://www.cgal.org/bug_report.html" << endl;
+           << "Refer to the bug-reporting instructions at https://www.cgal.org/bug_report.html" << endl;
       return false;
     }
     
@@ -335,7 +327,7 @@ namespace CGAL_MINIBALL_NAMESPACE {
           ++i;
         if (i >= D+1) {
           cerr << "BUG: Min_sphere_of_spheres_d: supp. centers aff. dep." << endl
-               << "Refer to the bug-reporting instructions at http://www.cgal.org/bug_report.html" << endl;
+               << "Refer to the bug-reporting instructions at https://www.cgal.org/bug_report.html" << endl;
           return false;
         }
     
@@ -369,7 +361,7 @@ namespace CGAL_MINIBALL_NAMESPACE {
       if (!is_zero(rhs[i],ss.disc())) {
         cerr << "BUG: Min_sphere_of_spheres_d: center of the miniball" << endl
              << "     not in the span of the support centers." << endl
-             << "Refer to the bug-reporting instructions at http://www.cgal.org/bug_report.html" << endl;
+             << "Refer to the bug-reporting instructions at https://www.cgal.org/bug_report.html" << endl;
         return false;
       }
     
@@ -387,7 +379,7 @@ namespace CGAL_MINIBALL_NAMESPACE {
       if (is_neg_or_zero(lambda[i],ss.disc())) {
         cerr << "BUG: Min_sphere_of_spheres_d: center of miniball not in" << endl
              << "     interior of convex hull of support centers." << endl
-             << "Refer to the bug-reporting instructions at http://www.cgal.org/bug_report.html" << endl;
+             << "Refer to the bug-reporting instructions at https://www.cgal.org/bug_report.html" << endl;
         return false;
       }
     

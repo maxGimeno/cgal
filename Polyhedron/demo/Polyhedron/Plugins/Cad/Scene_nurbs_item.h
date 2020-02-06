@@ -22,29 +22,25 @@ class SCENE_NURBS_ITEM_EXPORT Scene_nurbs_item
 {
    Q_OBJECT
 public:
-  Scene_nurbs_item(const dtkNurbsSurface& dtk_nurbs_surface, CGAL::Three::Scene_interface* scene);
+  Scene_nurbs_item(const dtkNurbsSurface& dtk_nurbs_surface);
   ~Scene_nurbs_item();
-  bool isEmpty() const;
-
- public:
-  void draw(CGAL::Three::Viewer_interface *) const;
-  void drawEdges(CGAL::Three::Viewer_interface *) const;
-
- public:
+  bool isEmpty() const Q_DECL_OVERRIDE;
+  void draw(CGAL::Three::Viewer_interface *) const Q_DECL_OVERRIDE;
+  void drawEdges(CGAL::Three::Viewer_interface *) const Q_DECL_OVERRIDE;
+  Scene_item* clone() const Q_DECL_OVERRIDE {return 0;}
   QString toolTip() const Q_DECL_OVERRIDE;
-  bool supportsRenderingMode(RenderingMode m) const { return (m == Flat || m == FlatPlusEdges || m == Wireframe); }
+    void compute_bbox() const Q_DECL_OVERRIDE;
+  QMenu* contextMenu() Q_DECL_OVERRIDE;
+  bool supportsRenderingMode(RenderingMode m) const Q_DECL_OVERRIDE { return (m == Flat || m == FlatPlusEdges || m == Wireframe); }
+  void initializeBuffers(Viewer_interface *) const;
+  void computeElements() const;
 
- public:
-  Scene_item* clone() const {return 0;}
   Bbox bbox() const
   {
     if(!is_bbox_computed)
       compute_bbox();
     return _bbox;
-  };
-  void compute_bbox() const;
-  QMenu* contextMenu();
-
+  }
 public Q_SLOTS:
   void show_trimmed(bool b);
   void show_control_points(bool b);

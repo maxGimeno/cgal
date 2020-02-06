@@ -1,19 +1,11 @@
 // Copyright (c) 2010-2011 CNRS and LIRIS' Establishments (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 //
@@ -245,7 +237,7 @@ namespace CGAL
    */
   template < class Map, unsigned int i, unsigned int d >
   typename Map::size_type unmark_cell(const Map & amap, 
-                                      typename Map::Dart_handle adart,
+                                      typename Map::Dart_const_handle adart,
                                       typename Map::size_type amark)
   { return CGAL::unmark_orbit<Map,
         typename Map::template Dart_of_cell_basic_range<i,d>::const_iterator>
@@ -253,7 +245,7 @@ namespace CGAL
 
   template < class Map, unsigned int i >
   typename Map::size_type unmark_cell(const Map & amap, 
-                                      typename Map::Dart_handle adart,
+                                      typename Map::Dart_const_handle adart,
                                       typename Map::size_type amark)
   { return CGAL::unmark_cell<Map,i,Map::dimension>(amap, adart, amark); }
      
@@ -264,10 +256,10 @@ namespace CGAL
    * @return the degree of the cell.
    */
   template < class Map, unsigned int i >
-  typename Map::size_type degree( const Map & amap, 
-                                  typename Map::Dart_handle adart )
+  typename Map::size_type degree(const Map & amap, 
+                                 typename Map::Dart_const_handle adart)
   {
-    CGAL_assertion(adart != NULL);
+    CGAL_assertion(adart != nullptr);
   
     typename Map::size_type nbIncident = 0;
     typename Map::size_type mark;
@@ -279,20 +271,20 @@ namespace CGAL
       Dart_of_cell_basic_range<i>::const_iterator it(amap, adart, mark);
     for ( ;it.cont(); ++it )
     {
-      if (!amap.is_marked(*it, treated))
+      if (!amap.is_marked(it, treated))
       {
         ++nbIncident;
-        CGAL::mark_cell<Map,i+1>(amap, *it, treated);
+        CGAL::mark_cell<Map,i+1>(amap, it, treated);
       }
-      amap.mark(*it,mark);
+      amap.mark(it,mark);
     }
   
     amap.negate_mark(mark);
     for (it.rewind(); it.cont(); ++it)
     {
-      if (amap.is_marked(*it, treated))
-        CGAL::unmark_cell<Map,i+1>(amap, *it, treated);
-      amap.mark(*it,mark);
+      if (amap.is_marked(it, treated))
+      { CGAL::unmark_cell<Map,i+1>(amap, it, treated); }
+      amap.mark(it,mark);
     }
   
     amap.negate_mark(mark);
@@ -314,9 +306,9 @@ namespace CGAL
    */
   template < class Map, unsigned int i >
   typename Map::size_type codegree(const Map & amap, 
-                                   typename Map::Dart_handle adart)
+                                   typename Map::Dart_const_handle adart)
   {
-    CGAL_assertion(adart != NULL);
+    CGAL_assertion(adart != nullptr);
   
     typename Map::size_type nbIncident = 0;
     typename Map::size_type mark;
@@ -328,20 +320,20 @@ namespace CGAL
       Dart_of_cell_basic_range<i>::const_iterator it(amap, adart, mark);
     for ( ; it.cont(); ++it)
     {
-      if (!amap.is_marked(*it, treated))
+      if (!amap.is_marked(it, treated))
       {
         ++nbIncident;
-        CGAL::mark_cell<Map,i-1>(amap, *it, treated);
+        CGAL::mark_cell<Map,i-1>(amap, it, treated);
       }
-      amap.mark(*it,mark);
+      amap.mark(it,mark);
     }
   
     amap.negate_mark(mark);
     for (it.rewind(); it.cont(); ++it)
     {
-      if (amap.is_marked(*it, treated))      
-        CGAL::unmark_cell<Map,i-1>(amap, *it, treated);
-      amap.mark(*it,mark);
+      if (amap.is_marked(it, treated))      
+      { CGAL::unmark_cell<Map,i-1>(amap, it, treated); }
+      amap.mark(it,mark);
     }
 
     amap.negate_mark(mark);

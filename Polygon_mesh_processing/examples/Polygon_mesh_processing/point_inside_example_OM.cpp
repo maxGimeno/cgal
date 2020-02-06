@@ -12,7 +12,6 @@
 #include <vector>
 #include <fstream>
 #include <limits>
-#include <boost/foreach.hpp>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 
@@ -26,8 +25,8 @@ double max_coordinate(const Mesh& mesh)
   typedef boost::property_map<Mesh,CGAL::vertex_point_t>::type VPmap;
   VPmap vpmap = get(CGAL::vertex_point,mesh);
 
-  double max_coord = std::numeric_limits<double>::min();
-  BOOST_FOREACH(vertex_descriptor v, vertices(mesh))
+  double max_coord = -std::numeric_limits<double>::infinity();
+  for(vertex_descriptor v : vertices(mesh))
   {
     Point p = get(vpmap, v);
     max_coord = (std::max)(max_coord, p.x());

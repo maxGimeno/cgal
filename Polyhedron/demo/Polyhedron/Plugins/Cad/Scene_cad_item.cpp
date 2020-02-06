@@ -1,4 +1,7 @@
+#undef QT_NO_KEYWORDS
 #define foreach Q_FOREACH
+#define signals Q_SIGNALS
+#define slots Q_SLOTS
 #include <dtkBRep>
 #include <dtkNurbsSurface>
 #include <dtkTopoTrim>
@@ -7,10 +10,17 @@
 #include <dtkTrim>
 #include <dtkContinuousGeometryUtils>
 
+#include <CGAL/Three/Edge_container.h>
+#include <CGAL/Three/Three.h>
+
 #include "Scene_cad_item.h"
 #include "Scene_nurbs_item.h"
 #include <QDebug>
 #include <QMenu>
+
+
+typedef CGAL::Three::Edge_container Ec;
+typedef CGAL::Three::Viewer_interface Vi;
 
 struct Scene_cad_item_priv{
   Scene_cad_item_priv(dtkBRep* brep, CGAL::Three::Scene_interface* scene, Scene_cad_item* parent)
@@ -20,9 +30,8 @@ struct Scene_cad_item_priv{
     const std::vector < dtkNurbsSurface* > nurbs_surfaces = m_brep->nurbsSurfaces();
 
     for (auto it = nurbs_surfaces.begin(); it != nurbs_surfaces.end(); ++it) {
-      Scene_nurbs_item* nurbs_item =  new Scene_nurbs_item(*(*it), scene);
+      Scene_nurbs_item* nurbs_item =  new Scene_nurbs_item(*(*it));
       nurbs_item->setFlatMode();
-      nurbs_item->setScene(scene);
       nurbs_item->setName(QString("NURBS Surface #%1").arg(i));
       scene->addItem(nurbs_item);
       item->addChild(nurbs_item);
@@ -82,35 +91,6 @@ struct Scene_cad_item_priv{
         }
   }
 
-  void initializeBuffers(CGAL::Three::Viewer_interface *viewer)const
-  {
-    // ///////////////////////////////////////////////////////////////////
-    // Creates VBO EBO and VAO
-    // ///////////////////////////////////////////////////////////////////
-    m_program = item->getShaderProgram(Scene_nurbs_item::PROGRAM_NO_SELECTION, viewer);
-    m_program->bind();
-    item->vaos[INTERSECTION]->bind();
-
-    item->buffers[B_INTERSECTION].bind();
-    item->buffers[B_INTERSECTION].allocate(intersection.data(), static_cast<int>(intersection.size() * sizeof(float)));
-
-    m_program->enableAttributeArray("vertex");
-    m_program->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
-
-    item->buffers[B_INTERSECTION].release();
-
-    item->buffers[B_INTERSECTION_COLORS].bind();
-    item->buffers[B_INTERSECTION_COLORS].allocate(intersection_colors.data(), static_cast<int>(intersection_colors.size() * sizeof(float)));
-
-    m_program->enableAttributeArray("colors");
-    m_program->setAttributeBuffer("colors", GL_FLOAT, 0, 3, 0);
-
-    item->buffers[B_INTERSECTION_COLORS].release();
-
-    item->vaos[INTERSECTION]->release();
-
-    m_program->release();
-  }
 
     dtkBRep* m_brep;
 
@@ -141,10 +121,13 @@ struct Scene_cad_item_priv{
         };
 };
 
-typedef Scene_cad_item_priv D;
+
 Scene_cad_item::Scene_cad_item(dtkBRep* brep, CGAL::Three::Scene_interface* scene)
-  :CGAL::Three::Scene_group_item("unnamed", D::NumberOfBuffers, D::NumberOfVaos)
+  :CGAL::Three::Scene_group_item("unnamed")
 {
+  setEdgeContainer(0,
+                   new Ec( Vi::PROGRAM_NO_SELECTION
+                           ,false));
   d = new Scene_cad_item_priv(brep, scene, this);
   d->current_index = 0;
   d->current_next_index = 0;
@@ -152,6 +135,12 @@ Scene_cad_item::Scene_cad_item(dtkBRep* brep, CGAL::Three::Scene_interface* scen
 
 void Scene_cad_item::computeElements()const
 {
+  getEdgeContainer(0)->allocate(Ec::Vertices, d->intersection.data(),
+                                          static_cast<int>(d->intersection.size() *
+                                                           sizeof(float)));
+  getEdgeContainer(0)->allocate(Ec::Colors, d->intersection_colors.data(),
+                                          static_cast<int>(d->intersection_colors.size() *
+                                                           sizeof(float)));
 
 }
 
@@ -159,30 +148,25 @@ void Scene_cad_item::computeElements()const
 void Scene_cad_item::draw(CGAL::Three::Viewer_interface* viewer) const
 {
   CGAL::Three::Scene_group_item::draw(viewer);
-  if(!are_buffers_filled) {
-      d->initializeBuffers(viewer);
-      are_buffers_filled = true;
+  if(!isInit(viewer))
+    initGL(viewer);
+  if ( getBuffersFilled() &&
+       ! getBuffersInit(viewer))
+  {
+    initializeBuffers(viewer);
+    setBuffersInit(viewer, true);
+  }
+  if(!getBuffersFilled())
+  {
+    initializeBuffers(viewer);
+    setBuffersFilled(true);
+    setBuffersInit(viewer, true);
   }
 
   if(d->intersections_shown)
   {
-    attribBuffers(viewer, PROGRAM_NO_SELECTION);
-
-    d->m_program = getShaderProgram(PROGRAM_NO_SELECTION, viewer);
-    d->m_program->bind();
-
-    vaos[D::INTERSECTION]->bind();
-
-    buffers[D::B_INTERSECTION_COLORS].bind();
-    d->m_program->setAttributeBuffer("colors", GL_FLOAT, 0, 3);
-
-    viewer->glDrawArrays(GL_LINES, 0, d->intersection.size() / 3);
-
-    buffers[D::B_INTERSECTION_COLORS].release();
-
-    vaos[D::INTERSECTION]->release();
-
-    d->m_program->release();
+    getEdgeContainer(0)->setColor(QColor(Qt::red));
+    getEdgeContainer(0)->draw(viewer, false);
   }
 }
 
@@ -199,8 +183,9 @@ Scene_cad_item::~Scene_cad_item()
 Scene_cad_item::Bbox Scene_cad_item::bbox() const
 {
   Bbox box = Bbox(0,0,0,0,0,0);
-  Q_FOREACH(Scene_item* item, getChildren())
+  for(CGAL::Three::Scene_interface::Item_id id: getChildren())
   {
+    Scene_item* item = scene->item(id);
     box += item->bbox();
   }
   return box;
@@ -208,38 +193,51 @@ Scene_cad_item::Bbox Scene_cad_item::bbox() const
 
 void Scene_cad_item::show_trimmed(bool b)
 {
-  Q_FOREACH(Scene_item* item, getChildren())
+  for(CGAL::Three::Scene_interface::Item_id id: getChildren())
   {
+    Scene_item* item = scene->item(id);
     Scene_nurbs_item* nurbs = qobject_cast<Scene_nurbs_item*>(item);
     if(!nurbs)
       continue;
-
-    nurbs->show_trimmed(b);
+    QAction* actionShowTrimmed = nurbs->contextMenu()->findChild<QAction*>("actionShowTrimmed");
+    if(!actionShowTrimmed){
+      continue;
+    }
+    actionShowTrimmed->toggled(!b);
+    //nurbs->show_trimmed(b);
   }
 }
 
 void Scene_cad_item::show_control_points(bool b)
 {
-  Q_FOREACH(Scene_item* item, getChildren())
+  for(CGAL::Three::Scene_interface::Item_id id: getChildren())
   {
+    Scene_item* item = scene->item(id);
     Scene_nurbs_item* nurbs = qobject_cast<Scene_nurbs_item*>(item);
     if(!nurbs)
       continue;
-
-    nurbs->show_control_points(b);
+    QAction* actionShowCPs= nurbs->contextMenu()->findChild<QAction*>("actionShowCPs");
+    if(!actionShowCPs){
+      continue;
+    }
+    actionShowCPs->toggled(!b);
   }
 }
 
 void Scene_cad_item::show_bezier_surfaces(bool b)
 {
-  Q_FOREACH(Scene_item* item, getChildren())
+  for(CGAL::Three::Scene_interface::Item_id id: getChildren())
   {
+    Scene_item* item = scene->item(id);
     Scene_nurbs_item* nurbs = qobject_cast<Scene_nurbs_item*>(item);
     if(!nurbs)
       continue;
-
+    QAction* actionShowBeziers = nurbs->contextMenu()->findChild<QAction*>("actionShowBeziers");
+    if(!actionShowBeziers){
+      continue;
+    }
+    actionShowBeziers->toggled(!b);
     nurbs->setVisible(!b);
-    nurbs->show_bezier_surfaces(b);
   }
 }
 
@@ -265,6 +263,7 @@ QMenu* Scene_cad_item::contextMenu()
     actionShowTrimmed->setCheckable(true);
     actionShowTrimmed->setChecked(false);
     actionShowTrimmed->setObjectName("actionShowTrimmed");
+    actionShowTrimmed->setProperty("is_groupable", true);
     connect(actionShowTrimmed, SIGNAL(toggled(bool)),
             this, SLOT(show_trimmed(bool)));
 
@@ -272,6 +271,7 @@ QMenu* Scene_cad_item::contextMenu()
         menu->addAction(tr("Show Control Points"));
     actionShowCPs->setCheckable(true);
     actionShowCPs->setChecked(false);
+    actionShowCPs->setProperty("is_groupable", true);
     actionShowCPs->setObjectName("actionShowCPs");
     connect(actionShowCPs, SIGNAL(toggled(bool)),
             this, SLOT(show_control_points(bool)));
@@ -280,6 +280,7 @@ QMenu* Scene_cad_item::contextMenu()
         menu->addAction(tr("Show Bezier Surfaces"));
     actionShowBezierSurfaces->setCheckable(true);
     actionShowBezierSurfaces->setChecked(false);
+    actionShowBezierSurfaces->setProperty("is_groupable", true);
     actionShowBezierSurfaces->setObjectName("actionShowBezierSurfaces");
     connect(actionShowBezierSurfaces, SIGNAL(toggled(bool)),
             this, SLOT(show_bezier_surfaces(bool)));
@@ -289,6 +290,7 @@ QMenu* Scene_cad_item::contextMenu()
     actionShowIntersections->setCheckable(true);
     actionShowIntersections->setChecked(false);
     actionShowIntersections->setObjectName("actionShowIntersections");
+    actionShowIntersections->setProperty("is_groupable", true);
     connect(actionShowIntersections, SIGNAL(toggled(bool)),
             this, SLOT(show_intersections(bool)));
 
@@ -320,16 +322,9 @@ void Scene_cad_item::clearHighlight(void)
     if(d->current_next_index !=0) {
         std::vector<float> old_intersection_colors((d->current_next_index - d->current_index) * 3, 0.);
 
-        d->m_program->bind();
-
-        vaos[D::INTERSECTION]->bind();
-
-        buffers[D::B_INTERSECTION_COLORS].bind();
-        buffers[D::B_INTERSECTION_COLORS].write(d->current_index * 3 * sizeof(float), old_intersection_colors.data(), 3 * (d->current_next_index - d->current_index) * sizeof(float));
-        buffers[D::B_INTERSECTION_COLORS].release();
-
-        vaos[D::INTERSECTION]->release();
-        d->m_program->release();
+        getEdgeContainer(0)->getVbo(Ec::Colors)->bind();
+        getEdgeContainer(0)->getVbo(Ec::Colors)->vbo.write(d->current_index * 3 * sizeof(float), old_intersection_colors.data(), 3 * (d->current_next_index - d->current_index) * sizeof(float));
+        getEdgeContainer(0)->getVbo(Ec::Colors)->release();
     }
 
     d->current_index = 0;
@@ -345,17 +340,10 @@ void Scene_cad_item::highlight(const dtkTopoTrim *topo_trim)
     // ///////////////////////////////////////////////////////////////////
     if(d->current_next_index !=0) {
         std::vector<float> old_intersection_colors((d->current_next_index - d->current_index) * 3, 0.);
+         getEdgeContainer(0)->getVbo(Ec::Colors)->bind();
+         getEdgeContainer(0)->getVbo(Ec::Colors)->vbo.write(d->current_index * 3 * sizeof(float), old_intersection_colors.data(), 3 * (d->current_next_index - d->current_index) * sizeof(float));
+         getEdgeContainer(0)->getVbo(Ec::Colors)->release();
 
-         d->m_program->bind();
-
-         vaos[D::INTERSECTION]->bind();
-
-         buffers[D::B_INTERSECTION_COLORS].bind();
-         buffers[D::B_INTERSECTION_COLORS].write(d->current_index * 3 * sizeof(float), old_intersection_colors.data(), 3 * (d->current_next_index - d->current_index) * sizeof(float));
-         buffers[D::B_INTERSECTION_COLORS].release();
-
-         vaos[D::INTERSECTION]->release();
-         d->m_program->release();
     }
 
     // ///////////////////////////////////////////////////////////////////
@@ -388,20 +376,24 @@ void Scene_cad_item::highlight(const dtkTopoTrim *topo_trim)
         new_intersection_colors[3 * i + 2] = (float)0;
     }
 
-    d->m_program->bind();
+    getEdgeContainer(0)->getVbo(Ec::Colors)->bind();
+    getEdgeContainer(0)->getVbo(Ec::Colors)->vbo.write(index * 3 * sizeof(float), new_intersection_colors.data(), 3 * (next_index - index) * sizeof(float));
+    getEdgeContainer(0)->getVbo(Ec::Colors)->release();
 
-    vaos[D::INTERSECTION]->bind();
-
-    buffers[D::B_INTERSECTION_COLORS].bind();
-    buffers[D::B_INTERSECTION_COLORS].write(index * 3 * sizeof(float), new_intersection_colors.data(), 3 * (next_index - index) * sizeof(float));
-    buffers[D::B_INTERSECTION_COLORS].release();
-
-    vaos[D::INTERSECTION]->release();
-    d->m_program->release();
 
     d->current_index = index;
     d->current_next_index = next_index;
     itemChanged();
     Q_EMIT highlighted(topo_trim);
     Q_EMIT updated();
+}
+
+void Scene_cad_item::initializeBuffers(Viewer_interface *viewer) const
+{
+
+  getEdgeContainer(0)->initializeBuffers(viewer);
+  getEdgeContainer(0)->setFlatDataSize(d->intersection.size()/3);
+
+  d->intersection.clear();
+  d->intersection.shrink_to_fit();
 }

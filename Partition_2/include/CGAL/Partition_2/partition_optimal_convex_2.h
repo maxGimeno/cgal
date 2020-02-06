@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Susan Hert <hert@mpi-sb.mpg.de>
@@ -209,11 +201,13 @@ bool collinearly_visible(unsigned int edge_num1, unsigned int e_num,
                          const Traits& traits)
 {
    typedef typename Traits::Orientation_2                Orientation_2;
+   typedef typename Traits::Point_2                      Point_2;
    Orientation_2 orientation = traits.orientation_2_object();
 
    if ((e_num == edge_num1+1 || e_num+1 == edge_num2) && 
        edges[edge_num1][edge_num2].is_visible() &&
-       orientation(polygon[edge_num1], polygon[e_num], polygon[edge_num2]) ==
+       orientation(Point_2(polygon[edge_num1]), Point_2(polygon[e_num]),
+                   Point_2(polygon[edge_num2])) ==
                   COLLINEAR)
      return true;
    else
@@ -364,6 +358,7 @@ void make_collinear_vertices_visible(Polygon& polygon,
 {
     typedef typename Polygon::size_type                   size_type;
     typedef typename Traits::Orientation_2                Orientation_2;
+    typedef typename Traits::Point_2                      Point_2;
     Orientation_2 orientation = traits.orientation_2_object();
 
     size_type i; 
@@ -380,7 +375,7 @@ void make_collinear_vertices_visible(Polygon& polygon,
     j = 1;
     size_type start_i = 0;
     while (i > 0 && 
-           orientation(polygon[i], polygon[prev_j], polygon[j]) == COLLINEAR)
+           orientation(Point_2(polygon[i]), Point_2(polygon[prev_j]), Point_2(polygon[j])) == COLLINEAR)
     {
        prev_j = i;
        start_i = i;
@@ -390,7 +385,7 @@ void make_collinear_vertices_visible(Polygon& polygon,
     prev_j = 1;
     j = 2;
     while (j < polygon.size() &&
-           orientation(polygon[i], polygon[prev_j], polygon[j]) == COLLINEAR)
+           orientation(Point_2(polygon[i]), Point_2(polygon[prev_j]), Point_2(polygon[j])) == COLLINEAR)
     {
        i++;
        prev_j++;
@@ -419,7 +414,7 @@ void make_collinear_vertices_visible(Polygon& polygon,
        prev_j = i+1;
        j = i+2;
        while (j < polygon.size() &&
-              orientation(polygon[i], polygon[prev_j], polygon[j]) == 
+              orientation(Point_2(polygon[i]), Point_2(polygon[prev_j]), Point_2(polygon[j])) == 
               COLLINEAR)
        {
            j++;
@@ -453,7 +448,7 @@ void partition_opt_cvx_preprocessing(Polygon& polygon,
     typedef typename Traits::Point_2                      Point_2;
     typedef std::pair<Point_2, Point_2>                   Point_pair;
 
-    Vis_graph graph(polygon.begin(), polygon.end());
+    Vis_graph graph(polygon.begin(), polygon.end(), traits);
 
     size_type prev_i, i, next_i, next_next_i;
     size_type prev_j, j, next_j;
@@ -524,7 +519,7 @@ OutputIterator partition_optimal_convex_2(InputIterator first,
    Tee_for_output_iterator<OutputIterator, Polygon_2>      res(result);
 #endif // no postconditions
 
-   P_Polygon_2 polygon(first, beyond);
+   P_Polygon_2 polygon(first, beyond,traits);
    CGAL_partition_precondition(
     orientation_2(polygon.begin(), polygon.end(), traits) == COUNTERCLOCKWISE);
 

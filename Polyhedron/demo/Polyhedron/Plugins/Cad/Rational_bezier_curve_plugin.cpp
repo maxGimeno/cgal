@@ -1,3 +1,4 @@
+#undef QT_NO_KEYWORDS
 #include <CGAL/Three/Polyhedron_demo_io_plugin_interface.h>
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 

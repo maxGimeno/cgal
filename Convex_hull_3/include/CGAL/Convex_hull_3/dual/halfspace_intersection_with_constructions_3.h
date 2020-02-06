@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Jocelyn Meyron
@@ -24,6 +16,7 @@
 
 #include <CGAL/license/Convex_hull_3.h>
 
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/Origin.h>
 #include <CGAL/convex_hull_3.h>
@@ -33,7 +26,6 @@
 #include <CGAL/Convex_hull_3/dual/interior_polyhedron_3.h>
 #include <CGAL/internal/Exact_type_selector.h>
 
-#include <boost/foreach.hpp>
 #include <boost/unordered_map.hpp>
 #include <list>
 #include <vector>
@@ -55,30 +47,33 @@ namespace CGAL
         typedef typename boost::graph_traits<Polyhedron>::face_descriptor face_descriptor;
         typedef typename boost::graph_traits<Polyhedron>::vertex_descriptor vertex_descriptor;
           
-        typename boost::property_map<Polyhedron, vertex_point_t>::const_type vpmap  = get(CGAL::vertex_point, primal);
+        typename boost::property_map<Polyhedron, vertex_point_t>::const_type vpm_primal = get(CGAL::vertex_point, primal);
+        typename boost::property_map<Polyhedron, vertex_point_t>::type vpm_dual = get(CGAL::vertex_point, dual);
         // compute coordinates of extreme vertices in the dual polyhedron
         // from primal faces
         boost::unordered_map<face_descriptor, vertex_descriptor> extreme_points;
 
-        BOOST_FOREACH (face_descriptor fd , faces( primal)){
+        for(face_descriptor fd : faces( primal)){
           halfedge_descriptor h = halfedge(fd,primal);
-          Plane_3 p (get(vpmap, target(h, primal)),
-                     get(vpmap, target(next(h, primal), primal)),
-                     get(vpmap, target(next(next(h, primal), primal), primal)));
+          Plane_3 p (get(vpm_primal, target(h, primal)),
+                     get(vpm_primal, target(next(h, primal), primal)),
+                     get(vpm_primal, target(next(next(h, primal), primal), primal)));
           // translate extreme vertex
           Point_3 extreme_p = CGAL::ORIGIN + p.orthogonal_vector () / (-p.d());
           Point_3 translated_extreme_p(extreme_p.x() + origin.x(),
                                        extreme_p.y() + origin.y(),
                                        extreme_p.z() + origin.z());
-          extreme_points[fd] = add_vertex(translated_extreme_p,dual);
+          vertex_descriptor vd = add_vertex(dual);
+          extreme_points[fd] = vd;
+          put(vpm_dual, vd, translated_extreme_p);
         }
         
         // build faces
-        BOOST_FOREACH (vertex_descriptor vd , vertices(primal)) {
+        for(vertex_descriptor vd : vertices(primal)) {
           //CGAL_assertion (it->is_bivalent() == false);
           
           std::list<vertex_descriptor> vertices;
-          BOOST_FOREACH(face_descriptor fd, faces_around_target(halfedge(vd,primal),primal)){
+          for(face_descriptor fd : faces_around_target(halfedge(vd,primal),primal)){
             vertices.push_front(extreme_points[fd]);
           }
         Euler::add_face(vertices,dual);
@@ -154,6 +149,8 @@ namespace CGAL
 
 
 } // namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_HALFSPACE_INTERSECTION_WITH_CONSTRUCTION_3_H
 

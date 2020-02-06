@@ -1,18 +1,10 @@
 // Copyright (c) 2005, 2006 Fernando Luis Cacciola Carballal. All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
 //
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL: svn+ssh://fcacciola@scm.gforge.inria.fr/svn/cgal/trunk/Straight_skeleton_2/test/Straight_skeleton_2/test_offset_builder.cpp $
-// $Id: test_offset_builder.cpp 33476 2006-08-22 08:24:07Z afabri $
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Fernando Cacciola <fernando_cacciola@ciudad.com.ar>
 //
@@ -546,25 +538,25 @@ void dump_to_dxf ( TestCase const& aCase )
     {
       if ( sVerbose )
         cout << "    Dumping input region. " << endl ;
-      dump_region_to_dxf(*aCase.Inner.Input,BLUE,"Input",lDxf);
+      dump_region_to_dxf(*aCase.Inner.Input,blue(),"Input",lDxf);
     }
     
     if ( aCase.Inner.PartialSkeleton )
     {
       if ( sVerbose )
         cout << "    Dumping inner skeleton." << endl ;
-      dump_skeleton_to_dxf(*aCase.Inner.PartialSkeleton,YELLOW,GREEN,PURPLE,GRAY,"InnerSkeleton",lDxf);
+      dump_skeleton_to_dxf(*aCase.Inner.PartialSkeleton,yellow(),green(),purple(),gray(),"InnerSkeleton",lDxf);
     }
       
     if ( aCase.Outer.PartialSkeleton )
     {
       if ( sVerbose )
         cout << "    Dumping outer skeleton." << endl ;
-      dump_skeleton_to_dxf(*aCase.Outer.PartialSkeleton,YELLOW,GREEN,PURPLE,GRAY,"OuterSkeleton",lDxf);
+      dump_skeleton_to_dxf(*aCase.Outer.PartialSkeleton,yellow(),green(),purple(),gray(),"OuterSkeleton",lDxf);
     }
           
-    dump_region_to_dxf(aCase.Inner.Contours,GRAY,"InnerOffset",lDxf);
-    dump_region_to_dxf(aCase.Outer.Contours,GRAY,"OuterOffset",lDxf);
+    dump_region_to_dxf(aCase.Inner.Contours,gray(),"InnerOffset",lDxf);
+    dump_region_to_dxf(aCase.Outer.Contours,gray(),"OuterOffset",lDxf);
     
   }
   
@@ -792,7 +784,7 @@ int test_zone ( Zone& rZone )
       {
         if ( sOffsetAtEntry.size() > 0 )
         {
-          int lSize = std::distance(lTimes.begin(),lTimes.end());
+          std::ptrdiff_t lSize = std::distance(lTimes.begin(),lTimes.end());
           
           for ( std::vector<int>::const_iterator oi = sOffsetAtEntry.begin() ; oi != sOffsetAtEntry.end() ; ++ oi )
           {

@@ -4,7 +4,7 @@
 #include "create_sphere.h"
 
 #include <CGAL/Three/Scene_group_item.h>
-#include <CGAL/Three/Scene_item.h>
+#include <CGAL/Three/Scene_item_rendering_helper.h>
 #include <CGAL/Three/Scene_interface.h>
 #include <CGAL/Three/Viewer_interface.h>
 #include <CGAL/Sphere_3.h>
@@ -24,7 +24,7 @@ struct Scene_spheres_item_priv;
  * have a Scene_spheres_item child).
 */
 class SCENE_BASIC_OBJECTS_EXPORT Scene_spheres_item
-    : public CGAL::Three::Scene_item
+    : public CGAL::Three::Scene_item_rendering_helper
 {
   Q_OBJECT
 public:
@@ -48,16 +48,18 @@ public:
   void add_sphere(const Sphere &sphere, std::size_t index = 0, CGAL::Color = CGAL::Color(120,120,120));
   void clear_spheres();
   void setPrecision(int prec);
-
+  void gl_initialization(CGAL::Three::Viewer_interface* viewer);
   void draw(CGAL::Three::Viewer_interface* viewer) const Q_DECL_OVERRIDE;
   void drawEdges(CGAL::Three::Viewer_interface* viewer) const Q_DECL_OVERRIDE;
   void invalidateOpenGLBuffers() Q_DECL_OVERRIDE;
-  void computeElements() const;
   void setPlane(Kernel::Plane_3 p_plane);
   void setToolTip(QString s);
   void setColor(QColor c) Q_DECL_OVERRIDE;
   bool save(const std::string &file_name) const;
 
+
+  void initializeBuffers(Viewer_interface *) const Q_DECL_OVERRIDE;
+  void computeElements() const Q_DECL_OVERRIDE;
 Q_SIGNALS:
   void on_color_changed();
 protected:

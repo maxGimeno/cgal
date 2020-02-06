@@ -1,3 +1,4 @@
+#undef QT_NO_KEYWORDS
 #include <CGAL/Three/Polyhedron_demo_io_plugin_interface.h>
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 
@@ -51,8 +52,8 @@ public:
   //IO PLUGIN PART
   QString name() const { return "Nurbs_surface_plugin"; }
   QString nameFilters() const { return "None"; }
-  bool canLoad() const { return true; }
-  CGAL::Three::Scene_item* load(QFileInfo fileinfo) {
+  bool canLoad(QFileInfo) const { return true; }
+  QList<CGAL::Three::Scene_item*> load(QFileInfo fileinfo, bool& ok, bool add_to_scene=true){
       dtkContinuousGeometrySettings settings;
       settings.beginGroup("continuous-geometry");
       dtkLogger::instance().attachConsole();
@@ -63,6 +64,8 @@ public:
       dtkAbstractNurbsSurfaceData *nurbs_surface_data = dtkContinuousGeometry::abstractNurbsSurfaceData::pluginFactory().create("dtkNurbsSurfaceDataOn");
       if(nurbs_surface_data == nullptr) {
           dtkFatal() << "The openNURBS plugin of dtkNurbsSurfaceData could not be loaded.";
+          ok = false;
+          return QList<CGAL::Three::Scene_item*>();
       }
       nurbs_surface_data->create(fileinfo.absoluteFilePath().toStdString());
       dtkNurbsSurface *nurbs_surface = new dtkNurbsSurface(nurbs_surface_data);
@@ -71,14 +74,17 @@ public:
       item->setName(fileinfo.baseName());
       item->setFlatMode();
       scene->setSelectedItem(scene->item_id(item));
-      return item;
+      ok = true;
+      if(add_to_scene)
+        CGAL::Three::Three::scene()->addItem(item);
+      return QList<CGAL::Three::Scene_item*>()<<item;
   }
 
   bool canSave(const CGAL::Three::Scene_item*) {
       return false;
   }
 
-  bool save(const CGAL::Three::Scene_item*, QFileInfo) {
+  bool save(QFileInfo, QList<CGAL::Three::Scene_item*>& ){
     return false;
   }
 

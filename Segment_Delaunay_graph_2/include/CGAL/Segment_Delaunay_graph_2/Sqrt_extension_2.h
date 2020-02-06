@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Menelaos Karavelas <mkaravel@iacm.forth.gr>
@@ -63,11 +55,6 @@ public:
     CGAL_exactness_precondition( !(CGAL::is_negative(A_)) );
     CGAL_exactness_precondition( !(CGAL::is_negative(B_)) );
   }
-
-  Sqrt_extension_2(const Sqrt_extension_2<NT>& other)
-    : a0_(other.a0_), a1_(other.a1_), a2_(other.a2_),
-      a3_(other.a3_), A_(other.A_), B_(other.B_) {}
-
 
   NT a() const { return a0_; }
   NT b() const { return a1_; }
@@ -263,7 +250,7 @@ public:
     typedef Sqrt_extension_2<NT> Real_embeddable;
     
     class Abs 
-        : public std::unary_function< Real_embeddable, Real_embeddable >{
+        : public CGAL::cpp98::unary_function< Real_embeddable, Real_embeddable >{
     public:
         Real_embeddable operator()(const Real_embeddable& x) const {
             return (x>=0)?x:-x;
@@ -271,7 +258,7 @@ public:
     };    
 
     class Sgn 
-        : public std::unary_function< Real_embeddable, CGAL::Sign >{
+        : public CGAL::cpp98::unary_function< Real_embeddable, CGAL::Sign >{
     public:
         CGAL::Sign operator()(const Real_embeddable& x) const {
             return x.sign();
@@ -279,9 +266,10 @@ public:
     };
     
     class Compare 
-        : public std::binary_function< Real_embeddable, 
-                                  Real_embeddable, 
-                                  CGAL::Comparison_result >{
+        : public CGAL::cpp98::binary_function< Real_embeddable,
+                                               Real_embeddable,
+                                               CGAL::Comparison_result >
+    {
     public:
         CGAL::Comparison_result operator()(
                 const Real_embeddable& x, 
@@ -293,7 +281,7 @@ public:
     };
     
     class To_double 
-        : public std::unary_function< Real_embeddable, double >{
+        : public CGAL::cpp98::unary_function< Real_embeddable, double >{
     public:
         double operator()(const Real_embeddable& x) const {
             return x.to_double();
@@ -301,7 +289,7 @@ public:
     };
     
     class To_interval 
-        : public std::unary_function< Real_embeddable, std::pair< double, double > >{
+        : public CGAL::cpp98::unary_function< Real_embeddable, std::pair< double, double > >{
     public:
         std::pair<double,double> operator()(const Real_embeddable& x) const {
             return x.to_interval();

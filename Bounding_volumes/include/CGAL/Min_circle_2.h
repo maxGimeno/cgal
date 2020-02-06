@@ -2,18 +2,10 @@
 // ETH Zurich (Switzerland).  All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Sven Schoenherr <sven@inf.ethz.ch>, Bernd Gaertner
@@ -27,6 +19,7 @@
 // includes
 #  include <CGAL/Optimisation/basic.h>
 #  include <CGAL/Random.h>
+#  include <CGAL/algorithm.h>
 #  include <list>
 #  include <vector>
 #  include <algorithm>
@@ -320,7 +313,7 @@ class Min_circle_2 {
     
                     // shuffle points at random
                     std::vector<Point> v( first, last);
-                    std::random_shuffle( v.begin(), v.end(), random);
+                    CGAL::cpp98::random_shuffle( v.begin(), v.end(), random);
                     std::copy( v.begin(), v.end(),
                                std::back_inserter( points)); }
                 else

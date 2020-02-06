@@ -1,37 +1,29 @@
 // Copyright (c) 2007  GeometryFactory (France).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Fernando Cacciola
 //
-// Descriptions of the file format can be found at
+// Description of the file format can be found at the following address:
 // http://www.autodesk.com/techpubs/autocad/acad2000/dxf/
- 
 
 #ifndef CGAL_IO_DXF_WRITER_H
 #define CGAL_IO_DXF_WRITER_H
 
-#include <CGAL/license/Straight_skeleton_2.h>
-
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/basic.h>
 #include <CGAL/algorithm.h>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <list>
+#include <boost/format.hpp>
 
 namespace CGAL {
 
@@ -125,7 +117,7 @@ public:
         
         while ( lCurrVertex != aVerticesEnd )
         {
-          XY_Iterator lNextVertex = ( lCurrVertex == lLastVertex ? lFirstVertex : CGAL::cpp11::next(lCurrVertex) ) ;
+          XY_Iterator lNextVertex = ( lCurrVertex == lLastVertex ? lFirstVertex : std::next(lCurrVertex) ) ;
           
           add_segment_2 ( *lCurrVertex, *lNextVertex, aLayer, aColor ) ;
           
@@ -143,24 +135,24 @@ private:
 
   std::string get_entity_handle()
   {
-    char lBuff[64];
-    sprintf(lBuff,"%5x",mHandle++);
-    return std::string(lBuff);
+    std::ostringstream oss;
+    oss << boost::format("%5x") % mHandle++;
+    return oss.str();
   }
   
   std::string to_str ( int aN )
   {
-    char lBuff[64];
-    sprintf(lBuff,"%6d",aN);
-    return std::string(lBuff);
+    std::ostringstream oss;
+    oss << boost::format("%6d") % aN;
+    return oss.str();
   }
   
   
   std::string to_str ( double aN )
   {
-    char lBuff[64];
-    sprintf(lBuff,"%6.6f",aN);
-    return std::string(lBuff);
+    std::ostringstream oss;
+    oss << boost::format("%6.6f") % aN;
+    return oss.str();
   }
   
   void insert_line ( Line_iterator aPos, std::string aLine )
@@ -282,5 +274,7 @@ private:
 } ;
 
 } // end namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_IO_DXF_WRITER_H

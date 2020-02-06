@@ -5,19 +5,11 @@
 // Max-Planck-Institute Saarbruecken (Germany),
 // and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Stefan Schirra, Sylvain Pion, Michael Hoffmann
@@ -1043,7 +1035,6 @@ namespace CartesianKernelFunctors {
 
   };
 
-  // TODO ...
   template <typename K>
   class Compute_squared_radius_2
   {
@@ -1051,29 +1042,21 @@ namespace CartesianKernelFunctors {
     typedef typename K::Point_2     Point_2;
     typedef typename K::Circle_2    Circle_2;
   public:
-    template<class>
-    struct result {
-      typedef FT type;
-    };
-    
-    template<typename F>
-    struct result<F(Circle_2)> {
-      typedef const FT& type;
-    };
+    typedef FT                      result_type;
 
-    const FT&
+    result_type
     operator()( const Circle_2& c) const
     { return c.rep().squared_radius(); }
 
-    FT
+    result_type
     operator()( const Point_2& /*p*/) const
     { return FT(0); }
 
-    FT
+    result_type
     operator()( const Point_2& p, const Point_2& q) const
     { return squared_radiusC2(p.x(), p.y(), q.x(), q.y()); }
 
-    FT
+    result_type
     operator()( const Point_2& p, const Point_2& q, const Point_2& r) const
     { return squared_radiusC2(p.x(), p.y(), q.x(), q.y(), r.x(), r.y()); }
   };
@@ -1771,10 +1754,10 @@ namespace CartesianKernelFunctors {
         // to avoid badly defined vectors with coordinates all close
         // to 0 when the plane is almost horizontal, we ignore the
         // smallest coordinate instead of always ignoring Z
-        if (CGAL::possibly(a <= b && a <= c))
+        if (a <= b && a <= c)
           return Vector_3(FT(0), -h.c(), h.b());
 
-        if (CGAL::possibly(b <= a && b <= c))
+        if (b <= a && b <= c)
           return Vector_3(-h.c(), FT(0), h.a());
 
         return Vector_3(-h.b(), h.a(), FT(0));
@@ -1811,10 +1794,21 @@ namespace CartesianKernelFunctors {
     result_type
     operator()(const Triangle_2& t) const
     {
+      Bbox_2 bb = this->operator()(t.vertex(0));
+      bb += this->operator()(t.vertex(1));
+      bb += this->operator()(t.vertex(2));
+      return bb;
+      /*
+	  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.40629.0 for x64 
+	  produces a segfault of this functor for Simple_cartesian<Interval_nt<0>>
+	  with the original version of the code below
+	  Note that it also worked for 18.00.21005.1
+
       typename K::Construct_bbox_2 construct_bbox_2;
       return construct_bbox_2(t.vertex(0))
 	   + construct_bbox_2(t.vertex(1))
 	   + construct_bbox_2(t.vertex(2));
+      */
     }
 
     result_type
@@ -2932,6 +2926,7 @@ namespace CartesianKernelFunctors {
   class Construct_point_2
   {
     typedef typename K::RT         RT;
+    typedef typename K::FT         FT;
     typedef typename K::Point_2    Point_2;
     typedef typename K::Weighted_point_2 Weighted_point_2;
     typedef typename K::Line_2     Line_2;
@@ -2970,12 +2965,12 @@ namespace CartesianKernelFunctors {
     {
       typename K::Construct_point_2 construct_point_2;
       typename K::FT x, y;
-      line_get_pointC2(l.a(), l.b(), l.c(), 0, x, y);
+      line_get_pointC2(l.a(), l.b(), l.c(), FT(0), x, y);
       return construct_point_2(x,y);
     }
 
     Point_2
-    operator()(const Line_2& l, int i) const
+    operator()(const Line_2& l, const FT i) const
     {
       typename K::Construct_point_2 construct_point_2;
       typename K::FT x, y;
@@ -3178,6 +3173,7 @@ namespace CartesianKernelFunctors {
     typedef typename K::Line_3     Line_3;
     typedef typename K::Triangle_3 Triangle_3;
     typedef typename K::Segment_3  Segment_3;
+    typedef typename K::Ray_3      Ray_3;
     typedef typename K::FT         FT;
   public:
     typedef Point_3                result_type;
@@ -3212,6 +3208,10 @@ namespace CartesianKernelFunctors {
     Point_3
     operator()( const Segment_3& s, const Point_3& p ) const
     { return CommonKernelFunctors::Construct_projected_point_3<K>()(p,s,K()); }
+    
+    Point_3
+    operator()( const Ray_3& r, const Point_3& p ) const
+    { return CommonKernelFunctors::Construct_projected_point_3<K>()(p,r,K()); }
   };
 
   template <class K> 

@@ -1,19 +1,11 @@
 // Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Michael Hemmer <hemmer@mpi-inf.mpg.de>    
@@ -24,6 +16,8 @@
 
 #ifndef CGAL_ALGEBRAIC_KERNEL_D_1_H
 #define CGAL_ALGEBRAIC_KERNEL_D_1_H
+
+#include <CGAL/disable_warnings.h>
 
 #ifndef CGAL_AK_ENABLE_DEPRECATED_INTERFACE 
 #define CGAL_AK_ENABLE_DEPRECATED_INTERFACE 0
@@ -68,12 +62,12 @@ protected:
 
   // Some functors used for STL calls
   template<typename A,typename B>
-    struct Pair_first : public std::unary_function<std::pair<A,B>,A> {
+    struct Pair_first : public CGAL::cpp98::unary_function<std::pair<A,B>,A> {
       A operator() (std::pair<A,B> pair) const { return pair.first; }
   };
 
   template<typename A,typename B>
-    struct Pair_second : public std::unary_function<std::pair<A,B>,B> {
+    struct Pair_second : public CGAL::cpp98::unary_function<std::pair<A,B>,B> {
       B operator() (std::pair<A,B> pair) const { return pair.second; }
   };
   
@@ -83,7 +77,7 @@ public:
     typedef Algebraic_real_1                      Type;
     
     struct Bound_between 
-      : public std::binary_function< Type, Type, Bound > {
+      : public CGAL::cpp98::binary_function< Type, Type, Bound > {
       Bound operator()( const Type& t1, 
           const Type& t2 ) const {
 #if CGAL_AK_DONT_USE_SIMPLE_BOUND_BETWEEN
@@ -96,21 +90,21 @@ public:
     };
                                 
     struct Lower_bound
-      : public std::unary_function< Type, Bound > {
+      : public CGAL::cpp98::unary_function< Type, Bound > {
       Bound operator()( const Type& t ) const {
         return t.low();
       }
     };
                 
     struct Upper_bound
-      : public std::unary_function< Type, Bound > {
+      : public CGAL::cpp98::unary_function< Type, Bound > {
       Bound operator()( const Type& t ) const {
         return t.high();
       }
     };
                 
     struct Refine
-      : public std::unary_function< Type, void > {
+      : public CGAL::cpp98::unary_function< Type, void > {
       void operator()( const Type& t ) const {
         t.refine();
       }
@@ -148,7 +142,7 @@ public:
     };              
     
     struct Approximate_absolute_1:
-      public std::binary_function<Algebraic_real_1,int,std::pair<Bound,Bound> >{
+      public CGAL::cpp98::binary_function<Algebraic_real_1,int,std::pair<Bound,Bound> >{
       std::pair<Bound,Bound> 
       operator()(const Algebraic_real_1& x, int prec) const {
         Lower_bound lower; 
@@ -167,7 +161,7 @@ public:
     }; 
     
     struct Approximate_relative_1:
-      public std::binary_function<Algebraic_real_1,int,std::pair<Bound,Bound> >{
+      public CGAL::cpp98::binary_function<Algebraic_real_1,int,std::pair<Bound,Bound> >{
       std::pair<Bound,Bound> 
       operator()(const Algebraic_real_1& x, int prec) const {
         
@@ -198,7 +192,9 @@ public:
 
 
   }; // class Algebraic_real_traits
-            
+
+  struct Construct_algebraic_real_1;
+  
   // Functors of Algebraic_kernel_d_1
   struct Solve_1 {
   public:
@@ -275,7 +271,7 @@ public:
     /*
     // TODO: Can we avoid to use this?
     struct Greater_compare : 
-      public std::binary_function<Algebraic_real_1,Algebraic_real_1,bool> {
+      public CGAL::cpp98::binary_function<Algebraic_real_1,Algebraic_real_1,bool> {
       
       bool operator() (const Algebraic_real_1& a, const Algebraic_real_1& b)
 	const {
@@ -333,7 +329,7 @@ public:
   };
 
   class Number_of_solutions_1 
-      : public std::unary_function<Polynomial_1,size_type> {
+      : public CGAL::cpp98::unary_function<Polynomial_1,size_type> {
     
     public:
 	
@@ -342,14 +338,14 @@ public:
 
 	std::vector<std::pair<Algebraic_real_1,Multiplicity_type> > roots;
 	Solve_1()(p,std::back_inserter(roots));
-	return roots.size(); 
+	return static_cast<size_type>(roots.size()); 
       }
 
   };
 
             
   struct Sign_at_1 
-    : public std::binary_function< Polynomial_1, Algebraic_real_1, CGAL::Sign > {
+    : public CGAL::cpp98::binary_function< Polynomial_1, Algebraic_real_1, CGAL::Sign > {
     CGAL::Sign operator()( const Polynomial_1& p, const Algebraic_real_1& ar ) const {
       if(CGAL::is_zero(p)) return ZERO; 
       if(CGAL::degree(p)==0) return p.sign_at(0);
@@ -372,7 +368,7 @@ public:
     }
   };                
   struct Is_zero_at_1 
-    : public std::binary_function< Polynomial_1, Algebraic_real_1, bool > {
+    : public CGAL::cpp98::binary_function< Polynomial_1, Algebraic_real_1, bool > {
     bool operator()( const Polynomial_1& p, const Algebraic_real_1& ar ) const {
       if(CGAL::is_zero(p)) return true; 
       if( ar.low() == ar.high() ) return p.sign_at( ar.low() ) == ZERO;
@@ -382,7 +378,7 @@ public:
   };                
                    
   struct Is_square_free_1 
-    : public std::unary_function< Polynomial_1, bool > {
+    : public CGAL::cpp98::unary_function< Polynomial_1, bool > {
     bool operator()( const Polynomial_1& p ) const {
       typename CGAL::Polynomial_traits_d< Polynomial_1 >::Is_square_free isf;
       return isf(p);
@@ -390,7 +386,7 @@ public:
   };
             
   struct Is_coprime_1
-    : public std::binary_function< Polynomial_1, Polynomial_1, bool > {
+    : public CGAL::cpp98::binary_function< Polynomial_1, Polynomial_1, bool > {
     bool operator()( const Polynomial_1& p1, const Polynomial_1& p2 ) const {
       typename CGAL::Polynomial_traits_d< Polynomial_1 >::Total_degree total_degree;
                         
@@ -400,7 +396,7 @@ public:
   }; 
             
   struct Make_square_free_1
-    : public std::unary_function< Polynomial_1, Polynomial_1 > {
+    : public CGAL::cpp98::unary_function< Polynomial_1, Polynomial_1 > {
     Polynomial_1 operator()( const Polynomial_1& p ) const {
       return typename CGAL::Polynomial_traits_d< Polynomial_1 >::Make_square_free()( p );
     }
@@ -435,7 +431,7 @@ public:
     } 
   };
 
-  struct Compute_polynomial_1 : public std::unary_function<Algebraic_real_1,
+  struct Compute_polynomial_1 : public CGAL::cpp98::unary_function<Algebraic_real_1,
                                                            Polynomial_1> {
     Polynomial_1 operator()(const Algebraic_real_1& x) const {
       return x.polynomial();
@@ -485,7 +481,7 @@ public:
   };
 
   struct Compare_1
-    : public std::binary_function<Algebraic_real_1,
+    : public CGAL::cpp98::binary_function<Algebraic_real_1,
 	                          Algebraic_real_1,
                                   CGAL::Comparison_result>{
     
@@ -530,7 +526,7 @@ public:
 
  public:
 
-  struct Isolate_1 : public std::binary_function
+  struct Isolate_1 : public CGAL::cpp98::binary_function
     < Algebraic_real_1,Polynomial_1,std::pair<Bound,Bound> > {
     
     public:
@@ -670,6 +666,6 @@ class Algebraic_kernel_d_1
 
 } //namespace CGAL
 
-
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_ALGEBRAIC_KERNEL_D_1_H

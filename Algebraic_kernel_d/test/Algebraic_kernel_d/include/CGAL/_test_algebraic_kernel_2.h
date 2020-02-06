@@ -1,26 +1,16 @@
 // Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
+// This file is part of CGAL (www.cgal.org)
 //
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL: svn+ssh://hemmer@scm.gforge.inria.fr/svn/cgal/trunk/Polynomial/include/CGAL/Polynomial.h $
-// $Id: Polynomial.h 47254 2008-12-06 21:18:27Z afabri $
-// 
+// $URL$
+// $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     :   Michael Kerber <mkerber@mpi-inf.mpg.de>
 //
 // ============================================================================
 
-#include <CGAL/basic.h>
 #include <cassert>
 #include <algorithm>
 
@@ -48,7 +38,7 @@ void test_algebraic_kernel_2(const AlgebraicKernel_2& ak_2) {
   typedef typename AK_2::Coefficient Coefficient;
   typedef typename AK_2::Bound Bound;
   typedef std::pair<Bound,Bound> BInterval;
-  typedef CGAL::cpp11::array<Bound, 4> BArray;
+  typedef std::array<Bound, 4> BArray;
   typedef typename AK_2::Polynomial_1 Polynomial_1; 
   typedef typename AK_2::Polynomial_2 Polynomial_2; 
   typedef typename AK_2::Algebraic_real_1 Algebraic_real_1; 
@@ -101,6 +91,8 @@ void test_algebraic_kernel_2(const AlgebraicKernel_2& ak_2) {
   {                                                             \
     typedef typename Name::argument_type AT_;                   \
     typedef typename Name::result_type   RT_;                   \
+    CGAL_USE_TYPE(AT_);                                           \
+    CGAL_USE_TYPE(RT_);                                           \
     {CGAL_static_assertion(( ::boost::is_same<AT,AT_>::value));}  \
     {CGAL_static_assertion(( ::boost::is_same<RT,RT_>::value));}  \
   }
@@ -109,6 +101,9 @@ void test_algebraic_kernel_2(const AlgebraicKernel_2& ak_2) {
     typedef typename Name::first_argument_type AT1_;                    \
     typedef typename Name::second_argument_type AT2_;                   \
     typedef typename Name::result_type   RT_;                           \
+    CGAL_USE_TYPE(AT1_);                                                 \
+    CGAL_USE_TYPE(AT2_);                                                \
+    CGAL_USE_TYPE(RT_);                                                 \
     {CGAL_static_assertion(( ::boost::is_same<AT1,AT1_>::value));}        \
     {CGAL_static_assertion(( ::boost::is_same<AT2,AT2_>::value));}        \
     {CGAL_static_assertion(( ::boost::is_same<RT,RT_>::value));}          \

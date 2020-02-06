@@ -1,18 +1,10 @@
 // Copyright (c) 2006  GeometryFactory (France). All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
 //
@@ -32,21 +24,21 @@ namespace CGAL {
 namespace Surface_mesh_simplification
 {
 
-  template<class ECM_, class VertexPointMap_ = typename boost::property_map<ECM_, CGAL::vertex_point_t>::type>
+  template<class TM_, class VertexPointMap_ = typename boost::property_map<TM_, CGAL::vertex_point_t>::type>
 class Edge_profile
 {
 public:
 
-  typedef ECM_ ECM ;
+  typedef TM_ TM ;
   typedef VertexPointMap_ VertexPointMap;
-  typedef boost::graph_traits<ECM>       GraphTraits ;
+  typedef boost::graph_traits<TM>       GraphTraits ;
   
   typedef typename GraphTraits::vertex_descriptor vertex_descriptor ;
   typedef typename GraphTraits::face_descriptor face_descriptor ;
   typedef typename GraphTraits::halfedge_descriptor halfedge_descriptor ;
 
 
-  //typedef typename boost::property_map<ECM, CGAL::vertex_point_t>::type Vertex_point_pmap;
+  //typedef typename boost::property_map<TM, CGAL::vertex_point_t>::type Vertex_point_pmap;
   typedef typename boost::property_traits<VertexPointMap>::value_type Point;
   typedef typename Kernel_traits<Point>::Kernel Kernel;
   typedef typename Kernel::FT FT;
@@ -83,7 +75,7 @@ public :
           ,class EdgeIdxMap
           >
   Edge_profile ( halfedge_descriptor  const& aV0V1
-               , ECM&                    aSurface
+               , TM&                    aSurface
                , VertexIdxMap     const& aVertex_index_map
                , VertexPointMap   const& aVertex_point_map
                , EdgeIdxMap       const& aEdge_index_map
@@ -128,8 +120,8 @@ public :
   halfedge_descriptor_vector const& border_edges() const {
     return mBorderEdges ; 
   }
-  ECM& surface() const { return *mSurface ; } 
-  ECM& surface_mesh() const { return *mSurface ; } 
+  TM& surface() const { return *mSurface ; } 
+  TM& surface_mesh() const { return *mSurface ; } 
  
   VertexPointMap vertex_point_map() const { return mvpm ; }
   
@@ -150,7 +142,7 @@ private:
   
   bool is_border(halfedge_descriptor e) const
   {
-    return face(e,*mSurface) == boost::graph_traits<ECM>::null_face();
+    return face(e,*mSurface) == boost::graph_traits<TM>::null_face();
   }
    
 
@@ -184,7 +176,7 @@ private:
   halfedge_descriptor_vector   mBorderEdges ;
   Triangle_vector          mTriangles ;
   
-  ECM* mSurface ;
+  TM* mSurface ;
   VertexPointMap mvpm;  
 } ;
   

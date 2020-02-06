@@ -1,19 +1,11 @@
 // Copyright (c) 2007,2008,2009,2010,2011 Max-Planck-Institute Saarbruecken (Germany), 
 // and Tel-Aviv University (Israel).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Eric Berberich <eric@mpi-inf.mpg.de>
@@ -21,9 +13,6 @@
 
 #ifndef CGAL_CURVED_KERNEL_VIA_ANALYSIS_2_IMPL_H
 #define CGAL_CURVED_KERNEL_VIA_ANALYSIS_2_IMPL_H
-
-#include <CGAL/license/Arrangement_on_surface_2.h>
-
 
 /*!\file include/CGAL/Curved_kernel_via_analysis_2.h
  * \brief defines class \c Curved_kernel_via_analysis_2
@@ -33,6 +22,7 @@
 
 #include <CGAL/config.h>
 
+#include <CGAL/tss.h>
 #include <CGAL/Arr_enums.h>
 #include <CGAL/Arr_tags.h>
 #include <CGAL/Curved_kernel_via_analysis_2/Point_2.h>
@@ -187,8 +177,8 @@ public:
     static NewCKvA& set_instance(
             const NewCKvA& ckva
     ) {
-        static NewCKvA instance;
-        static NewCKvA binstance;
+      CGAL_STATIC_THREAD_LOCAL_VARIABLE_0(NewCKvA, instance);
+      CGAL_STATIC_THREAD_LOCAL_VARIABLE_0(NewCKvA, binstance);
         
         if (&ckva == &_reset_instance()) {
             instance = binstance; 
@@ -212,7 +202,7 @@ private:
      * sets instance to default for internal purposes
      */
     static NewCKvA& _set_instance() {
-        static NewCKvA instance;
+      CGAL_STATIC_THREAD_LOCAL_VARIABLE_0(NewCKvA, instance);
         return instance;
         
     }
@@ -221,7 +211,7 @@ private:
      * sets instance to default for internal purposes
      */
     static NewCKvA& _reset_instance() {
-        static NewCKvA instance;
+      CGAL_STATIC_THREAD_LOCAL_VARIABLE_0(NewCKvA, instance);
         return instance;
     }
     

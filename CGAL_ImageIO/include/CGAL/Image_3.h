@@ -2,25 +2,19 @@
 //               2008 GeometryFactory
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Laurent Rineau, Pierre Alliez
 
 #ifndef CGAL_IMAGE_3_H
 #define CGAL_IMAGE_3_H
+
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/basic.h>
 #include <CGAL/array.h>
@@ -49,7 +43,7 @@ namespace ImageIO {
 template <typename T>
 struct Indicator_factory
 {
-  class Indicator : public std::unary_function<T, double>
+  class Indicator : public CGAL::cpp98::unary_function<T, double>
   {
     const T label;
   public:
@@ -70,14 +64,23 @@ struct Indicator_factory
 
 class CGAL_IMAGEIO_EXPORT Image_3
 {
+  class Image_deleter {
+    const bool own_the_data;
 
-  struct Image_deleter {
+  public:
+    Image_deleter(bool own_the_data) : own_the_data(own_the_data) {}
+
     void operator()(_image* image)
     {
+      if(!own_the_data && image != 0) {
+        image->data = 0;
+      }
       ::_freeImage(image);
     }
   };
 public:
+  enum Own { OWN_THE_DATA, DO_NOT_OWN_THE_DATA };
+
   typedef boost::shared_ptr<_image> Image_shared_ptr;
   typedef Image_shared_ptr Pointer;
 
@@ -85,7 +88,7 @@ protected:
   Image_shared_ptr image_ptr;
 
    // implementation in src/CGAL_ImageIO/Image_3.cpp
-  bool private_read(_image* im);
+  bool private_read(_image* im, Own own_the_data = OWN_THE_DATA);
 
 public:
   Image_3()
@@ -99,9 +102,9 @@ public:
 //     std::cerr << "Image_3::copy_constructor\n";
   }
 
-  Image_3(_image* im) 
+  Image_3(_image* im, Own own_the_data = OWN_THE_DATA)
   {
-    private_read(im);
+    private_read(im, own_the_data);
   }
 
   ~Image_3()
@@ -142,6 +145,10 @@ public:
   double vx() const { return image_ptr->vx; }
   double vy() const { return image_ptr->vy; }
   double vz() const { return image_ptr->vz; }
+
+  double tx() const { return image_ptr->tx; }
+  double ty() const { return image_ptr->ty; }
+  double tz() const { return image_ptr->tz; }
 
   float value(const std::size_t i,
               const std::size_t j,
@@ -251,9 +258,9 @@ Image_3::trilinear_interpolation(const Coord_type& x,
   if ( x < 0 || y < 0 || z < 0 )
     return value_outside;
   
-  const Coord_type lx = x / image()->vx;
-  const Coord_type ly = y / image()->vy;
-  const Coord_type lz = z / image()->vz;
+  const Coord_type lx = static_cast<Coord_type>(x / image()->vx);
+  const Coord_type ly = static_cast<Coord_type>(y / image()->vy);
+  const Coord_type lz = static_cast<Coord_type>(z / image()->vz);
   const std::size_t dimx = xdim();
   const std::size_t dimy = ydim();
   const std::size_t dimz = zdim();
@@ -467,7 +474,7 @@ Image_3::labellized_trilinear_interpolation
   const int i2 = i1 + 1;
   const int j2 = j1 + 1;
 
-  CGAL::cpp11::array<std::size_t,8> index;
+  std::array<std::size_t,8> index;
   index[0] = (i1 * dimy + j1) * dimx + k1;
   index[1] = index[0] + 1;
   index[2] = (i1 * dimy + j2) * dimx + k1;
@@ -477,7 +484,7 @@ Image_3::labellized_trilinear_interpolation
   index[6] = (i2 * dimy + j2) * dimx + k1;
   index[7] = index[6] + 1;
 
-  CGAL::cpp11::array<Image_word_type,8> labels;
+  std::array<Image_word_type,8> labels;
   
   labels[0] = ((Image_word_type*)image()->data)[index[0]];
   int lc = 1;
@@ -500,7 +507,7 @@ Image_3::labellized_trilinear_interpolation
     static_cast<unsigned int>(lc));
 
   if(lc == 1) {
-    return labels[0];
+    return static_cast<Target_type>(labels[0]);
   }
     
   double best_value = 0.;
@@ -518,7 +525,7 @@ Image_3::labellized_trilinear_interpolation
     }
   }
 //   CGAL_assertion(best_value > 0.5);
-  return best;
+  return static_cast<Target_type>(best);
 }
 
 } // end namespace CGAL
@@ -530,5 +537,7 @@ Image_3::labellized_trilinear_interpolation
 #if defined(BOOST_MSVC)
 #  pragma warning(pop)
 #endif
- 
+
+#include <CGAL/enable_warnings.h>
+
 #endif // CGAL_IMAGE_3_H

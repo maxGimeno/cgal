@@ -37,7 +37,6 @@ bool get_material_metadata(std::istream& input,
 
   iss >> _material.second;//name
 
-  //static int material_id = 0;
   while (std::getline(input, line))
   {
     std::string prop; //property
@@ -49,7 +48,7 @@ bool get_material_metadata(std::istream& input,
     {
       int tmp_id;
       iss >> tmp_id;
-      _material.first = material_id++;
+      _material.first = material_id;
 
       if ((0 == to_lower_case(_material.second).compare("exterior"))
           && _material.first != 0)
@@ -82,11 +81,11 @@ template<class Mesh, typename DuplicatedPointsOutIterator, class NamedParameters
 bool read_surf(std::istream& input, std::vector<Mesh>& output,
     std::vector<MaterialData>& metadata,
     CGAL::Bbox_3& grid_box,
-    CGAL::cpp11::array<unsigned int, 3>& grid_size,
+    std::array<unsigned int, 3>& grid_size,
     DuplicatedPointsOutIterator out,
     const NamedParameters&)
 {
-  typedef typename CGAL::GetGeomTraits<Mesh,
+  typedef typename CGAL::Polygon_mesh_processing::GetGeomTraits<Mesh,
       NamedParameters>::type Kernel;
   typedef typename Kernel::Point_3 Point_3;
   std::vector<Point_3> points;
@@ -236,7 +235,7 @@ bool read_surf(std::istream& input, std::vector<Mesh>& output,
     }
 
     //connect triangles
-    typedef CGAL::cpp11::array<std::size_t, 3> Triangle_ind;
+    typedef std::array<std::size_t, 3> Triangle_ind;
     std::vector<Triangle_ind> polygons;
     polygons.reserve(nb_triangles);
     while(std::getline(input, line))
@@ -287,12 +286,12 @@ bool read_surf(std::istream& input, std::vector<Mesh>& output,
 
     Mesh& mesh = output[i];
 
-    PMP::internal::Polygon_soup_to_polygon_mesh<Mesh, Point_3, Triangle_ind>
+    PMP::internal::Polygon_soup_to_polygon_mesh<Mesh, std::vector<Point_3>, std::vector<Triangle_ind>>
       converter(points, polygons);
     converter(mesh, false/*insert_isolated_vertices*/);
 
     CGAL_assertion(PMP::remove_isolated_vertices(mesh) == 0);
-    CGAL_assertion(is_valid(mesh));
+    CGAL_assertion(is_valid_polygon_mesh(mesh));
   } // end loop on patches
 
   return true;
@@ -302,7 +301,7 @@ template<class Mesh, typename DuplicatedPointsOutIterator>
 bool read_surf(std::istream& input, std::vector<Mesh>& output,
   std::vector<MaterialData>& metadata,
   CGAL::Bbox_3& grid_box,
-  CGAL::cpp11::array<unsigned int, 3>& grid_size,
+  std::array<unsigned int, 3>& grid_size,
   DuplicatedPointsOutIterator out)
 {
   return read_surf(input, output, metadata, grid_box, grid_size, out,

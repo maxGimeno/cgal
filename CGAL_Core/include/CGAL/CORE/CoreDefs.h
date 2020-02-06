@@ -4,17 +4,6 @@
  * All rights reserved.
  *
  * This file is part of CGAL (www.cgal.org).
- * You can redistribute it and/or modify it under the terms of the GNU
- * Lesser General Public License as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * Licensees holding a valid commercial license may use this file in
- * accordance with the commercial license agreement provided with the
- * software.
- *
- * This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
- * WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- *
  *
  * File: CoreDefs.h
  * Synopsis:
@@ -33,6 +22,7 @@
  *
  * $URL$
  * $Id$
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  ***************************************************************************/
 
 #ifndef _CORE_COREDEFS_H_
@@ -40,6 +30,7 @@
 
 #include <CGAL/CORE/extLong.h>
 #include <CGAL/atomic.h>
+#include <CGAL/disable_warnings.h>
 
 #ifdef CGAL_HEADER_ONLY
   
@@ -53,7 +44,7 @@
 #else // CGAL_HEADER_ONLY
 
   #define CGAL_GLOBAL_STATE_VAR(TYPE, NAME, VALUE)  \
-    CGAL_CORE_EXPORT extern TYPE NAME;                   \
+    CGAL_CORE_EXPORT extern TYPE NAME;              \
     inline TYPE& get_static_##NAME()                \
     {                                               \
       return NAME;                                  \
@@ -320,7 +311,6 @@ inline bool setRationalReduceFlag(bool f) {
 inline void CORE_init(long d) {
   get_static_defAbsPrec() = CORE_posInfty;
   get_static_defOutputDigits() = d;
-  std::setprecision(get_static_defOutputDigits());
 }
 
 /// change to scientific output format
@@ -338,5 +328,9 @@ inline void setPositionalFormat(std::ostream& o = std::cout) {
 #ifdef CGAL_HEADER_ONLY
 #include <CGAL/CORE/CoreDefs_impl.h>
 #endif // CGAL_HEADER_ONLY
+
+#include <CGAL/enable_warnings.h>
+
+#undef CGAL_GLOBAL_STATE_VAR
 
 #endif // _CORE_COREDEFS_H_

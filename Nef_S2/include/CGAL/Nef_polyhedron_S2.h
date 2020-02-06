@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 // 
 //
 // Author(s)     : Michael Seel       <seel@mpi-sb.mpg.de>
@@ -24,11 +16,7 @@
 
 #include <CGAL/license/Nef_S2.h>
 
-
-#if defined(BOOST_MSVC)
-#  pragma warning(push)
-#  pragma warning(disable:4800) // complaint about performance in std::map where we can't do anything
-#endif
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/basic.h>
 #include <CGAL/Handle_for.h>
@@ -353,6 +341,11 @@ public:
             f->mark() == true);
   }
 
+  bool is_sphere() const
+  {
+    return is_plane();
+  }
+
   void extract_complement()
   { CGAL_NEF_TRACEN("extract complement");
     if ( this->is_shared() ) clone_rep();
@@ -378,7 +371,7 @@ public:
     SHalfedge_iterator e;
     CGAL_forall_svertices(v,D) v->mark() = false;
     CGAL_forall_sedges(e,D) e->mark() = false;
-    if ( D.has_sloop() ) D.shalfloop()->mark() = false;
+    if ( D.has_shalfloop() ) D.shalfloop()->mark() = false;
     D.simplify();
   }
 
@@ -393,7 +386,7 @@ public:
     CGAL_forall_svertices(v,D) v->mark() = true;
     CGAL_forall_sedges(e,D)    e->mark() = true;
     CGAL_forall_sfaces(f,D)    f->mark() = false;
-    if ( D.has_sloop() )       D.shalfloop()->mark() = D.shalfoop()->twin() = true;
+    if ( D.has_shalfloop() )       D.shalfloop()->mark() = D.shalfoop()->twin()->mark() = true;
     D.simplify();
   }
 
@@ -615,7 +608,7 @@ public:
   converted to a |SVertex_/SHalfedge_/SFace_const_handle| as described
   above. The object returned is intersected by the ray starting in |p|
   with direction |d| and has minimal distance to |p|.  The operation
-  returns the null handle |NULL| if the ray shoot along |d| does not hit
+  returns the null handle |nullptr| if the ray shoot along |d| does not hit
   any object |h| of |\Mvar| with |\Mvar.contains(h)|.}*/
   { 
     Locator PL(&sphere_map());
@@ -635,7 +628,7 @@ public:
   |SVertex_/SHalfedge_const_handle| as described above. The object
   returned is part of the $1$-skeleton of |\Mvar|, intersected by the
   ray starting in |p| with direction |d| and has minimal distance to
-  |p|.  The operation returns the null handle |NULL| if the ray shoot
+  |p|.  The operation returns the null handle |nullptr| if the ray shoot
   along |d| does not hit any $1$-skeleton object |h| of |\Mvar|. The
   location mode flag |m| allows one to choose between different point
   location strategies.}*/
@@ -728,10 +721,8 @@ std::istream& operator>>
   return is;
 }
 
-
-#if defined(BOOST_MSVC)
-#  pragma warning(pop)
-#endif
-
 } //namespace CGAL
+
+#include <CGAL/enable_warnings.h>
+
 #endif //CGAL_NEF_POLYHEDRON_S2_H

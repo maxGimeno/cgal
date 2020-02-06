@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Authors: Weisheng Si, Quincy Tse
@@ -57,9 +49,10 @@ namespace CGAL {
  *
  */
 template <typename Kernel_, typename Graph_>
-class  Less_by_direction_2 : public std::binary_function <typename Graph_::vertex_descriptor,
-        typename Graph_::vertex_descriptor, bool> {
-
+class Less_by_direction_2
+  : public CGAL::cpp98::binary_function <typename Graph_::vertex_descriptor,
+                                         typename Graph_::vertex_descriptor, bool>
+{
 public:
     // typedef for C++11 - doesn't hurt to also have for C++98
     typedef typename Graph_::vertex_descriptor first_argument_type;

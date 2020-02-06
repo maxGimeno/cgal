@@ -1,27 +1,16 @@
 // Copyright (c) 2007  GeometryFactory (France).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Andreas Fabri, Fernando Cacciola
 
 #ifndef CGAL_BOOST_GRAPH_GRAPH_TRAITS_POLYHEDRON_3_H
 #define CGAL_BOOST_GRAPH_GRAPH_TRAITS_POLYHEDRON_3_H
-
-#include <CGAL/license/Polyhedron.h>
-
 
 #include <CGAL/boost/graph/graph_traits_HalfedgeDS.h>
 
@@ -463,12 +452,6 @@ reserve(CGAL::Polyhedron_3<Gt,I,HDS,A>& p,
         typename boost::graph_traits< CGAL::Polyhedron_3<Gt,I,HDS,A> >::faces_size_type nf)
 {
   p.reserve(nv, 2*ne, nf);
-}
-
-template<class Gt, class I, CGAL_HDS_PARAM_, class A>
-bool is_valid(const CGAL::Polyhedron_3<Gt,I,HDS,A>& p, bool verbose = false)
-{
-  return p.is_valid(verbose);
 }
 
 template<class Gt, class I, CGAL_HDS_PARAM_, class A>

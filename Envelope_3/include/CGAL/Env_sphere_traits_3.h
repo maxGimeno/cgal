@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Michal Meyerovitch     <gorgymic@post.tau.ac.il>
 //                 Baruch Zukerman        <baruchzu@post.tau.ac.il>
@@ -245,7 +237,7 @@ public:
           
           Algebraic  ys[2];
           Algebraic *ys_end;
-          int   n_ys;
+          std::ptrdiff_t   n_ys;
 
           ys_end = nt_traits.solve_quadratic_equation(A, B, C, ys);
           n_ys = ys_end - ys;
@@ -326,7 +318,7 @@ public:
           
           Algebraic  xs[2];
           Algebraic *xs_end;
-          int   n_xs;
+          std::ptrdiff_t n_xs;
 
           xs_end = nt_traits.solve_quadratic_equation(D, E, F, xs);
           n_xs = xs_end - xs;
@@ -512,7 +504,7 @@ public:
         // with the conic
         //    R*x^2 + S*y^2 + T*xy + U*x + V*y + W = 0
         Alg_point_2 source, target, pmid;
-        int n_inter_points;
+        std::ptrdiff_t n_inter_points;
         if (CGAL_NTS compare(lb, zero) != EQUAL)
         {
           // Find the x-coordinates of the intersection points of the conic 
@@ -1093,7 +1085,7 @@ public:
     
     Algebraic  zs[2];
     Algebraic *zs_end;
-    int   n_zs;
+    std::ptrdiff_t n_zs;
 
     Nt_traits nt_traits;
     zs_end = nt_traits.solve_quadratic_equation(A, B, C, zs);

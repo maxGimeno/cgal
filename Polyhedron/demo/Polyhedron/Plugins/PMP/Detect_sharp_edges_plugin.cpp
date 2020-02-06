@@ -7,24 +7,12 @@
 
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 
-#ifdef USE_SURFACE_MESH
 #include "Scene_surface_mesh_item.h"
-#include <CGAL/Mesh_3/properties_Surface_mesh.h>
-
-#else
-#include "Scene_polyhedron_item.h"
-#include "Polyhedron_type.h"
-#include <CGAL/Mesh_3/properties_Polyhedron_3.h>
-#endif
 
 #include "Polyhedron_demo_detect_sharp_edges.h"
 
-#ifdef USE_SURFACE_MESH
 typedef Scene_surface_mesh_item Scene_facegraph_item;
 typedef CGAL::Kernel_traits<Scene_surface_mesh_item::Face_graph::Point>::Kernel Kernel;
-#else
-typedef Scene_polyhedron_item Scene_facegraph_item;
-#endif
 
 typedef Scene_facegraph_item::Face_graph FaceGraph;
 typedef boost::graph_traits<FaceGraph>::halfedge_descriptor halfedge_descriptor;
@@ -38,7 +26,7 @@ class Polyhedron_demo_detect_sharp_edges_plugin :
 {
   Q_OBJECT
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
-  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0" FILE "detect_sharp_edges_plugin.json")
 
 public:
   void init(QMainWindow* mainWindow, Scene_interface* scene_interface, Messages_interface*) {
@@ -67,7 +55,7 @@ public:
   }
 
 public Q_SLOTS:
-void detectSharpEdges(bool input_dialog = false, double angle = 60);
+  void detectSharpEdges(bool input_dialog = false, double angle = 60);
   void detectSharpEdgesWithInputDialog();
 
 protected:
@@ -85,6 +73,7 @@ void Polyhedron_demo_detect_sharp_edges_plugin::detectSharpEdgesWithInputDialog(
   detectSharpEdges(true);
 }
 
+namespace PMP = CGAL::Polygon_mesh_processing;
 void Polyhedron_demo_detect_sharp_edges_plugin::detectSharpEdges(bool input_dialog,
                                                                  double angle)
 {
@@ -123,23 +112,28 @@ void Polyhedron_demo_detect_sharp_edges_plugin::detectSharpEdges(bool input_dial
   // Detect edges
   QApplication::setOverrideCursor(Qt::WaitCursor);
   QApplication::processEvents();
+  std::size_t first_patch = 1;
   Q_FOREACH(Poly_tuple tuple, polyhedrons)
   {
     Scene_facegraph_item* item =
       qobject_cast<Scene_facegraph_item*>(scene->item(tuple.first));
     FaceGraph* pMesh = tuple.second;
-    if (!pMesh) continue;
+    if (!pMesh)
+      continue;
 
-    CGAL::Polygon_mesh_processing::Detect_features_in_polyhedra<FaceGraph,
-        int> detect_features;
+    typedef boost::property_map<FaceGraph,CGAL::face_patch_id_t<int> >::type PatchID;
+    typedef boost::property_map<FaceGraph, CGAL::vertex_incident_patches_t<int> >::type VIP;
+    boost::property_map<FaceGraph, CGAL::edge_is_feature_t>::type eif
+      = get(CGAL::edge_is_feature, *pMesh);
+    PatchID pid = get(CGAL::face_patch_id_t<int>(), *pMesh);
+    VIP vip = get(CGAL::vertex_incident_patches_t<int>(), *pMesh);
 
-    // Get sharp features
-    detect_features.detect_sharp_edges(*pMesh, angle);
-    detect_features.detect_surface_patches(*pMesh);
-    detect_features.detect_vertices_incident_patches(*pMesh);
-
+    first_patch+=PMP::sharp_edges_segmentation(*pMesh, angle, eif, pid,
+                                               PMP::parameters::first_index(first_patch)
+                                               .vertex_incident_patches_map(vip));
     //update item
     item->setItemIsMulticolor(true);
+    item->computeItemColorVectorAutomatically(true);
     item->invalidateOpenGLBuffers();
 
     // update scene

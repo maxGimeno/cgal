@@ -2,26 +2,12 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Laurent Rineau
-//
-//******************************************************************************
-// File Description :
-//
-//
-//******************************************************************************
 
 #ifndef CGAL_MESH_3_FACET_TOPOLOGICAL_CRITERION_WITH_ADJACENCY_H
 #define CGAL_MESH_3_FACET_TOPOLOGICAL_CRITERION_WITH_ADJACENCY_H
@@ -45,7 +31,7 @@ private:
   
   typedef Mesh_3::Abstract_criterion<Tr,Visitor_> Base;
   typedef typename Base::Quality Quality;
-  typedef typename Base::Badness Badness;
+  typedef typename Base::Is_bad  Is_bad;
   
   typedef Facet_topological_criterion_with_adjacency<Tr,MeshDomain, Visitor_> Self;
 
@@ -57,9 +43,10 @@ public:
   /// Constructor
   Facet_topological_criterion_with_adjacency(const MeshDomain* domain)
     : domain(domain)
-  {};
+  {}
+
   /// Destructor
-  virtual ~Facet_topological_criterion_with_adjacency() {};
+  virtual ~Facet_topological_criterion_with_adjacency() {}
   
 protected:
   virtual void do_accept(Visitor_& v) const
@@ -73,7 +60,7 @@ protected:
     return new Self(*this);
   }
   
-  virtual Badness do_is_bad (const Facet& f) const
+  virtual Is_bad do_is_bad (const Tr& /*tr*/, const Facet& f) const
   {
     typedef typename Tr::Vertex_handle  Vertex_handle;
     typedef typename Tr::Cell_handle    Cell_handle;
@@ -101,35 +88,35 @@ protected:
           Index_set set;
           domain->get_corner_incidences(corner_id, std::back_inserter(set));
           if(std::find(set.begin(), set.end(), patch_index) == set.end())
-            return Badness(Quality(1)); // bad!
+            return Is_bad(Quality(1)); // bad!
         }
         break;
       case 1: 
         {
           ++nb_vertices_on_curves;
-          const typename MeshDomain::Curve_segment_index curve_id =
-            domain->curve_segment_index(v->index());
+          const typename MeshDomain::Curve_index curve_id =
+            domain->curve_index(v->index());
           Index_set set;
           domain->get_incidences(curve_id, std::back_inserter(set));
           if(std::find(set.begin(), set.end(), patch_index) == set.end())
-            return Badness(Quality(1)); // bad!
+            return Is_bad(Quality(1)); // bad!
         }
         break;
       case 2:
         if(domain->surface_patch_index(v->index()) != patch_index)
-          return Badness(Quality(1)); // bad!
+          return Is_bad(Quality(1)); // bad!
         break;
       default:
-        return Badness(Quality(1));
+        return Is_bad(Quality(1));
         break;
       }
     }
     if(nb_vertices_on_curves == 3) {
-      return Badness(Quality(1)); // bad!
+      return Is_bad(Quality(1)); // bad!
       // All vertices are on curves. That means that the facet could be on
       // several different patches. Let's disallow that.
     }
-    return Badness();
+    return Is_bad();
   }
 }; // end class Facet_topological_criterion_with_adjacency
 

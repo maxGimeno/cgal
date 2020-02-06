@@ -2,7 +2,7 @@
 namespace CGAL {
 
 /*!
-\ingroup PkgAlphaShape2
+\ingroup PkgAlphaShapes2Ref
 
 The class `Alpha_shape_2` represents the family of 
 \f$ \alpha\f$-shapes of points in a plane for <I>all</I> positive 
@@ -33,7 +33,9 @@ overhead. Note that the tag `ExactAlphaComparisonTag` is currently ignored (mean
 if `Dt::Geom_traits::FT` is not a floating point number type as this strategy
 does not make sense if the traits class already provides exact constructions.
 
-\warning When the tag `ExactAlphaComparisonTag` is set to \link Tag_true `Tag_true`\endlink,
+\warning
+<ul>
+<li>When the tag `ExactAlphaComparisonTag` is set to \link Tag_true `Tag_true`\endlink,
 the class `Cartesian_converter` is used internally to switch between the traits class
 and the %CGAL kernel `CGAL::Simple_cartesian<NT>`, where `NT` can be either `CGAL::Interval_nt` or
 `CGAL::Exact_rational`. `Cartesian_converter` must thus offer the necessary functors
@@ -45,6 +47,17 @@ how to convert from the camouflaged `CGAL::Point_3` to the two-dimensional point
 of `CGAL::Simple_cartesian<NT>`. In this case, a partial specialization of `Cartesian_converter`
 must be provided by the user. An example of such specialization is given in the example
 \ref Alpha_shapes_2/ex_alpha_projection_traits.cpp "ex_alpha_projection_traits.cpp".
+<li>The tag `ExactAlphaComparisonTag` cannot be used in conjonction with periodic triangulations.
+When the tag `ExactAlphaComparisonTag` is set to \link Tag_true `Tag_true`\endlink,
+the evaluations of predicates such as `Side_of_oriented_circle_2` are done lazily.
+Consequently, the predicates store pointers to the geometrical positions of the
+points passed as arguments of the predicates. It is thus important that
+these points are not temporary objects. Points of the triangulation are accessed
+using the function `point(Face_handle, int)` of the underlying triangulation.
+In the case of periodic triangulations, the `point(Face_handle, int)` function
+is actually a construction that returns a temporary, which thus cannot be used
+along with a lazy predicate evaluation.
+</ul>
 
 \cgalHeading{I/O}
 
@@ -95,6 +108,10 @@ resorting to exact arithmetic). Access to the interval containing the exact valu
 with `Protected=true`. Access to the exact value is provided through the function
 `FT::Exact_nt exact() const` where `FT::Exact_nt` depends on the configuration of %CGAL
 (it is `Gmpq` if `gmp` is available and `Quotient<CGAL::MP_Float>` otherwise).
+An overload for the function `double to_double(FT)` is also available. Its
+precision is controlled through `FT::set_relative_precision_of_to_double()` in
+exactly the same way as with `Lazy_exact_nt<NT>`, so a call to `to_double` may
+trigger an exact evaluation.
 It must be noted that an object of type `FT` is valid as long as the alpha shapes class that creates
 it is valid and has not been modified.
 For convenience, classical comparison operators are provided for the type `FT`.

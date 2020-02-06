@@ -1,30 +1,23 @@
 // Copyright (c) 2006-2009 Max-Planck-Institute Saarbruecken (Germany).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
+// This file is part of CGAL (www.cgal.org)
 //
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL: svn+ssh://hemmer@scm.gforge.inria.fr/svn/cgal/trunk/Polynomial/include/CGAL/Polynomial.h $
-// $Id: Polynomial.h 47254 2008-12-06 21:18:27Z afabri $
-// 
+// $URL$
+// $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     :   Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
 //                   Michael Kerber <mkerber@mpi-inf.mpg.de>
 //
 // ============================================================================
 
-#include <CGAL/basic.h>
-#include <cassert>
+#include <CGAL/use.h>
+#include <CGAL/IO/io.h>
 
-//#include <CGAL/_test_basic.h>
+#include <cassert>
+#include <vector>
+
 
 #ifndef CGAL_TEST_ALGEBRAIC_CURVE_KERNEL_2_H
 #define CGAL_TEST_ALGEBRAIC_CURVE_KERNEL_2_H
