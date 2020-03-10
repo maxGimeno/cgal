@@ -126,7 +126,7 @@ class Periodic_3_triangulation_3
   typedef Periodic_3_triangulation_3<GT,TDS>   Self;
 
 public:
-  typedef GT                                   Geometric_traits;
+   typedef GT                                   Geometric_traits;
   typedef TDS                                  Triangulation_data_structure;
 
   typedef typename GT::Periodic_3_offset_3     Offset;
