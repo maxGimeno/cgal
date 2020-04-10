@@ -29,6 +29,7 @@ public:
   QMenu* contextMenu();
   void initializeBuffers(CGAL::Three::Viewer_interface *) const;
   void computeElements() const;
+  void compute_bbox() const Q_DECL_OVERRIDE{};
 
 
 protected:
