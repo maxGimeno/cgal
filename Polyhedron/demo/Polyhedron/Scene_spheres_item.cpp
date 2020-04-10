@@ -17,9 +17,11 @@ struct Scene_spheres_item_priv
   typedef std::pair<Sphere, CGAL::Color> Sphere_pair;
   typedef std::vector<std::vector<Sphere_pair> > Spheres_container;
 
-  Scene_spheres_item_priv(bool planed, std::size_t max_index, Scene_spheres_item* parent)
+
+  Scene_spheres_item_priv(bool planed, std::size_t max_index, Scene_spheres_item* parent, bool pickable)
     :precision(36)
     ,has_plane(planed)
+    ,pickable(pickable)
   {
     item = parent;
     create_flat_and_wire_sphere(1.0f,vertices,normals, edges);
@@ -38,7 +40,7 @@ struct Scene_spheres_item_priv
   {
   }
 
-  void pick(int id)const;
+  void pick(int &id)const;
 
   void initializeBuffers(CGAL::Three::Viewer_interface *viewer)const;
 
@@ -62,11 +64,20 @@ struct Scene_spheres_item_priv
   Scene_spheres_item* item;
   QString tooltip;
   mutable Spheres_container spheres;
+  const bool pickable;
 
 };
 
-void Scene_spheres_item_priv::pick(int id) const
+void Scene_spheres_item_priv::pick(int& id) const
 {
+  if(!pickable)
+    return;
+  
+  if(id >= static_cast<int>(spheres.size()))
+  {
+    id = -1;
+  }
+    
   int offset = 0;
   float color[4];
   for(std::size_t i=0; i<spheres.size(); ++i)
@@ -94,15 +105,19 @@ void Scene_spheres_item_priv::pick(int id) const
   }
 }
 
-Scene_spheres_item::Scene_spheres_item(Scene_group_item* parent, std::size_t max_index, bool planed)
+Scene_spheres_item::Scene_spheres_item(Scene_group_item* parent, std::size_t max_index, bool planed, bool pickable)
 {
   setParent(parent);
-  d = new Scene_spheres_item_priv(planed, max_index, this);
+  d = new Scene_spheres_item_priv(planed, max_index, this, pickable);
+  if(pickable)
+  {
   //for picking
   setTriangleContainer(1,
                        new Tc(planed ? Vi::PROGRAM_CUTPLANE_SPHERES
                                      : Vi::PROGRAM_SPHERES
                                        ,false));
+
+  }
   //for drawing
   setTriangleContainer(0, 
                        new Tc(planed ? Vi::PROGRAM_CUTPLANE_SPHERES
@@ -124,10 +139,12 @@ void Scene_spheres_item_priv::initializeBuffers(CGAL::Three::Viewer_interface *v
   item->getTriangleContainer(0)->initializeBuffers(viewer);
   item->getTriangleContainer(0)->setFlatDataSize(nb_vertices);
   item->getTriangleContainer(0)->setCenterSize(nb_centers);
-
-  item->getTriangleContainer(1)->initializeBuffers(viewer);
-  item->getTriangleContainer(1)->setFlatDataSize(nb_vertices);
-  item->getTriangleContainer(1)->setCenterSize(nb_centers);
+  if(pickable)
+  {
+    item->getTriangleContainer(1)->initializeBuffers(viewer);
+    item->getTriangleContainer(1)->setFlatDataSize(nb_vertices);
+    item->getTriangleContainer(1)->setCenterSize(nb_centers);
+  }
   vertices.clear();
   vertices.shrink_to_fit();
   item->getEdgeContainer(0)->initializeBuffers(viewer);
@@ -170,10 +187,11 @@ void Scene_spheres_item::draw(Viewer_interface *viewer) const
     {
       QVector4D cp(d->plane.a(),d->plane.b(),d->plane.c(),d->plane.d());
       getTriangleContainer(0)->setPlane(cp);
+      if(d->pickable)
+        getTriangleContainer(1)->setPlane(cp);
     }
-    if(d->spheres.size() > 1 && viewer->inDrawWithNames())
+    if(d->pickable && (d->spheres.size() > 1 && viewer->inDrawWithNames()))
     {
-      getTriangleContainer(1)->allocate(Tc::Flat_normals, 0, 0);
       getTriangleContainer(1)->getVao(viewer)->program->setAttributeValue("normals", QVector3D(0,0,0));
       getTriangleContainer(1)->draw(viewer, false);
     }
@@ -181,23 +199,21 @@ void Scene_spheres_item::draw(Viewer_interface *viewer) const
     {
       getTriangleContainer(0)->draw(viewer, false);
     }
-    if(d->spheres.size() > 1 && viewer->inDrawWithNames())
+    if(d->pickable && (d->spheres.size() > 1 && viewer->inDrawWithNames()))
+    {
+      int rowLength = deviceWidth * 4; // data asked in RGBA,so 4 bytes.
+      const static int dataLength = rowLength * deviceHeight;
+      GLubyte* buffer = new GLubyte[dataLength];
+      // Qt uses upper corner for its origin while GL uses the lower corner.
+      QPoint picking_target = viewer->mapFromGlobal(QCursor::pos());
+      viewer->glReadPixels(picking_target.x(), deviceHeight-1-picking_target.y(), 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+      int ID = (buffer[0] + buffer[1] * 256 +buffer[2] * 256*256) ;
+      if(buffer[0]*buffer[1]*buffer[2] < 255*255*255)
       {
-        int rowLength = deviceWidth * 4; // data asked in RGBA,so 4 bytes.
-        const static int dataLength = rowLength * deviceHeight;
-        GLubyte* buffer = new GLubyte[dataLength];
-        // Qt uses upper corner for its origin while GL uses the lower corner.
-        QPoint picking_target = viewer->mapFromGlobal(QCursor::pos());
-        viewer->glReadPixels(picking_target.x(), deviceHeight-1-picking_target.y(), 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-        int ID = (buffer[0] + buffer[1] * 256 +buffer[2] * 256*256) ;
-        if(buffer[0]*buffer[1]*buffer[2] < 255*255*255)
-        {
-          d->pick(ID);
-          viewer->displayMessage(QString("Picked spheres index : %1 .").arg(ID), 2000);
-        }
-        else
-          d->pick(-1);
+        d->pick(ID);
+        picked(ID);
       }
+    }
 }
 
 void Scene_spheres_item::drawEdges(Viewer_interface *viewer) const
@@ -227,7 +243,7 @@ void Scene_spheres_item::drawEdges(Viewer_interface *viewer) const
 }
 void Scene_spheres_item::add_sphere(const Sphere &sphere, std::size_t index,  CGAL::Color color)
 {
-  if(index > d->spheres.size()-1)
+  if((int)index > (int)d->spheres.size() - 1)
     d->spheres.resize(index+1);
 
   d->spheres[index].push_back(std::make_pair(sphere, color));
@@ -235,16 +251,18 @@ void Scene_spheres_item::add_sphere(const Sphere &sphere, std::size_t index,  CG
   d->colors.push_back((float)color.red()/255);
   d->colors.push_back((float)color.green()/255);
   d->colors.push_back((float)color.blue()/255);
-  int R = (index & 0x000000FF) >>  0;
-  int G = (index & 0x0000FF00) >>  8;
-  int B = (index & 0x00FF0000) >> 16;
-  float r = R/255.0;
-  float g = G/255.0;
-  float b = B/255.0;
-  d->picking_colors.push_back(r);
-  d->picking_colors.push_back(g);
-  d->picking_colors.push_back(b);
-
+  if(d->pickable)
+  {
+    int R = (index & 0x000000FF) >>  0;
+    int G = (index & 0x0000FF00) >>  8;
+    int B = (index & 0x00FF0000) >> 16;
+    float r = R/255.0;
+    float g = G/255.0;
+    float b = B/255.0;
+    d->picking_colors.push_back(r);
+    d->picking_colors.push_back(g);
+    d->picking_colors.push_back(b); 
+  }
   d->edges_colors.push_back((float)color.red()/255);
   d->edges_colors.push_back((float)color.green()/255);
   d->edges_colors.push_back((float)color.blue()/255);
@@ -252,16 +270,18 @@ void Scene_spheres_item::add_sphere(const Sphere &sphere, std::size_t index,  CG
   d->centers.push_back(sphere.center().x());
   d->centers.push_back(sphere.center().y());
   d->centers.push_back(sphere.center().z());
-
   d->radius.push_back(CGAL::sqrt(sphere.squared_radius()));
 }
 
 void Scene_spheres_item::clear_spheres()
 {
+  d->spheres.clear();
   d->colors.clear();
   d->edges_colors.clear();
   d->centers.clear();
   d->radius.clear();
+  d->picking_colors.clear();
+  setBuffersFilled(false);
 }
 void Scene_spheres_item::setPrecision(int prec) { d->precision = prec; }
 void Scene_spheres_item::setPlane(Kernel::Plane_3 p_plane) { d->plane = p_plane; }
@@ -269,7 +289,11 @@ void Scene_spheres_item::invalidateOpenGLBuffers()
 {
   setBuffersFilled(false);
   getTriangleContainer(0)->reset_vbos(NOT_INSTANCED);
-  getTriangleContainer(1)->reset_vbos(NOT_INSTANCED);
+  getTriangleContainer(0)->reset_vbos(COLORS);
+  if(d->pickable){
+    getTriangleContainer(1)->reset_vbos(NOT_INSTANCED);
+    getTriangleContainer(1)->reset_vbos(COLORS);
+  }
   getEdgeContainer(0)->reset_vbos(NOT_INSTANCED);
 }
 
@@ -304,10 +328,10 @@ void Scene_spheres_item::computeElements() const
     getTriangleContainer(0)->allocate(Tc::Flat_normals, d->normals.data(),
                                       static_cast<int>(d->normals.size()*sizeof(float)));
 
-
-    getTriangleContainer(1)->allocate(Tc::Flat_vertices, d->vertices.data(),
-                                      static_cast<int>(d->vertices.size()*sizeof(float)));
-
+    if(d->pickable)
+      getTriangleContainer(1)->allocate(Tc::Flat_vertices, d->vertices.data(),
+                                        static_cast<int>(d->vertices.size()*sizeof(float)));
+    
     d->nb_vertices = d->vertices.size();
     
   }
@@ -318,12 +342,15 @@ void Scene_spheres_item::computeElements() const
   getTriangleContainer(0)->allocate(Tc::Facet_centers, d->centers.data(),
                                     static_cast<int>(d->centers.size()*sizeof(float)));
 
-  getTriangleContainer(1)->allocate(Tc::FColors, d->picking_colors.data(),
-                                    static_cast<int>(d->picking_colors.size()*sizeof(float)));
-  getTriangleContainer(1)->allocate(Tc::Radius, d->radius.data(),
-                                    static_cast<int>(d->radius.size()*sizeof(float)));
-  getTriangleContainer(1)->allocate(Tc::Facet_centers, d->centers.data(),
-                                    static_cast<int>(d->centers.size()*sizeof(float)));
+  if(d->pickable)
+  {
+    getTriangleContainer(1)->allocate(Tc::FColors, d->picking_colors.data(),
+                                      static_cast<int>(d->picking_colors.size()*sizeof(float)));
+    getTriangleContainer(1)->allocate(Tc::Radius, d->radius.data(),
+                                      static_cast<int>(d->radius.size()*sizeof(float)));
+    getTriangleContainer(1)->allocate(Tc::Facet_centers, d->centers.data(),
+                                      static_cast<int>(d->centers.size()*sizeof(float)));
+  }
 
   if(!d->model_sphere_is_up)
   {
@@ -370,7 +397,7 @@ void Scene_spheres_item::compute_bbox() const
       box += pair.first.bbox();
     }
   }
-  setBbox(box);
+  _bbox = box;
 }
 
 bool Scene_spheres_item::save(const std::string& file_name)const
@@ -395,3 +422,4 @@ bool Scene_spheres_item::save(const std::string& file_name)const
   out << "\n";
   return true;
 }
+

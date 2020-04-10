@@ -33,7 +33,7 @@ public:
   typedef std::pair<Sphere, CGAL::Color> Sphere_pair;
   typedef std::vector<std::vector<Sphere_pair> > Spheres_container;
 
-  Scene_spheres_item(Scene_group_item* parent, std::size_t max_index = 0, bool planed = false);
+  Scene_spheres_item(Scene_group_item* parent, std::size_t max_index = 0, bool planed = false, bool pickable = true);
 
   ~Scene_spheres_item();
 
@@ -62,6 +62,7 @@ public:
   void computeElements() const Q_DECL_OVERRIDE;
 Q_SIGNALS:
   void on_color_changed();
+  void picked(std::size_t id) const;
 protected:
   friend struct Scene_spheres_item_priv;
   Scene_spheres_item_priv* d;

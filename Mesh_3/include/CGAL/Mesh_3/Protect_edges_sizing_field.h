@@ -39,8 +39,16 @@
 #ifdef CGAL_MESH_3_DUMP_FEATURES_PROTECTION_ITERATIONS
 #include <CGAL/IO/File_binary_mesh_3.h>
 #endif
-#include <CGAL/Has_timestamp.h>
+
 #include <CGAL/internal/Mesh_3/Handle_IO_for_pair_of_int.h>
+
+#include <CGAL/enum.h>
+#include <CGAL/Time_stamper.h>
+#include <CGAL/internal/Has_member_visited.h>
+#include <CGAL/iterator.h>
+#include <CGAL/number_utils.h>
+#include <CGAL/Delaunay_triangulation_3.h>
+#include <CGAL/atomic.h>
 
 
 #define CGAL_MESH_3_PROTECTION_DEBUG 255
