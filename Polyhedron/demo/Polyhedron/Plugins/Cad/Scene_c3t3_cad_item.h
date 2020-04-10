@@ -25,6 +25,7 @@
 #include <Scene_polygon_soup_item.h>
 #include <CGAL/IO/File_binary_mesh_3.h>
 #include <CGAL/Three/Scene_item_with_properties.h>
+#include <CGAL/internal/Mesh_3/Handle_IO_for_pair_of_int.h>
 
 struct Scene_c3t3_cad_item_priv;
 class Scene_spheres_item;
@@ -38,14 +39,14 @@ public:
   typedef CGAL::qglviewer::ManipulatedFrame ManipulatedFrame;
 
   Scene_c3t3_cad_item();
-  Scene_c3t3_cad_item(const C3t3& c3t3, const Mesh_domain& md);
+  Scene_c3t3_cad_item(const C3t3_cad& c3t3, const Mesh_domain_cad& md);
   ~Scene_c3t3_cad_item();
 
   void common_constructor();
   bool has_stats()const  Q_DECL_OVERRIDE {return true;}
   QString computeStats(int type)  Q_DECL_OVERRIDE;
   CGAL::Three::Scene_item::Header_data header() const Q_DECL_OVERRIDE;
-  const Mesh_domain& meshDomain() const;
+  const Mesh_domain_cad& meshDomain() const;
 
   void setColor(QColor c) Q_DECL_OVERRIDE;
   bool save_binary(std::ostream& os) const
@@ -54,7 +55,7 @@ public:
   }
   bool save_ascii(std::ostream& os) const
   {
-      os << "ascii CGAL c3t3 " << CGAL::Get_io_signature<C3t3>()() << "\n";
+      os << "ascii CGAL c3t3 " << CGAL::Get_io_signature<C3t3_cad>()() << "\n";
       CGAL::set_ascii_mode(os);
       return !!(os << c3t3());
   }
@@ -67,8 +68,8 @@ public:
 
   void set_valid(bool);
 
-  const C3t3& c3t3() const;
-  C3t3& c3t3();
+  const C3t3_cad& c3t3() const;
+  C3t3_cad& c3t3();
 
   bool manipulatable() const  Q_DECL_OVERRIDE{
     return true;
@@ -88,7 +89,7 @@ public:
 
   void setNormal(float x, float y, float z) ;
 
-  Geom_traits::Plane_3 plane(CGAL::qglviewer::Vec offset = CGAL::qglviewer::Vec(0,0,0)) const;
+  Geom_traits_cad::Plane_3 plane(CGAL::qglviewer::Vec offset = CGAL::qglviewer::Vec(0,0,0)) const;
 
   bool isFinite() const Q_DECL_OVERRIDE { return true; }
   bool isEmpty() const Q_DECL_OVERRIDE {

@@ -53,7 +53,7 @@ public:
       return false;
     }
   };
-  
+
 private:
   CGAL::Three::Scene_interface* scene;
 };
@@ -96,7 +96,7 @@ struct Fake_mesh_domain {
   typedef boost::variant<Subdomain_index,Surface_patch_index> Index;
 };
 
-typedef Geom_traits Fake_gt;
+typedef Geom_traits_cad Fake_gt;
 typedef CGAL::Mesh_vertex_base_3<Fake_gt, Fake_mesh_domain> Fake_vertex_base;
 typedef CGAL::Compact_mesh_cell_base_3<Fake_gt, Fake_mesh_domain> Fake_cell_base;
 typedef CGAL::Triangulation_data_structure_3<Fake_vertex_base,Fake_cell_base> Fake_tds;
@@ -267,7 +267,7 @@ struct Update_cell {
   }
 }; // end struct Update_cell
 
-#include <CGAL/Triangulation_file_input.h>
+
 
 
 #include <QtPlugin>

@@ -115,7 +115,7 @@ void Polyhedron_demo_remeshing_plugin::remesh()
   const double distance = ui.errorSpinBox->value();
   const double cell_sizing = ui.sizeSpinBox->value();
 
-  Mesh_criteria p_criteria( cell_size = cell_sizing,
+  Mesh_criteria_cad p_criteria( cell_size = cell_sizing,
                             facet_distance = distance,
                             facet_angle = angle
                             );
@@ -155,7 +155,7 @@ void Polyhedron_demo_remeshing_plugin::remesh()
   cgal_brep_mesh_domain_with_features.add_features(features.begin(), features.end());
 
   // 	Mesh generation (without optimization)
-  C3t3 p_c3t3 = CGAL::make_mesh_3<C3t3>(cgal_brep_mesh_domain_with_features,
+  C3t3_cad p_c3t3 = CGAL::make_mesh_3<C3t3_cad>(cgal_brep_mesh_domain_with_features,
                                         p_criteria);
   if(!p_c3t3.is_valid()){std::cerr << "bip biip not valid" << std::endl;}
 

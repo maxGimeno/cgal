@@ -199,7 +199,7 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
 
     const double edge_sizing = ui_protection->sizeSpinBox->value();
 
-    Mesh_domain *cgal_brep_mesh_domain = new Mesh_domain(*brep);
+    Mesh_domain_cad *cgal_brep_mesh_domain = new Mesh_domain_cad(*brep);
 
     ///////////////////////////////////////////////////////////////////
     // Recovers the trims not to protect
@@ -222,22 +222,22 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
         protection_graph = new dtkSeamProtectionGraph(*brep, ui_protection->sizeSpinBox->value(), ui_protection->sizeSpinBox->value(), true);
     }
 
-    C3t3 p_c3t3;
-    Tr& tr = p_c3t3.triangulation();
+    C3t3_cad p_c3t3;
+    Tr_cad& tr = p_c3t3.triangulation();
     const CGAL::Bbox_3& cgal_bbox = cgal_brep_mesh_domain->bbox();
-    std::list< Weighted_point > w_points;
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
+    std::list< Weighted_point_cad > w_points;
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
     for(auto& w_point : w_points) {
-        Vertex_handle vi = tr.insert(w_point);
-        CGAL_assertion(vi != Vertex_handle());
+        Vertex_handle_cad vi = tr.insert(w_point);
+        CGAL_assertion(vi != Vertex_handle_cad());
         p_c3t3.set_dimension(vi, 0);
         p_c3t3.set_index(vi, 0);
     }
@@ -256,12 +256,12 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
         // } else {
         //     curr_index = find->second;
         // }
-        Weighted_point pi(Point_3(p_sphere->center()[0], p_sphere->center()[1], p_sphere->center()[2]),
+        Weighted_point_cad pi(Point_3(p_sphere->center()[0], p_sphere->center()[1], p_sphere->center()[2]),
                           p_sphere->radius() * p_sphere->radius());
-        Vertex_handle v = tr.insert(pi);
+        Vertex_handle_cad v = tr.insert(pi);
         // `v` could be null if `pi` is hidden by other vertices of `tr`.
-        CGAL_assertion(v != Vertex_handle());
-        if(v == Vertex_handle()) {
+        CGAL_assertion(v != Vertex_handle_cad());
+        if(v == Vertex_handle_cad()) {
             dtkInfo() << "A vertex is hidden by its neighbors and will be removed";
         }
         p_c3t3.set_dimension(v, 1); // by construction, points are on surface
@@ -288,23 +288,23 @@ void Polyhedron_demo_CAD_initialization_plugin::randomShootingInitialization(){
     dtkBRep* brep = cad_item->brep();
     if(!brep) return;
 
-    Mesh_domain* cgal_brep_mesh_domain = new Mesh_domain(*brep);
-    C3t3 p_c3t3;
-    Tr& tr = p_c3t3.triangulation();
+    Mesh_domain_cad* cgal_brep_mesh_domain = new Mesh_domain_cad(*brep);
+    C3t3_cad p_c3t3;
+    Tr_cad& tr = p_c3t3.triangulation();
     const CGAL::Bbox_3& cgal_bbox = cgal_brep_mesh_domain->bbox();
-    std::list< Weighted_point > w_points;
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
-    w_points.push_back(Weighted_point(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
+    std::list< Weighted_point_cad > w_points;
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmin()), 1.));
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmin()), 1.));
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmin(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmax(), cgal_bbox.ymin(), cgal_bbox.zmax()), 1.));
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmin(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
+    w_points.push_back(Weighted_point_cad(Point_3(cgal_bbox.xmax(), cgal_bbox.ymax(), cgal_bbox.zmax()), 1.));
     for(auto& w_point : w_points) {
-        Vertex_handle vi = tr.insert(w_point);
-        CGAL_assertion(vi != Vertex_handle());
+        Vertex_handle_cad vi = tr.insert(w_point);
+        CGAL_assertion(vi != Vertex_handle_cad());
         p_c3t3.set_dimension(vi, 0);
         p_c3t3.set_index(vi, 0);
     }
@@ -312,12 +312,12 @@ void Polyhedron_demo_CAD_initialization_plugin::randomShootingInitialization(){
     ///////////////////////////////////////////////////////////////////
     //    Recovers the points
     ///////////////////////////////////////////////////////////////////
-    std::vector<std::pair<Point_3, Index> > initial_points;
+    std::vector<std::pair<Point_3, Index_cad> > initial_points;
     cgal_brep_mesh_domain->construct_initial_points_object()(std::back_inserter(initial_points), 20);
 
     for(auto& point : initial_points) {
-        Vertex_handle vi = tr.insert(Weighted_point(point.first, 1.));
-        CGAL_assertion(vi != Vertex_handle());
+        Vertex_handle_cad vi = tr.insert(Weighted_point_cad(point.first, 1.));
+        CGAL_assertion(vi != Vertex_handle_cad());
         p_c3t3.set_dimension(vi, 2);
         p_c3t3.set_index(vi, point.second);
     }

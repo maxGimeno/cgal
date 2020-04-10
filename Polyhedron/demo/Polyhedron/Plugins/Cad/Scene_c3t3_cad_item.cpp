@@ -41,7 +41,7 @@
 
 
 typedef CGAL::AABB_triangulation_3_cell_primitive<EPICK,
-                                                  C3t3::Triangulation> Primitive;
+                                                  C3t3_cad::Triangulation> Primitive;
 typedef CGAL::AABB_traits<EPICK, Primitive> Traits;
 typedef CGAL::AABB_tree<Traits> Tree;
 typedef Tree::Point_and_primitive_id Point_and_primitive_id;
@@ -174,11 +174,11 @@ public :
     is_fast = b;
   }
 
-  void addTriangle(const Tr::Bare_point& pa, const Tr::Bare_point& pb,
-                   const Tr::Bare_point& pc, const CGAL::Color color)
+  void addTriangle(const Tr_cad::Bare_point& pa, const Tr_cad::Bare_point& pb,
+                   const Tr_cad::Bare_point& pc, const CGAL::Color color)
   {
     const CGAL::qglviewer::Vec offset = Three::mainViewer()->offset();
-    Geom_traits::Vector_3 n = cross_product(pb - pa, pc - pa);
+    Geom_traits_cad::Vector_3 n = cross_product(pb - pa, pc - pa);
     n = n / CGAL::sqrt(n*n);
 
     for (int i = 0; i<3; i++)
@@ -306,7 +306,7 @@ struct Scene_c3t3_cad_item_priv {
     tet_Slider->setValue(100);
     invalidate_stats();
   }
-  Scene_c3t3_cad_item_priv(const C3t3& c3t3_, const Mesh_domain& mesh_domain_, Scene_c3t3_cad_item* item)
+  Scene_c3t3_cad_item_priv(const C3t3_cad& c3t3_, const Mesh_domain_cad& mesh_domain_, Scene_c3t3_cad_item* item)
     : item(item), c3t3(c3t3_)
     , mesh_domain(mesh_domain_)
     , frame(new ManipulatedFrame())
@@ -359,12 +359,12 @@ struct Scene_c3t3_cad_item_priv {
     CGAL::Real_timer timer;
     timer.start();
     tree.clear();
-    for (Tr::Finite_cells_iterator
+    for (Tr_cad::Finite_cells_iterator
            cit = c3t3.triangulation().finite_cells_begin(),
            end = c3t3.triangulation().finite_cells_end();
          cit != end; ++cit)
     {
-      Tr::Cell_handle ch = cit;
+      Tr_cad::Cell_handle ch = cit;
 
       if(!c3t3.is_in_complex(ch)) continue;
 
@@ -378,15 +378,15 @@ struct Scene_c3t3_cad_item_priv {
     QGuiApplication::restoreOverrideCursor();
   }
   void reset_cut_plane();
-  void draw_triangle(const Tr::Bare_point& pa,
-                     const Tr::Bare_point& pb,
-                     const Tr::Bare_point& pc) const;
-  void draw_triangle_edges(const Tr::Bare_point& pa,
-                           const Tr::Bare_point& pb,
-                           const Tr::Bare_point& pc) const;
-  void draw_triangle_edges_cnc(const Tr::Bare_point& pa,
-                               const Tr::Bare_point& pb,
-                               const Tr::Bare_point& pc) const;
+  void draw_triangle(const Tr_cad::Bare_point& pa,
+                     const Tr_cad::Bare_point& pb,
+                     const Tr_cad::Bare_point& pc) const;
+  void draw_triangle_edges(const Tr_cad::Bare_point& pa,
+                           const Tr_cad::Bare_point& pb,
+                           const Tr_cad::Bare_point& pc) const;
+  void draw_triangle_edges_cnc(const Tr_cad::Bare_point& pa,
+                               const Tr_cad::Bare_point& pb,
+                               const Tr_cad::Bare_point& pc) const;
   double complex_diag() const;
   void compute_color_map(const QColor& c);
   void initializeBuffers(CGAL::Three::Viewer_interface *viewer);
@@ -431,8 +431,8 @@ struct Scene_c3t3_cad_item_priv {
     NB_SUBDOMAINS
   };
   Scene_c3t3_cad_item* item;
-  C3t3 c3t3;
-  const Mesh_domain& mesh_domain;
+  C3t3_cad c3t3;
+  const Mesh_domain_cad& mesh_domain;
   bool is_grid_shown;
   CGAL::qglviewer::ManipulatedFrame* frame;
   bool need_changed;
@@ -546,7 +546,7 @@ Scene_c3t3_cad_item::Scene_c3t3_cad_item()
   common_constructor();
 }
 
-Scene_c3t3_cad_item::Scene_c3t3_cad_item(const C3t3& c3t3, const Mesh_domain& md)
+Scene_c3t3_cad_item::Scene_c3t3_cad_item(const C3t3_cad& c3t3, const Mesh_domain_cad &md)
   : Scene_group_item("unnamed")
   , d(new Scene_c3t3_cad_item_priv(c3t3, md, this))
 {
@@ -588,12 +588,12 @@ Scene_c3t3_cad_item::data_item_destroyed()
   set_data_item(NULL);
 }
 
-const C3t3&
+const C3t3_cad&
 Scene_c3t3_cad_item::c3t3() const {
   return d->c3t3;
 }
 
-C3t3&
+C3t3_cad&
 Scene_c3t3_cad_item::c3t3()
 {
   return d->c3t3;
@@ -631,14 +631,14 @@ Scene_c3t3_cad_item::c3t3_changed()
   d->subdomain_indices_.clear();
 
   int max = 0;
-  for (C3t3::Cells_in_complex_iterator cit = this->c3t3().cells_in_complex_begin(),
+  for (C3t3_cad::Cells_in_complex_iterator cit = this->c3t3().cells_in_complex_begin(),
     end = this->c3t3().cells_in_complex_end(); cit != end; ++cit)
   {
     max = (std::max)(max, cit->subdomain_index());
     d->subdomain_indices_.insert(cit->subdomain_index());
   }
   const int max_subdomain_index = max;
-  for (C3t3::Facets_in_complex_iterator fit = this->c3t3().facets_in_complex_begin(),
+  for (C3t3_cad::Facets_in_complex_iterator fit = this->c3t3().facets_in_complex_begin(),
     end = this->c3t3().facets_in_complex_end(); fit != end; ++fit)
   {
     max = (std::max)(max, 0// fit->first->surface_patch_index(// fit->second
@@ -672,11 +672,11 @@ Scene_c3t3_cad_item::graphicalToolTip() const
 }
 
 std::vector<int>
-create_histogram(const C3t3& c3t3, double& min_value, double& max_value)
+create_histogram(const C3t3_cad& c3t3, double& min_value, double& max_value)
 {
-  Geom_traits::Compute_approximate_dihedral_angle_3 approx_dihedral_angle
+  Geom_traits_cad::Compute_approximate_dihedral_angle_3 approx_dihedral_angle
     = c3t3.triangulation().geom_traits().compute_approximate_dihedral_angle_3_object();
-  Geom_traits::Construct_point_3 wp2p
+  Geom_traits_cad::Construct_point_3 wp2p
     = c3t3.triangulation().geom_traits().construct_point_3_object();
 
   std::vector<int> histo(181, 0);
@@ -684,7 +684,7 @@ create_histogram(const C3t3& c3t3, double& min_value, double& max_value)
   min_value = 180.;
   max_value = 0.;
 
-  for (C3t3::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();
+  for (C3t3_cad::Cells_in_complex_iterator cit = c3t3.cells_in_complex_begin();
     cit != c3t3.cells_in_complex_end();
     ++cit)
   {
@@ -699,10 +699,10 @@ create_histogram(const C3t3& c3t3, double& min_value, double& max_value)
       continue;
 #endif //CGAL_MESH_3_DEMO_DONT_COUNT_TETS_ADJACENT_TO_SHARP_FEATURES_FOR_HISTOGRAM
 
-    const Tr::Bare_point& p0 = wp2p(cit->vertex(0)->point());
-    const Tr::Bare_point& p1 = wp2p(cit->vertex(1)->point());
-    const Tr::Bare_point& p2 = wp2p(cit->vertex(2)->point());
-    const Tr::Bare_point& p3 = wp2p(cit->vertex(3)->point());
+    const Tr_cad::Bare_point& p0 = wp2p(cit->vertex(0)->point());
+    const Tr_cad::Bare_point& p1 = wp2p(cit->vertex(1)->point());
+    const Tr_cad::Bare_point& p2 = wp2p(cit->vertex(2)->point());
+    const Tr_cad::Bare_point& p3 = wp2p(cit->vertex(3)->point());
 
     double a = CGAL::to_double(CGAL::abs(approx_dihedral_angle(p0, p1, p2, p3)));
     histo[static_cast<int>(std::floor(a))] += 1;
@@ -873,12 +873,12 @@ Scene_c3t3_cad_item_priv::compute_color_map(const QColor& c)
   }
 }
 
-Geom_traits::Plane_3 Scene_c3t3_cad_item::plane(CGAL::qglviewer::Vec offset) const
+Geom_traits_cad::Plane_3 Scene_c3t3_cad_item::plane(CGAL::qglviewer::Vec offset) const
 {
   const CGAL::qglviewer::Vec& pos = d->frame->position() - offset;
   const CGAL::qglviewer::Vec& n =
     d->frame->inverseTransformOf(CGAL::qglviewer::Vec(0.f, 0.f, 1.f));
-  return Geom_traits::Plane_3(n[0], n[1], n[2], -n * pos);
+  return Geom_traits_cad::Plane_3(n[0], n[1], n[2], -n * pos);
 }
 
 void Scene_c3t3_cad_item::compute_bbox() const {
@@ -887,7 +887,7 @@ void Scene_c3t3_cad_item::compute_bbox() const {
   else {
     bool bbox_init = false;
     CGAL::Bbox_3 result;
-    for (Tr::Finite_vertices_iterator
+    for (Tr_cad::Finite_vertices_iterator
            vit = c3t3().triangulation().finite_vertices_begin(),
            end = c3t3().triangulation().finite_vertices_end();
          vit != end; ++vit)
@@ -1087,12 +1087,12 @@ void Scene_c3t3_cad_item::drawPoints(CGAL::Three::Viewer_interface * viewer) con
   }
 }
 
-void Scene_c3t3_cad_item_priv::draw_triangle(const Tr::Bare_point& pa,
-                                         const Tr::Bare_point& pb,
-                                         const Tr::Bare_point& pc) const
+void Scene_c3t3_cad_item_priv::draw_triangle(const Tr_cad::Bare_point& pa,
+                                         const Tr_cad::Bare_point& pb,
+                                         const Tr_cad::Bare_point& pc) const
 {
 #undef darker
-  Geom_traits::Vector_3 n = cross_product(pb - pa, pc - pa);
+  Geom_traits_cad::Vector_3 n = cross_product(pb - pa, pc - pa);
   n = n / CGAL::sqrt(n*n);
   const CGAL::qglviewer::Vec offset = Three::mainViewer()->offset();
 
@@ -1124,9 +1124,9 @@ void Scene_c3t3_cad_item_priv::draw_triangle(const Tr::Bare_point& pa,
 
 }
 
-void Scene_c3t3_cad_item_priv::draw_triangle_edges(const Tr::Bare_point& pa,
-                                               const Tr::Bare_point& pb,
-                                               const Tr::Bare_point& pc) const
+void Scene_c3t3_cad_item_priv::draw_triangle_edges(const Tr_cad::Bare_point& pa,
+                                               const Tr_cad::Bare_point& pb,
+                                               const Tr_cad::Bare_point& pc) const
 {
 #undef darker
   const CGAL::qglviewer::Vec offset = Three::mainViewer()->offset();
@@ -1155,9 +1155,9 @@ void Scene_c3t3_cad_item_priv::draw_triangle_edges(const Tr::Bare_point& pa,
   positions_lines.push_back(pa.z()+offset.z);
 
 }
-void Scene_c3t3_cad_item_priv::draw_triangle_edges_cnc(const Tr::Bare_point& pa,
-                                                   const Tr::Bare_point& pb,
-                                                   const Tr::Bare_point& pc) const
+void Scene_c3t3_cad_item_priv::draw_triangle_edges_cnc(const Tr_cad::Bare_point& pa,
+                                                   const Tr_cad::Bare_point& pb,
+                                                   const Tr_cad::Bare_point& pc) const
 {
 #undef darker
   const CGAL::qglviewer::Vec offset = Three::mainViewer()->offset();
@@ -1340,17 +1340,17 @@ void Scene_c3t3_cad_item_priv::initializeBuffers(CGAL::Three::Viewer_interface *
 
 void Scene_c3t3_cad_item_priv::computeIntersection(const Primitive& cell)
 {
-  Geom_traits::Construct_point_3 wp2p
+  Geom_traits_cad::Construct_point_3 wp2p
     = c3t3.triangulation().geom_traits().construct_point_3_object();
 
   typedef unsigned char UC;
-  Tr::Cell_handle ch = cell.id();
+  Tr_cad::Cell_handle ch = cell.id();
   QColor c = this->colors_subdomains[ch->subdomain_index()].lighter(50);
 
-  const Tr::Bare_point& pa = wp2p(ch->vertex(0)->point());
-  const Tr::Bare_point& pb = wp2p(ch->vertex(1)->point());
-  const Tr::Bare_point& pc = wp2p(ch->vertex(2)->point());
-  const Tr::Bare_point& pd = wp2p(ch->vertex(3)->point());
+  const Tr_cad::Bare_point& pa = wp2p(ch->vertex(0)->point());
+  const Tr_cad::Bare_point& pb = wp2p(ch->vertex(1)->point());
+  const Tr_cad::Bare_point& pc = wp2p(ch->vertex(2)->point());
+  const Tr_cad::Bare_point& pd = wp2p(ch->vertex(3)->point());
 
   CGAL::Color color(UC(c.red()), UC(c.green()), UC(c.blue()));
 
@@ -1383,7 +1383,7 @@ void Scene_c3t3_cad_item_priv::computeIntersections(CGAL::Three::Viewer_interfac
   f_colors.clear();
   positions_lines.clear();
   positions_barycenter.clear();
-  const Geom_traits::Plane_3& plane = item->plane(offset);
+  const Geom_traits_cad::Plane_3& plane = item->plane(offset);
   tree.all_intersected_primitives(plane,
         boost::make_function_output_iterator(ComputeIntersection(*this)));
   intersection->gl_initialization(viewer);
@@ -1391,20 +1391,20 @@ void Scene_c3t3_cad_item_priv::computeIntersections(CGAL::Three::Viewer_interfac
 
 void Scene_c3t3_cad_item_priv::computeSpheres()
 {
-  Geom_traits::Construct_point_3 wp2p
+  Geom_traits_cad::Construct_point_3 wp2p
     = c3t3.triangulation().geom_traits().construct_point_3_object();
 
   if(!spheres)
     return;
 
-  for(Tr::Finite_vertices_iterator
+  for(Tr_cad::Finite_vertices_iterator
       vit = c3t3.triangulation().finite_vertices_begin(),
       end =  c3t3.triangulation().finite_vertices_end();
       vit != end; ++vit)
   {
     if(vit->point().weight()==0) continue;
 
-    typedef Tr::Vertex_handle Vertex_handle;
+    typedef Tr_cad::Vertex_handle Vertex_handle;
     std::vector<Vertex_handle> incident_vertices;
     c3t3.triangulation().incident_vertices(vit, std::back_inserter(incident_vertices));
     bool red = vit->is_special();
@@ -1413,7 +1413,7 @@ void Scene_c3t3_cad_item_priv::computeSpheres()
         vvit != end; ++vvit)
     {
       if(c3t3.triangulation().is_infinite(*vvit)) continue;
-      if(Geom_traits::Sphere_3(wp2p(vit->point()),
+      if(Geom_traits_cad::Sphere_3(wp2p(vit->point()),
                                vit->point().weight()).bounded_side(wp2p((*vvit)->point()))
          == CGAL::ON_BOUNDED_SIDE)
         red = true;
@@ -1437,12 +1437,12 @@ void Scene_c3t3_cad_item_priv::computeSpheres()
     }
 
     const CGAL::qglviewer::Vec offset = Three::mainViewer()->offset();
-    Tr::Bare_point center(wp2p(vit->point()).x() + offset.x,
+    Tr_cad::Bare_point center(wp2p(vit->point()).x() + offset.x,
                           wp2p(vit->point()).y() + offset.y,
                           wp2p(vit->point()).z() + offset.z);
     float radius = vit->point().weight() ;
     typedef unsigned char UC;
-    spheres->add_sphere(Geom_traits::Sphere_3(center, radius),
+    spheres->add_sphere(Geom_traits_cad::Sphere_3(center, radius),
                         0,
                         CGAL::Color(UC(c.red()), UC(c.green()), UC(c.blue())));
   }
@@ -1499,19 +1499,19 @@ void Scene_c3t3_cad_item_priv::computeElements()
 
   //The facets
   {
-    Geom_traits::Construct_point_3 wp2p
+    Geom_traits_cad::Construct_point_3 wp2p
       = c3t3.triangulation().geom_traits().construct_point_3_object();
 
-    for (C3t3::Facet_iterator
+    for (C3t3_cad::Facet_iterator
       fit = c3t3.facets_begin(),
       end = c3t3.facets_end();
     fit != end; ++fit)
     {
-      const Tr::Cell_handle& cell = fit->first;
+      const Tr_cad::Cell_handle& cell = fit->first;
       const int& index = fit->second;
-      const Tr::Bare_point& pa = wp2p(cell->vertex((index + 1) & 3)->point());
-      const Tr::Bare_point& pb = wp2p(cell->vertex((index + 2) & 3)->point());
-      const Tr::Bare_point& pc = wp2p(cell->vertex((index + 3) & 3)->point());
+      const Tr_cad::Bare_point& pa = wp2p(cell->vertex((index + 1) & 3)->point());
+      const Tr_cad::Bare_point& pb = wp2p(cell->vertex((index + 2) & 3)->point());
+      const Tr_cad::Bare_point& pc = wp2p(cell->vertex((index + 3) & 3)->point());
 
       QColor color = colors[0// cell->surface_patch_index(index)
                                   ];
@@ -1524,7 +1524,7 @@ void Scene_c3t3_cad_item_priv::computeElements()
       draw_triangle_edges(pa, pb, pc);
     }
     //the cells not in the complex
-    for(C3t3::Triangulation::Cell_iterator
+    for(C3t3_cad::Triangulation::Cell_iterator
         cit = c3t3.triangulation().finite_cells_begin(),
         end = c3t3.triangulation().finite_cells_end();
         cit != end; ++cit)
@@ -1541,10 +1541,10 @@ void Scene_c3t3_cad_item_priv::computeElements()
           }
         if(!has_far_point)
         {
-          const Tr::Bare_point& p1 = wp2p(cit->vertex(0)->point());
-          const Tr::Bare_point& p2 = wp2p(cit->vertex(1)->point());
-          const Tr::Bare_point& p3 = wp2p(cit->vertex(2)->point());
-          const Tr::Bare_point& p4 = wp2p(cit->vertex(3)->point());
+          const Tr_cad::Bare_point& p1 = wp2p(cit->vertex(0)->point());
+          const Tr_cad::Bare_point& p2 = wp2p(cit->vertex(1)->point());
+          const Tr_cad::Bare_point& p3 = wp2p(cit->vertex(2)->point());
+          const Tr_cad::Bare_point& p4 = wp2p(cit->vertex(3)->point());
           draw_triangle_edges_cnc(p1, p2, p4);
           draw_triangle_edges_cnc(p1, p3, p4);
           draw_triangle_edges_cnc(p2, p3, p4);
@@ -1774,7 +1774,7 @@ bool Scene_c3t3_cad_item::keyPressEvent(QKeyEvent *event)
 
 QString Scene_c3t3_cad_item::computeStats(int type)
 {
-  Geom_traits::Construct_point_3 wp2p
+  Geom_traits_cad::Construct_point_3 wp2p
     = d->c3t3.triangulation().geom_traits().construct_point_3_object();
 
   if(!d->computed_stats)
@@ -1784,16 +1784,16 @@ QString Scene_c3t3_cad_item::computeStats(int type)
     float nb_angle = 0;
     float total_angle = 0;
 
-    for (C3t3::Facet_iterator
+    for (C3t3_cad::Facet_iterator
       fit = d->c3t3.facets_begin(),
       end = d->c3t3.facets_end();
     fit != end; ++fit)
     {
-      const Tr::Cell_handle& cell = fit->first;
+      const Tr_cad::Cell_handle& cell = fit->first;
       const int& index = fit->second;
-      const Tr::Bare_point& pa = wp2p(cell->vertex((index + 1) & 3)->point());
-      const Tr::Bare_point& pb = wp2p(cell->vertex((index + 2) & 3)->point());
-      const Tr::Bare_point& pc = wp2p(cell->vertex((index + 3) & 3)->point());
+      const Tr_cad::Bare_point& pa = wp2p(cell->vertex((index + 1) & 3)->point());
+      const Tr_cad::Bare_point& pb = wp2p(cell->vertex((index + 2) & 3)->point());
+      const Tr_cad::Bare_point& pc = wp2p(cell->vertex((index + 3) & 3)->point());
       float edges[3];
       edges[0]=(std::sqrt(CGAL::squared_distance(pa, pb)));
       edges[1]=(std::sqrt(CGAL::squared_distance(pa, pc)));
@@ -1807,7 +1807,7 @@ QString Scene_c3t3_cad_item::computeStats(int type)
       }
     }
     d->mean_edges_length = total_edges/(float)nb_edges;
-    for(Tr::Finite_vertices_iterator
+    for(Tr_cad::Finite_vertices_iterator
         vit = d->c3t3.triangulation().finite_vertices_begin(),
         end =  d->c3t3.triangulation().finite_vertices_end();
         vit != end; ++vit)
@@ -1815,7 +1815,7 @@ QString Scene_c3t3_cad_item::computeStats(int type)
       if(vit->point().weight()==0) continue;
       ++d->nb_spheres;
     }
-    for(C3t3::Triangulation::Cell_iterator
+    for(C3t3_cad::Triangulation::Cell_iterator
         cit = d->c3t3.triangulation().finite_cells_begin(),
         end = d->c3t3.triangulation().finite_cells_end();
         cit != end; ++cit)
@@ -1835,11 +1835,11 @@ QString Scene_c3t3_cad_item::computeStats(int type)
       }
     }
 
-    Geom_traits::Compute_approximate_dihedral_angle_3 approx_dihedral_angle
+    Geom_traits_cad::Compute_approximate_dihedral_angle_3 approx_dihedral_angle
       = d->c3t3.triangulation().geom_traits().compute_approximate_dihedral_angle_3_object();
 
     QVector<int> sub_ids;
-    for (C3t3::Cells_in_complex_iterator cit = d->c3t3.cells_in_complex_begin();
+    for (C3t3_cad::Cells_in_complex_iterator cit = d->c3t3.cells_in_complex_begin();
       cit != d->c3t3.cells_in_complex_end();
       ++cit)
     {
@@ -1850,10 +1850,10 @@ QString Scene_c3t3_cad_item::computeStats(int type)
         sub_ids.push_back(cit->subdomain_index());
       }
 
-      const Tr::Bare_point& p0 = wp2p(cit->vertex(0)->point());
-      const Tr::Bare_point& p1 = wp2p(cit->vertex(1)->point());
-      const Tr::Bare_point& p2 = wp2p(cit->vertex(2)->point());
-      const Tr::Bare_point& p3 = wp2p(cit->vertex(3)->point());
+      const Tr_cad::Bare_point& p0 = wp2p(cit->vertex(0)->point());
+      const Tr_cad::Bare_point& p1 = wp2p(cit->vertex(1)->point());
+      const Tr_cad::Bare_point& p2 = wp2p(cit->vertex(2)->point());
+      const Tr_cad::Bare_point& p3 = wp2p(cit->vertex(3)->point());
       float v = std::abs(CGAL::volume(p0, p1, p2, p3));
       float circumradius = std::sqrt(CGAL::squared_radius(p0, p1, p2, p3));
       //find smallest edge
@@ -2133,8 +2133,7 @@ void Scene_c3t3_cad_item::newViewer(Viewer_interface *viewer)
   }
 }
 
-const Mesh_domain&
-Scene_c3t3_cad_item::meshDomain() const
+const Mesh_domain_cad &Scene_c3t3_cad_item::meshDomain() const
 {
     return d->mesh_domain;
 }
