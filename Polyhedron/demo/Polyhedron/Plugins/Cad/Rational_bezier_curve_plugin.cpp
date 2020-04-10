@@ -52,8 +52,8 @@ public:
   //IO PLUGIN PART
   QString name() const { return "Rational_bezier_curve_plugin"; }
   QString nameFilters() const { return "None"; }
-  bool canLoad() const { return true; }
-  CGAL::Three::Scene_item* load(QFileInfo fileinfo) {
+  bool canLoad(QFileInfo) const { return true; }
+   QList<Scene_item*> load(QFileInfo fileinfo, bool& ok, bool add_to_scene=true) {
       dtkContinuousGeometrySettings settings;
       settings.beginGroup("continuous-geometry");
       dtkLogger::instance().attachConsole();
@@ -72,14 +72,14 @@ public:
       item->setName(fileinfo.baseName());
       item->setFlatMode();
       scene->setSelectedItem(scene->item_id(item));
-      return item;
+      return QList<Scene_item*>()<<item;
   }
 
   bool canSave(const CGAL::Three::Scene_item*) {
       return false;
   }
 
-  bool save(const CGAL::Three::Scene_item*, QFileInfo) {
+  bool save(QFileInfo, QList<CGAL::Three::Scene_item*>& ) {
     return false;
   }
 
