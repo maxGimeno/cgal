@@ -27,7 +27,7 @@ public:
   QString toolTip() const {return QString();}
   bool supportsRenderingMode(RenderingMode m) const { return (m == Flat || m == FlatPlusEdges || m == Wireframe); }
   QMenu* contextMenu();
-  void initializeBuffers(Viewer_interface *) const;
+  void initializeBuffers(CGAL::Three::Viewer_interface *) const;
   void computeElements() const;
 
 

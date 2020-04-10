@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <QMenu>
 
-typedef Scene_rational_bezier_curve_item_priv D;
 typedef CGAL::Three::Edge_container Ec;
 typedef CGAL::Three::Viewer_interface Vi;
 //Vertex source code
