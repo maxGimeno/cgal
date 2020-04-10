@@ -82,6 +82,8 @@ else()
   target_link_libraries(scene_c3t3_cad_item PUBLIC
     scene_polygon_soup_item
     scene_basic_objects
+    dtkNurbsProbingCore
+    dtkContinuousGeometryCore
     ${TBB_LIBRARIES})
   
   qt5_wrap_ui( cad_mesherUI_FILES Cad_mesher_dialog.ui)
