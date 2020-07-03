@@ -33,8 +33,7 @@ polyhedron_demo_plugin(lcc_io_plugin lcc_io_plugin KEYWORDS IO)
 target_link_libraries(lcc_io_plugin PUBLIC scene_lcc_item)
 
 polyhedron_demo_plugin(triangulation_3_io_plugin triangulation_3_io_plugin KEYWORDS IO)
-#todo
-#target_link_libraries(triangulation_3_io_plugin PUBLIC scene_triangulation_3_item)
+target_link_libraries(triangulation_3_io_plugin PUBLIC scene_triangulation_3_item)
 
 find_package(VTK QUIET COMPONENTS
   vtkCommonCore vtkIOCore vtkIOLegacy vtkIOXML vtkFiltersCore vtkFiltersSources)

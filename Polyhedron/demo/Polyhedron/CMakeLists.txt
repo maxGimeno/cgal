@@ -330,6 +330,8 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
 
   add_item(scene_lcc_item Scene_lcc_item.cpp)
 
+  add_item(scene_triangulation_3_item Scene_triangulation_3_item.cpp)
+
   foreach( lib
       demo_framework
       scene_basic_objects
