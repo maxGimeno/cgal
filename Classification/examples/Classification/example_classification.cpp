@@ -3,18 +3,18 @@
                               // converts 64 to 32 bits integers
 #endif
 
-#include <cstdlib>
-#include <fstream>
-#include <iostream>
-#include <string>
-
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Classification.h>
 #include <CGAL/bounding_box.h>
 #include <CGAL/tags.h>
-#include <CGAL/IO/read_ply_points.h>
+#include <CGAL/IO/read_points.h>
 
 #include <CGAL/Real_timer.h>
+
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <string>
 
 typedef CGAL::Parallel_if_available_tag Concurrency_tag;
 
@@ -47,13 +47,11 @@ typedef Classification::Feature::Vertical_dispersion<Kernel, Point_range, Pmap> 
 
 int main (int argc, char** argv)
 {
-  std::string filename (argc > 1 ? argv[1] : "data/b9.ply");
-  std::ifstream in (filename.c_str());
-  std::vector<Point> pts;
+  const char* filename = (argc > 1) ? argv[1] : "data/b9.ply";
 
   std::cerr << "Reading input" << std::endl;
-  if (!in
-      || !(CGAL::read_ply_points (in, std::back_inserter (pts))))
+  std::vector<Point> pts;
+  if (!(CGAL::read_points(filename, std::back_inserter(pts))))
   {
     std::cerr << "Error: cannot read " << filename << std::endl;
     return EXIT_FAILURE;

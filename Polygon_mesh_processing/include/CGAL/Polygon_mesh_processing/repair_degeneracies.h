@@ -27,7 +27,7 @@
 
 #ifdef CGAL_PMP_REMOVE_DEGENERATE_FACES_DEBUG
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
-#include <CGAL/IO/OFF_reader.h>
+#include <CGAL/IO/OFF.h>
 #endif
 
 #include <boost/algorithm/minmax_element.hpp>
@@ -419,10 +419,7 @@ bool remove_almost_degenerate_faces(const FaceRange& face_range,
     std::cout << edges_to_collapse.size() << " needles and " << edges_to_flip.size() << " caps" << std::endl;
     std::ostringstream oss;
     oss << "degen_cleaning_iter_" << iter++ << ".off";
-    std::ofstream out(oss.str().c_str());
-    out << std::setprecision(17);
-    out << tmesh;
-    out.close();
+    CGAL::write_polygon_mesh(oss.str(), tmesh, CGAL::parameters::stream_precision(17));
 #endif
 
     if(edges_to_collapse.empty() && edges_to_flip.empty())
@@ -1514,26 +1511,33 @@ bool remove_degenerate_edges(TriangleMesh& tmesh)
 // @pre `CGAL::is_triangle_mesh(tmesh)`
 //
 // @tparam TriangleMesh a model of `FaceListGraph` and `MutableFaceGraph`
-// @tparam NamedParameters a sequence of \ref pmp_namedparameters "Named Parameters"
+// @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
 //
 // @param tmesh the  triangulated surface mesh to be repaired
-// @param np optional \ref pmp_namedparameters "Named Parameters" described below
+// @param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
 //
 // \cgalNamedParamsBegin
-//    \cgalParamBegin{vertex_point_map} the property map with the points associated to the vertices of `pmesh`.
-//                                      The type of this map is model of `ReadWritePropertyMap`.
-//                                      If this parameter is omitted, an internal property map for
-//                                      `CGAL::vertex_point_t` must be available in `TriangleMesh`
-//    \cgalParamEnd
-//    \cgalParamBegin{geom_traits} a geometric traits class instance.
-//       The traits class must provide the nested type `Point_3`,
-//       and the nested functors:
-//         - `Compare_distance_3` to compute the distance between 2 points
-//         - `Collinear_3` to check whether 3 points are collinear
-//         - `Less_xyz_3` to compare lexicographically two points
-//         - `Equal_3` to check whether 2 points are identical.
-//       For each functor Foo, a function `Foo foo_object()` must be provided.
-//   \cgalParamEnd
+//   \cgalParamNBegin{vertex_point_map}
+//     \cgalParamDescription{a property map associating points to the vertices of `tmesh`}
+//     \cgalParamType{a class model of `ReadablePropertyMap` with `boost::graph_traits<TriangleMesh>::%vertex_descriptor`
+//                    as key type and `%Point_3` as value type}
+//     \cgalParamDefault{`boost::get(CGAL::vertex_point, tmesh)`}
+//     \cgalParamExtra{If this parameter is omitted, an internal property map for `CGAL::vertex_point_t`
+//                     must be available in `TriangleMesh`.}
+//   \cgalParamNEnd
+//
+//   \cgalParamNBegin{geom_traits}
+//     \cgalParamDescription{an instance of a geometric traits class}
+//     \cgalParamType{The traits class must provide the nested type `Point_3`,
+//                    and the nested functors:
+//                    - `Compare_distance_3` to compute the distance between 2 points
+//                    - `Collinear_3` to check whether 3 points are collinear
+//                    - `Less_xyz_3` to compare lexicographically two points
+//                    - `Equal_3` to check whether 2 points are identical.
+//                    For each functor Foo, a function `Foo foo_object()` must be provided.}
+//     \cgalParamDefault{a \cgal Kernel deduced from the point type, using `CGAL::Kernel_traits`}
+//     \cgalParamExtra{The geometric traits class must be compatible with the vertex point type.}
+//   \cgalParamNEnd
 // \cgalNamedParamsEnd
 //
 // \todo the function might not be able to remove all degenerate faces.
@@ -1631,9 +1635,7 @@ bool remove_degenerate_faces(const FaceRange& face_range,
 #ifdef CGAL_PMP_REMOVE_DEGENERATE_FACES_DEBUG
   {
     std::cout <<"Done with null edges.\n";
-    std::ofstream output("/tmp/no_null_edges.off");
-    output << std::setprecision(17) << tmesh << "\n";
-    output.close();
+    CGAL::write_polygon_mesh("/tmp/no_null_edges.off", tmesh, CGAL::parameters::stream_precision(17));
   }
 #endif
 

@@ -50,7 +50,7 @@ if (VTK_FOUND)
       polyhedron_demo_plugin(vtk_plugin VTK_io_plugin KEYWORDS IO Mesh_3)
       target_link_libraries(vtk_plugin PUBLIC scene_surface_mesh_item scene_polylines_item scene_c3t3_item scene_points_with_normal_item
                                        ${VTK_LIBRARIES})
-
+      target_compile_definitions(vtk_plugin  PRIVATE -DCGAL_USE_VTK)
     else()
       message(STATUS "NOTICE : the vtk IO plugin needs VTK libraries and will not be compiled.")
     endif()
@@ -95,6 +95,7 @@ if(3MF_LIBRARIES AND 3MF_INCLUDE_DIR AND EXISTS "${3MF_INCLUDE_DIR}/Model/COM/NM
   include_directories(${3MF_INCLUDE_DIR})
   polyhedron_demo_plugin(3mf_io_plugin 3mf_io_plugin KEYWORDS IO PMP)
   target_link_libraries(3mf_io_plugin PRIVATE scene_surface_mesh_item scene_points_with_normal_item scene_polylines_item ${3MF_LIBRARIES})
+  target_compile_definitions(3mf_io_plugin PRIVATE -DCGAL_LINKED_WITH_3MF)
 else()
   message(STATUS "NOTICE : The 3mf_io_plugin requires the lib3MF library in a version < 2.0, and will not be compiled.")
 endif()

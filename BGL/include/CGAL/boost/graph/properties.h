@@ -177,7 +177,7 @@ struct Is_writable_property_map<PropertyMap, boost::lvalue_property_map_tag>
 
 } // namespace internal
 
-// Needed by PMP::detec_features and Mesh_3
+// Needed by PMP::detect_features and Mesh_3
 enum vertex_feature_degree_t    { vertex_feature_degree };
 enum edge_is_feature_t          { edge_is_feature };
 

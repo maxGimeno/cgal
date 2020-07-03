@@ -4,12 +4,12 @@
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/Surface_mesh.h>
 
+#include <CGAL/algorithm.h>
+#include <CGAL/IO/OFF.h>
 #include <CGAL/Polygon_mesh_processing/orientation.h>
 #include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
 #include <CGAL/Polygon_mesh_processing/orient_polygon_soup_extension.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
-
-#include <CGAL/algorithm.h>
 #include <CGAL/Timer.h>
 
 #include <fstream>

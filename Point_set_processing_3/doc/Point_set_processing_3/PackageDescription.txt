@@ -7,11 +7,17 @@
 Collection of algorithms of point set processing (smoothing,
 simplification, etc.).
 
-\defgroup PkgPointSetProcessing3IO IO (XYZ/OFF Formats)
+\defgroup PkgPointSetProcessing3IO IO (I/O Functions)
 \ingroup PkgPointSetProcessing3Ref
 
-Read and write points (with or without normal vectors) in XYZ and OFF
-formats.
+\defgroup PkgPointSetProcessing3IODeprecated IO (I/O Functions (Deprecated))
+\ingroup PkgPointSetProcessing3IO
+
+\defgroup PkgPointSetProcessing3IOOff IO (OFF Formats)
+\ingroup PkgPointSetProcessing3Ref
+
+\defgroup PkgPointSetProcessing3IOXyz IO (XYZ Formats)
+\ingroup PkgPointSetProcessing3Ref
 
 \defgroup PkgPointSetProcessing3IOPly IO (PLY Format)
 \ingroup PkgPointSetProcessing3Ref
@@ -72,19 +78,22 @@ format.
 - `CGAL::vcm_is_on_feature_edge()`
 - `CGAL::structure_point_set()`
 
+\cgalCRPSection{IO (All Formats)}
+
+- `CGAL::read_points()`
+- `CGAL::write_points()`
+
 \cgalCRPSection{IO (XYZ/OFF Formats)}
 
-- `CGAL::read_off_points()`
-- `CGAL::read_xyz_points()`
-- `CGAL::write_off_points()`
-- `CGAL::write_xyz_points()`
+- \link PkgPointSetProcessing3IOOff OFF I/O Functions (`read_OFF()` and `write_OFF()`)\endlink
+- \link PkgPointSetProcessing3IOXyz XYZ I/O Functions (`read_XYZ()` and `write_XYZ()`)\endlink
 
 \cgalCRPSection{IO (PLY Format)}
 
-- `CGAL::read_ply_points()`
-- `CGAL::read_ply_points_with_properties()`
-- `CGAL::write_ply_points()`
-- `CGAL::write_ply_points_with_properties()`
+- \link PkgPointSetProcessing3IOPly `CGAL::read_PLY()` \endlink
+- `CGAL::read_PLY_with_properties()`
+- \link PkgPointSetProcessing3IOPly `CGAL::write_PLY()` \endlink
+- `CGAL::write_PLY_with_properties()`
 - `CGAL::PLY_property<T>`
 - `CGAL::make_ply_point_reader()`
 - `CGAL::make_ply_point_writer()`
@@ -93,10 +102,10 @@ format.
 
 \cgalCRPSection{IO (LAS Format)}
 
-- `CGAL::read_las_points()`
-- `CGAL::read_las_points_with_properties()`
-- `CGAL::write_las_points()`
-- `CGAL::write_las_points_with_properties()`
+- `CGAL::read_LAS()`
+- `CGAL::read_LAS_with_properties()`
+- `CGAL::write_LAS()`
+- `CGAL::write_LAS_with_properties()`
 - `CGAL::make_las_point_reader()`
 - `CGAL::make_las_point_writer()`
 
