@@ -630,7 +630,8 @@ Scene_c3t3_item::changed()
 }
 
 void Scene_c3t3_item::updateCutPlane()
-{ // just handle deformation - paint like selection is handled in eventFilter()
+{
+  // just handle deformation - paint like selection is handled in eventFilter()
   if(!d)
     return;
   if(d->need_changed) {
@@ -1166,7 +1167,7 @@ void Scene_c3t3_item::export_facets_in_complex()
   this->setVisible(false);
 }
 
-QMenu* Scene_c3t3_item::contextMenu()
+QMenu* Scene_c3t3_item::triangulation_3u()
 {
   const char* prop_name = "Menu modified by Scene_c3t3_item.";
 
@@ -1660,6 +1661,7 @@ void Scene_c3t3_item::reset_spheres()
 {
   d->spheres = NULL;
 }
+
 CGAL::Three::Scene_item::ManipulatedFrame* Scene_c3t3_item::manipulatedFrame() {
   if(d)
     return d->frame;
@@ -2000,6 +2002,7 @@ void Scene_c3t3_item::itemAboutToBeDestroyed(Scene_item *item)
   }
 
 }
+
 void Scene_c3t3_item::on_spheres_color_changed()
 {
   if(!d->spheres)
