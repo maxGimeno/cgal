@@ -54,21 +54,37 @@ using namespace CGAL::Three;
       CGAL::set_ascii_mode(os);
       return !!(os << c3t3());
     }
+    bool load_binary(std::istream& is) override;
 
     bool is_valid() const;//true if the c3t3 is correct, false if it was made from a .mesh, for example
+    void set_valid(bool);
     QMenu* contextMenu() override;
 
-  public Q_SLOTS:
-    void show_spheres(bool b);
+    void drawEdges(Viewer_interface *viewer) const override;
 
+    //stats
+    QString computeStats(int type)  override;
+    CGAL::Three::Scene_item::Header_data header() const override;
+
+  public Q_SLOTS:
+    void show_cnc(bool);
+    void export_facets_in_complex();
+    void initializeBuffers(Viewer_interface *) const override;
+    void computeElements() const override;
   protected:
     friend struct Scene_c3t3_item_priv;
     mutable Scene_c3t3_item_priv* d;
 
+    enum Edge_Containers{
+      CNC = 2
+    };
     bool do_take_cell(const T3::Cell_handle&) const override;
     bool do_take_facet(const T3::Facet&)const override;
-    bool do_take_vertex(const T3::Vertex&)const override;
+    bool do_take_vertex(const T3::Vertex_handle &)const override;
     bool is_facet_oriented(const T3::Facet&)const override;
+    bool is_surface()const override;
+    void common_constructor(bool is_surface);
+
   };
 
 #endif // SCENE_C3T3_ITEM_H

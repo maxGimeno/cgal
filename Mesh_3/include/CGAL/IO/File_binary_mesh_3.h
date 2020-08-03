@@ -71,7 +71,8 @@ bool load_binary_file(std::istream& is, C3T3& c3t3)
       return false;
     }
   }
-  if(binary) CGAL::set_binary_mode(is);
+  if(binary)
+    CGAL::set_binary_mode(is);
   is >> c3t3;
   return !!is;
   // call operator!() twice, because operator bool() is C++11
