@@ -91,9 +91,13 @@ int main()
   }
   else {
        const std::string& output_file = "data/building_result-0.05.off";
-       if (CGAL::write_OFF(output_file, model))
-           std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
-       else {
+       std::ofstream output_stream(output_file.c_str());
+       if (output_stream && CGAL::write_off(output_stream, model)) {
+                        // flush the buffer
+                        output_stream << std::flush;
+                        std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
+       }
+                else {
            std::cerr << " Failed saving file." << std::endl;
            return EXIT_FAILURE;
        }
@@ -108,31 +112,39 @@ int main()
   }
   else {
        const std::string& output_file = "data/building_result-0.5.off";
-       if (CGAL::write_OFF(output_file, model))
-           std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
-       else {
+       std::ofstream output_stream(output_file.c_str());
+       if (output_stream && CGAL::write_off(output_stream, model)) {
+                        // flush the buffer
+                        output_stream << std::flush;
+                        std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
+       }
+                else {
            std::cerr << " Failed saving file." << std::endl;
            return EXIT_FAILURE;
        }
-  }
+        }
 
-  // Model 3: more less detail
-  std::cout << "Reconstructing with complexity 0.7...";
-  t.reset();
-  if (!algo.reconstruct<MIP_Solver>(model, 0.2, 0.1, 0.7)) {
-    std::cerr << " Failed: " << algo.error_message() << std::endl;
-    return EXIT_FAILURE;
-  }
-  else {
-    const std::string& output_file = "data/building_result-0.7.off";
-    if (CGAL::write_OFF(output_file, model))
-      std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
-    else {
-      std::cerr << " Failed saving file." << std::endl;
-      return EXIT_FAILURE;
-    }
-  }
-  return EXIT_SUCCESS;
+        // Model 3: more less detail
+        std::cout << "Reconstructing with complexity 0.7...";
+        t.reset();
+        if (!algo.reconstruct<MIP_Solver>(model, 0.2, 0.1, 0.7)) {
+                std::cerr << " Failed: " << algo.error_message() << std::endl;
+                return EXIT_FAILURE;
+        }
+        else {
+                const std::string& output_file = "data/building_result-0.7.off";
+                std::ofstream output_stream(output_file.c_str());
+                if (output_stream && CGAL::write_off(output_stream, model)) {
+                        // flush the buffer
+                        output_stream << std::flush;
+                        std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
+                }
+                else {
+                        std::cerr << " Failed saving file." << std::endl;
+                        return EXIT_FAILURE;
+                }
+        }
+        return EXIT_SUCCESS;
 }
 
 
