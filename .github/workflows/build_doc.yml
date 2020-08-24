@@ -17,11 +17,16 @@ jobs:
          wget -O doxygen_exe https://cgal.geometryfactory.com/~mgimeno/doxygen_exe
          sudo mv doxygen_exe /usr/bin/doxygen
          sudo chmod +x /usr/bin/doxygen
-         echo ${{ secrets.ssh_key }} > ~/.ssh/id_rsa
-         echo ${{ secrets.ssh_key_pub }} > ~/.ssh/id_rsa.pub
+         echo "coucou"
+         cat <<EOF
+         ${{ secrets.ssh_key }}
+         EOF >> ~/.ssh/id_rsa
+         cat <<EOF
+         ${{ secrets.ssh_key_pub }}
+         EOF >> ~/.ssh/id_rsa.pub
          
     - name: configure all
-      run: mkdir build_doc && cd build_doc && cmake ../Documentation/Documentation
+      run: mkdir build_doc && cd build_doc && cmake ../Documentation/doc
       
     - name: configure all
       run: |
