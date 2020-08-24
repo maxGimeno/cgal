@@ -1,0 +1,31 @@
+
+name: Documentation
+
+on: [pull_request_target]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2.0.0
+    - name: install dependencies
+      run: |
+         sudo apt-get install -y graphviz ssh
+         wget -O doxygen_exe https://cgal.geometryfactory.com/~mgimeno/doxygen_exe
+         sudo mv doxygen_exe /usr/bin/doxygen
+         sudo chmod +x /usr/bin/doxygen
+         echo ${{ secrets.ssh_key }} > ~/.ssh/id_rsa
+         echo ${{ secrets.ssh_key_pub }} > ~/.ssh/id_rsa.pub
+         
+    - name: configure all
+      run: mkdir build_doc && cd build_doc && cmake ../Documentation/Documentation
+      
+    - name: configure all
+      run: |
+        set -e
+        cd build_doc && make -j2 doc && make -j2 doc_with_postprocessing
+        PR_NUMBER=$(echo $GITHUB_REF | awk 'BEGIN { FS = "/" } ; { print $3 }')
+        scp -r doc_output/ ${{ secrets.ids }}/${PR_NUMBER}_doc
+      
