@@ -14,10 +14,10 @@ jobs:
       run: |
          set -x
          sudo apt-get install -y graphviz ssh
+         sudo pip install lxml pyquery
          wget -O doxygen_exe https://cgal.geometryfactory.com/~mgimeno/doxygen_exe
          sudo mv doxygen_exe /usr/bin/doxygen
          sudo chmod +x /usr/bin/doxygen
-         echo "coucou"
          cat <<EOF
          ${{ secrets.ssh_key }}
          EOF >> ~/.ssh/id_rsa
