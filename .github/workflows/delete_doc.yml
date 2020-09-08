@@ -1,7 +1,7 @@
 name: Documentation
 
-on: [delete]
-
+on: pull_request_target
+    types: closed
 jobs:
   build:
 
@@ -32,3 +32,4 @@ jobs:
          )>> ~/.ssh/known_hosts
          
         ssh ${{ secrets.ids }}/pr_doc/ rm -rf ${PR_NUMBER}/
+        echo "tmp"
