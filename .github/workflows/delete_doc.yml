@@ -33,4 +33,4 @@ jobs:
          )>> ~/.ssh/known_hosts
          PR_NUMBER=$(python -c "import json; import os; y = json.load(open(os.environ['GITHUB_EVENT_PATH'])); print(y[\"number\"])")
          ssh mgimeno@cgal.geometryfactory.com rm -rf /home/mgimeno/public_html/pr_doc/${PR_NUMBER}
-         
+         echo "coucou"
