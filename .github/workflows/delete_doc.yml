@@ -32,4 +32,3 @@ jobs:
          )>> ~/.ssh/known_hosts
          
         ssh ${{ secrets.ids }}/pr_doc/ rm -rf ${PR_NUMBER}/
-    
