@@ -54,10 +54,11 @@ public:
 
   //IO PLUGIN PART
   QString name() const { return "Cad_meshing_plugin"; }
-  QString nameFilters() const { return "Cad Files (*.3dm)"; }
+  QString nameFilters() const { return "CAD Files (*.3dm; *.step)"; }
   bool canLoad(QFileInfo) const { return true; }
   QList<CGAL::Three::Scene_item*> load(QFileInfo fileinfo, bool& ok, bool add_to_scene=true){
-      if(fileinfo.suffix().toLower() != "3dm"){
+      bool step_file = (fileinfo.suffix().toLower() == "step");
+      if(!step_file && fileinfo.suffix().toLower() != "3dm"){
         ok = false;
         return QList<CGAL::Three::Scene_item*>();
       }
@@ -68,8 +69,10 @@ public:
       dtkContinuousGeometry::setVerboseLoading(true);
       dtkContinuousGeometry::initialize(settings.value("plugins").toString());
       settings.endGroup();
-      dtkBRepReader* brep_reader = dtkContinuousGeometry::bRepReader::pluginFactory().create("openNURBSBRepReader");
-      if(brep_reader == NULL) {
+      dtkBRepReader *brep_reader =
+          dtkContinuousGeometry::bRepReader::pluginFactory().create(
+              step_file ? "OpenCASCADEBRepReader" : "openNURBSBRepReader");
+      if (brep_reader == NULL) {
         messageInterface->message_error("ERROR in initialization");
         ok = false;
         return QList<CGAL::Three::Scene_item*>();
