@@ -54,10 +54,10 @@ public:
 
   //IO PLUGIN PART
   QString name() const { return "Cad_meshing_plugin"; }
-  QString nameFilters() const { return "CAD Files (*.3dm; *.step)"; }
+  QString nameFilters() const { return "CAD Files (*.3dm *.step *.stp)"; }
   bool canLoad(QFileInfo) const { return true; }
   QList<CGAL::Three::Scene_item*> load(QFileInfo fileinfo, bool& ok, bool add_to_scene=true){
-      bool step_file = (fileinfo.suffix().toLower() == "step");
+      bool step_file = (fileinfo.suffix().toLower() == "step") || (fileinfo.suffix().toLower() == "stp");
       if(!step_file && fileinfo.suffix().toLower() != "3dm"){
         ok = false;
         return QList<CGAL::Three::Scene_item*>();
