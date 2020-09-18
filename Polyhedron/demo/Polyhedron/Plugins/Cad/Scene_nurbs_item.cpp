@@ -125,8 +125,7 @@ struct Scene_nurbs_item_priv{
     // ///////////////////////////////////////////////////////////////////
     // Builds up the array of vertices by sampling the surface
     // ///////////////////////////////////////////////////////////////////
-    untrimmed_vertices.resize(m_nb_untrimmed_vertices * 3 * 3);
-
+    untrimmed_vertices.resize(m_nb_untrimmed_vertices * 2 * 3);
 
     double uvbounds[4];
     m_nurbs_surface.uvBounds(uvbounds);
