@@ -161,6 +161,13 @@ struct Scene_nurbs_item_priv{
         untrimmed_vertices[6 * index + 5] = normal[2];
       }
     }
+    if(m_nurbs_surface.hasReversedOrientation()) {
+      for(auto i = 0u; i < m_nb_untrimmed_vertices; ++i) {
+        untrimmed_vertices[6 * i + 3] *= -1;
+        untrimmed_vertices[6 * i + 4] *= -1;
+        untrimmed_vertices[6 * i + 5] *= -1;
+      }
+    }
     bbox = CGAL::Three::Scene_item::Bbox(min_box[0], min_box[1], min_box[2],
         max_box[0], max_box[1], max_box[2]);
     m_untrimmed_elements.resize(m_nb_untrimmed_elements * 3);
