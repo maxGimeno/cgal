@@ -118,8 +118,8 @@ struct Scene_nurbs_item_priv{
     // ///////////////////////////////////////////////////////////////////
     // Sampling corresponds to the number of triangles edges along a NURBS edge
     // ///////////////////////////////////////////////////////////////////
-    std::size_t u_sampling = 50;
-    std::size_t v_sampling = 40;
+    constexpr std::size_t u_sampling = 50;
+    constexpr std::size_t v_sampling = 40;
     m_nb_untrimmed_vertices = (u_sampling + 1) * (v_sampling + 1);
     m_nb_untrimmed_elements = u_sampling * v_sampling * 2;
     // ///////////////////////////////////////////////////////////////////
@@ -127,18 +127,16 @@ struct Scene_nurbs_item_priv{
     // ///////////////////////////////////////////////////////////////////
     untrimmed_vertices.resize(m_nb_untrimmed_vertices * 3 * 3);
 
-    double u_knots[dtk_nurbs_surface.uNbCps() + dtk_nurbs_surface.uDegree() - 1];
-    dtk_nurbs_surface.uKnots(u_knots);
-    double v_knots[dtk_nurbs_surface.vNbCps() + dtk_nurbs_surface.vDegree() - 1];
-    dtk_nurbs_surface.vKnots(v_knots);
 
+    double uvbounds[4];
+    m_nurbs_surface.uvBounds(uvbounds);
     dtkContinuousGeometryPrimitives::Point_3 point(0., 0., 0.);
     dtkContinuousGeometryPrimitives::Vector_3 normal(0., 0., 0.);
     for (std::size_t i = 0.; i <= u_sampling; ++i) {
       for (std::size_t j = 0.; j <= v_sampling; ++j) {
         m_nurbs_surface.evaluatePoint(
-              u_knots[0] + double(i) / u_sampling * (u_knots[dtk_nurbs_surface.uNbCps() + dtk_nurbs_surface.uDegree() - 2] - u_knots[0]),
-            v_knots[0] + double(j) / v_sampling * (v_knots[dtk_nurbs_surface.vNbCps() + dtk_nurbs_surface.vDegree() - 2] - v_knots[0]),
+            uvbounds[0] + double(i) / u_sampling * (uvbounds[1] - uvbounds[0]),
+            uvbounds[2] + double(j) / v_sampling * (uvbounds[3] - uvbounds[2]),
             point.data());
         for(int foo=0; foo<3; ++foo)
         {
@@ -148,8 +146,8 @@ struct Scene_nurbs_item_priv{
             max_box[foo]=point[foo];
         }
         m_nurbs_surface.evaluateNormal(
-          u_knots[0] + double(i) / u_sampling * (u_knots[dtk_nurbs_surface.uNbCps() + dtk_nurbs_surface.uDegree() - 2] - u_knots[0]),
-          v_knots[0] + double(j) / v_sampling * (v_knots[dtk_nurbs_surface.vNbCps() + dtk_nurbs_surface.vDegree() - 2] - v_knots[0]),
+          uvbounds[0] + double(i) / u_sampling * (uvbounds[1] - uvbounds[0]),
+          uvbounds[2] + double(j) / v_sampling * (uvbounds[3] - uvbounds[2]),
           normal.data());
         int index = i * (v_sampling + 1) + j;
         untrimmed_vertices[6 * index]     = point[0];
