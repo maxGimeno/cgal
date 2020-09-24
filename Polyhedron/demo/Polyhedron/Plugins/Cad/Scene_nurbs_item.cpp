@@ -182,8 +182,6 @@ struct Scene_nurbs_item_priv{
     }
 
 
-    std::vector< dtkContinuousGeometryPrimitives::Point_3 > points;
-
     dtkNurbsPolyhedralSurface *polyhedral_surface = dtkContinuousGeometry::nurbsPolyhedralSurface::pluginFactory().create("dtkNurbsPolyhedralSurfaceCgal");
     if (polyhedral_surface == nullptr) {
         dtkFatal() << "The dtkAbstractNurbsPolyhedralSurfaceData could not be loaded by the factory under the cgal implementation";
@@ -196,6 +194,7 @@ struct Scene_nurbs_item_priv{
 
     dtkDebug() << "Recovering points and triangles...";
 
+    std::vector< dtkContinuousGeometryPrimitives::Point_3 > points;
     std::vector< std::size_t > triangles;
     std::vector< dtkContinuousGeometryPrimitives::Vector_3 > normals;
     polyhedral_surface->pointsTrianglesAndNormals(points, triangles, normals);
