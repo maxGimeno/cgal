@@ -299,7 +299,14 @@ void Scene_spheres_item::invalidateOpenGLBuffers()
 
 QString
 Scene_spheres_item::toolTip() const {
-    return d->tooltip;
+  if(!d->tooltip.isEmpty()) return d->tooltip;
+  QString str = QObject::tr("<p>Spheres item <b>%1</b> (mode: %2, color: %3)</p>"
+                            "<p>Number of spheres: %4</p>")
+      .arg(this->name())
+      .arg(this->renderingModeName())
+      .arg(this->color().name())
+      .arg(this->d->spheres.size());
+  return str;
 }
 
 void Scene_spheres_item::setToolTip(QString s)
@@ -422,4 +429,3 @@ bool Scene_spheres_item::save(const std::string& file_name)const
   out << "\n";
   return true;
 }
-
