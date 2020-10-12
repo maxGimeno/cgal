@@ -252,7 +252,8 @@ public:
                   bool inverse_normal=false,
                   bool draw_rays=true,
                   bool draw_lines=true,
-                  bool draw_text=true) :
+                  bool draw_text=true,
+                  bool no_2D_mode=false) :
     CGAL::QGLViewer(parent),
     m_draw_vertices(draw_vertices),
     m_draw_edges(draw_edges),
@@ -263,6 +264,7 @@ public:
     m_use_mono_color(use_mono_color),
     m_inverse_normal(inverse_normal),
     m_draw_text(draw_text),
+    m_no_2D_mode(no_2D_mode),
     m_size_points(7.),
     m_size_edges(3.1),
     m_size_rays(3.1),
@@ -979,7 +981,8 @@ protected:
 
   // Returns true if the data structure lies on a plane
   bool is_two_dimensional() {
-    return (!is_empty() && (has_zero_x() || has_zero_y() || has_zero_z()));
+    return (!is_empty() && !m_no_2D_mode &&
+            (has_zero_x() || has_zero_y() || has_zero_z()));
   }
 
   virtual void draw()
@@ -987,6 +990,28 @@ protected:
     glEnable(GL_DEPTH_TEST);
     if(!m_are_buffers_initialized)
     { initialize_buffers(); }
+
+    if (is_two_dimensional())
+    {
+      camera()->setType(CGAL::qglviewer::Camera::ORTHOGRAPHIC);
+      //      Camera Constraint:
+      constraint.setRotationConstraintType(CGAL::qglviewer::AxisPlaneConstraint::AXIS);
+      constraint.setTranslationConstraintType(CGAL::qglviewer::AxisPlaneConstraint::FREE);
+
+      double cx=0., cy=0., cz=0.;
+      if (has_zero_x())      { cx=1.; }
+      else if (has_zero_y()) { cy=1.; }
+      else                   { cz=1.; }
+
+      camera()->setViewDirection(CGAL::qglviewer::Vec(-cx,-cy,-cz));
+      constraint.setRotationConstraintDirection(CGAL::qglviewer::Vec(cx, cy, cz));
+      camera()->frame()->setConstraint(&constraint);
+    }
+    else
+    {
+      camera()->setType(CGAL::qglviewer::Camera::PERSPECTIVE);
+      camera()->frame()->setConstraint(nullptr);
+    }
 
     QColor color;
     attrib_buffers(this);
@@ -1168,23 +1193,6 @@ protected:
       rendering_program_face.release();
     }
 
-    if (is_two_dimensional())
-    {
-      camera()->setType(CGAL::qglviewer::Camera::ORTHOGRAPHIC);
-      //      Camera Constraint:
-      constraint.setRotationConstraintType(CGAL::qglviewer::AxisPlaneConstraint::AXIS);
-      constraint.setTranslationConstraintType(CGAL::qglviewer::AxisPlaneConstraint::FREE);
-
-      double cx=0., cy=0., cz=0.;
-      if (has_zero_x())      { cx=1.; }
-      else if (has_zero_y()) { cy=1.; }
-      else                   { cz=1.; }
-
-      camera()->setViewDirection(CGAL::qglviewer::Vec(-cx,-cy,-cz));
-      constraint.setRotationConstraintDirection(CGAL::qglviewer::Vec(cx, cy, cz));
-      camera()->frame()->setConstraint(&constraint);
-    }
-
     if (m_draw_text)
     {
       glDisable(GL_LIGHTING);
@@ -1218,19 +1226,20 @@ protected:
 
     // Add custom key description (see keyPressEvent).
     setKeyDescription(::Qt::Key_E, "Toggles edges display");
-    setKeyDescription(::Qt::Key_F, "Toggles faces display");
-    setKeyDescription(::Qt::Key_G, "Switch between flat/Gouraud shading display");
     setKeyDescription(::Qt::Key_M, "Toggles mono color");
     setKeyDescription(::Qt::Key_N, "Inverse direction of normals");
+    setKeyDescription(::Qt::Key_S, "Switch between flat/Gouraud shading display");
     setKeyDescription(::Qt::Key_T, "Toggles text display");
     setKeyDescription(::Qt::Key_U, "Move camera direction upside down");
     setKeyDescription(::Qt::Key_V, "Toggles vertices display");
+    setKeyDescription(::Qt::Key_W, "Toggles faces display");
     setKeyDescription(::Qt::Key_Plus, "Increase size of edges");
     setKeyDescription(::Qt::Key_Minus, "Decrease size of edges");
     setKeyDescription(::Qt::Key_Plus+::Qt::ControlModifier, "Increase size of vertices");
     setKeyDescription(::Qt::Key_Minus+::Qt::ControlModifier, "Decrease size of vertices");
     setKeyDescription(::Qt::Key_PageDown, "Increase light (all colors, use shift/alt/ctrl for one rgb component)");
     setKeyDescription(::Qt::Key_PageUp, "Decrease light (all colors, use shift/alt/ctrl for one rgb component)");
+    setKeyDescription(::Qt::Key_O, "Toggles 2D mode only");
 
     // Light default parameters
     glLineWidth(m_size_edges);
@@ -1278,20 +1287,6 @@ protected:
       m_draw_edges=!m_draw_edges;
       displayMessage(QString("Draw edges=%1.").arg(m_draw_edges?"true":"false"));
       update();
-    }else if ((e->key()==::Qt::Key_F) && (modifiers==::Qt::NoButton))
-    {
-      m_draw_faces=!m_draw_faces;
-      displayMessage(QString("Draw faces=%1.").arg(m_draw_faces?"true":"false"));
-      update();
-    }
-    else if ((e->key()==::Qt::Key_G) && (modifiers==::Qt::NoButton))
-    {
-      m_flatShading=!m_flatShading;
-      if (m_flatShading)
-        displayMessage("Flat shading.");
-      else
-        displayMessage("Gouraud shading.");
-      redraw();
     }
     else if ((e->key()==::Qt::Key_M) && (modifiers==::Qt::NoButton))
     {
@@ -1305,6 +1300,21 @@ protected:
       displayMessage(QString("Inverse normal=%1.").arg(m_inverse_normal?"true":"false"));
       negate_all_normals();
       redraw();
+    }
+    else if ((e->key()==::Qt::Key_S) && (modifiers==::Qt::NoButton))
+    {
+      m_flatShading=!m_flatShading;
+      if (m_flatShading)
+        displayMessage("Flat shading.");
+      else
+        displayMessage("Gouraud shading.");
+      redraw();
+    }
+    else if ((e->key()==::Qt::Key_T) && (modifiers==::Qt::NoButton))
+    {
+      m_draw_text=!m_draw_text;
+      displayMessage(QString("Draw text=%1.").arg(m_draw_text?"true":"false"));
+      update();
     }
     else if ((e->key()==::Qt::Key_U) && (modifiers==::Qt::NoButton))
     {
@@ -1330,16 +1340,16 @@ protected:
         redraw();
       }
     }
-    else if ((e->key()==::Qt::Key_T) && (modifiers==::Qt::NoButton))
-    {
-      m_draw_text=!m_draw_text;
-      displayMessage(QString("Draw text=%1.").arg(m_draw_text?"true":"false"));
-      update();
-    }
     else if ((e->key()==::Qt::Key_V) && (modifiers==::Qt::NoButton))
     {
       m_draw_vertices=!m_draw_vertices;
       displayMessage(QString("Draw vertices=%1.").arg(m_draw_vertices?"true":"false"));
+      update();
+    }
+    else if ((e->key()==::Qt::Key_W) && (modifiers==::Qt::NoButton))
+    {
+      m_draw_faces=!m_draw_faces;
+      displayMessage(QString("Draw faces=%1.").arg(m_draw_faces?"true":"false"));
       update();
     }
     else if ((e->key()==::Qt::Key_Plus) && (!modifiers.testFlag(::Qt::ControlModifier))) // No ctrl
@@ -1438,6 +1448,18 @@ protected:
                      arg(m_ambient_color.x()).arg(m_ambient_color.y()).arg(m_ambient_color.z()));
       update();
     }
+    else if ((e->key()==::Qt::Key_O) && (modifiers==::Qt::NoButton))
+    {
+      bool old_2D=is_two_dimensional();
+      m_no_2D_mode=!m_no_2D_mode;
+      if (old_2D!=is_two_dimensional())
+      {
+        if (is_two_dimensional())
+        { displayMessage(QString("Viewer is in 2D mode.")); }
+        else { displayMessage(QString("Viewer is in 3D mode.")); }
+        update();
+      }
+    }
     else
       CGAL::QGLViewer::keyPressEvent(e);
   }
@@ -1487,6 +1509,7 @@ protected:
   bool m_use_mono_color;
   bool m_inverse_normal;
   bool m_draw_text;
+  bool m_no_2D_mode;
 
   double m_size_points;
   double m_size_edges;

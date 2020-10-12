@@ -1,4 +1,3 @@
-//=============================================================================
 // Copyright (C) 2001-2005 by Computer Graphics Group, RWTH Aachen
 // Copyright (C) 2011 by Graphics & Geometry Group, Bielefeld University
 // Copyright (C) 2014 GeometryFactory
@@ -440,7 +439,7 @@ public:
     {
         for (std::size_t i=0; i<parrays_.size(); ++i)
             parrays_[i]->reserve(n);
-        capacity_ = std::max(n, capacity_);
+        capacity_ = (std::max)(n, capacity_);
     }
 
     // resize all arrays to size n
@@ -465,7 +464,7 @@ public:
         for (std::size_t i=0; i<parrays_.size(); ++i)
             parrays_[i]->push_back();
         ++size_;
-        capacity_ = (std::max(size_, capacity_));
+        capacity_ = ((std::max)(size_, capacity_));
     }
 
     // reset element to its default property values

@@ -58,7 +58,8 @@ namespace PMP=Polygon_mesh_processing;
 namespace params=PMP::parameters;
 
 template <class TriangleMesh,
-          class VertexPointMap,
+          class VertexPointMap1,
+          class VertexPointMap2,
           class VpmOutTuple,
           class FaceIdMap1,
           class FaceIdMap2,
@@ -72,8 +73,9 @@ class Face_graph_output_builder
   typedef typename Default::Get<
     Kernel_,
     typename Kernel_traits<
-      typename boost::property_traits<VertexPointMap>::value_type
-    >::Kernel >::type                                           Kernel;
+      typename boost::property_traits<VertexPointMap1>::value_type
+    >::Kernel >::type                                                   Kernel;
+
   typedef typename Default::Get<EdgeMarkMapBind_,
     Ecm_bind<TriangleMesh, No_mark<TriangleMesh> >
       >::type                                          EdgeMarkMapBind;
@@ -111,8 +113,8 @@ class Face_graph_output_builder
 //Data members
   TriangleMesh &tm1, &tm2;
   // property maps of input meshes
-  const VertexPointMap vpm1;
-  const VertexPointMap vpm2;
+  const VertexPointMap1& vpm1;
+  const VertexPointMap2& vpm2;
   FaceIdMap1 fids1;
   FaceIdMap2 fids2;
   EdgeMarkMapBind& marks_on_input_edges;
@@ -346,8 +348,8 @@ public:
 
   Face_graph_output_builder(TriangleMesh& tm1,
                             TriangleMesh& tm2,
-                            const VertexPointMap vpm1,
-                            const VertexPointMap vpm2,
+                            const VertexPointMap1& vpm1,
+                            const VertexPointMap2& vpm2,
                             FaceIdMap1 fids1,
                             FaceIdMap2 fids2,
                             EdgeMarkMapBind& marks_on_input_edges,
@@ -682,6 +684,10 @@ public:
       halfedge_descriptor h1 = it->second.first[&tm1];
       halfedge_descriptor h2 = it->second.first[&tm2];
 
+#ifdef CGAL_COREFINEMENT_DEBUG
+      std::cout << "Looking at triangles around edge " << tm1.point(source(h1, tm1)) << " " << tm1.point(target(h1, tm1)) << "\n";
+#endif
+
       CGAL_assertion(ids.first==vertex_to_node_id1[source(h1,tm1)]);
       CGAL_assertion(ids.second==vertex_to_node_id1[target(h1,tm1)]);
       CGAL_assertion(ids.first==vertex_to_node_id2[source(h2,tm2)]);
@@ -713,6 +719,9 @@ public:
             //Nothing allowed
             if (!used_to_clip_a_surface)
             {
+#ifdef CGAL_COREFINEMENT_DEBUG
+              std::cout << "  Non-manifold edge case 1\n";
+#endif
               impossible_operation.set();
               return;
             }
@@ -723,6 +732,9 @@ public:
           //Ambiguous, we can do nothing
           if (!used_to_clip_a_surface)
           {
+#ifdef CGAL_COREFINEMENT_DEBUG
+              std::cout << "  Non-manifold edge case 2\n";
+#endif
             impossible_operation.set();
             return;
           }
@@ -776,6 +788,9 @@ public:
         {
           CGAL_assertion(!used_to_clip_a_surface);
           //Ambiguous, we do nothing
+#ifdef CGAL_COREFINEMENT_DEBUG
+              std::cout << "  Non-manifold edge case 3\n";
+#endif
           impossible_operation.set();
           return;
         }
@@ -971,6 +986,9 @@ public:
                 // poly_second - poly_first             = {0}
                 // poly_first \cap poly_second          = q1q2
                 // opposite( poly_first U poly_second ) = p2p1
+#ifdef CGAL_COREFINEMENT_DEBUG
+              std::cout << "  Non-manifold edge case 4\n";
+#endif
                 impossible_operation.set(TM1_MINUS_TM2); // tm1-tm2 is non-manifold
               }
               else{
@@ -982,7 +1000,12 @@ public:
                 is_patch_inside_tm2.set(patch_id_p1);
                 is_patch_inside_tm2.set(patch_id_p2);
                 if (!used_to_clip_a_surface)
+                {
+#ifdef CGAL_COREFINEMENT_DEBUG
+              std::cout << "  Non-manifold edge case 5\n";
+#endif
                   impossible_operation.set(INTERSECTION); // tm1 n tm2 is non-manifold
+                }
               }
             }
             else
@@ -997,6 +1020,9 @@ public:
               {
                 if (!used_to_clip_a_surface)
                 {
+#ifdef CGAL_COREFINEMENT_DEBUG
+              std::cout << "  Non-manifold edge case 6\n";
+#endif
                   impossible_operation.set();
                   return;
                 }
@@ -1018,6 +1044,9 @@ public:
               {
                 if (!used_to_clip_a_surface)
                 {
+#ifdef CGAL_COREFINEMENT_DEBUG
+              std::cout << "  Non-manifold edge case 7\n";
+#endif
                   impossible_operation.set();
                   return;
                 }
@@ -1039,6 +1068,9 @@ public:
                 // poly_second - poly_first             = q1q2
                 // poly_first \cap poly_second          = {0}
                 // opposite( poly_first U poly_second ) = p2q1 U q2p1
+#ifdef CGAL_COREFINEMENT_DEBUG
+              std::cout << "  Non-manifold edge case 8\n";
+#endif
                 impossible_operation.set(UNION); // tm1 U tm2 is non-manifold
               }
               else{
@@ -1049,6 +1081,9 @@ public:
                 // poly_second - poly_first             = q1p1 U p2q2
                 // poly_first \cap poly_second          = p1p2
                 // opposite( poly_first U poly_second ) = q2q1
+#ifdef CGAL_COREFINEMENT_DEBUG
+              std::cout << "  Non-manifold edge case 9\n";
+#endif
                 impossible_operation.set(TM2_MINUS_TM1); // tm2 - tm1 is non-manifold
               }
             }
@@ -1065,10 +1100,6 @@ public:
     if (!is_tm2_closed)
       patch_status_not_set_tm1.reset();
 
-    typedef Side_of_triangle_mesh<TriangleMesh,
-                                  Kernel,
-                                  VertexPointMap> Inside_poly_test;
-
 #ifdef CGAL_COREFINEMENT_POLYHEDRA_DEBUG
     #warning stop using next_marked_halfedge_around_target_vertex and create lists of halfedges instead?
 #endif
@@ -1078,7 +1109,7 @@ public:
       CGAL::Bounded_side in_tm2 = is_tm2_inside_out
                                 ? ON_UNBOUNDED_SIDE : ON_BOUNDED_SIDE;
 
-      Inside_poly_test inside_tm2(tm2, vpm2);
+      Side_of_triangle_mesh<TriangleMesh, Kernel, VertexPointMap2> inside_tm2(tm2, vpm2);
 
       for(face_descriptor f : faces(tm1))
       {
@@ -1140,7 +1171,7 @@ public:
       CGAL::Bounded_side in_tm1 = is_tm1_inside_out
                                 ? ON_UNBOUNDED_SIDE : ON_BOUNDED_SIDE;
 
-      Inside_poly_test inside_tm1(tm1, vpm1);
+      Side_of_triangle_mesh<TriangleMesh, Kernel, VertexPointMap1> inside_tm1(tm1, vpm1);
       for(face_descriptor f : faces(tm2))
       {
         const std::size_t f_id = get(fids2, f);

@@ -1,18 +1,8 @@
-//=======================================================================
-// Copyright 1997, 1998, 1999, 2000 University of Notre Dame.
-// Authors: Andrew Lumsdaine, Lie-Quan Lee, Jeremy G. Siek
-//
-// This file is part of the Boost Graph Library
-//
-// Distributed under the Boost Software License, Version 1.0. (See
-// accompanying file LICENSE_1_0.txt or copy at
-// https://www.boost.org/LICENSE_1_0.txt)
-//=======================================================================
 // Copyright (c) 2007-2015  GeometryFactory (France).  All rights reserved.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: BSL-1.0
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Andreas Fabri, Fernando Cacciola, Jane Tournois
 
@@ -25,6 +15,8 @@
 #include <CGAL/Dynamic_property_map.h>
 #include <CGAL/Kernel_traits.h>
 #include <CGAL/Origin.h>
+#include <CGAL/iterator.h>
+
 #include <CGAL/property_map.h>
 
 #include <boost/mpl/if.hpp>
@@ -223,7 +215,7 @@ typename BGL::internal::GetInitializedIndexMap<CGAL::internal_np::DTYPE##_index_
                                                CGAL::dynamic_##DTYPE##_property_t<STYPE>,          \
                                                Graph, NamedParameters>::const_type                 \
 get_initialized_##DTYPE##_index_map(const Graph& g,                                                \
-                                   const NamedParameters& np)                                      \
+                                    const NamedParameters& np)                                     \
 {                                                                                                  \
   typedef BGL::internal::GetInitializedIndexMap<CGAL::internal_np::DTYPE##_index_t,                \
                                                 boost::DTYPE##_index_t,                            \
@@ -251,7 +243,7 @@ typename BGL::internal::GetInitializedIndexMap<CGAL::internal_np::DTYPE##_index_
                                                CGAL::dynamic_##DTYPE##_property_t<STYPE>,          \
                                                Graph, NamedParameters>::type                       \
 get_initialized_##DTYPE##_index_map(Graph& g,                                                      \
-                                   const NamedParameters& np)                                      \
+                                    const NamedParameters& np)                                     \
 {                                                                                                  \
   typedef BGL::internal::GetInitializedIndexMap<CGAL::internal_np::DTYPE##_index_t,                \
                                                 boost::DTYPE##_index_t,                            \
@@ -300,7 +292,6 @@ CGAL_DEF_GET_INITIALIZED_INDEX_MAP(face, typename boost::graph_traits<Graph>::fa
       DummyNormalPmap//default
       > ::type  type;
   };
-
 
   namespace internal {
     BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(Has_nested_type_iterator, iterator, false)
@@ -497,6 +488,18 @@ CGAL_DEF_GET_INITIALIZED_INDEX_MAP(face, typename boost::graph_traits<Graph>::fa
         internal_np::point_is_constrained_t,
         NamedParameters,
         DummyConstrainedMap //default
+        > ::type  type;
+    };
+
+    template<typename PointRange, typename NamedParameters>
+    class GetAdjacencies
+    {
+    public:
+      typedef Emptyset_iterator Empty;
+      typedef typename internal_np::Lookup_named_param_def <
+        internal_np::adjacencies_t,
+        NamedParameters,
+        Empty//default
         > ::type  type;
     };
 

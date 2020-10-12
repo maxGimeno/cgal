@@ -15,7 +15,7 @@ CGAL_add_named_parameter(halfedge_index_t, halfedge_index, halfedge_index_map)
 CGAL_add_named_parameter(edge_index_t, edge_index, edge_index_map)
 CGAL_add_named_parameter(face_index_t, face_index, face_index_map)
 CGAL_add_named_parameter(vertex_index_t, vertex_index, vertex_index_map)
-CGAL_add_named_parameter(graph_visitor_t, graph_visitor, visitor)
+CGAL_add_named_parameter(visitor_t, visitor, visitor)
 
 CGAL_add_named_parameter(point_t, point_map, point_map)
 
@@ -37,6 +37,7 @@ CGAL_add_named_parameter(vertex_to_vertex_map_t, vertex_to_vertex_map, vertex_to
 CGAL_add_named_parameter(halfedge_to_halfedge_map_t, halfedge_to_halfedge_map, halfedge_to_halfedge_map)
 CGAL_add_named_parameter(face_to_face_map_t, face_to_face_map, face_to_face_map)
 CGAL_add_named_parameter(implementation_tag_t, implementation_tag, implementation_tag)
+CGAL_add_named_parameter(prevent_unselection_t, prevent_unselection, prevent_unselection)
 
 // List of named parameters that we use in the package 'Mesh_3'
 CGAL_add_named_parameter(vertex_feature_degree_t, vertex_feature_degree, vertex_feature_degree_map)
@@ -97,8 +98,10 @@ CGAL_add_named_parameter(i_used_as_a_predicate_t, i_used_as_a_predicate, i_used_
 CGAL_add_named_parameter(nesting_levels_t, nesting_levels, nesting_levels);
 CGAL_add_named_parameter(i_used_for_volume_orientation_t, i_used_for_volume_orientation, i_used_for_volume_orientation);
 CGAL_add_named_parameter(area_threshold_t, area_threshold, area_threshold)
+CGAL_add_named_parameter(halfedges_keeper_t, halfedges_keeper, halfedges_keeper)
 CGAL_add_named_parameter(volume_threshold_t, volume_threshold, volume_threshold)
 CGAL_add_named_parameter(dry_run_t, dry_run, dry_run)
+CGAL_add_named_parameter(do_not_modify_t, do_not_modify, do_not_modify)
 
 // List of named parameters that we use in the package 'Surface Mesh Simplification'
 CGAL_add_named_parameter(get_cost_policy_t, get_cost_policy, get_cost)
@@ -146,6 +149,7 @@ CGAL_add_named_parameter(transformation_checkers_t, transformation_checkers, tra
 CGAL_add_named_parameter(inspector_t, inspector, inspector)
 CGAL_add_named_parameter(logger_t, logger, logger)
 CGAL_add_named_parameter(pointmatcher_config_t, pointmatcher_config, pointmatcher_config)
+CGAL_add_named_parameter(adjacencies_t, adjacencies, adjacencies)
 
 // List of named parameters used in Surface_mesh_approximation package
 CGAL_add_named_parameter(verbose_level_t, verbose_level, verbose_level)
@@ -154,12 +158,21 @@ CGAL_add_named_parameter(max_number_of_proxies_t, max_number_of_proxies, max_num
 CGAL_add_named_parameter(min_error_drop_t, min_error_drop, min_error_drop)
 CGAL_add_named_parameter(number_of_relaxations_t, number_of_relaxations, number_of_relaxations)
 
+// List of named parameters used in Optimal_bounding_box package
+CGAL_add_named_parameter(use_convex_hull_t, use_convex_hull, use_convex_hull)
+
 // meshing parameters
 CGAL_add_named_parameter(subdivision_ratio_t, subdivision_ratio, subdivision_ratio)
 CGAL_add_named_parameter(relative_to_chord_t, relative_to_chord, relative_to_chord)
 CGAL_add_named_parameter(with_dihedral_angle_t, with_dihedral_angle, with_dihedral_angle)
 CGAL_add_named_parameter(optimize_anchor_location_t, optimize_anchor_location, optimize_anchor_location)
 CGAL_add_named_parameter(pca_plane_t, pca_plane, pca_plane)
+
+// tetrahedral remeshing parameters
+CGAL_add_named_parameter(remesh_boundaries_t, remesh_boundaries, remesh_boundaries)
+CGAL_add_named_parameter(cell_selector_t, cell_selector, cell_selector)
+CGAL_add_named_parameter(facet_is_constrained_t, facet_is_constrained, facet_is_constrained_map)
+CGAL_add_named_parameter(smooth_constrained_edges_t, smooth_constrained_edges, smooth_constrained_edges)
 
 // output parameters
 CGAL_add_named_parameter(face_proxy_map_t, face_proxy_map, face_proxy_map)
@@ -172,4 +185,3 @@ CGAL_add_named_parameter(accuracy_t, accuracy, accuracy)
 CGAL_add_named_parameter(maximum_running_time_t, maximum_running_time, maximum_running_time)
 CGAL_add_named_parameter(overlap_t, overlap, overlap)
 CGAL_add_named_parameter(maximum_normal_deviation_t, maximum_normal_deviation, maximum_normal_deviation)
-
