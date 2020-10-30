@@ -4,9 +4,6 @@
 #include <CGAL/Three/Scene_item.h>
 
 #include <QComboBox>
-#include <QLineEdit>
-#include <QSpinBox>
-#include <QMultipleInputDialog.h>
 
 #include <CGAL/Classification/Feature_set.h>
 #include <CGAL/Classification/Label_set.h>
@@ -14,7 +11,6 @@
 
 #include <CGAL/Classification/ETHZ/Random_forest_classifier.h>
 #include <CGAL/Classification/Sum_of_weighted_features_classifier.h>
-
 #ifdef CGAL_LINKED_WITH_TENSORFLOW
 #  include <CGAL/Classification/TensorFlow/Neural_network_classifier.h>
 #endif
@@ -34,7 +30,7 @@
 
 #define CGAL_CLASSIFICATION_SOWF_ID "Sum of Weighted Features"
 #define CGAL_CLASSIFICATION_SOWF_NUMBER 3
-
+class QMultipleInputDialog;
 
 class Item_classification_base
 {

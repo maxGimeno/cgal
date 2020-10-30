@@ -800,3 +800,5 @@ void Scene_polylines_item::point_set_from_polyline()
   new_ps_item->invalidateOpenGLBuffers();
   new_ps_item->redraw();
 }
+
+#include "moc_Scene_polylines_item.cpp"

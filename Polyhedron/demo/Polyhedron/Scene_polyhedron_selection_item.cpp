@@ -2669,3 +2669,4 @@ void Scene_polyhedron_selection_item::setKeepSelectionValid(SelectionTypes type)
 {
   d->keep_selection_valid = type;
 }
+#include "moc_Scene_polyhedron_selection_item.cpp"

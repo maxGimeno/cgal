@@ -26,6 +26,7 @@
 #include <CGAL/Three/Three.h>
 
 #include "ui_LightingDialog.h"
+#include <CGAL/Three/TextRenderer.h>
 #include "CGAL_double_edit.h"
 
 #if defined(_WIN32)
@@ -2119,3 +2120,4 @@ void Viewer::onTextMessageSocketReceived(QString message)
 
 const QVector3D& Viewer::scaler()const { return d->scaler; }
 #include "Viewer.moc"
+#include "moc_Viewer.cpp"

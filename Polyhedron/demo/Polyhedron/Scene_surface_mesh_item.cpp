@@ -2579,3 +2579,4 @@ void Scene_surface_mesh_item::fill_flat_vertex_map()
   d->cumul_id.push_back(counter);
   d->flat_vertex_map_ready = true;
 }
+#include "moc_Scene_surface_mesh_item.cpp"

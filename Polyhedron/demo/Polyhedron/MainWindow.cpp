@@ -48,6 +48,9 @@
 #include <QJsonArray>
 #include <QSequentialIterable>
 #include <QDir>
+#include <QLineEdit>
+
+
 #ifdef QT_SCRIPT_LIB
 #  include <QScriptValue>
 #  ifdef QT_SCRIPTTOOLS_LIB
@@ -3748,3 +3751,5 @@ void MainWindow::on_actionLoad_a_Scene_from_a_Script_File_triggered()
     tmp_file.remove();
   }
 }
+
+#include "moc_MainWindow.cpp"

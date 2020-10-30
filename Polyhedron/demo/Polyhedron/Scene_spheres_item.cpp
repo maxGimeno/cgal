@@ -429,6 +429,7 @@ bool Scene_spheres_item::save(const std::string& file_name)const
   return true;
 }
 
+
 bool Scene_spheres_item::eventFilter(QObject *, QEvent *e)
 {
   if(e->type() == QEvent::ShortcutOverride)
@@ -441,3 +442,5 @@ bool Scene_spheres_item::eventFilter(QObject *, QEvent *e)
   }
   return false;
 }
+
+#include "moc_Scene_spheres_item.cpp"

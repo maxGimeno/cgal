@@ -26,6 +26,7 @@
 #include <QAbstractProxyModel>
 #include <QMimeData>
 #include <QOpenGLFramebufferObject>
+#include <QItemSelection>
 
 
 Scene::Scene(QObject* parent)
@@ -1974,3 +1975,5 @@ void Scene::addChild(Scene_item *item)
 {
   children.push_back(item_id(item));
 }
+
+#include "moc_Scene.cpp"

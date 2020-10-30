@@ -17,6 +17,11 @@ if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
 
+if(${CMAKE_VERSION} VERSION_LESS "3.18.0")
+  set(USE_PCH FALSE)
+else()
+  set(USE_PCH TRUE)
+endif()
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -29,7 +34,6 @@ if(has_cpp11 LESS 0)
   message(STATUS "NOTICE: This demo requires a C++11 compiler and will not be compiled.")
   return()
 endif()
-
 # Use C++11 for this directory and its sub-directories.
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
@@ -202,7 +206,6 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
     target_link_libraries(demo_framework PUBLIC Qt5::WebSockets)
     message(STATUS "Qt5WebSockets was found. Using WebSockets is therefore possible.")
   endif()
-
   cgal_add_compilation_test(demo_framework)
   # Let's define `three_EXPORT` during the compilation of `demo_framework`,
   # in addition of `demo_framework_EXPORT` (defined automatically by
@@ -212,7 +215,18 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
   if(CGAL_HEADER_ONLY)
     target_compile_definitions(demo_framework PRIVATE -DCGAL_USE_Qt5_RESOURCES)
   endif()
-
+  if(COMMAND target_precompile_headers)
+    target_precompile_headers(demo_framework PRIVATE
+    <QApplication>
+    <QMainWindow>
+    <QAction>
+    <QMessageBox>
+    <QObject>
+    <QMenu>
+    <QString>
+    <vector>
+    )
+endif()#target_precompile_headers
   add_library(scene_basic_objects SHARED
     Scene_plane_item.cpp
     Scene_spheres_item.cpp
@@ -222,6 +236,8 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
     demo_framework
     ${CGAL_LIBRARIES}
     Qt5::OpenGL Qt5::Gui Qt5::Script Qt5::Widgets)
+
+
   add_library(scene_color_ramp SHARED Color_ramp.cpp)
   target_link_libraries(scene_color_ramp PRIVATE Qt5::Core)
 
@@ -255,14 +271,13 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
   if(TARGET CGAL::TBB_support)
     target_link_libraries(scene_c3t3_item PUBLIC CGAL::TBB_support)
   endif()
-  if(COMMAND target_precompile_headers)
-    # Support for precompiled headers, for Mesh_3 (since CMake 3.16)
-    target_precompile_headers(scene_c3t3_item PUBLIC [["C3t3_type.h"]])
-  endif()
+
   add_item(scene_transform_item Plugins/PCA/Scene_facegraph_transform_item.cpp )
   add_item(scene_edit_box_item Plugins/PCA/Scene_edit_box_item.cpp )
   add_item(scene_image_item Scene_image_item.cpp)
   add_item(scene_surface_mesh_item Scene_surface_mesh_item.cpp)
+
+
 
   if(TBB_FOUND)
     target_link_libraries(scene_surface_mesh_item PUBLIC CGAL::TBB_support)
@@ -304,6 +319,8 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
   add_item(scene_polygon_soup_item Scene_polygon_soup_item.cpp)
   target_link_libraries(scene_polygon_soup_item PUBLIC scene_surface_mesh_item)
 
+
+
   add_item(scene_nef_polyhedron_item Scene_nef_polyhedron_item.cpp)
   target_link_libraries(scene_nef_polyhedron_item PUBLIC scene_surface_mesh_item)
 
@@ -311,6 +328,7 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
   if (TARGET CGAL::Eigen_support)
     target_link_libraries(scene_points_with_normal_item PUBLIC CGAL::Eigen_support)
   endif()
+
 
   find_package(LASLIB)
   include(CGAL_LASLIB_support)
