@@ -1,15 +1,32 @@
-include( polyhedron_demo_macros )
+include(polyhedron_demo_macros)
 if(TARGET CGAL::Eigen_support)
 
   find_package(SCIP QUIET)
+
+  set_package_properties(
+    SCIP PROPERTIES
+    DESCRIPTION "A solver."
+    PURPOSE
+      "Can be used as a solver in the surface_reconstruction_plugin plugin.")
+
   include(CGAL_SCIP_support)
   if(NOT TARGET CGAL::SCIP_support)
     find_package(GLPK QUIET)
+
+    set_package_properties(
+      GLPK PROPERTIES
+      DESCRIPTION "An alternative for SCIP."
+      PURPOSE
+        "Can be used as a solver in the surface_reconstruction_plugin plugin.")
+
     include(CGAL_GLPK_support)
   endif()
 
   if(NOT TARGET CGAL::SCIP_support AND NOT TARGET CGAL::GLPK_support)
-    message(STATUS "NOTICE: SCIP and GLPK were not found. Polygonal surface reconstruction will not be available.")
+    message(
+      STATUS
+        "NOTICE: SCIP and GLPK were not found. Polygonal surface reconstruction will not be available."
+    )
   endif()
 
 if(${USE_PCH})
@@ -30,62 +47,124 @@ if(${USE_PCH})
   <QtPlugin>
   )
 endif() #use pch
+  qt5_wrap_ui(surface_reconstructionUI_FILES Surface_reconstruction_plugin.ui)
+  polyhedron_demo_plugin(
+    surface_reconstruction_plugin
+    Surface_reconstruction_plugin
+    Surface_reconstruction_poisson_impl
+    Surface_reconstruction_advancing_front_impl
+    Surface_reconstruction_scale_space_impl
+    Surface_reconstruction_polygonal_impl
+    ${surface_reconstructionUI_FILES}
+    KEYWORDS
+    PointSetProcessing)
+  target_link_libraries(
+    surface_reconstruction_plugin
+    PUBLIC scene_polygon_soup_item scene_surface_mesh_item
+           scene_points_with_normal_item CGAL::Eigen_support)
 
-
-  qt5_wrap_ui( surface_reconstructionUI_FILES Surface_reconstruction_plugin.ui)
-  polyhedron_demo_plugin(surface_reconstruction_plugin Surface_reconstruction_plugin Surface_reconstruction_poisson_impl Surface_reconstruction_advancing_front_impl Surface_reconstruction_scale_space_impl Surface_reconstruction_polygonal_impl ${surface_reconstructionUI_FILES} KEYWORDS PointSetProcessing)
-  target_link_libraries(surface_reconstruction_plugin PUBLIC scene_polygon_soup_item scene_surface_mesh_item scene_points_with_normal_item CGAL::Eigen_support)
-
-  if (TARGET CGAL::SCIP_support)
-    target_link_libraries(surface_reconstruction_plugin PUBLIC CGAL::SCIP_support)
+  if(TARGET CGAL::SCIP_support)
+    target_link_libraries(surface_reconstruction_plugin
+                          PUBLIC CGAL::SCIP_support)
   elseif(TARGET CGAL::GLPK_support)
-    target_link_libraries(surface_reconstruction_plugin PUBLIC CGAL::GLPK_support)
+    target_link_libraries(surface_reconstruction_plugin
+                          PUBLIC CGAL::GLPK_support)
   endif()
 
-  qt5_wrap_ui( point_set_normal_estimationUI_FILES Point_set_normal_estimation_plugin.ui)
-  polyhedron_demo_plugin(point_set_normal_estimation_plugin Point_set_normal_estimation_plugin ${point_set_normal_estimationUI_FILES} KEYWORDS PointSetProcessing Classification)
-  target_link_libraries(point_set_normal_estimation_plugin PUBLIC scene_points_with_normal_item scene_callback_signaler CGAL::Eigen_support)
+  qt5_wrap_ui(point_set_normal_estimationUI_FILES
+              Point_set_normal_estimation_plugin.ui)
+  polyhedron_demo_plugin(
+    point_set_normal_estimation_plugin Point_set_normal_estimation_plugin
+    ${point_set_normal_estimationUI_FILES} KEYWORDS PointSetProcessing
+    Classification)
+  target_link_libraries(
+    point_set_normal_estimation_plugin
+    PUBLIC scene_points_with_normal_item scene_callback_signaler
+           CGAL::Eigen_support)
 
-  qt5_wrap_ui( features_detection_pluginUI_FILES Features_detection_plugin.ui)
-  polyhedron_demo_plugin(features_detection_plugin Features_detection_plugin ${features_detection_pluginUI_FILES} KEYWORDS PointSetProcessing)
-  target_link_libraries(features_detection_plugin PUBLIC scene_points_with_normal_item CGAL::Eigen_support)
+  qt5_wrap_ui(features_detection_pluginUI_FILES Features_detection_plugin.ui)
+  polyhedron_demo_plugin(
+    features_detection_plugin Features_detection_plugin
+    ${features_detection_pluginUI_FILES} KEYWORDS PointSetProcessing)
+  target_link_libraries(
+    features_detection_plugin PUBLIC scene_points_with_normal_item
+                                     CGAL::Eigen_support)
 
-  polyhedron_demo_plugin(point_set_smoothing_plugin Point_set_smoothing_plugin KEYWORDS PointSetProcessing)
-  target_link_libraries(point_set_smoothing_plugin PUBLIC scene_points_with_normal_item scene_callback_signaler CGAL::Eigen_support)
+  polyhedron_demo_plugin(point_set_smoothing_plugin Point_set_smoothing_plugin
+                         KEYWORDS PointSetProcessing)
+  target_link_libraries(
+    point_set_smoothing_plugin
+    PUBLIC scene_points_with_normal_item scene_callback_signaler
+           CGAL::Eigen_support)
 
-  polyhedron_demo_plugin(point_set_average_spacing_plugin Point_set_average_spacing_plugin KEYWORDS PointSetProcessing Classification)
-  target_link_libraries(point_set_average_spacing_plugin PUBLIC scene_points_with_normal_item scene_callback_signaler CGAL::Eigen_support)
+  polyhedron_demo_plugin(
+    point_set_average_spacing_plugin Point_set_average_spacing_plugin KEYWORDS
+    PointSetProcessing Classification)
+  target_link_libraries(
+    point_set_average_spacing_plugin
+    PUBLIC scene_points_with_normal_item scene_callback_signaler
+           CGAL::Eigen_support)
 
-  qt5_wrap_ui(point_set_shape_detectionUI_FILES Point_set_shape_detection_plugin.ui)
-  polyhedron_demo_plugin(point_set_shape_detection_plugin Point_set_shape_detection_plugin ${point_set_shape_detectionUI_FILES} KEYWORDS PointSetProcessing Classification)
-  target_link_libraries(point_set_shape_detection_plugin PUBLIC scene_surface_mesh_item scene_points_with_normal_item scene_polygon_soup_item scene_callback_signaler CGAL::Eigen_support)
+  qt5_wrap_ui(point_set_shape_detectionUI_FILES
+              Point_set_shape_detection_plugin.ui)
+  polyhedron_demo_plugin(
+    point_set_shape_detection_plugin Point_set_shape_detection_plugin
+    ${point_set_shape_detectionUI_FILES} KEYWORDS PointSetProcessing
+    Classification)
+  target_link_libraries(
+    point_set_shape_detection_plugin
+    PUBLIC scene_surface_mesh_item scene_points_with_normal_item
+           scene_polygon_soup_item scene_callback_signaler CGAL::Eigen_support)
 
   find_package(OpenGR QUIET)
   include(CGAL_OpenGR_support)
   find_package(libpointmatcher QUIET)
   include(CGAL_pointmatcher_support)
 
-  if (TARGET CGAL::OpenGR_support OR CGAL::pointmatcher_support)
+  if(TARGET CGAL::OpenGR_support OR CGAL::pointmatcher_support)
     qt5_wrap_ui(register_point_setsUI_FILES Register_point_sets_plugin.ui)
-    polyhedron_demo_plugin(register_point_sets_plugin Register_point_sets_plugin ${register_point_setsUI_FILES} KEYWORDS PointSetProcessing)
-    target_link_libraries(register_point_sets_plugin PUBLIC scene_points_with_normal_item)
+    polyhedron_demo_plugin(
+      register_point_sets_plugin Register_point_sets_plugin
+      ${register_point_setsUI_FILES} KEYWORDS PointSetProcessing)
+    target_link_libraries(register_point_sets_plugin
+                          PUBLIC scene_points_with_normal_item)
     target_link_libraries(register_point_sets_plugin PUBLIC CGAL::Eigen_support)
-    if (TARGET CGAL::OpenGR_support)
-      target_link_libraries(register_point_sets_plugin PUBLIC CGAL::OpenGR_support)
+    if(TARGET CGAL::OpenGR_support)
+      target_link_libraries(register_point_sets_plugin
+                            PUBLIC CGAL::OpenGR_support)
     endif()
-    if (TARGET CGAL::pointmatcher_support)
-      target_link_libraries(register_point_sets_plugin PUBLIC CGAL::pointmatcher_support)
+    if(TARGET CGAL::pointmatcher_support)
+      target_link_libraries(register_point_sets_plugin
+                            PUBLIC CGAL::pointmatcher_support)
     endif()
   else()
-    message(STATUS "NOTICE: OpenGR and libpointmatcher were not found. Registration plugin will not be available.")
+    message(
+      STATUS
+        "NOTICE: OpenGR and libpointmatcher were not found. Registration plugin will not be available."
+    )
   endif()
 
 else(EIGEN3_FOUND)
-  message(STATUS "NOTICE: Eigen 3.1 (or greater) was not found. Surface reconstruction plugin will not be available.")
-  message(STATUS "NOTICE: Eigen 3.1 (or greater) was not found. Normal estimation plugins will not be available.")
-  message(STATUS "NOTICE: Eigen 3.1 (or greater) was not found. Smoothing plugin will not be available.")
-  message(STATUS "NOTICE: Eigen 3.1 (or greater) was not found. Average spacing plugin will not be available.")
-  message(STATUS "NOTICE: Eigen 3.1 (or greater) was not found. Feature detection plugin will not be available.")
+  message(
+    STATUS
+      "NOTICE: Eigen 3.1 (or greater) was not found. Surface reconstruction plugin will not be available."
+  )
+  message(
+    STATUS
+      "NOTICE: Eigen 3.1 (or greater) was not found. Normal estimation plugins will not be available."
+  )
+  message(
+    STATUS
+      "NOTICE: Eigen 3.1 (or greater) was not found. Smoothing plugin will not be available."
+  )
+  message(
+    STATUS
+      "NOTICE: Eigen 3.1 (or greater) was not found. Average spacing plugin will not be available."
+  )
+  message(
+    STATUS
+      "NOTICE: Eigen 3.1 (or greater) was not found. Feature detection plugin will not be available."
+  )
 endif()
 
   qt5_wrap_ui(point_set_bilateral_smoothingUI_FILES Point_set_bilateral_smoothing_plugin.ui)
