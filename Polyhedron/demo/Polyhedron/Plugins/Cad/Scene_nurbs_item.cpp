@@ -106,7 +106,7 @@ struct Scene_nurbs_item_priv{
 
   {
     dtkLogger::instance().attachConsole();
-    dtkLogger::instance().setLevel(dtkLog::Trace);
+    dtkLogger::instance().setLevel(dtk::LogLevel::Trace);
     spheres_item = NULL;
     trimmed_shown = false;
     cp_shown = false;

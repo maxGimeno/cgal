@@ -22,7 +22,7 @@ struct Scene_rational_bezier_surface_item_priv{
     : m_rational_bezier_surface(dtk_rational_bezier_surface), item(parent)
   {
     dtkLogger::instance().attachConsole();
-    dtkLogger::instance().setLevel(dtkLog::Error);
+    dtkLogger::instance().setLevel(dtk::LogLevel::Error);
 
     trimmed_shown = false;
     float min_box[3];

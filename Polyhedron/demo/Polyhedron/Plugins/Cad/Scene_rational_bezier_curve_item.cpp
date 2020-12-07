@@ -22,7 +22,7 @@ struct Scene_rational_bezier_curve_item_priv{
 
     {
         dtkLogger::instance().attachConsole();
-        dtkLogger::instance().setLevel(dtkLog::Trace);
+        dtkLogger::instance().setLevel(dtk::LogLevel::Trace);
 
       dtkContinuousGeometryPrimitives::Point_3 p(0., 0., 0.);
 

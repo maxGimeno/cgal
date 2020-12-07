@@ -135,7 +135,7 @@ void Polyhedron_demo_CAD_initialization_plugin::onCurrentItemChanged(void) {
 void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
 {
     dtkLogger::instance().attachConsole();
-    dtkLogger::instance().setLevel(dtkLog::Info);
+    dtkLogger::instance().setLevel(dtk::LogLevel::Info);
     Scene_cad_item* cad_item = qobject_cast<Scene_cad_item*>(scene->item(scene->selectionIndices().first()));
     if(!cad_item) {return;}
     dtkBRep* brep = cad_item->brep();
@@ -155,7 +155,7 @@ void Polyhedron_demo_CAD_initialization_plugin::protectInitialization()
 
     connect(ui_protection->protectTrimCB, SIGNAL(stateChanged(int)), this, SLOT(updateProtectTrim(int)));
     ui_protection->mergingToleranceSB->setDisabled(true);
-    dtkLogger::instance().setLevel(dtkLog::Error);
+    dtkLogger::instance().setLevel(dtk::LogLevel::Error);
     // ///////////////////////////////////////////////////////////////////
     // Recovers the topo trims and display them in the list
     // ///////////////////////////////////////////////////////////////////

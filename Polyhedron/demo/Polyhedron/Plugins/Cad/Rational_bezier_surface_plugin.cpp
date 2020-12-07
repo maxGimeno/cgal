@@ -57,7 +57,7 @@ public:
       dtkContinuousGeometrySettings settings;
       settings.beginGroup("continuous-geometry");
       dtkLogger::instance().attachConsole();
-      dtkLogger::instance().setLevel(dtkLog::Error);
+      dtkLogger::instance().setLevel(dtk::LogLevel::Error);
       dtkContinuousGeometry::setVerboseLoading(true);
       dtkContinuousGeometry::initialize(settings.value("plugins").toString());
       settings.endGroup();

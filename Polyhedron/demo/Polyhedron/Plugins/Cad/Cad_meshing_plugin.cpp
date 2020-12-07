@@ -64,7 +64,7 @@ public:
         return QList<CGAL::Three::Scene_item*>();
       }
 
-      dtkLogger::instance().setLevel(dtkLog::Info);
+      dtkLogger::instance().setLevel(dtk::LogLevel::Info);
 
       dtkContinuousGeometrySettings settings;
       settings.beginGroup("continuous-geometry");
