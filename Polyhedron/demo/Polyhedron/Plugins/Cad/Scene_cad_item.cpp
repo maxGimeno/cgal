@@ -2,6 +2,7 @@
 #define foreach Q_FOREACH
 #define signals Q_SIGNALS
 #define slots Q_SLOTS
+#include <set>
 #include <dtkBRep>
 #include <dtkNurbsSurface>
 #include <dtkTopoTrim>

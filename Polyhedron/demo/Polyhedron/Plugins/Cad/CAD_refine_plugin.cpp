@@ -58,7 +58,9 @@ public:
   }
 
   bool applicable(QAction*) const {
-    return qobject_cast<Scene_c3t3_cad_item*>(scene->item(scene->selectionIndices().first()));
+    if(scene->selectionIndices().empty())
+      return false;
+    return qobject_cast<Scene_c3t3_cad_item*>(scene->item(scene->mainSelectionIndex()));
   }
 
   QList<QAction*> actions() const {

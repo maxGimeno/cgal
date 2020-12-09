@@ -63,6 +63,8 @@ public:
   }
 
   bool applicable(QAction*) const {
+    if(scene->selectionIndices().empty())
+      return false;
     return qobject_cast<Scene_cad_item*>(scene->item(scene->selectionIndices().first()));
   }
 

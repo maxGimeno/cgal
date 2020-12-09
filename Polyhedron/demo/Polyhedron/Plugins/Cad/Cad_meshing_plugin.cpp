@@ -70,7 +70,12 @@ public:
       settings.beginGroup("continuous-geometry");
 
       dtkContinuousGeometry::setVerboseLoading(true);
-      dtkContinuousGeometry::initialize(settings.value("plugins").toString());
+      QString plugins_path = settings.value("plugins").toString();
+      if(plugins_path.isEmpty())
+      {
+        plugins_path = QFileDialog::getExistingDirectory(mw, "Path to install/plugins/dtkContinuousPlugins");
+      }
+      dtkContinuousGeometry::initialize(plugins_path);
       settings.endGroup();
       dtkBRepReader *brep_reader =
           dtkContinuousGeometry::bRepReader::pluginFactory().create(
