@@ -58,8 +58,8 @@ option( POLYHEDRON_QTSCRIPT_DEBUGGER
   "Activate the use of Qt Script Debugger in Polyhedron_3 demo" OFF)
 
 # Find Qt5 itself
-find_package(CGAL COMPONENTS Qt5 ImageIO)
-include(${CGAL_USE_FILE})
+  find_package(CGAL COMPONENTS Qt5 ImageIO)
+  include(${CGAL_USE_FILE})
 
 find_package(Qt5
              QUIET
@@ -328,17 +328,22 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
 
   find_package(dtkCore QUIET)
   find_package(dtkLog QUIET)
-  find_package(dtkContinuousGeometry 0.0.1 QUIET)
-  if (dtkCore_FOUND AND dtkContinuousGeometry_FOUND)
-    include_directories(${dtkCore_INCLUDE_DIRS})
-    include_directories(${dtkLog_INCLUDE_DIRS})
-    include_directories(${dtkContinuousGeometry_INCLUDE_DIRS})
 
+  if(NOT USES_SUBMODULES)
+    find_package(dtkContinuousGeometry 0.0.1 QUIET)
+  endif()
+
+    if (dtkCore_FOUND AND dtkContinuousGeometry_FOUND)
+      if(NOT USES_SUBMODULES)
+        include_directories(${dtkCore_INCLUDE_DIRS})
+        include_directories(${dtkLog_INCLUDE_DIRS})
+        include_directories(${dtkContinuousGeometry_INCLUDE_DIRS})
+    endif()
     add_item(scene_nurbs_item Plugins/Cad/Scene_nurbs_item.cpp)
     target_link_libraries(scene_nurbs_item PUBLIC scene_rational_bezier_surface_item dtkCore dtkContinuousGeometryCore scene_basic_objects)
 
-   add_item(scene_rational_bezier_curve_item Plugins/Cad/Scene_rational_bezier_curve_item.cpp)
-   target_link_libraries(scene_rational_bezier_curve_item PUBLIC dtkCore dtkContinuousGeometryCore)
+    add_item(scene_rational_bezier_curve_item Plugins/Cad/Scene_rational_bezier_curve_item.cpp)
+    target_link_libraries(scene_rational_bezier_curve_item PUBLIC dtkCore dtkContinuousGeometryCore)
 
     add_item(scene_rational_bezier_surface_item Plugins/Cad/Scene_rational_bezier_surface_item.cpp)
     target_link_libraries(scene_rational_bezier_surface_item PUBLIC dtkCore dtkContinuousGeometryCore)
@@ -428,6 +433,11 @@ add_executable  ( CGAL_PMP PMP.cpp )
 add_dependencies(CGAL_PMP PMP)
 target_link_libraries( CGAL_PMP PRIVATE polyhedron_demo )
 add_to_cached_list( CGAL_EXECUTABLE_TARGETS CGAL_PMP )
+
+add_executable  ( CGAL_NURBS NURBS.cpp )
+add_dependencies(CGAL_NURBS NURBS)
+target_link_libraries( CGAL_NURBS PRIVATE polyhedron_demo )
+add_to_cached_list( CGAL_EXECUTABLE_TARGETS CGAL_NURBS )
 
 #WS Server
 if(TARGET Qt5::WebSockets)

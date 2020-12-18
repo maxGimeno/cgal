@@ -33,7 +33,7 @@ class Cad_meshing_plugin :
   Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.IOPluginInterface/1.0")
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_io_plugin_interface)
-  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0" FILE "cad_meshing_plugin.json")
 public:
   //PLUGIN PART (for access to the scene and the message interface)
   bool applicable(QAction*) const
@@ -71,10 +71,21 @@ public:
 
       dtkContinuousGeometry::setVerboseLoading(true);
       QString plugins_path = settings.value("plugins").toString();
+      QApplication::restoreOverrideCursor();
+
       if(plugins_path.isEmpty())
       {
-        plugins_path = QFileDialog::getExistingDirectory(mw, "Path to install/plugins/dtkContinuousPlugins");
+#ifdef DTK_PLUGINS_DIR
+        plugins_path = QFileDialog::getExistingDirectory(mw, "Path to dtkContinuousPlugins", DTK_PLUGINS_DIR);
+#else
+        plugins_path = QFileDialog::getExistingDirectory(mw, "Path to dtkContinuousPlugins");
+#endif
+        if(plugins_path.isEmpty())
+        {
+          return QList<CGAL::Three::Scene_item*>();
+        }
       }
+      QApplication::setOverrideCursor(Qt::WaitCursor);
       dtkContinuousGeometry::initialize(plugins_path);
       settings.endGroup();
       dtkBRepReader *brep_reader =
