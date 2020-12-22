@@ -37,13 +37,8 @@ option(CGAL_HEADER_ONLY "Enable header-only mode of CGAL (no compilation of CGAL
 #--------------------------------------------------------------------------------------------------
 
 message( "== Setting paths ==" )
-if(USES_SUBMODULES)
-  set(SOURCE_DIR "${CMAKE_SOURCE_DIR}/nurbs-viewer-mesher")
-  set(BINARY_DIR "${CMAKE_BINARY_DIR}/nurbs-viewer-mesher")
-else()
-  set(SOURCE_DIR ${CMAKE_SOURCE_DIR})
-  set(BINARY_DIR ${CMAKE_BINARY_DIR})
-endif()#USES_SUBMODULES
+  set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
+  set(BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/..")
 
 if ( CGAL_BRANCH_BUILD )
 

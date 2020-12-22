@@ -3,7 +3,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 find_package(Blaze QUIET)
 
-if(NOT USES_SUBMODULES)
+if(NOT TARGET dtkContinuousGeometryCore)
   find_package(dtkCore REQUIRED)
   find_package(dtkLog REQUIRED)
   find_package(dtkContinuousGeometry 0.0.1 REQUIRED)
