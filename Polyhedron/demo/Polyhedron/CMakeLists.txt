@@ -337,7 +337,7 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
     find_package(dtkContinuousGeometry 0.0.1 QUIET)
   endif()
 
-    if (dtkCore_FOUND AND dtkContinuousGeometry_FOUND)
+  if ((dtkCore_FOUND AND dtkContinuousGeometry_FOUND) OR (TARGET dtkCore AND TARGET  dtkContinuousGeometryCore))
       if(NOT TARGET dtkContinuousGeometryCore)
         include_directories(${dtkCore_INCLUDE_DIRS})
         include_directories(${dtkLog_INCLUDE_DIRS})
