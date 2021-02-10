@@ -50,6 +50,7 @@ include(${CGAL_MODULES_DIR}/CGAL_add_test.cmake)
     #create "${plugin_implementation_base_name}.json" in BINARY_DIR
     STRING(TOLOWER "${plugin_implementation_base_name}.json" base_name)
     SET(filename "${CMAKE_CURRENT_BINARY_DIR}/${base_name}")
+    FILE(TOUCH ${filename})
     LIST(LENGTH ARG_KEYWORDS size)
     if(${size} GREATER 0)
       SET(keywords )
