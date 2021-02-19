@@ -1,0 +1,24 @@
+name: Filter Testsuite
+
+on:
+  issue_comment:
+      types: [created]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v3
+        id: get_round
+        with:
+         script: |
+           const userName = context.payload.comment.user.login
+           if(userName == 'maxGimeno' ) {
+             const body = context.payload.comment.body
+             if(body.includes("run filter test")) {
+               ssh mgimeno@geometryfactory.pro.dns-orange.fr 'echo "coucou" '
+               }
+             }
+           }
+      
