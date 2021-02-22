@@ -26,4 +26,25 @@ jobs:
       - name: Run Testsuite
         if: steps.check.outputs.result != 'stop'
         run: |
+          mkdir -p ~/.ssh
+          #ssh key
+          (
+          cat <<EOF
+          ${{ secrets.ssh_key }}
+          EOF
+          )>> ~/.ssh/id_rsa
+          chmod 600 /home/runner/.ssh/id_rsa 
+          #ssh public key
+          (
+          cat <<EOF
+          ${{ secrets.ssh_key_pub }}
+          EOF
+          )>> ~/.ssh/id_rsa.pub
+          chmod 644 /home/runner/.ssh/id_rsa.pub
+          (
+          cat <<EOF
+          |1|eZG+u8Twxx+5wmaB3oh4D/DyAPw=|q+eUbrFSAWhDiZnS2qMLpXphQFo= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBF9KCvu41PSuTf1sd2zLFb0E4jw40hlWPzW+l62sbDn2FugyR5kR87sA58TdHgdlyshSjf+In3tdi45fPIepy+U=
+          EOF
+          )>> ~/.ssh/known_hosts
+          #ssh command
           ssh mgimeno@geometryfactory.pro.dns-orange.fr 'touch coucou.txt'
