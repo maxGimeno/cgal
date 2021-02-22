@@ -17,12 +17,25 @@ jobs:
            const userName = context.payload.comment.user.login
            if(userName == 'maxGimeno') {
              const body = context.payload.comment.body
-             if(body.includes("run filter test")) {
+             if(body.includes("/testme")) {             
                return 'OK'
              }
            }
            return 'stop'
 
+      - uses: actions/github-script@v3
+        if: steps.check.result != 'stop'
+        id: get_label
+        with:
+         result-encoding: string
+         script: |
+           //get branch name and username
+           
+           const pr_url = context.payload.issue.pull_request.url
+           const pr_content = await github.request(pr_url)
+           const label = pr_content.data.head.label
+           console.log(label)
+           return label
       - name: Run Testsuite
         if: steps.check.outputs.result != 'stop'
         run: |
@@ -40,11 +53,26 @@ jobs:
           ${{ secrets.ssh_key_pub }}
           EOF
           )>> ~/.ssh/id_rsa.pub
+          #known hosts
           chmod 644 /home/runner/.ssh/id_rsa.pub
           (
           cat <<EOF
-          |1|eZG+u8Twxx+5wmaB3oh4D/DyAPw=|q+eUbrFSAWhDiZnS2qMLpXphQFo= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBF9KCvu41PSuTf1sd2zLFb0E4jw40hlWPzW+l62sbDn2FugyR5kR87sA58TdHgdlyshSjf+In3tdi45fPIepy+U=
+          geometryfactory.pro.dns-orange.fr ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBF9KCvu41PSuTf1sd2zLFb0E4jw40hlWPzW+l62sbDn2FugyR5kR87sA58TdHgdlyshSjf+In3tdi45fPIepy+U=
+          192.168.2.104 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNPek+ynn/yTde9CXJ0oMXy/sxU60n6yxnKvGvrUr9sga6BHmlA7uq4mVxDveNaD+Wk2umVCjn/lhNMDztdX5GM=
           EOF
           )>> ~/.ssh/known_hosts
+          #config file
+          (
+          cat <<EOF
+          Host blake-via-renoir
+          ProxyCommand ssh mgimeno@geometryfactory.pro.dns-orange.fr nc 192.168.2.104 %p
+          User cgaltest
+          Hostname 192.168.2.104
+          EOF
+          )>> ~/.ssh/config
           #ssh command
-          ssh mgimeno@geometryfactory.pro.dns-orange.fr 'touch coucou.txt'
+          LABEL="${{ steps.get_label.outputs.result }}"
+          USER_NAME=$(echo $LABEL | cut -d':' -f 1)
+          BRANCH_NAME=$(echo $LABEL | cut -d':' -f 2)
+          ssh blake-via-renoir "touch ~/${USER_NAME}.txt ${BRANCH_NAME}.txt"
+          #ssh blake-via-renoir "~/cgal_root/run_testsuite_from_branch_name.sh $USER_NAME $BRANCH_NAME"
