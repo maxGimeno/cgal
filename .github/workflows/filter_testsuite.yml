@@ -65,7 +65,7 @@ jobs:
           (
           cat <<EOF
           Host blake-via-renoir
-          ProxyCommand ssh mgimeno@geometryfactory.pro.dns-orange.fr nc 192.168.2.104 %p
+          ProxyCommand ssh -q mgimeno@geometryfactory.pro.dns-orange.fr nc 192.168.2.104 %p
           User cgaltest
           Hostname 192.168.2.104
           EOF
@@ -74,5 +74,16 @@ jobs:
           LABEL="${{ steps.get_label.outputs.result }}"
           USER_NAME=$(echo $LABEL | cut -d':' -f 1)
           BRANCH_NAME=$(echo $LABEL | cut -d':' -f 2)
-          ssh blake-via-renoir "touch ~/${USER_NAME}.txt ${BRANCH_NAME}.txt"
-          #ssh blake-via-renoir "~/cgal_root/run_testsuite_from_branch_name.sh $USER_NAME $BRANCH_NAME"
+          ssh blake-via-renoir "~/cgal_root/run_testsuite_from_branch_name.sh $USER_NAME $BRANCH_NAME"
+      - name: Post address
+        uses: actions/github-script@v3
+        if: steps.check.outputs.result != 'stop'
+        with:
+          script: |
+            const address = "The testsuite is lauched. results will be found, after it is done, here : https://cgal.geometryfactory.com/~mgimeno/test_suite/TESTRESULTS/index.shtml "
+            github.issues.createComment({
+              owner: "maxGimeno",
+              repo: "cgal",
+              issue_number: ${{ github.event.issue.number }},
+              body: address
+            });
