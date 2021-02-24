@@ -6,7 +6,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v3
@@ -22,7 +21,6 @@ jobs:
              }
            }
            return 'stop'
-
       - uses: actions/github-script@v3
         if: steps.check.result != 'stop'
         id: get_label
@@ -30,12 +28,23 @@ jobs:
          result-encoding: string
          script: |
            //get branch name and username
-           
            const pr_url = context.payload.issue.pull_request.url
            const pr_content = await github.request(pr_url)
            const label = pr_content.data.head.label
            console.log(label)
            return label
+      - uses: actions/github-script@v3
+        if: steps.check.result != 'stop'
+        id: get_base
+        with:
+         result-encoding: string
+         script: |
+           //get branch name and username   
+           const pr_url = context.payload.issue.pull_request.url
+           const pr_content = await github.request(pr_url)
+           const base = pr_content.data.base.ref
+           console.log(base)
+           return base
       - name: Run Testsuite
         if: steps.check.outputs.result != 'stop'
         run: |
@@ -74,7 +83,8 @@ jobs:
           LABEL="${{ steps.get_label.outputs.result }}"
           USER_NAME=$(echo $LABEL | cut -d':' -f 1)
           BRANCH_NAME=$(echo $LABEL | cut -d':' -f 2)
-          ssh blake-via-renoir "~/cgal_root/run_testsuite_from_branch_name.sh $USER_NAME $BRANCH_NAME"
+          BASE="${{ steps.get_base.outputs.result }}"
+          ssh blake-via-renoir "~/cgal_root/run_testsuite_from_branch_name.sh $USER_NAME $BRANCH_NAME $BASE"
       - name: Post address
         uses: actions/github-script@v3
         if: steps.check.outputs.result != 'stop'
