@@ -30,7 +30,10 @@ RESULT_FILE=''
 # print timings on fd3
 print_testresult()
 {
-  if [ ! -f ErrorOutput_$1 ] ; then
+  if [ -f skipped ]; then
+    RESULT="s"
+    TIMING="s"
+  elif [ ! -f ErrorOutput_$1 ] ; then
     RESULT="?"
     TIMING="?"
   else
@@ -71,7 +74,6 @@ parse_flags_and_third_party_choices()
   grep -e "^-- USING " ${PLATFORM_BUILD_LOGFILE} >> $RESULT_FILE
   echo "------------" >> $RESULT_FILE
 }
-
 
 output_main_logs()
 {
@@ -211,6 +213,7 @@ echo "Host-specific installation log file: ${PLATFORM_BUILD_LOGFILE}"  >> "$RESU
 output_main_logs
 
 parse_flags_and_third_party_choices
+
 
 for DIR in $TEST_DIRECTORIES ; do
   if [ -d "$DIR" ] ; then
