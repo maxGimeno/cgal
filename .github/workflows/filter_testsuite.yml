@@ -84,7 +84,7 @@ jobs:
           USER_NAME=$(echo $LABEL | cut -d':' -f 1)
           BRANCH_NAME=$(echo $LABEL | cut -d':' -f 2)
           BASE="${{ steps.get_base.outputs.result }}"
-          ssh blake-via-renoir "~/cgal_root/run_testsuite_from_branch_name.sh $USER_NAME $BRANCH_NAME $BASE"
+          ssh blake-via-renoir "/cygdrive/c/cgal_root/run_testsuite_from_branch_name.sh $USER_NAME $BRANCH_NAME $BASE"
       - name: Post address
         uses: actions/github-script@v3
         if: steps.check.outputs.result != 'stop'
