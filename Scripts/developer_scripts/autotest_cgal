@@ -621,25 +621,34 @@ CGAL_ROOT='${CGAL_ROOT}'
 rm -rf '${CGAL_BINARY_DIR}/test';
 
 if [ -f '${LIST_TEST_PACKAGES}' ]; then
-
   mkdir '${CGAL_BINARY_DIR}/test'
 
   cp '${CGAL_TEST_DIR}/collect_cgal_testresults_from_cmake' '${CGAL_BINARY_DIR}/test'
   cp '${CGAL_TEST_DIR}/makefile2'                           '${CGAL_BINARY_DIR}/test'
   cp '${CGAL_TEST_DIR}/run_testsuite_with_cmake'            '${CGAL_BINARY_DIR}/test'
 
-  for PACKAGE in \`source '${LIST_TEST_PACKAGES}' '${CGAL_ROOT}'\`; do
+# list all packages in CGAL_TEST_DIR. If PACKAGE is found in LIST_TEST_PACKAGES,
+# copy it, else prepare for the special "skipped" case in the table.
 
-    if [ -d "${CGAL_TEST_DIR}/\${PACKAGE}" ]; then
-      mkdir "${CGAL_BINARY_DIR}/test/\${PACKAGE}"
-      cp -r "${CGAL_TEST_DIR}/\${PACKAGE}" '${CGAL_BINARY_DIR}/test'
+  for PACKAGE in \$(ls "${CGAL_TEST_DIR}"); do
+    if [ -d "${CGAL_TEST_DIR}/\$PACKAGE" ]; then
+      if source '${LIST_TEST_PACKAGES}' '${CGAL_ROOT}' | egrep -q \$PACKAGE; then
+        mkdir "\${CGAL_BINARY_DIR}/test/\${PACKAGE}"
+        cp -r "${CGAL_TEST_DIR}/\${PACKAGE}" '${CGAL_BINARY_DIR}/test'
+      elif [ "$PACKAGE" = "resources"]; then
+          mkdir "\${CGAL_BINARY_DIR}/test/\${PACKAGE}"
+          cp -r "${CGAL_TEST_DIR}/\${PACKAGE}" '${CGAL_BINARY_DIR}/test'
+      else
+        mkdir "${CGAL_BINARY_DIR}/test/\${PACKAGE}"
+        touch "${CGAL_BINARY_DIR}/test/\${PACKAGE}/skipped"
+      fi
     fi
-
   done
 
 else
   cp -r '${CGAL_TEST_DIR}' '${CGAL_BINARY_DIR}/test';
 fi
+
 
 cd '${CGAL_BINARY_DIR}/test';
 if [ -n "\${ULIMIT_OPTIONS}" ]; then
