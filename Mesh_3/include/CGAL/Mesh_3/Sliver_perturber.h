@@ -505,7 +505,8 @@ private:
   #ifdef CGAL_MESH_3_USE_RELAXED_HEAP
   typedef boost::relaxed_heap<PVertex, less_PVertex, PVertex_id> PQueue;
   #else
-  typedef ::CGAL::internal::mutable_queue_with_remove<PVertex,std::vector<PVertex>, less_PVertex, PVertex_id> PQueue;
+  //typedef ::CGAL::internal::mutable_queue_with_remove<PVertex,std::vector<PVertex>, less_PVertex, PVertex_id> PQueue;
+  typedef ::CGAL::internal::set_based_heap<PVertex,less_PVertex> PQueue;
   #endif //CGAL_MESH_3_USE_RELAXED_HEAP
 
 public:

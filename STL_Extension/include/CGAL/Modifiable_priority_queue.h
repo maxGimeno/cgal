@@ -16,40 +16,52 @@
 #ifdef CGAL_SURFACE_MESH_SIMPLIFICATION_USE_RELAXED_HEAP
 #include <boost/pending/relaxed_heap.hpp>
 #else
-#include <CGAL/internal/boost/mutable_queue.hpp>
+#include <set>
+
 
 
 namespace CGAL {
   namespace internal {
-template <class IndexedType,
-          class RandomAccessContainer = std::vector<IndexedType>,
-          class Comp = std::less<typename RandomAccessContainer::value_type>,
-          class ID = ::boost::identity_property_map >
-class mutable_queue_with_remove : public internal::boost_::mutable_queue<IndexedType,RandomAccessContainer,Comp,ID>
+template <
+      class IndexedType,
+      class Comp
+         >
+class set_based_heap : public std::set<IndexedType, Comp>
 {
-  typedef internal::boost_::mutable_queue<IndexedType,RandomAccessContainer,Comp,ID> Base;
+  typedef std::set<IndexedType, Comp> Base;
 public:
   typedef typename Base::size_type size_type;
-  typedef typename Base::Node Node;
+  typedef typename Base::iterator handle;
+  typedef typename Base::value_type value_type;
 
-  mutable_queue_with_remove(size_type n, const Comp& x=Comp(), const ID& _id=ID()) : Base(n,x,_id,true)
+  set_based_heap(const Comp& x=Comp()) : Base(x)
   {}
 
   void remove(const IndexedType& x){
-    //first place element at the top
-    size_type current_pos = this->index_array[ get(this->id, x) ];
-    this->c[current_pos] = x;
-
-    Node node(this->c.begin(), this->c.end(), this->c.begin()+current_pos, this->id);
-    while (node.has_parent())
-      node.swap(node.parent(), this->index_array);
-    //then pop it
-    this->pop();
+    this->erase(x);
   }
 
   bool contains(const IndexedType& x) const {
-    return this->index_array[ get(this->id, x) ] !=this->index_array.size();
+    return (this->find(x) != this->end());
   }
+
+  handle update ( value_type const& v, handle h ) {
+    auto node = this->extract(h);
+    node.value() = v;
+    this->insert(move(node));
+    return h;
+  }
+
+  void update ( value_type const& v) {
+    auto node = this->extract(v);
+    this->insert(move(node));
+  }
+
+  void pop() { this->erase(this->begin()); }
+
+  value_type top() const { return *this->begin(); }
+
+  handle push ( value_type const& v ) { return this->insert(v).first; }
 };
 
 } } //namespace CGAL::internal
@@ -73,21 +85,23 @@ public:
 
   #ifdef CGAL_SURFACE_MESH_SIMPLIFICATION_USE_RELAXED_HEAP
   typedef boost::relaxed_heap<IndexedType,Compare,ID> Heap;
+  typedef bool handle ;
   #else
-  typedef  internal::mutable_queue_with_remove<IndexedType,std::vector<IndexedType>,Compare,ID> Heap;
+  typedef  internal::set_based_heap<IndexedType,Compare> Heap;
+  typedef typename Heap::handle handle;
   #endif //CGAL_SURFACE_MESH_SIMPLIFICATION_USE_RELAXED_HEAP
   typedef typename Heap::value_type value_type;
   typedef typename Heap::size_type  size_type;
 
-  typedef bool handle ;
 
 public:
 
-  Modifiable_priority_queue( size_type largest_ID, Compare const& c, ID const& id ) : mHeap(largest_ID,c,id) {}
+  Modifiable_priority_queue( size_type, Compare const& c, ID const&) : mHeap(c) {}
 
-  handle push ( value_type const& v ) { mHeap.push(v) ; return handle(true) ; }
+  handle push ( value_type const& v ) { return mHeap.push(v); }
 
-  handle update ( value_type const& v, handle h ) { mHeap.update(v); return h ; }
+  handle update ( value_type const& v, handle h ) { return mHeap.update(v, h); }
+  handle update ( value_type const& v, bool) { return mHeap.update(v); return null_handle();}
 
   handle erase ( value_type const& v, handle  ) { mHeap.remove(v); return null_handle() ; }
   handle erase ( value_type const& v  ) { mHeap.remove(v); return null_handle() ; }
@@ -112,7 +126,7 @@ public:
     return r ;
   }
 
-  static handle null_handle() { return handle(false); }
+  static handle null_handle() { return handle(); }
 
 private:
 
