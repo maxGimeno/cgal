@@ -34,27 +34,32 @@ public:
   typedef typename Base::iterator handle;
   typedef typename Base::value_type value_type;
 
-  set_based_heap(const Comp& x=Comp()) : Base(x)
+  set_based_heap(std::size_t, const Comp& x=Comp()) : Base(x)
   {}
 
   void remove(const IndexedType& x){
     this->erase(x);
   }
 
-  bool contains(const IndexedType& x) const {
-    return (this->find(x) != this->end());
+  void remove(handle h){
+    this->erase(h);
+  }
+
+  handle contains(const IndexedType& x) const {
+    return this->find(x);
   }
 
   handle update ( value_type const& v, handle h ) {
+
     auto node = this->extract(h);
     node.value() = v;
-    this->insert(move(node));
+    this->insert(std::move(node));
     return h;
   }
 
   void update ( value_type const& v) {
     auto node = this->extract(v);
-    this->insert(move(node));
+    this->insert(std::move(node));
   }
 
   void pop() { this->erase(this->begin()); }
@@ -96,12 +101,12 @@ public:
 
 public:
 
-  Modifiable_priority_queue( size_type, Compare const& c, ID const&) : mHeap(c) {}
+  Modifiable_priority_queue( size_type dum, Compare const& c, ID const&) : mHeap(dum, c) {}
 
   handle push ( value_type const& v ) { return mHeap.push(v); }
 
   handle update ( value_type const& v, handle h ) { return mHeap.update(v, h); }
-  handle update ( value_type const& v, bool) { return mHeap.update(v); return null_handle();}
+  handle update ( value_type const& v, bool) {  mHeap.update(v); return null_handle();}
 
   handle erase ( value_type const& v, handle  ) { mHeap.remove(v); return null_handle() ; }
   handle erase ( value_type const& v  ) { mHeap.remove(v); return null_handle() ; }
@@ -112,7 +117,9 @@ public:
 
   bool empty() const { return mHeap.empty() ; }
 
-  bool contains ( value_type const& v ) { return mHeap.contains(v) ; }
+  bool contains ( value_type const& v ) { return mHeap.contains(v) != mHeap.end(); }
+
+  handle  contains ( value_type const& v, bool& found) { handle res = mHeap.contains(v); found = (res != mHeap.end()); return res; }
 
   boost::optional<value_type> extract_top()
   {

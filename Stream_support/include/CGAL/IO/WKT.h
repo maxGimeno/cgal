@@ -14,7 +14,7 @@
 
 #ifndef CGAL_IO_WKT_H
 #define CGAL_IO_WKT_H
-//#if defined(DOXYGEN_RUNNING) || (BOOST_VERSION >= 105600 && (!defined(BOOST_GCC) || BOOST_GCC >= 40500))
+#if defined(DOXYGEN_RUNNING) || (BOOST_VERSION >= 105600 && (!defined(BOOST_GCC) || BOOST_GCC >= 40500))
 
 #include <CGAL/Point_2.h>
 #include <CGAL/Point_3.h>
@@ -575,6 +575,6 @@ bool read_WKT(std::istream& is,
 
 } // namespace CGAL
 
-//#endif // BOOST VERSION CHECKS
+#endif // BOOST VERSION CHECKS
 
 #endif // CGAL_IO_WKT_H

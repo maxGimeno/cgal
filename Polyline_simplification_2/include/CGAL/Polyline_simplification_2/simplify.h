@@ -312,8 +312,8 @@ operator()()
   if((*mpq).empty()){
       return false;
     }
-  Vertex_handle v = (*mpq).top();
-  (*mpq).pop();
+  Vertex_handle v = mpq->top();
+  mpq->pop();
   if(stop(pct, v, v->cost(), pct_initial_number_of_vertices, pct.number_of_vertices())){
     return false;
   }
@@ -331,9 +331,11 @@ operator()()
           mpq->erase(*u);
         }
       } else {
-        (*u)->set_cost(*dist);
-        if(mpq->contains(*u)){
-          mpq->update(*u, true);
+        bool found;
+        typename MPQ::handle h =mpq->contains(*u, found);
+        if(found){
+          (*u)->set_cost(*dist);
+          mpq->update(*u, h);
         }
         else{
           mpq->push(*u);
@@ -343,21 +345,21 @@ operator()()
 
     if((*w)->is_removable()){
       boost::optional<FT> dist = cost(pct, w);
-      if(! dist){
+      if(! dist)
         // cost is undefined
         if( mpq->contains(*w) ){
           mpq->erase(*w);
+        } else {
+          bool found;
+          typename MPQ::handle h =mpq->contains(*w, found);
+          if(found){
+            (*w)->set_cost(*dist);
+            mpq->update(*w, h);
+          }
+          else{
+            mpq->push(*w);
+          }
         }
-      } else {
-        (*w)->set_cost(*dist);
-        if(mpq->contains(*w)){
-          mpq->update(*w, true);
-        }
-        else{
-          mpq->push(*w);
-        }
-
-      }
     }
   } else {
     ++number_of_unremovable_vertices;
