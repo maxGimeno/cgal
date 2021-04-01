@@ -1232,17 +1232,17 @@ int
 Sliver_perturber<C3T3,Md,Sc,V_>::
 update_priority_queue(const PVertex& pv, PQueue& pqueue) const
 {
-  typename PQueue::handle cont = pqueue.contains(pv);
-  if (  cont != pqueue.end())
+  typename PQueue::handle h = pqueue.contains(pv);
+  if (  h != pqueue.end())
   {
     if ( pv.is_perturbable() )
     {
-      pqueue.update(pv, cont);
+      pqueue.update(pv, h);
       return 0;
     }
     else
     {
-      pqueue.remove(cont);
+      pqueue.remove(h);
       return -1;
     }
   }

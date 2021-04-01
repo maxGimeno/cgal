@@ -110,6 +110,7 @@ public:
 
   handle erase ( value_type const& v, handle  ) { mHeap.remove(v); return null_handle() ; }
   handle erase ( value_type const& v  ) { mHeap.remove(v); return null_handle() ; }
+  handle erase ( handle h) { mHeap.remove(h); return null_handle() ; }
 
   value_type top() const { return mHeap.top() ; }
 

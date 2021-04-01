@@ -28,6 +28,7 @@
 #include <CGAL/Polyline_simplification_2/Stop_above_cost_threshold.h>
 #include <CGAL/Modifiable_priority_queue.h>
 #include <CGAL/algorithm.h>
+#include<CGAL/assertions.h>
 
 // Needed for Polygon_2
 
@@ -35,7 +36,6 @@
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Constrained_triangulation_plus_2.h>
 #include <list>
-
 
 namespace CGAL {
 
@@ -325,14 +325,14 @@ operator()()
 
     if((*u)->is_removable()){
       boost::optional<FT> dist = cost(pct, u);
+      bool found;
+      typename MPQ::handle h =mpq->contains(*u, found);
       if(! dist){
         // cost is undefined
-        if( mpq->contains(*u) ){
-          mpq->erase(*u);
+        if( found ){
+          mpq->erase(h);
         }
       } else {
-        bool found;
-        typename MPQ::handle h =mpq->contains(*u, found);
         if(found){
           (*u)->set_cost(*dist);
           mpq->update(*u, h);
@@ -345,13 +345,13 @@ operator()()
 
     if((*w)->is_removable()){
       boost::optional<FT> dist = cost(pct, w);
+      bool found;
+      typename MPQ::handle h =mpq->contains(*w, found);
       if(! dist)
         // cost is undefined
-        if( mpq->contains(*w) ){
-          mpq->erase(*w);
+        if( found){
+          mpq->erase(h);
         } else {
-          bool found;
-          typename MPQ::handle h =mpq->contains(*w, found);
           if(found){
             (*w)->set_cost(*dist);
             mpq->update(*w, h);
