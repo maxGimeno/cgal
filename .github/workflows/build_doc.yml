@@ -65,6 +65,7 @@ jobs:
           mkdir -p build_doc && cd build_doc && cmake ../Documentation/doc
 
       - name: Build and Upload Doc
+        id: build_and_run
         if: steps.get_round.outputs.result != 'stop'
         run: |
           set -ex
@@ -77,7 +78,13 @@ jobs:
             if [ "$LIST_OF_PKGS" = "" ]; then
               exit 1
             fi
-            cd build_doc && make -j2 doc && make -j2 doc_with_postprocessing
+            cd build_doc && make -j2 doc
+            make -j2 doc_with_postprocessing 2>tmp.log
+            cat tmp.log
+            if [ -s tmp.log ]; then
+              echo ::set-output name=DoxygenError::$(cat tmp.log)
+              exit 1
+            fi
             cd ..
             git clone https://CGAL:${{ secrets.PUSH_TO_CGAL_GITHUB_IO_TOKEN }}@github.com/CGAL/cgal.github.io.git
             mkdir -p cgal.github.io/${PR_NUMBER}/$ROUND
@@ -92,20 +99,34 @@ jobs:
             egrep -v " ${PR_NUMBER}\." index.html > tmp.html || true
             echo "<li><a href=https://cgal.github.io/${PR_NUMBER}/$ROUND/Manual/index.html>Manual for PR ${PR_NUMBER} ($ROUND).</a></li>" >> ./tmp.html
             mv tmp.html index.html
-            git add ${PR_NUMBER}/$ROUND index.html && git commit -q --amend -m "base commit" && git push -q -f -u origin master
+            git add ${PR_NUMBER}/$ROUND && git commit -q --amend -m "base commit" && git push -q -f -u origin master
           else
             exit 1
           fi
 
       - name: Post address
         uses: actions/github-script@v3
-        if: steps.get_round.outputs.result != 'stop'
+        if: ${{ success() && steps.get_round.outputs.result != 'stop' }}
         with:
           script: |
             const address = "The documentation is built. It will be available, after a few minutes, here : https://cgal.github.io/${{ steps.get_pr_number.outputs.result }}/${{ steps.get_round.outputs.result }}/Manual/index.html"
             github.issues.createComment({
-              owner: "CGAL",
+              owner: "maxGimeno",
               repo: "cgal",
               issue_number: ${{ github.event.issue.number }},
               body: address
+            });
+
+      - name: Post error
+        uses: actions/github-script@v3
+        if: ${{ failure() && steps.get_round.outputs.result != 'stop' }}
+        with:
+          script: |
+            const error = "${{steps.build_and_run.outputs.DoxygenError}}"
+            const msg = "There was an error while building the doc: \n"+error
+            github.issues.createComment({
+              owner: "maxGimeno",
+              repo: "cgal",
+              issue_number: ${{ github.event.issue.number }},
+              body: msg
             });
