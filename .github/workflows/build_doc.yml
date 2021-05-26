@@ -80,8 +80,8 @@ jobs:
             fi
             cd build_doc && make -j2 doc
             make -j2 doc_with_postprocessing 2>tmp.log
-            cat tmp.log
             if [ -s tmp.log ]; then
+              content=`cat ./build_doc/tmp.log`
               echo ::set-output name=DoxygenError::$(cat tmp.log)
               exit 1
             fi
@@ -99,7 +99,7 @@ jobs:
             egrep -v " ${PR_NUMBER}\." index.html > tmp.html || true
             echo "<li><a href=https://cgal.github.io/${PR_NUMBER}/$ROUND/Manual/index.html>Manual for PR ${PR_NUMBER} ($ROUND).</a></li>" >> ./tmp.html
             mv tmp.html index.html
-            git add ${PR_NUMBER}/$ROUND && git commit -q --amend -m "base commit" && git push -q -f -u origin master
+            git add ${PR_NUMBER}/$ROUND index.html && git commit -q --amend -m "base commit" && git push -q -f -u origin master
           else
             exit 1
           fi
@@ -111,7 +111,7 @@ jobs:
           script: |
             const address = "The documentation is built. It will be available, after a few minutes, here : https://cgal.github.io/${{ steps.get_pr_number.outputs.result }}/${{ steps.get_round.outputs.result }}/Manual/index.html"
             github.issues.createComment({
-              owner: "maxGimeno",
+              owner: "CGAL",
               repo: "cgal",
               issue_number: ${{ github.event.issue.number }},
               body: address
@@ -125,7 +125,7 @@ jobs:
             const error = "${{steps.build_and_run.outputs.DoxygenError}}"
             const msg = "There was an error while building the doc: \n"+error
             github.issues.createComment({
-              owner: "maxGimeno",
+              owner: "CGAL",
               repo: "cgal",
               issue_number: ${{ github.event.issue.number }},
               body: msg
