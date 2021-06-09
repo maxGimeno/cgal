@@ -79,7 +79,8 @@ jobs:
               exit 1
             fi
             cd build_doc && make -j2 doc
-            make -j2 doc_with_postprocessing 2>tmp.log
+            #filter the output of make to remove warnings and empty lines.
+            make -j2 doc_with_postprocessing 2 | grep -v -i warning|grep .>tmp.log
             if [ -s tmp.log ]; then
               content=`cat ./build_doc/tmp.log`
               echo ::set-output name=DoxygenError::$(cat tmp.log)
