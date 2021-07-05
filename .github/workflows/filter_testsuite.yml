@@ -67,7 +67,7 @@ jobs:
           (
           cat <<EOF
           geometryfactory.pro.dns-orange.fr ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBF9KCvu41PSuTf1sd2zLFb0E4jw40hlWPzW+l62sbDn2FugyR5kR87sA58TdHgdlyshSjf+In3tdi45fPIepy+U=
-          192.168.2.106 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKC87VMXIhqsWW3iEJYDReFBkoozIFV/WmR1+iskeeXnA/Pi02UB4fshopKa91txA2WBPlDtnSDtk+c3sUdJ8Qs=
+          192.168.2.106 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBCZEBqjdmSNpe0H+RbNney/InmuW9HuvzA6lYePmOBGqW1UjepYbBiIhPNZkS7luuw6zZJU9tYYedsNgntkOmEM=
           EOF
           )>> ~/.ssh/known_hosts
           #config file
@@ -84,7 +84,9 @@ jobs:
           USER_NAME=$(echo $LABEL | cut -d':' -f 1)
           BRANCH_NAME=$(echo $LABEL | cut -d':' -f 2)
           BASE="${{ steps.get_base.outputs.result }}"
-          ssh sosno-via-renoir "/cygdrive/c/filter_test/run_testsuite_from_branch_name.sh $USER_NAME $BRANCH_NAME $BASE"
+          #ssh sosno-via-renoir "cd C:/filter_test && echo '$USER_NAME $BRANCH_NAME $BASE' > coucou.txt"
+          ssh sosno-via-renoir "cd C:/filter_test && bash ./run_testsuite_from_branch_name.sh $USER_NAME $BRANCH_NAME $BASE"
+          echo "ssh sent"
       - name: Post address
         uses: actions/github-script@v3
         if: steps.check.outputs.result != 'stop'
