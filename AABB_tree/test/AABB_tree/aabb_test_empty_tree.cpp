@@ -1,4 +1,3 @@
-//That's a comment bruh
 #include <iostream>
 #include <vector>
 

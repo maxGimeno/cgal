@@ -26,6 +26,8 @@
 
 #include <CGAL/enum.h>
 
+//That's a comment bruh
+
 namespace CGAL {
 namespace internal {
 
