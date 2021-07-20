@@ -635,6 +635,9 @@ if [ -f '${LIST_TEST_PACKAGES}' ]; then
       if source '${LIST_TEST_PACKAGES}' '${CGAL_ROOT}' | egrep -q \$PACKAGE; then
         mkdir "\${CGAL_BINARY_DIR}/test/\${PACKAGE}"
         cp -r "${CGAL_TEST_DIR}/\${PACKAGE}" '${CGAL_BINARY_DIR}/test'
+      elif [ "$PACKAGE" = "resources"]; then
+        mkdir "\${CGAL_BINARY_DIR}/test/\${PACKAGE}"
+        cp -r "${CGAL_TEST_DIR}/\${PACKAGE}" '${CGAL_BINARY_DIR}/test'
       else
         mkdir "${CGAL_BINARY_DIR}/test/\${PACKAGE}"
         touch "${CGAL_BINARY_DIR}/test/\${PACKAGE}/skipped"
