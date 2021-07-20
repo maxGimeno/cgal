@@ -80,15 +80,15 @@ jobs:
           BRANCH_NAME=$(echo $LABEL | cut -d':' -f 2)
           BASE="${{ steps.get_base.outputs.result }}"
           mapfile -t HOSTS < ~/ssh_host_list;
-          INDEX=0;
           LAST_INDEX=$((${#HOSTS[@]}-1))
-          for HOST in ${HOSTS[@]}; do
-            if [ "$INDEX" -ne  "$LAST_INDEX" ] ; then 
-              ssh ${HOST} "/cygdrive/c/cgal_root/run_testsuite_from_branch_name.sh $USER_NAME $BRANCH_NAME $BASE"
+          for i in ${!HOSTS[@]}; do
+            HOST=$(echo ${HOSTS[$i]}|cut -d' ' -f 1 );
+            PATH=$(echo ${HOSTS[$i]}|cut -d' ' -f 2 );
+            if [ "$i" -ne  "$LAST_INDEX" ] ; then
+              ssh ${HOST} "$PATH/run_testsuite_from_branch_name.sh $USER_NAME $BRANCH_NAME $BASE"
             else
               ssh ${HOST} "/cygdrive/c/cgal_root/run_testsuite_from_branch_name.sh $USER_NAME $BRANCH_NAME $BASE y"
             fi
-            INDEX=$((${INDEX}+1))
           done
       - name: Post address
         uses: actions/github-script@v3
