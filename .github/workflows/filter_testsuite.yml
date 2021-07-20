@@ -62,14 +62,9 @@ jobs:
           ${{ secrets.ssh_key_pub }}
           EOF
           )>> ~/.ssh/id_rsa.pub
-          #known hosts
           chmod 644 /home/runner/.ssh/id_rsa.pub
-          (
-          cat <<EOF
-          geometryfactory.pro.dns-orange.fr ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBF9KCvu41PSuTf1sd2zLFb0E4jw40hlWPzW+l62sbDn2FugyR5kR87sA58TdHgdlyshSjf+In3tdi45fPIepy+U=
-          192.168.2.104 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNPek+ynn/yTde9CXJ0oMXy/sxU60n6yxnKvGvrUr9sga6BHmlA7uq4mVxDveNaD+Wk2umVCjn/lhNMDztdX5GM=
-          EOF
-          )>> ~/.ssh/known_hosts
+          #known hosts
+          wget --no-check-certificate https://cgal.geometryfactory.com/CGAL/ssh_known_hosts -O ~/.ssh/known_hosts
           #config file
           wget --no-check-certificate https://cgal.geometryfactory.com/CGAL/ssh_config -O ~/.ssh/config 
           #list of hosts
