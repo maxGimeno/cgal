@@ -71,20 +71,25 @@ jobs:
           EOF
           )>> ~/.ssh/known_hosts
           #config file
-          (
-          cat <<EOF
-          Host blake-via-renoir
-          ProxyCommand ssh -q mgimeno@geometryfactory.pro.dns-orange.fr nc 192.168.2.104 %p
-          User cgaltest
-          Hostname 192.168.2.104
-          EOF
-          )>> ~/.ssh/config
+          wget --no-check-certificate https://cgal.geometryfactory.com/CGAL/ssh_config -O ~/.ssh/config 
+          #list of hosts
+          wget --no-check-certificate https://cgal.geometryfactory.com/CGAL/ssh_host_list -O ~/ssh_host_list
           #ssh command
           LABEL="${{ steps.get_label.outputs.result }}"
           USER_NAME=$(echo $LABEL | cut -d':' -f 1)
           BRANCH_NAME=$(echo $LABEL | cut -d':' -f 2)
           BASE="${{ steps.get_base.outputs.result }}"
-          ssh blake-via-renoir "/cygdrive/c/cgal_root/run_testsuite_from_branch_name.sh $USER_NAME $BRANCH_NAME $BASE"
+          mapfile -t HOSTS < ~/ssh_host_list;
+          INDEX=0;
+          LAST_INDEX=$((${#HOSTS[@]}-1))
+          for HOST in ${HOSTS[@]}; do
+            if [ "$INDEX" -ne  "$LAST_INDEX" ] ; then 
+              ssh ${HOST} "/cygdrive/c/cgal_root/run_testsuite_from_branch_name.sh $USER_NAME $BRANCH_NAME $BASE"
+            else
+              ssh ${HOST} "/cygdrive/c/cgal_root/run_testsuite_from_branch_name.sh $USER_NAME $BRANCH_NAME $BASE y"
+            fi
+            INDEX=$((${INDEX}+1))
+          done
       - name: Post address
         uses: actions/github-script@v3
         if: steps.check.outputs.result != 'stop'
